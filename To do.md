@@ -28,7 +28,8 @@ Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's n
 - [ ] Finish the Gmail sign-in on claude.ai (Calendar and Drive are connected).
 - [ ] Set the Google Calendar time zone to Central (it shows UTC).
 - [ ] Brain ideas Jarvis offered 2026-10-21, not decided yet: a hardware readiness list (laptop, Pi, cards, capture stick, rough prices (check)), a backend proficiency checklist, a pilot pitch draft for [[J Street Gym]].
-- [ ] Decide whether the job runner files chats every 3 hours (7am to 10pm Central) instead of only on LEARN NOW, "file my Jarvis chats" and Mondays. See [[Jarvis]].
+- [ ] Confirm in a Jarvis backend session: TJ said in a phone chat (2026-10-21) that Jarvis may ask about his health when it helps. CLAUDE.md still says not to unless he brings it up, so it stays that way until he confirms (check).
+- [ ] Phone page opens on a blank chat every time (each open starts a new chat; saved chats are not shown). Store checked 2026-10-21: all 6 chats intact. Fix offered: reopen the last chat and add a past-chats list. Waiting on TJ's OK. See [[Jarvis]].
 - [ ] When TJ has a computer: sign in to Claude in Chrome there, then test one website job.
 
 ## Later

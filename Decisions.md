@@ -5,6 +5,8 @@ type: log
 
 Newest first. Covers [[SecurityAI]], [[Basis]] and [[Jarvis]].
 
+- **2026-10-21** [[Jarvis]] gets a morning brief, calendar reminders and a memory panel (copied from ChatGPT Pulse, Gemini, ChatGPT memory). Job runner moves to 6:15am, 9:15, 12:15, 3:15, 6:15 and 9:15pm Central so the first run brings the brief; same number of runs. Routines and email triage wait. Why: TJ said "Let's do it" to the top three; free and phone-only.
+
 - **2026-10-21** Job runner works lean: a cheap check first, one run at a time (a lock), and the page is republished only when it or the notes' sections change. Why: TJ's usage limit; TJ asked for usage-saving jobs.
 - **2026-10-21** New AI tools from videos get vetted first (source, license, code that runs, keys, cost) with the vet-ai-tool skill; only free, read, markdown-only ones get installed. Why: TJ asked to install the ones that help; see [[AI tools to use and avoid]].
 - **2026-10-21** Do every to-do that needs no hardware now; Gym-security stays read-only for this (no pushes). Why: TJ asked; nothing can run at [[J Street Gym]] until there is a laptop or Pi.

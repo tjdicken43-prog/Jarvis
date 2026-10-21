@@ -26,7 +26,7 @@ Calm, dry wit, quietly confident, loyal, like Tony Stark's Jarvis. Answers first
 Believer, Critic, Investor, then Judge with the decision and next steps. Set in [[CLAUDE]]. Friendly, not personal.
 
 ## Not yet (needs setup)
-- **Phone only**: TJ has no computer, just an Android phone (2026-10-21). The Chrome extension and desktop computer use are out. For website jobs behind his login (Render, Namecheap), Jarvis gives step-by-step phone walkthroughs.
+- **Phone for now**: TJ only has an Android phone right now; a computer comes later (2026-10-21). Until then the Chrome extension and desktop computer use wait, and website jobs behind his login (Render, Namecheap) get step-by-step phone walkthroughs. Once he has a computer: install Claude in Chrome, sign in, and test one website job.
 - **Email, calendar and files**: Google Calendar and Google Drive connected 2026-10-21. The calendar time zone is UTC, not Central, until TJ changes it. Gmail sign-in not finished yet.
 - **Better voice**: the browser voice is free but robotic. ElevenLabs or OpenAI voices sound like the movie, about $5 to $22 a month. Needs TJ's OK before signing up.
 - **HUD brain key**: an Anthropic API key for the HUD (console.anthropic.com, pay as you go, about $5 lasts hundreds of questions). TJ's call; key lives in the browser, never in notes.

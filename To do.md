@@ -26,6 +26,7 @@ Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's n
 - [ ] Tell Claude favourite music and chill routines for [[Personal]].
 - [ ] Finish the Gmail sign-in on claude.ai (Calendar and Drive are connected).
 - [ ] Set the Google Calendar time zone to Central (it shows UTC).
+- [ ] When TJ has a computer: sign in to Claude in Chrome there, then test one website job.
 
 ## Later
 - [ ] Staff and cleaner schedules (after real nights).

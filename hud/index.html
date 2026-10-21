@@ -690,7 +690,7 @@ function penteract(time) {
 // warp starfield: streaks fly out of the core, faster when he talks or thinks
 const STARS = Array.from({ length: 170 }, (_, i) => { const r = rng(300 + i); return { x: r() * 2 - 1, y: r() * 2 - 1, z: 0.05 + r() * 0.95 }; });
 function warp(ox, oy) {
-  const sp = 0.0022 + level * 0.012 + (mode === "thinking" ? 0.01 : 0);
+  const sp = 0.0022 + warpBoost + level * 0.012 + (mode === "thinking" ? 0.01 : 0);
   cx.lineCap = "round";
   for (let i = 0; i < STARS.length; i += lowPower ? 2 : 1) {
     const s = STARS[i], z0 = s.z; s.z -= sp;
@@ -860,6 +860,260 @@ function loadShowStats() {
   dbPromise.then(async (db) => { if (!db) return; try { const q = await db.collection("chats").orderBy("started", "desc").limit(500).get(); showStats.chats = q.docs.length; } catch {} });
 }
 
+/* ---------- Show off flight: into the brain, where tiny worlds do the work ---------- */
+// In cinema the camera flies through the shell of notes to the core. Each Jarvis system is a tiny planet orbiting
+// it, with a dome house, a round tree, a road round the middle, and little workers doing that job live.
+const FK = 6; // the brain's radius in flight space
+const V = {
+  add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]], sub: (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
+  mul: (a, k) => [a[0] * k, a[1] * k, a[2] * k], dot: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
+  cross: (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]],
+  norm: (a) => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; },
+  lerp: (a, b, u) => [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u],
+};
+const ease = (u) => u * u * (3 - 2 * u);
+const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+const jobCounts = () => { const v = Object.values(jobsSeen || {}); return [v.filter((s) => s === "queued" || s === "working").length, v.filter((s) => s === "done").length]; };
+const WORLDS = [
+  { tag: "JOBS", name: "THE WORKSHOP", grass: [92, 206, 118], sky: 190, roof: "#ff6b5a", suit: "#4fd8ff",
+    line: () => { const [l, d] = jobCounts(); return `${plural(l, "job")} live, ${d} done. Jarvis backend builds here.`; },
+    items: [["tree", -0.66], ["desk", -0.3], ["house", 0.1], ["dish", 0.42], ["courier", -0.12, 0.3]] },
+  { tag: "LEARNING", name: "THE LIBRARY", grass: [132, 210, 92], sky: 45, roof: "#ffb23e", suit: "#ffd166",
+    line: () => `${plural(lessons.length, "lesson")} learned, ${lessons.filter((l) => !l.filed).length} waiting to be shelved.`,
+    items: [["house", -0.52], ["reader", -0.14], ["shelf", 0.2], ["tree", 0.52]] },
+  { tag: "NOTES", name: "THE ARCHIVE", grass: [86, 196, 156], sky: 280, roof: "#9b8cff", suit: "#c9b8ff",
+    line: () => `${nodes.length} notes, ${edges.length} links, filed and cross-linked.`,
+    items: [["tree", -0.62], ["papers", -0.32], ["cabinet", 0.26], ["house", 0.56], ["filer", -0.24, 0.16]] },
+  { tag: "VOICE", name: "THE STUDIO", grass: [104, 220, 140], sky: 330, roof: "#ff5fa2", suit: "#ff9bd0",
+    line: () => `${($("voice").value || "builtin:butler").replace("builtin:", "")} voice on air. ${showStats.chats == null ? "Every chat" : plural(showStats.chats, "chat")} saved.`,
+    items: [["house", -0.55], ["tower", -0.22], ["singer", 0.1], ["tree", 0.46]] },
+];
+WORLDS.forEach((w, i) => {
+  const a = i * Math.PI / 2 + 0.5, out = [Math.cos(a), 0, Math.sin(a)], tan = [-out[2], 0, out[0]];
+  w.pos = [out[0] * 2.9, i % 2 ? -0.55 : 0.5, out[2] * 2.9]; w.r = 0.5;
+  w.light = w.grass.map((c) => Math.round(c + (255 - c) * 0.45)).join(","); w.dark = w.grass.map((c) => Math.round(c * 0.28)).join(",");
+  // the camera parks beside the world, a little above, looking at its top where the work happens
+  w.stop = { p: V.add(w.pos, V.add(V.mul(tan, 0.74), [0, 0.6, 0])), l: V.add(w.pos, [0, 0.66, 0]), hold: 8, w,
+    cap: () => ({ tag: `SYSTEM ${i + 1} OF ${WORLDS.length} · ${w.tag}`, title: w.name, line: w.line() }) };
+});
+const FSTOPS = [
+  { p: [0, 2, -15], l: [0, 0, 0], hold: 2.6, cap: () => ({ tag: "LIVE DEMO · FLYING IN", title: `THE BRAIN · ${nodes.length} NOTES`, line: "Every star a note, every line a link. Going in." }) },
+  ...WORLDS.map((w) => w.stop),
+  { p: [0, 0.8, -2.6], l: [0, 0, 0], hold: 5, cap: () => ({ tag: "THE CENTRE", title: "JARVIS CORE", line: "Every world wires its work in here. This is me thinking." }) },
+];
+const TRAVEL = 3.6;
+function orbitAround(p, l, a) { const d = V.sub(p, l), c = Math.cos(a), s = Math.sin(a); return V.add(l, [d[0] * c - d[2] * s, d[1], d[0] * s + d[2] * c]); }
+function flightPose(ft) {
+  const period = FSTOPS.reduce((a, s) => a + s.hold + TRAVEL, 0);
+  let x = ft % period, k = 0;
+  while (x > FSTOPS[k].hold + TRAVEL) { x -= FSTOPS[k].hold + TRAVEL; k++; }
+  const A = FSTOPS[k], B = FSTOPS[(k + 1) % FSTOPS.length];
+  if (x < A.hold) return { p: orbitAround(A.p, A.l, Math.sin(x / A.hold * Math.PI - Math.PI / 2) * 0.18), l: A.l, k, moving: false };
+  const raw = (x - A.hold) / TRAVEL, u = ease(raw), ul = ease(Math.min(1, raw * 1.3)); // the eyes turn a moment before the body
+  const p = V.lerp(orbitAround(A.p, A.l, 0.18), orbitAround(B.p, B.l, -0.18), u);
+  return { p: V.add(p, [0, Math.sin(raw * Math.PI) * 1.4, 0]), l: V.lerp(A.l, B.l, ul), k, moving: true };
+}
+function lookAt(p, l, fl) {
+  const F = V.norm(V.sub(l, p)), R = V.norm(V.cross([0, 1, 0], F)), U = V.cross(F, R);
+  return (X) => { const d = V.sub(X, p), z = V.dot(d, F); if (z < 0.06) return null; const s = fl / z; return [W / 2 + V.dot(d, R) * s, H / 2 - V.dot(d, U) * s, z, s]; };
+}
+
+// little workers: feet at 0, facing right, h = standing height in px
+function person(h, pose, ph, suit) {
+  const sit = pose === "type" || pose === "read", hip = sit ? -0.3 * h : -0.42 * h, sh = hip - 0.36 * h;
+  const sw = pose === "jog" ? Math.sin(ph) * 0.55 : pose === "walk" || pose === "carry" ? Math.sin(ph) * 0.32 : 0;
+  cx.lineCap = "round"; cx.lineJoin = "round"; cx.strokeStyle = suit; cx.lineWidth = Math.max(1.2, h * 0.12);
+  cx.beginPath();
+  if (sit) { cx.moveTo(0, hip); cx.lineTo(0.22 * h, hip); cx.lineTo(0.24 * h, 0); }
+  else { cx.moveTo(Math.sin(sw) * 0.42 * h, 0); cx.lineTo(0, hip); cx.lineTo(-Math.sin(sw) * 0.42 * h, 0); }
+  cx.moveTo(0, hip); cx.lineTo(0, sh);
+  const s0 = sh + 0.06 * h;
+  if (pose === "type") { const b = Math.sin(ph) * 0.04 * h; cx.moveTo(0, s0); cx.lineTo(0.32 * h, hip - 0.08 * h + b); cx.moveTo(0, s0); cx.lineTo(0.28 * h, hip - 0.06 * h - b); }
+  else if (pose === "read") { cx.moveTo(0, s0); cx.lineTo(0.26 * h, sh + 0.14 * h); }
+  else if (pose === "carry") { cx.moveTo(0, s0); cx.lineTo(-0.1 * h, sh - 0.28 * h); cx.moveTo(0, s0); cx.lineTo(0.1 * h, sh - 0.28 * h); }
+  else if (pose === "talk") { cx.moveTo(0, s0); cx.lineTo(0.28 * h, sh - 0.02 * h); cx.moveTo(0, s0); cx.lineTo(-0.2 * h, sh - 0.2 * h + Math.sin(ph) * 0.1 * h); }
+  else { cx.moveTo(0, s0); cx.lineTo(-Math.sin(sw) * 0.32 * h, sh + 0.36 * h); cx.moveTo(0, s0); cx.lineTo(Math.sin(sw) * 0.32 * h, sh + 0.36 * h); }
+  cx.stroke();
+  const hy = sh - 0.17 * h; // head, with a visor that glows like the core
+  cx.fillStyle = "#ffe0bd"; cx.beginPath(); cx.arc(0, hy, 0.16 * h, 0, Math.PI * 2); cx.fill();
+  cx.fillStyle = `rgb(${ARC})`; cx.fillRect(0.02 * h, hy - 0.05 * h, 0.14 * h, 0.07 * h);
+  return sh;
+}
+const SPINES = ["#ff6b5a", "#ffd166", "#4fd8ff", "#9b8cff", "#5cf2a5", "#ff9bd0"];
+function tree(h) {
+  cx.rotate(Math.sin(t * 1.3) * 0.03);
+  cx.fillStyle = "#7a4a2a"; cx.fillRect(-0.08 * h, -0.75 * h, 0.16 * h, 0.75 * h);
+  for (const [x, y, r, c] of [[-0.26, -0.8, 0.3, "#2f8f4e"], [0.26, -0.84, 0.32, "#2f8f4e"], [0, -1.12, 0.42, "#3fae5c"], [0.08, -1.2, 0.2, "#6fd486"]]) {
+    cx.fillStyle = c; cx.beginPath(); cx.arc(x * h, y * h, r * h, 0, Math.PI * 2); cx.fill();
+  }
+}
+function house(h, roof) {
+  cx.fillStyle = roof; cx.beginPath(); cx.ellipse(0, 0, 0.95 * h, 1.05 * h, 0, Math.PI, Math.PI * 2); cx.fill();
+  cx.fillStyle = "rgba(255,255,255,.25)"; cx.beginPath(); cx.ellipse(-0.3 * h, -0.6 * h, 0.22 * h, 0.32 * h, -0.5, 0, Math.PI * 2); cx.fill();
+  cx.fillStyle = "#f4ead8"; cx.fillRect(-0.95 * h, -0.14 * h, 1.9 * h, 0.14 * h);
+  cx.fillStyle = "#2a1c3a"; cx.beginPath(); cx.roundRect ? cx.roundRect(0.18 * h, -0.55 * h, 0.32 * h, 0.55 * h, [0.16 * h, 0.16 * h, 0, 0]) : cx.rect(0.18 * h, -0.55 * h, 0.32 * h, 0.55 * h); cx.fill();
+  cx.fillStyle = "rgba(255,226,140,.95)"; cx.beginPath(); cx.arc(-0.42 * h, -0.5 * h, 0.15 * h, 0, Math.PI * 2); cx.fill();
+  cx.strokeStyle = "#ddd"; cx.lineWidth = Math.max(1, h * 0.05); cx.beginPath(); cx.moveTo(0, -1.04 * h); cx.lineTo(0, -1.4 * h); cx.stroke();
+  cx.fillStyle = Math.sin(t * 4) > 0 ? "#ff4b5c" : "#5a1a22"; cx.beginPath(); cx.arc(0, -1.42 * h, 0.07 * h, 0, Math.PI * 2); cx.fill();
+}
+function rising(h, x0, y0, glyphs, c) { // little symbols drifting up off the work
+  cx.font = `700 ${Math.max(7, h * 0.24) | 0}px 'IBM Plex Mono', monospace`; cx.textAlign = "center";
+  for (let k = 0; k < 3; k++) { const u = (t * 0.45 + k / 3) % 1; cx.fillStyle = `rgba(${c},${1 - u})`; cx.fillText(glyphs[k % glyphs.length], x0 + Math.sin(u * 6 + k) * 0.12 * h, y0 - u * 0.9 * h); }
+}
+function worldItem(type, h, w, i) {
+  if (type === "tree") tree(h);
+  else if (type === "house") house(h, w.roof);
+  else if (type === "desk") {
+    cx.fillStyle = "#8a6a4a"; cx.fillRect(0, -0.42 * h, 0.75 * h, 0.06 * h); cx.fillRect(0.06 * h, -0.36 * h, 0.05 * h, 0.36 * h); cx.fillRect(0.64 * h, -0.36 * h, 0.05 * h, 0.36 * h);
+    cx.fillStyle = "#444"; cx.fillRect(-0.32 * h, -0.28 * h, 0.22 * h, 0.06 * h); cx.fillRect(-0.23 * h, -0.22 * h, 0.04 * h, 0.22 * h); // stool
+    cx.save(); cx.translate(0.48 * h, -0.44 * h); cx.rotate(-0.15);
+    cx.fillStyle = "#1a2030"; cx.fillRect(-0.02 * h, -0.4 * h, 0.06 * h, 0.4 * h);
+    cx.fillStyle = `rgba(${ARC},.9)`; cx.fillRect(-0.3 * h, -0.42 * h, 0.3 * h, 0.36 * h);
+    cx.fillStyle = "rgba(4,10,20,.8)"; for (let k = 0; k < 4; k++) cx.fillRect(-0.27 * h, -0.38 * h + k * 0.08 * h, (0.06 + ((Math.sin(t * 3 + k * 1.7) + 1) / 2) * 0.18) * h, 0.03 * h);
+    cx.restore();
+    cx.save(); cx.translate(-0.21 * h, -0.28 * h); person(h, "type", t * 14, w.suit); cx.restore();
+    rising(h, 0.4 * h, -0.95 * h, ["</>", "{ }", "PR"], ARC);
+  } else if (type === "dish") {
+    cx.strokeStyle = "#cfd8e8"; cx.lineWidth = Math.max(1, h * 0.07); cx.beginPath(); cx.moveTo(0, 0); cx.lineTo(0, -0.55 * h); cx.stroke();
+    cx.save(); cx.translate(0, -0.6 * h); cx.rotate(-0.5 + Math.sin(t * 0.7) * 0.15);
+    cx.fillStyle = "#e8eef8"; cx.beginPath(); cx.ellipse(0, 0, 0.42 * h, 0.16 * h, 0, 0, Math.PI); cx.fill();
+    for (let k = 0; k < 3; k++) { const u = (t * 0.8 + k / 3) % 1; cx.strokeStyle = `rgba(${ARC},${1 - u})`; cx.lineWidth = 1.2; cx.beginPath(); cx.arc(0, -0.1 * h, (0.2 + u * 0.9) * h, Math.PI * 1.25, Math.PI * 1.75); cx.stroke(); }
+    cx.restore();
+  } else if (type === "reader") {
+    for (let k = 0; k < 3; k++) { cx.fillStyle = SPINES[(k + 2) % 6]; cx.fillRect(-0.3 * h + k * 0.03 * h, -(k + 1) * 0.1 * h, 0.55 * h, 0.1 * h); }
+    cx.save(); cx.translate(-0.1 * h, -0.3 * h);
+    const sh = person(h, "read", t, w.suit);
+    cx.fillStyle = "#fff"; cx.save(); cx.translate(0.3 * h, sh + 0.12 * h); cx.fillRect(-0.02 * h, -0.14 * h, 0.04 * h, 0.16 * h);
+    cx.fillStyle = "#f4ead8"; cx.fillRect(0.02 * h, -0.14 * h, 0.14 * h * Math.abs(Math.cos(t * 1.2)), 0.16 * h); cx.restore(); // a page turning
+    const glow = 0.5 + 0.5 * Math.sin(t * 2.4); // the idea lightbulb
+    cx.fillStyle = `rgba(255,214,90,${0.25 * glow})`; cx.beginPath(); cx.arc(0, sh - 0.75 * h, 0.3 * h, 0, Math.PI * 2); cx.fill();
+    cx.fillStyle = `rgba(255,236,150,${0.6 + 0.4 * glow})`; cx.beginPath(); cx.arc(0, sh - 0.75 * h, 0.13 * h, 0, Math.PI * 2); cx.fill();
+    cx.restore();
+  } else if (type === "shelf") {
+    cx.fillStyle = "#6b4a30"; cx.fillRect(-0.45 * h, -1.15 * h, 0.9 * h, 1.15 * h);
+    for (let r = 0; r < 3; r++) for (let k = 0; k < 6; k++) {
+      cx.fillStyle = SPINES[(r * 2 + k) % 6]; const bh = (0.24 + ((k * 7 + r * 3) % 4) * 0.025) * h;
+      cx.fillRect(-0.4 * h + k * 0.135 * h, -0.08 * h - r * 0.36 * h - bh, 0.11 * h, bh);
+    }
+  } else if (type === "papers") {
+    for (let k = 0; k < 5; k++) { cx.fillStyle = k % 2 ? "#f4f0e6" : "#fff"; cx.fillRect(-0.25 * h + (k % 2) * 0.04 * h, -(k + 1) * 0.06 * h, 0.45 * h, 0.05 * h); }
+    const u = (t * 0.35) % 1; cx.save(); cx.translate(Math.sin(u * 9) * 0.2 * h, -0.4 * h - (1 - u) * 1.2 * h); cx.rotate(Math.sin(u * 7) * 0.6); // a note floating down from the brain
+    cx.fillStyle = `rgba(255,255,255,${Math.min(1, u * 3)})`; cx.fillRect(-0.1 * h, -0.07 * h, 0.2 * h, 0.14 * h); cx.restore();
+  } else if (type === "cabinet") {
+    cx.fillStyle = "#8c96aa"; cx.fillRect(-0.28 * h, -0.95 * h, 0.56 * h, 0.95 * h);
+    const open = Math.max(0, Math.cos(t * 0.9)) * 0.25 * h;
+    for (let k = 0; k < 3; k++) { const dx = k === 0 ? -open : 0; cx.fillStyle = "#b4bdcf"; cx.fillRect(-0.24 * h + dx, -0.9 * h + k * 0.3 * h, 0.48 * h, 0.25 * h); cx.fillStyle = "#555"; cx.fillRect(-0.06 * h + dx, -0.8 * h + k * 0.3 * h, 0.12 * h, 0.03 * h); }
+  } else if (type === "tower") {
+    cx.strokeStyle = "#d8dde8"; cx.lineWidth = Math.max(1, h * 0.05); cx.beginPath();
+    cx.moveTo(-0.3 * h, 0); cx.lineTo(0, -1.7 * h); cx.lineTo(0.3 * h, 0);
+    for (let k = 1; k < 5; k++) { const y = -k * 0.34 * h, x = 0.3 * h * (1 - k / 5); cx.moveTo(-x, y); cx.lineTo(x, y + 0.34 * h * 0.5); }
+    cx.stroke();
+    cx.fillStyle = Math.sin(t * 5) > 0 ? "#ff4b5c" : "#5a1a22"; cx.beginPath(); cx.arc(0, -1.72 * h, 0.08 * h, 0, Math.PI * 2); cx.fill();
+    for (let k = 0; k < 3; k++) { const u = (t * 0.7 + k / 3) % 1; cx.strokeStyle = `rgba(${ARC},${(1 - u) * (0.5 + level)})`; cx.lineWidth = 1.4; cx.beginPath(); cx.arc(0, -1.72 * h, (0.2 + u) * h, Math.PI * 1.1, Math.PI * 1.9); cx.stroke(); }
+  } else if (type === "singer") {
+    cx.strokeStyle = "#ccc"; cx.lineWidth = Math.max(1, h * 0.05); cx.beginPath(); cx.moveTo(0.36 * h, 0); cx.lineTo(0.36 * h, -0.62 * h); cx.stroke();
+    cx.fillStyle = "#333"; cx.beginPath(); cx.arc(0.36 * h, -0.68 * h, 0.07 * h, 0, Math.PI * 2); cx.fill();
+    person(h, "talk", t * 5, w.suit);
+    for (let k = 0; k < 3; k++) { const u = (t * 0.9 + k / 3) % 1; cx.strokeStyle = `rgba(${hue(w.sky)},${1 - u})`; cx.lineWidth = 1.2; cx.beginPath(); cx.arc(0.36 * h, -0.68 * h, (0.15 + u * 0.6) * h, -0.9, 0.5); cx.stroke(); }
+  }
+}
+// someone walking back and forth between two spots, carrying the work
+function mover(w, x, y, r, rot, h, type, a0, a1) {
+  const s = Math.sin(t * 0.55 + a0 * 5), a = a0 + (a1 - a0) * (0.5 + 0.5 * s), dir = Math.cos(t * 0.55 + a0 * 5) * (a1 - a0) > 0 ? 1 : -1;
+  place(x, y, r, a + rot, () => {
+    cx.scale(dir, 1); const sh = person(h, "carry", t * 9, w.suit);
+    if (type === "courier") { cx.fillStyle = "#d9a066"; cx.fillRect(-0.16 * h, sh - 0.46 * h, 0.32 * h, 0.2 * h); cx.fillStyle = "#a8743e"; cx.fillRect(-0.16 * h, sh - 0.38 * h, 0.32 * h, 0.03 * h); }
+    else { cx.fillStyle = "#fff"; cx.fillRect(-0.14 * h, sh - 0.4 * h, 0.28 * h, 0.14 * h); cx.fillStyle = "#99a"; for (let k = 0; k < 2; k++) cx.fillRect(-0.1 * h, sh - 0.36 * h + k * 0.05 * h, 0.2 * h, 0.015 * h); }
+  });
+}
+function place(x, y, r, a, fn) { cx.save(); cx.translate(x + Math.sin(a) * r, y - Math.cos(a) * r); cx.rotate(a); fn(); cx.restore(); }
+function drawWorld(w, i, x, y, r, lx, ly) {
+  const sky = hue(w.sky);
+  const halo = cx.createRadialGradient(x, y, r * 0.92, x, y, r * 1.4);
+  halo.addColorStop(0, `rgba(${sky},.4)`); halo.addColorStop(1, `rgba(${sky},0)`);
+  cx.fillStyle = halo; cx.beginPath(); cx.arc(x, y, r * 1.4, 0, Math.PI * 2); cx.fill();
+  const g = cx.createRadialGradient(x + lx * r * 0.45, y + ly * r * 0.45, r * 0.05, x, y, r);
+  g.addColorStop(0, `rgb(${w.light})`); g.addColorStop(0.65, `rgb(${w.grass.join(",")})`); g.addColorStop(1, `rgb(${w.dark})`);
+  cx.fillStyle = g; cx.beginPath(); cx.arc(x, y, r, 0, Math.PI * 2); cx.fill();
+  if (r < 26) return;
+  // the road round the middle, then grass tufts on the rim
+  cx.save(); cx.beginPath(); cx.arc(x, y, r, 0, Math.PI * 2); cx.clip();
+  for (let k = 0; k < 7; k++) { const a = k * 2.4 + i, d = 0.25 + (k % 3) * 0.22; cx.fillStyle = `rgba(${w.dark},.1)`; cx.beginPath(); cx.ellipse(x + Math.sin(a) * d * r, y - Math.cos(a) * d * r, r * 0.16, r * 0.1, a, 0, Math.PI * 2); cx.fill(); }
+  cx.strokeStyle = "rgba(236,214,160,.75)"; cx.lineWidth = r * 0.07; cx.beginPath(); cx.ellipse(x, y + r * 0.12, r * 1.02, r * 0.26, 0, 0, Math.PI); cx.stroke();
+  cx.restore();
+  const rot = Math.sin(t * 0.12 + i * 2) * 0.2, h = Math.min(r * 0.25, 70);
+  cx.strokeStyle = `rgba(${w.light},.7)`; cx.lineWidth = Math.max(1, r * 0.006);
+  for (let k = 0; k < 90; k++) { const a = k / 90 * Math.PI * 2 + rot; place(x, y, r, a, () => { cx.beginPath(); cx.moveTo(0, 0.004 * r); cx.lineTo(Math.sin(k + t) * 0.004 * r, -(0.008 + (k % 3) * 0.005) * r); cx.stroke(); }); }
+  for (const [type, a0, a1] of w.items) {
+    if (a1 !== undefined) mover(w, x, y, r, rot, h, type, a0, a1);
+    else place(x, y, r, a0 + rot, () => worldItem(type, h, w, i));
+  }
+  // and someone running laps round the whole world, for no reason at all
+  place(x, y, r, t * 0.32 + i * 1.7, () => person(h * 0.9, "jog", t * 11, "#fff"));
+}
+
+const flight = { on: false, t0: 0, k: -1, flash: 0, inside: null, lastP: null };
+let warpBoost = 0;
+function drawFlight() {
+  const pose = flightPose(t - flight.t0), fl = Math.min(W, H) * 0.95, P = lookAt(pose.p, pose.l, fl);
+  if (flight.lastP) warpBoost = Math.min(0.035, Math.hypot(...V.sub(pose.p, flight.lastP)) * 0.3);
+  flight.lastP = pose.p;
+  const inside = Math.hypot(...pose.p) < FK; // punching through the shell of notes flashes the screen
+  if (flight.inside !== null && inside !== flight.inside) flight.flash = 1;
+  flight.inside = inside; flight.flash *= 0.93;
+  if (!pose.moving && pose.k !== flight.k) { flight.k = pose.k; tour.cap = FSTOPS[pose.k].cap(); tour.at = t; tour.shock = t; }
+  cx.clearRect(0, 0, W, H);
+  warp(W / 2, H / 2);
+  for (const n of nodes) n.fp = P([n.x * FK, n.y * FK, n.z * FK]);
+  cx.lineWidth = 1;
+  for (const e of edges) {
+    const a = e[0].fp, b = e[1].fp; if (!a || !b) continue;
+    const near = Math.min(1, 9 / ((a[2] + b[2]) / 2)), ec = hue(e.h + t * 12);
+    cx.strokeStyle = `rgba(${ec},${0.08 + near * 0.3})`; cx.beginPath(); cx.moveTo(a[0], a[1]); cx.lineTo(b[0], b[1]); cx.stroke();
+    const u = (t * 0.22 + e.seed) % 1; cx.fillStyle = `rgba(${ec},${0.9 * Math.sin(u * Math.PI) * near})`;
+    cx.fillRect(a[0] + (b[0] - a[0]) * u - 1.5, a[1] + (b[1] - a[1]) * u - 1.5, 3, 3);
+  }
+  const C = (al) => `rgba(${ARC},${al})`, core = P([0, 0, 0]);
+  cx.font = "600 12px 'Chakra Petch', sans-serif"; cx.textAlign = "center";
+  for (const n of [...nodes].filter((n) => n.fp).sort((a, b) => b.fp[2] - a.fp[2])) {
+    const [x, y, , s] = n.fp, r = Math.min(46, Math.max(1.5, 0.11 * s)), c = nodeColor(n);
+    if (x < -r * 3 || x > W + r * 3 || y < -r * 3 || y > H + r * 3) continue;
+    cx.globalAlpha = 0.22; cx.fillStyle = c; cx.beginPath(); cx.arc(x, y, r * 2.2, 0, Math.PI * 2); cx.fill();
+    cx.globalAlpha = 1; cx.beginPath(); cx.arc(x, y, r, 0, Math.PI * 2); cx.fill();
+    cx.fillStyle = "rgba(255,255,255,.85)"; cx.beginPath(); cx.arc(x - r * 0.3, y - r * 0.3, r * 0.35, 0, Math.PI * 2); cx.fill();
+    if (r > 4.5 && r < 40 && y > 130) { cx.fillStyle = "rgba(235,246,255,.9)"; cx.fillText(n.name, x, y - r - 6); }
+  }
+  // the core: the sun every world orbits, wired to each one
+  if (core) {
+    const Rc = 0.42 * core[3];
+    for (const w of WORLDS) {
+      const q = P(w.pos); if (!q) continue;
+      cx.strokeStyle = `rgba(${hue(w.sky)},.22)`; cx.lineWidth = 1; cx.beginPath(); cx.moveTo(core[0], core[1]); cx.lineTo(q[0], q[1]); cx.stroke();
+      for (let k = 0; k < 3; k++) { const u = (t * 0.35 + k / 3) % 1; cx.fillStyle = `rgba(${hue(w.sky)},.9)`; cx.fillRect(q[0] + (core[0] - q[0]) * u - 1.5, q[1] + (core[1] - q[1]) * u - 1.5, 3, 3); }
+    }
+    if (Rc < W * 2) {
+      const g = cx.createRadialGradient(core[0], core[1], 0, core[0], core[1], Rc * 3);
+      g.addColorStop(0, "rgba(255,255,255,.95)"); g.addColorStop(0.15, C(0.6)); g.addColorStop(1, C(0));
+      cx.fillStyle = g; cx.beginPath(); cx.arc(core[0], core[1], Rc * 3, 0, Math.PI * 2); cx.fill();
+      cx.save(); cx.translate(core[0], core[1]); coreShow(Rc, C, t * 0.18); cx.restore();
+    }
+  }
+  // the worlds, far ones first
+  const lit = WORLDS.map((w, i) => ({ w, i, q: P(w.pos) })).filter((o) => o.q).sort((a, b) => b.q[2] - a.q[2]);
+  for (const { w, i, q } of lit) {
+    const r = w.r * q[3]; if (q[0] + r * 1.5 < 0 || q[0] - r * 1.5 > W || q[1] + r * 1.5 < 0 || q[1] - r * 1.5 > H) continue;
+    let lx = core ? core[0] - q[0] : 0, ly = core ? core[1] - q[1] : -1; const l = Math.hypot(lx, ly) || 1;
+    drawWorld(w, i, q[0], q[1], r, lx / l, ly / l);
+  }
+  if (!lowPower) bloom();
+  const fade = Math.max(0, 1 - (t - flight.t0) / 1.2); // fade in from black when the flight starts
+  if (fade > 0 || flight.flash > 0.02) { cx.fillStyle = fade > 0 ? `rgba(2,1,8,${fade})` : `rgba(${hue(200 + t * 20)},${flight.flash * 0.55})`; cx.fillRect(0, 0, W, H); }
+  const top = Math.min(110, H * 0.13);
+  cx.fillStyle = cached(`vt${BG}${top}`, () => { const g = cx.createLinearGradient(0, 0, 0, top); g.addColorStop(0, BG); g.addColorStop(1, BG + "00"); return g; });
+  cx.fillRect(0, 0, W, top);
+  caption(W / 2, H / 2, 0);
+}
+
 /* ---------- Frame ---------- */
 function nodeColor(n) { return n.type === "hub" || !TYPE_COLOR[n.type] ? `rgb(${ARC})` : TYPE_COLOR[n.type]; }
 function drawNode(n) {
@@ -928,8 +1182,13 @@ function draw() {
   if (SHOW() && !lowPower && frame > 45 && frameMs > 26) lowPower = true;
   t += reduce ? 0.004 : 1 / 60;
   const { ox, oy, base } = coreBox();
-  if (SHOW()) { ARC = hue(250 + Math.sin(t * 0.15) * 70); MODE_COLOR.idle = ARC.split(",").map(Number); MODE_COLOR.speaking = MODE_COLOR.idle.map((v) => Math.min(255, v + 40)); runTour(); }
+  if (SHOW()) { ARC = hue(250 + Math.sin(t * 0.15) * 70); MODE_COLOR.idle = ARC.split(",").map(Number); MODE_COLOR.speaking = MODE_COLOR.idle.map((v) => Math.min(255, v + 40)); if (!cinema) runTour(); }
   runCinema();
+  if (SHOW() && cinema) { // cinema in Show off is the flight through the brain
+    if (!flight.on) Object.assign(flight, { on: true, t0: t, k: -1, flash: 0, inside: null, lastP: null });
+    physics(); drawFlight(); requestAnimationFrame(draw); return;
+  }
+  if (flight.on) { flight.on = false; warpBoost = 0; tour.cap = null; }
   physics();
   if (cam.go && !grab) { // glide so the tapped note faces you
     let dy = cam.go[0] - cam.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
@@ -1807,7 +2066,7 @@ $("testVoice").addEventListener("click", () => { store.set("voice", $("voice").v
 $("voice").addEventListener("change", () => $("testVoice").click());
 $("theme").addEventListener("change", () => {
   setTheme($("theme").value); focus = null; tour.cap = null; tour.i = -1;
-  if (SHOW()) { loadShowStats(); lastInput = t - 7; speak("Show mode. Sit back, boss. Let me walk you through everything."); }
+  if (SHOW()) { loadShowStats(); lastInput = t - 11; speak("Show mode. Sit back, boss. I'll fly you through the brain."); }
 });
 if (SHOW()) loadShowStats();
 $("forget").addEventListener("click", () => { store.set("key", null); $("key").value = ""; });

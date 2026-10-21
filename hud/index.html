@@ -387,7 +387,7 @@ function physics() {
 for (let i = 0; i < 240; i++) physics(); // settle before the first frame
 
 const MODE_COLOR = { idle: [79, 216, 255], speaking: [120, 230, 255], listening: [92, 242, 165], thinking: [255, 178, 62] };
-let col = [79, 216, 255], t = 0, ARC = "79,216,255", THEME = "arc";
+let col = [79, 216, 255], t = 0, ARC = "79,216,255", THEME = "arc", BG = "#03070c";
 const RINGS = { arc: " J.A.R.V.I.S. · TJ'S BRAIN · ONLINE · ", agency: " J.A.R.V.I.S. · AGENCY HQ · CLEARANCE GRANTED · ",
   spy: " J.A.R.V.I.S. · SECRET SERVICE · EYES ONLY · ", hunter: " J.A.R.V.I.S. · HUNTER'S LOG · SALT AND IRON · " };
 function setTheme(name) {
@@ -398,7 +398,8 @@ function setTheme(name) {
   const c = ARC.split(",").map(Number);
   MODE_COLOR.idle = c; MODE_COLOR.speaking = c.map((v) => Math.min(255, v + 40));
   RING_TEXT = RINGS[name];
-  const meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
+  BG = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#03070c";
+  const meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.content = BG;
 }
 let RING_TEXT = RINGS.arc;
 setTheme(store.get("theme", "arc"));
@@ -440,7 +441,12 @@ const DUST = Array.from({ length: 150 }, (_, i) => {
 });
 
 /* ---------- Seeded glyphs for the Agency ring and Hunter sigils ---------- */
-function rng(seed) { return () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646; }
+function rng(seed) { // Park-Miller, scrambled and warmed up so nearby seeds don't start out alike
+  seed = (Math.imul(seed + 1, 2654435761) >>> 0) % 2147483646 + 1;
+  const next = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+  for (let i = 0; i < 4; i++) next();
+  return next;
+}
 const GLYPHS = Array.from({ length: 28 }, (_, i) => {
   const r = rng(97 + i * 13), strokes = [];
   for (let s = 0; s < 3; s++) strokes.push([r() - 0.5, r() - 0.5, r() - 0.5, r() - 0.5, r() < 0.3]);
@@ -481,12 +487,21 @@ function coreArc(R, C, spin) {
     cx.closePath(); cx.stroke();
   }
   cx.globalAlpha = 1;
+  // faint hex lattice behind the triangle, the element as Howard drew it
+  cx.strokeStyle = C(0.18); cx.lineWidth = 0.6; cx.shadowBlur = 0;
+  for (let q = -2; q <= 2; q++) for (let r = -2; r <= 2; r++) {
+    const hx = (q + r / 2) * R * 0.17, hy = r * R * 0.147; if (Math.hypot(hx, hy) > R * 0.42) continue;
+    cx.beginPath(); for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3 + Math.PI / 6; cx.lineTo(hx + Math.cos(a) * R * 0.085, hy + Math.sin(a) * R * 0.085); } cx.closePath(); cx.stroke();
+  }
+  cx.shadowBlur = 16;
   cx.beginPath(); cx.arc(0, 0, R * 0.22, 0, Math.PI * 2); cx.fillStyle = "rgba(240,253,255,.9)"; cx.fill();
   cx.lineWidth = 1.5; cx.strokeStyle = C(0.7);
   cx.beginPath(); cx.arc(0, 0, R, 0, Math.PI * 2); cx.stroke();
   // output readout, tiny, like the suit's diagnostics
   cx.shadowBlur = 0; cx.fillStyle = C(0.55); cx.font = `500 ${Math.max(7, R * 0.075) | 0}px 'IBM Plex Mono', monospace`;
   cx.fillText(`${(3 + level * 2.4).toFixed(2)} GJ/s`, 0, R * 0.52);
+  // the new element replaced palladium, so blood toxicity reads zero
+  cx.fillText("Pd TOXICITY 0.0% · NEW ELEMENT STABLE", 0, -R * 1.1);
 }
 function coreAgency(R, C, spin) {
   // brushed-chrome rings: a vertical gradient fakes the metal
@@ -514,6 +529,15 @@ function coreAgency(R, C, spin) {
   cx.fillStyle = `rgba(255,60,60,${0.55 + 0.45 * Math.sin(t * 3)})`; cx.shadowColor = "#ff3c3c"; cx.shadowBlur = 10;
   cx.beginPath(); cx.arc(0, -R * 1.08, R * 0.045, 0, Math.PI * 2); cx.fill(); cx.shadowBlur = 0;
   if (flash > 0) { cx.fillStyle = `rgba(255,255,255,${flash * 0.35})`; cx.beginPath(); cx.arc(0, 0, R * 3, 0, Math.PI * 2); cx.fill(); }
+  cx.fillStyle = "rgba(255,120,120,.75)"; cx.font = `600 ${Math.max(7, R * 0.07) | 0}px 'IBM Plex Mono', monospace`;
+  cx.fillText(flash > 0 ? "LOOK HERE" : `NEURALYZE IN ${Math.ceil(20 - t % 20)}s`, 0, -R * 1.16);
+  // unregistered alien activity: blips ping on the galaxy, logged with a case number
+  const k = Math.floor(t / 3), bp = (t % 3) / 3, br = rng(k + 11);
+  const bx = (br() - 0.5) * R * 0.8, by = (br() - 0.5) * R * 0.5;
+  cx.strokeStyle = `rgba(120,255,170,${(1 - bp) * 0.9})`; cx.lineWidth = 1;
+  cx.beginPath(); cx.arc(bx, by, 2 + bp * R * 0.12, 0, Math.PI * 2); cx.stroke();
+  cx.fillStyle = `rgba(120,255,170,${(1 - bp) * 0.8})`; cx.font = `500 ${Math.max(6, R * 0.06) | 0}px 'IBM Plex Mono', monospace`;
+  cx.fillText(`CASE ${String(4000 + (k * 37) % 997)}`, bx, by - 6 - bp * R * 0.12);
 }
 function coreSpy(R, C, spin) {
   // gun barrel: dark bore with six spiral rifling grooves
@@ -544,10 +568,21 @@ function coreSpy(R, C, spin) {
     cx.fillStyle = "rgba(245,234,210,.85)"; cx.font = `600 ${Math.max(6, R * 0.075) | 0}px 'IBM Plex Mono', monospace`;
     for (let i = 0; i < n; i++) { const a = (i + 0.5) / n * Math.PI * 2 + rot; cx.save(); cx.rotate(a + Math.PI / 2); cx.fillText(String(WHEEL[i]), 0, -(r1 + r2) / 2 + R * 0.03); cx.restore(); }
   }
+  // every 15 seconds a laser creeps across the bore ("No, I expect you to die")
+  const lp = (t % 15) / 15;
+  if (lp < 0.25) {
+    const lx = -R * 0.9 + lp / 0.25 * R * 1.8, half = Math.sqrt(Math.max(0, R * R * 0.81 - lx * lx));
+    cx.strokeStyle = "rgba(255,40,40,.85)"; cx.shadowColor = "#ff2828"; cx.shadowBlur = 10; cx.lineWidth = 1.4;
+    cx.beginPath(); cx.moveTo(lx, -half); cx.lineTo(lx, half); cx.stroke(); cx.shadowBlur = 0;
+  }
+  cx.fillStyle = "rgba(216,176,74,.7)"; cx.font = `600 ${Math.max(7, R * 0.07) | 0}px 'IBM Plex Mono', monospace`;
+  cx.fillText("00 SECTION · LICENCE ISSUED", 0, R * 1.52);
   const ba = t * 1.3; cx.fillStyle = "#fff"; cx.shadowColor = "#fff"; cx.shadowBlur = 6;
   cx.beginPath(); cx.arc(Math.cos(ba) * R * 1.43, Math.sin(ba) * R * 1.43, R * 0.035, 0, Math.PI * 2); cx.fill(); cx.shadowBlur = 0;
 }
 function coreHunter(R, C, spin) {
+  // the lights flicker now and then: something's here
+  if ((t % 9) < 0.35 && Math.sin(t * 90) > 0) cx.globalAlpha = 0.35;
   // devil's trap: double ring, pentagram, sigils between the rings
   const turn = spin * 0.05;
   cx.save(); cx.rotate(turn);
@@ -558,13 +593,18 @@ function coreHunter(R, C, spin) {
   cx.stroke();
   cx.shadowBlur = 0; cx.strokeStyle = C(0.7); cx.lineWidth = 1;
   for (let i = 0; i < 15; i++) { const a = i / 15 * Math.PI * 2; cx.save(); cx.rotate(a); cx.translate(0, -R * 0.92); glyph(GLYPHS[i], R * 0.09); cx.restore(); }
-  cx.restore();
+  cx.restore(); cx.shadowBlur = 0; // blur on hundreds of grains would cost frames
   // the anti-possession sun in the middle
   cx.strokeStyle = C(0.85); cx.lineWidth = 1.2;
   cx.beginPath(); cx.arc(0, 0, R * 0.16, 0, Math.PI * 2); cx.stroke();
   for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2 + turn * 2, r = i % 2 ? 0.26 : 0.32; cx.beginPath(); cx.moveTo(Math.cos(a) * R * 0.18, Math.sin(a) * R * 0.18); cx.lineTo(Math.cos(a) * R * r, Math.sin(a) * R * r); cx.stroke(); }
   // a salt line, grain by grain
-  for (const [a, u, v] of SALT) { cx.fillStyle = `rgba(255,248,235,${0.25 + v * 0.5})`; const d = R * (1.12 + u * 0.08); cx.fillRect(Math.cos(a) * d, Math.sin(a) * d, 1.1, 1.1); }
+  // when the EMF climbs, something breaks the salt line, and the lights flicker
+  const emfNow = level * 6, gap = emfNow > 3 ? 0.5 : 0, gapAt = -Math.PI / 4;
+  for (const [a, u, v] of SALT) {
+    if (gap && Math.abs(Math.atan2(Math.sin(a - gapAt), Math.cos(a - gapAt))) < gap) continue;
+    cx.fillStyle = `rgba(255,248,235,${0.25 + v * 0.5})`; const d = R * (1.12 + u * 0.08); cx.fillRect(Math.cos(a) * d, Math.sin(a) * d, 1.1, 1.1);
+  }
   // EMF meter: five bars that spike when he speaks
   const emf = Math.min(5, Math.round(1 + level * 6 + Math.max(0, Math.sin(t * 0.9)) * (mode === "idle" ? 0.6 : 0)));
   for (let i = 0; i < 5; i++) {
@@ -578,6 +618,7 @@ function coreHunter(R, C, spin) {
     const life = (t * 0.12 + i * 0.137) % 1, x = Math.sin(i * 7.1 + t * 0.4) * R * 0.9, y = R * 0.6 - life * R * 2.4;
     cx.fillStyle = `rgba(255,${140 + (i % 5) * 20},60,${(1 - life) * 0.8})`; cx.fillRect(x, y, 1.6, 1.6);
   }
+  cx.globalAlpha = 1;
 }
 const CORES = { arc: coreArc, agency: coreAgency, spy: coreSpy, hunter: coreHunter };
 
@@ -617,12 +658,12 @@ function drawLabels(R, ox, oy) {
   const fixed = [[ox - R * 1.25, oy - R * 1.25, ox + R * 1.25, oy + R * 1.25], [ox - 150, oy - R * 2.32 - 10, ox + 150, oy - R * 2.32 + 4], ...uiRects()];
   const taken = [];
   for (const n of order) {
-    const w = cx.measureText(n.name).width + 14, h = fs + 9, x0 = n.sx - w / 2, y0 = n.sy - n.sr - h + 2;
+    const w = (n.lw ??= cx.measureText(n.name).width) + 14, h = fs + 9, x0 = n.sx - w / 2, y0 = n.sy - n.sr - h + 2;
     let ok = taken.length < max && n.sz < 0.55 && x0 > 2 && x0 + w < W - 2 && y0 > 2;
     if (ok && n !== focus) for (const [a, b, c, d] of [...fixed, ...taken]) if (x0 < c + 4 && x0 + w > a - 4 && y0 < d + 3 && y0 + h > b - 3) { ok = false; break; }
     if (n === focus) ok = true;
     if (ok) taken.push([x0, y0, x0 + w, y0 + h]);
-    n.la += ((ok ? 1 : 0) - n.la) * 0.12; // fade, don't pop
+    n.la += ((ok ? 1 : 0) - n.la) * (ok ? 0.12 : 0.3); // fade in gently, get out of the way fast
     if (n.la < 0.03) continue;
     cx.globalAlpha = n.la;
     cx.fillStyle = "rgba(3,7,12,.78)"; cx.strokeStyle = `rgba(${ARC},.4)`; cx.lineWidth = 1;
@@ -634,6 +675,11 @@ function drawLabels(R, ox, oy) {
 }
 
 let focus = null;
+const gradCache = new Map(); // gradients only change when the layout or theme does
+function cached(key, make) {
+  if (!gradCache.has(key)) { if (gradCache.size > 40) gradCache.clear(); gradCache.set(key, make()); }
+  return gradCache.get(key);
+}
 function draw() {
   t += reduce ? 0.004 : 1 / 60;
   const { ox, oy, base } = coreBox();
@@ -682,6 +728,14 @@ function draw() {
   }
   const sorted = [...nodes].sort((a, b) => b.p[2] - a.p[2]);
   for (const n of sorted) if (n.p[2] > 0) drawNode(n);
+
+  // a dark lens behind the core hides the far side's links, so the core reads cleanly
+  const fx = cached(`lens${ox}|${oy}|${base}`, () => {
+    const g = cx.createRadialGradient(ox, oy, 0, ox, oy, base * 2.3);
+    g.addColorStop(0, "rgba(0,0,0,.72)"); g.addColorStop(0.7, "rgba(0,0,0,.45)"); g.addColorStop(1, "rgba(0,0,0,0)");
+    return g;
+  });
+  cx.fillStyle = fx; cx.beginPath(); cx.arc(ox, oy, base * 2.3, 0, Math.PI * 2); cx.fill();
 
   // the 4D layer
   const tv = tesseract(t).map(([x, y, z, w]) => [...view(x, y, z), w]);
@@ -756,11 +810,25 @@ function draw() {
     cx.beginPath(); cx.arc(x, y, 1.8, 0, Math.PI * 2); cx.fill(); cx.shadowBlur = 0;
   });
 
+  // the brain dissolves under the header and the input bar instead of colliding with them
+  const top = Math.min(110, H * 0.13);
+  cx.fillStyle = cached(`vt${BG}${top}`, () => { const g = cx.createLinearGradient(0, 0, 0, top); g.addColorStop(0, BG); g.addColorStop(1, BG + "00"); return g; });
+  cx.fillRect(0, 0, W, top);
+  cx.fillStyle = cached(`vb${BG}${H}`, () => { const g = cx.createLinearGradient(0, H - 120, 0, H); g.addColorStop(0, BG + "00"); g.addColorStop(1, BG); return g; });
+  cx.fillRect(0, H - 120, W, 120);
+
   drawLabels(R, ox, oy);
 
-  // dimension readout under the core
+  // dimension readout over the core, on its own dark strip
   const deg = (v) => String(Math.round(((v % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2) * 180 / Math.PI)).padStart(3, "0");
-  cx.fillStyle = `rgba(${ARC},.5)`; cx.font = "500 9px 'IBM Plex Mono', monospace"; cx.textAlign = "center";
+  cx.font = "500 9px 'IBM Plex Mono', monospace"; cx.textAlign = "center";
+  const ry = oy - R * 2.32, rw = Math.min(W - 24, 300);
+  cx.fillStyle = cached(`strip${ox}|${rw}`, () => {
+    const g = cx.createLinearGradient(ox - rw / 2, 0, ox + rw / 2, 0);
+    g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(0.2, "rgba(0,0,0,.7)"); g.addColorStop(0.8, "rgba(0,0,0,.7)"); g.addColorStop(1, "rgba(0,0,0,0)");
+    return g;
+  }); cx.fillRect(ox - rw / 2, ry - 10, rw, 14);
+  cx.fillStyle = `rgba(${ARC},.6)`;
   cx.fillText(`4D · XW ${deg(t * 0.31)}° · YW ${deg(t * 0.19)}° · ZW ${deg(t * 0.13)}° · ZOOM ${cam.zoom.toFixed(1)}×`, ox, oy - R * 2.32);
   requestAnimationFrame(draw);
 }

@@ -18,4 +18,5 @@ The first [[SecurityAI]] gym. TJ works here.
 - [ ] Photo of what Ashbourne shows for a denied scan.
 
 ## History
+- 2026-10-21: new code on a GitHub branch, waiting for TJ to merge.
 - 2026-10-19: field-proofing pass done, waiting for upload. See [[Release history]].

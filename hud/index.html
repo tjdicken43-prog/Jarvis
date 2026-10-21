@@ -82,6 +82,14 @@
   .msg { max-width: 92%; padding: 9px 13px; white-space: pre-wrap; font-size: 14px; animation: in .25s ease-out; }
   .msg.you { align-self: flex-end; color: var(--dim); border-right: 2px solid var(--dim); }
   .msg.jarvis { align-self: flex-start; background: var(--glass); border-left: 2px solid var(--arc); }
+  .msg.jarvis .line { font: 500 17px/1.35 var(--display); letter-spacing: .02em; color: #eafaff; text-shadow: 0 0 12px rgba(79, 216, 255, .35); }
+  .msg.jarvis details { margin-top: 8px; border-top: 1px dashed var(--faint); padding-top: 6px; }
+  .msg.jarvis summary { cursor: pointer; font: 600 10px/1.6 var(--mono); letter-spacing: .2em; color: var(--arc); list-style: none; }
+  .msg.jarvis summary::-webkit-details-marker { display: none; }
+  .msg.jarvis summary::before { content: "▸ "; }
+  .msg.jarvis details[open] summary::before { content: "▾ "; }
+  .msg.jarvis .detail { margin-top: 6px; font-size: 14px; color: #b9d9e8; white-space: pre-wrap; }
+  .scan { position: fixed; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(79, 216, 255, .025) 0 1px, transparent 1px 3px); mix-blend-mode: screen; }
   .msg.note { align-self: center; font: 500 11px/1.4 var(--mono); color: var(--dim); letter-spacing: .04em; text-align: center; }
   @keyframes in { from { opacity: 0; transform: translateY(6px); } }
 
@@ -151,6 +159,7 @@
 </head>
 <body>
 <canvas id="sky" aria-hidden="true"></canvas>
+<div class="scan" aria-hidden="true"></div>
 
 <div class="app">
   <header class="top">
@@ -208,6 +217,7 @@
   <p>How Jarvis sounds. Inside claude.ai he thinks with your Claude account, so nothing else is needed.</p>
   <label for="voice">Voice</label>
   <select id="voice"></select>
+  <p>Best free voice on Android: phone Settings, search "Text-to-speech", Google engine, Language English (United Kingdom), install the voice data and pick a male voice. Then choose it here.</p>
   <label><input id="talkback" type="checkbox"> Speak answers out loud</label>
   <div id="keyBox">
     <label for="key">Anthropic API key (only for the copy on a computer, kept in this browser)</label>
@@ -220,6 +230,7 @@
     </select>
   </div>
   <div class="row">
+    <button type="button" id="testVoice">TEST VOICE</button>
     <button type="button" id="forget">FORGET KEY</button>
     <button type="button" id="done">DONE</button>
   </div>
@@ -464,13 +475,53 @@ function say(who, text) {
   return el;
 }
 
+// A Jarvis reply is one spoken line, then the detail on screen (like the films: he says little, the HUD shows the rest).
+function splitReply(text) {
+  text = text.replace(/^JOB:.*$/gim, "").trim();
+  const m = text.match(/^\s*SAY:\s*(.+)$/im);
+  let line = m ? m[1].trim() : (text.match(/^[^.!?\n]+[.!?]?/) || [text])[0].trim();
+  let detail = m ? text.replace(m[0], "").trim() : text.slice(line.length).trim();
+  return { line, detail };
+}
+function renderReply(el, text) {
+  const { line, detail } = splitReply(text);
+  el.innerHTML = "";
+  const l = document.createElement("div"); l.className = "line"; l.textContent = line; el.append(l);
+  if (detail) {
+    const d = document.createElement("details"), sm = document.createElement("summary"), body = document.createElement("div");
+    sm.textContent = "DETAILS"; body.className = "detail"; body.textContent = detail;
+    d.open = detail.length < 280; d.append(sm, body); el.append(d);
+  }
+  el.scrollIntoView({ block: "end" });
+  return line;
+}
+
+/* ---------- UI sounds: soft synth blips, made on the fly ---------- */
+let actx = null;
+function blip(kind) {
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const notes = { listen: [880, 1320], done: [1320, 990], job: [660, 990, 1320] }[kind] || [990];
+    notes.forEach((f, i) => {
+      const o = actx.createOscillator(), g = actx.createGain(), t0 = actx.currentTime + i * 0.07;
+      o.type = "sine"; o.frequency.value = f;
+      g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(0.06, t0 + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.12);
+      o.connect(g).connect(actx.destination); o.start(t0); o.stop(t0 + 0.14);
+    });
+  } catch {}
+}
+
 /* ---------- Voice out ---------- */
 const synth = window.speechSynthesis;
 const voices = () => (synth ? synth.getVoices() : []);
 function fillVoices() {
   const sel = $("voice"), list = voices().filter((v) => /^en/i.test(v.lang)), saved = store.get("voice", "");
-  // a calm British voice suits him
-  const pick = saved || (list.find((v) => /daniel|arthur|george|male/i.test(v.name) && /GB/i.test(v.lang)) || list.find((v) => /GB/i.test(v.lang)) || list[0] || {}).name || "";
+  // A calm British butler voice. Ranked best first across Android (Google TTS), iPhone and desktop.
+  const rank = [/en-gb-x-rjs/i, /en-gb-x-gbd/i, /en-gb-x-gbb/i, /UK English Male/i, /\b(Daniel|Arthur|George|Oliver|Ryan|Thomas)\b/i, /Male/i];
+  const gb = list.filter((v) => /GB/i.test(v.lang));
+  let best = null;
+  for (const re of rank) { best = gb.find((v) => re.test(v.name)); if (best) break; }
+  const pick = saved || (best || gb.find((v) => v.localService) || gb[0] || list[0] || {}).name || "";
   sel.innerHTML = "";
   for (const v of list) {
     const o = document.createElement("option");
@@ -479,13 +530,14 @@ function fillVoices() {
 }
 if (synth) { fillVoices(); synth.onvoiceschanged = fillVoices; }
 function speak(text) {
-  text = text.replace(/For the brain:.*$/is, "").replace(/^JOB:.*$/gim, "").replace(/[*_#`>\[\]]/g, "").trim();
+  text = text.replace(/For the brain:.*$/is, "").replace(/^JOB:.*$/gim, "").replace(/^SAY:\s*/gim, "").replace(/[*_#`>\[\]]/g, "").trim();
   if (!synth || !text || store.get("talkback", "1") !== "1") { setMode("idle"); return; }
   synth.cancel();
   const u = new SpeechSynthesisUtterance(text);
   const v = voices().find((v) => v.name === $("voice").value);
   if (v) u.voice = v;
-  u.rate = 1.02; u.pitch = 0.92;
+  u.lang = v ? v.lang : "en-GB";
+  u.rate = 0.98; u.pitch = 0.88;
   u.onstart = () => setMode("speaking");
   u.onend = u.onerror = () => setMode("idle");
   synth.speak(u);
@@ -513,7 +565,7 @@ function listen() {
   if (!rec) { say("note", "No mic here. Tap the text box and use your keyboard's mic key."); $("q").focus(); return; }
   if (mode === "listening") { rec.stop(); return; }
   synth && synth.cancel();
-  $("q").value = ""; setMode("listening");
+  $("q").value = ""; setMode("listening"); blip("listen");
   try { rec.start(); } catch {}
 }
 $("mic").addEventListener("click", listen);
@@ -610,8 +662,8 @@ function watchJobs(db) {
       }
       list.append(el);
       if (fresh) {
-        say("jarvis", `Job back: ${j.answer || j.status}`);
-        speak(`Boss, a job's back. ${j.answer || ""}`);
+        renderReply(say("jarvis", ""), `SAY: ${j.status === "done" ? "The job's done, boss." : "That job needs you, boss."}\n${j.answer || ""}`);
+        blip("job"); speak(j.status === "done" ? "The job's done, boss. Details are on screen." : "That job needs your call, boss.");
         if (!$("jobsPanel").classList.contains("active")) $("badge").textContent = "●";
       }
     }
@@ -657,7 +709,7 @@ function systemPrompt() {
 - Friendly, not personal: don't pry into his private life.
 - Never say passwords, keys, gym codes or member info.
 It is now ${now} where TJ is (US Central).
-Keep everyday answers short: two to four sentences unless TJ asks for more or it's an idea or a plan. No markdown, no bullet symbols, no links; it will be read aloud.
+How to reply (always): the first line is "SAY: " plus one short spoken line in the manner of Jarvis in the Iron Man films, at most 18 words: the answer itself, or what you're about to do ("Running the numbers now, boss. Short version: about $40 a month."). Only that line is read out loud. Put any detail on the following lines for the screen: plain text, no markdown, no links. For a simple question the SAY line can be the whole reply. Ideas get the four voices in the detail, with the Judge's call in the SAY line.
 You can't write code, push to GitHub, edit the notes, browse the web or touch his files from here, but Claude Code can. When TJ asks for something like that, say in one sentence that you're sending it to Claude Code, then end with one line: "JOB: " followed by a clear, self-contained instruction for Claude Code. The page queues it and the answer comes back here.
 Whenever TJ tells you something new worth keeping (a fact, a preference, a decision, a to-do), end with one line starting "For the brain:" saying it in a few words. That line is saved and you will remember it next time.
 ${memoryText()}
@@ -672,10 +724,10 @@ async function viaAccount(sample, q) {
   const el = say("jarvis", "");
   const res = await sample(systemPrompt() + (said ? "\n\nConversation so far:\n" + said : "") + "\n\nTJ says: " + q, {
     cache: false,
-    onText: ({ text }) => { el.textContent = text; el.scrollIntoView({ block: "end" }); },
+    onText: ({ text }) => { renderReply(el, text); },
   });
   const text = (res.text || "").trim();
-  el.textContent = text;
+  renderReply(el, text);
   history.push({ role: "user", content: q }, { role: "assistant", content: text });
   return text;
 }
@@ -697,6 +749,7 @@ async function viaKey(q) {
   const msg = await stream.finalMessage();
   if (msg.stop_reason === "refusal") el.textContent = "I can't help with that one, boss.";
   const text = el.textContent.trim();
+  renderReply(el, text);
   history.push({ role: "assistant", content: text || "(no answer)" });
   return text;
 }
@@ -727,7 +780,8 @@ async function ask(q) {
   remember(q, text);
   const job = (text.match(/^JOB:\s*(.+)$/im) || [])[1];
   if (job) queueJob(job.trim());
-  speak(text.split("\n\nAlso see")[0]);
+  blip("done");
+  speak(splitReply(text.split("\n\nAlso see")[0]).line);
 }
 $("ask").addEventListener("submit", (e) => { e.preventDefault(); ask($("q").value); });
 
@@ -746,6 +800,7 @@ $("done").addEventListener("click", () => {
   store.set("talkback", $("talkback").checked ? "1" : "0");
   $("setup").close();
 });
+$("testVoice").addEventListener("click", () => { store.set("voice", $("voice").value); speak("At your service, boss. All systems online."); });
 $("forget").addEventListener("click", () => { store.set("key", null); $("key").value = ""; });
 
 samplePromise.then((sample) => {

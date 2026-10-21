@@ -1217,24 +1217,44 @@ function offlineAnswer(q) {
 }
 
 /* ---------- Memory: every chat and lesson is saved ---------- */
-const chatId = new Date().toISOString().replace(/[:.]/g, "-");
+// Store reads come back frozen, so take a plain copy before changing anything ("object is not extensible").
+const thaw = (v) => (v == null ? v : JSON.parse(JSON.stringify(v)));
+// The claude.ai frame can reload when TJ leaves the tab, so the open chat is kept and picked up again for 2 hours.
+const RESUME_MS = 2 * 3600e3;
+const openChat = (() => { try { const c = JSON.parse(store.get("chat", "null")); return c && Date.now() - new Date(c.at) < RESUME_MS ? c : null; } catch { return null; } })();
+const chatId = openChat?.id || new Date().toISOString().replace(/[:.]/g, "-");
+store.set("chat", JSON.stringify({ id: chatId, at: openChat?.at || new Date().toISOString() }));
 let lessons = [], lastChat = [], touches = { counts: {} }, aboutNote = null, touchTimer = 0;
-const turns = [];
+let turns = [];
 dbPromise.then(async (db) => {
   if (!db) return;
   try {
     const l = await db.doc("memory/lessons").get();
-    lessons = (l.exists && l.data().items) || [];
+    lessons = thaw((l.exists && l.data().items) || []);
     renderBrain(lessons.length);
     const tc = await db.doc("memory/touches").get();
-    if (tc.exists) touches = { counts: {}, ...tc.data() };
+    if (tc.exists) touches = thaw({ counts: {}, ...tc.data() });
     await checkNew(db);
-    const prev = await db.collection("chats").orderBy("started", "desc").limit(1).get();
-    if (!prev.empty) lastChat = (prev.docs[0].data().turns || []).slice(-10);
+    if (openChat) await resumeChat(db);
+    const prev = await db.collection("chats").orderBy("started", "desc").limit(openChat ? 2 : 1).get();
+    const last = prev.docs.find((d) => d.id !== chatId);
+    if (last) lastChat = thaw((last.data().turns || []).slice(-10));
   } catch {}
   watchJobs(db);
 });
+async function resumeChat(db) {
+  const c = await db.doc("chats/" + chatId).get();
+  if (!c.exists || turns.length) return;
+  turns = thaw(c.data().turns || []);
+  if (!turns.length) return;
+  document.querySelector(".chips")?.remove();
+  for (const t of turns) {
+    if (t.who === "tj") { say("you", t.text); history.push({ role: "user", content: t.text }); }
+    else { renderReply(say("jarvis", ""), t.text); history.push({ role: "assistant", content: t.text }); }
+  }
+}
 function touch(name) {
+  touches = { ...touches, counts: { ...touches.counts } };
   touches.counts[name] = (touches.counts[name] || 0) + 1; touches.last = name;
   clearTimeout(touchTimer);
   touchTimer = setTimeout(async () => { const db = await dbPromise; if (db) try { await db.doc("memory/touches").set(touches); } catch {} }, 1500);
@@ -1293,13 +1313,14 @@ async function remember(q, text) {
   const db = await dbPromise;
   if (!db) return;
   const at = new Date().toISOString();
-  turns.push({ who: "tj", text: q, at }, { who: "jarvis", text, at });
+  turns = [...turns, { who: "tj", text: q, at }, { who: "jarvis", text, at }];
+  store.set("chat", JSON.stringify({ id: chatId, at }));
   try {
-    await db.doc("chats/" + chatId).set({ started: turns[0].at, updated: at, turns, filed: false });
+    await db.doc("chats/" + chatId).set({ started: turns[0].at, updated: at, turns: thaw(turns), filed: false });
     const learned = (text.match(/For the brain:\s*(.+)/i) || [])[1];
     if (learned) {
-      lessons.push({ text: learned.trim(), at, filed: false, ...(aboutNote ? { note: aboutNote } : {}) });
-      await db.doc("memory/lessons").set({ items: lessons });
+      lessons = [...lessons, { text: learned.trim(), at, filed: false, ...(aboutNote ? { note: aboutNote } : {}) }];
+      await db.doc("memory/lessons").set({ items: thaw(lessons) });
       renderBrain(lessons.length);
       say("note", "Saved to memory: " + learned.trim());
     }
@@ -1431,6 +1452,7 @@ async function viaKey(q) {
 async function ask(q) {
   if (dictArmed) disarmDictation();
   q = q.trim(); if (!q) return;
+  if (/^(new chat|start over)\W*$/i.test(q)) { store.set("chat", null); location.reload(); return; }
   document.querySelector(".chips")?.remove();
   $("q").value = "";
   say("you", q);

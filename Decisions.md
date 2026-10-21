@@ -5,6 +5,8 @@ type: log
 
 Newest first. Covers [[SecurityAI]], [[Basis]] and [[Jarvis]].
 
+- **2026-10-21** Do every to-do that needs no hardware now; Gym-security stays read-only for this (no pushes). Why: TJ asked; nothing can run at [[J Street Gym]] until there is a laptop or Pi.
+- **2026-10-21** Fix the phone page chat save bug and keep the open chat across tab switches and reloads. Why: TJ said "Fix it" after saves failed.
 - **2026-10-21** [[Jarvis]] files everything from every phone chat (facts, preferences, decisions, to-dos), not only "For the brain" lines, to understand TJ's life more fully. [[Personal]] still holds only what TJ volunteers; guesses get "(check)". Why: TJ asked for it.
 - **2026-10-21** Claude Code is called "Jarvis backend" from now on. Why: TJ's choice, keeps the effect.
 - **2026-10-21** [[Jarvis]] gets the lean voice pack: five built-in voice styles plus four looks, free and inside the phone page. Not a paid lifelike voice for now, and never a clone of a real actor. Why: TJ picked it after seeing the trade-off; no money or outside hosting needed.

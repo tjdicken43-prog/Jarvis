@@ -58,6 +58,7 @@
   .clock span { font: 500 10px/1.6 var(--mono); letter-spacing: .16em; color: var(--dim); text-transform: uppercase; }
   .gear { margin-top: 8px; background: none; border: 1px solid var(--line); color: var(--arc); font: 600 10px/1 var(--mono); letter-spacing: .16em; padding: 7px 10px; cursor: pointer; clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px); }
   .gear:hover { background: var(--faint); }
+  .clock .btns { display: inline-flex; gap: 6px; }
 
   /* middle */
   .mid { min-height: 0; display: grid; grid-template-columns: minmax(220px, 280px) 1fr minmax(240px, 320px); gap: 16px; }
@@ -141,6 +142,10 @@
   /* settings */
   dialog { background: #061420; color: var(--ink); border: 1px solid var(--arc); width: min(440px, calc(100% - 32px)); padding: 20px; }
   dialog::backdrop { background: rgba(0, 0, 0, .65); }
+  .chatList { max-height: 55vh; overflow-y: auto; margin: 14px 0 4px; display: grid; gap: 6px; }
+  .chatList button { text-align: left; background: var(--glass); border: 1px solid var(--line); color: var(--ink); padding: 10px 12px; font: 400 13px/1.35 var(--body); cursor: pointer; }
+  .chatList button.current { border-color: var(--arc); }
+  .chatList time { display: block; font: 500 10px/1.4 var(--mono); letter-spacing: .1em; color: var(--dim); text-transform: uppercase; }
   dialog h3 { margin: 0 0 6px; font: 600 13px/1 var(--display); letter-spacing: .26em; color: var(--arc); }
   dialog p { font-size: 13px; color: var(--dim); margin: 6px 0 0; }
   dialog label { display: block; margin: 14px 0 6px; font: 500 11px/1 var(--mono); letter-spacing: .1em; color: var(--dim); }
@@ -198,7 +203,7 @@
     <div class="clock">
       <b id="time">--:--</b>
       <span id="date"></span><br>
-      <button class="gear" id="gear" type="button">SETTINGS</button>
+      <span class="btns"><button class="gear" id="chatsBtn" type="button">CHATS</button><button class="gear" id="gear" type="button">SETTINGS</button></span>
     </div>
   </header>
 
@@ -250,6 +255,16 @@
 <section class="panel" id="card" role="dialog" aria-live="polite"><h2 id="cardTitle"></h2><div class="scroll" id="cardBody"></div>
   <div class="acts"><button class="gear" type="button" data-act="ask">ASK</button><button class="gear" type="button" data-act="teach">TEACH</button><button class="gear" type="button" data-act="job">JOB</button><button class="gear" type="button" data-act="close">CLOSE</button></div></section>
 
+<dialog id="chats">
+  <h3>PAST CHATS</h3>
+  <p>Every chat is saved. Tap one to read it and carry on where you left off.</p>
+  <div class="chatList" id="chatList"><p class="empty">Loading…</p></div>
+  <div class="row">
+    <button type="button" id="newChat">NEW CHAT</button>
+    <button type="button" id="chatsDone">CLOSE</button>
+  </div>
+</dialog>
+
 <dialog id="setup">
   <h3>SETTINGS</h3>
   <p>How Jarvis sounds. Inside claude.ai he thinks with your Claude account, so nothing else is needed.</p>
@@ -284,7 +299,7 @@
 <script src="brain.js"></script>
 <script>
 const BRAIN = window.BRAIN || { notes: [], stats: {} };
-const RUNNER = "trig_01NNfgm6qmYUKRtaDu1BbMUn"; // the Claude Code scheduled task that works the job queue
+const RUNNER = "trig_01XmDbtyEAotBEyDx2phjSoF"; // the Claude Code scheduled task that works the job queue
 const $ = (id) => document.getElementById(id);
 const store = {
   get(k, d) { try { return localStorage.getItem("jarvis." + k) ?? d; } catch { return d; } },
@@ -1220,12 +1235,11 @@ function offlineAnswer(q) {
 let chatId = new Date().toISOString().replace(/[:.]/g, "-");
 const RESUME_MS = 6 * 3600e3; // reopening the page within 6 hours picks the same chat back up
 let lessons = [], lastChat = [], touches = { counts: {} }, aboutNote = null, touchTimer = 0;
-const turns = [];
+let turns = [];
 dbPromise.then(async (db) => {
   if (!db) return;
   try {
-    const l = await db.doc("memory/lessons").get();
-    lessons = (l.exists && l.data().items) || [];
+    lessons = await loadLessons(db);
     renderBrain(lessons.length);
     const tc = await db.doc("memory/touches").get();
     if (tc.exists) { const t = structuredClone(tc.data()); touches = { ...t, counts: { ...(t.counts || {}) } }; } // store data comes back frozen
@@ -1249,6 +1263,14 @@ function resumeChat(id, past) {
     if (t.who === "tj") { say("you", t.text); history.push({ role: "user", content: t.text }); }
     else { renderReply(say("jarvis", ""), t.text); history.push({ role: "assistant", content: t.text }); }
   }
+}
+// Each lesson is its own record in "lessons", so the page and Jarvis backend never overwrite each other's
+// lists. Older lessons from the single "memory/lessons" list are still read.
+async function loadLessons(db) {
+  const out = [];
+  try { const l = await db.doc("memory/lessons").get(); if (l.exists) out.push(...(l.data().items || [])); } catch {}
+  try { const q = await db.collection("lessons").orderBy("at", "asc").limit(500).get(); for (const d of q.docs) out.push({ id: d.id, ...d.data() }); } catch {}
+  return out;
 }
 function touch(name) {
   touches.counts[name] = (touches.counts[name] || 0) + 1; touches.last = name;
@@ -1312,24 +1334,17 @@ async function remember(q, text) {
   turns.push({ who: "tj", text: q, at }, { who: "jarvis", text, at });
   try {
     await db.doc("chats/" + chatId).set({ started: turns[0].at, updated: at, turns, filed: false });
-  } catch (e) { say("note", "Couldn't save this chat: " + (e?.code || e?.message || e)); }
-  const learned = (text.match(/For the brain:\s*(.+)/i) || [])[1];
-  if (learned) {
-    const item = { text: learned.trim(), at, filed: false, ...(aboutNote ? { note: aboutNote } : {}) };
-    // Re-read first so a lesson Claude Code just marked filed isn't put back as unfiled.
-    for (let tries = 0; tries < 2; tries++) {
-      try {
-        const cur = await db.doc("memory/lessons").get();
-        lessons = [...((cur.exists && cur.data().items) || []), item];
-        await db.doc("memory/lessons").set({ items: lessons });
-        renderBrain(lessons.length);
-        say("note", "Saved to memory: " + item.text);
-        break;
-      } catch (e) {
-        if (tries) say("note", "Lesson kept in the chat only (" + (e?.code || e?.message || e) + "). Jarvis backend still files it from the chat.");
-        else await new Promise((r) => setTimeout(r, 800 + Math.random() * 800));
-      }
-    }
+  } catch (e) { say("note", "Couldn't save this chat (" + (e?.code || e?.message || e) + "). It's still on screen; I'll retry with your next message."); }
+  // every "For the brain:" line in the reply becomes its own lesson record
+  for (const m of text.matchAll(/For the brain:\s*(.+)/gi)) {
+    const lesson = { text: m[1].replace(/\*+/g, "").trim(), at, filed: false, chat: chatId, ...(aboutNote ? { note: aboutNote } : {}) };
+    if (!lesson.text) continue;
+    try {
+      const ref = await db.collection("lessons").add(lesson);
+      lessons.push({ id: ref?.id, ...lesson });
+      renderBrain(lessons.length);
+      say("note", "Saved to memory: " + lesson.text);
+    } catch (e) { say("note", "Couldn't save that lesson (" + (e?.code || e?.message || e) + "). Jarvis backend will still find it in this chat."); }
   }
   aboutNote = null;
 }
@@ -1377,15 +1392,70 @@ async function queueJob(askText) {
   if (!db) { say("note", "Jobs only work in the claude.ai copy of Jarvis."); return false; }
   const at = new Date().toISOString();
   await db.collection("jobs").add({ ask: askText, status: "queued", created: at, updated: at, ...(aboutNote ? { note: aboutNote } : {}) });
-  // Wake the runner now instead of waiting for its next scheduled pass.
   const mcp = await mcpPromise;
-  let kicked = false;
-  if (mcp) {
-    try { await mcp.callTool("Claude Code Remote", "fire_trigger", { trigger_id: RUNNER }); kicked = true; } catch {}
-  }
-  say("note", kicked ? "Job sent to Claude Code. I'll tell you when it's back." : "Job queued. Claude Code picks it up on its next run (every 3 hours, 7am to 10pm).");
+  if (!mcp) { say("note", "Job queued. Jarvis backend picks it up on its next run (every 3 hours, 7am to 10pm)."); return true; }
+  wakeRunner(db, mcp);
   return true;
 }
+// One run handles a whole batch: wait for a quiet moment after the last job, and don't start a second run
+// while one is already working (the run keeps checking the queue until it's empty).
+let wakeTimer = 0;
+const WAKE_QUIET = 25000;
+function wakeRunner(db, mcp) {
+  if (!wakeTimer) say("note", "Job queued. I'll send the batch to Jarvis backend in a moment, in case you've got more.");
+  clearTimeout(wakeTimer);
+  wakeTimer = setTimeout(async () => {
+    wakeTimer = 0;
+    let last = 0;
+    try { const k = await db.doc("memory/runner").get(); if (k.exists) last = Date.parse(k.data().kickedAt) || 0; } catch {}
+    const busy = Object.values(jobsSeen || {}).includes("working");
+    if (busy && Date.now() - last < 20 * 60000) { say("note", "Jarvis backend is already on it; it'll take these too."); return; }
+    try {
+      await mcp.callTool("Claude Code Remote", "fire_trigger", { trigger_id: RUNNER });
+      try { await db.doc("memory/runner").set({ kickedAt: new Date().toISOString() }); } catch {}
+      say("note", "Sent to Jarvis backend. I'll tell you when it's back.");
+    } catch { say("note", "Couldn't wake Jarvis backend; it picks the jobs up on its next run (every 3 hours, 7am to 10pm)."); }
+  }, WAKE_QUIET);
+}
+/* ---------- Past chats: reopen any saved chat and carry on ---------- */
+function ago2(iso) { return new Date(iso).toLocaleString("en-US", { timeZone: "America/Chicago", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }); }
+$("chatsBtn").addEventListener("click", async () => {
+  $("chats").showModal();
+  const db = await dbPromise, list = $("chatList");
+  if (!db) { list.innerHTML = `<p class="empty">Saved chats live in the claude.ai copy of Jarvis.</p>`; return; }
+  try {
+    const q = await db.collection("chats").orderBy("started", "desc").limit(50).get();
+    list.innerHTML = q.empty ? `<p class="empty">No saved chats yet.</p>` : "";
+    for (const d of q.docs) {
+      const c = d.data(), first = (c.turns || []).find((m) => m.who === "tj")?.text || "(empty)";
+      const b = document.createElement("button"); b.type = "button"; if (d.id === chatId) b.className = "current";
+      b.innerHTML = `<time></time><span></span>`;
+      const n = (c.turns || []).filter((m) => m.who === "tj").length;
+      b.querySelector("time").textContent = `${ago2(c.started)} · ${n} message${n === 1 ? "" : "s"}${d.id === chatId ? " · open now" : ""}`;
+      b.querySelector("span").textContent = first.length > 90 ? first.slice(0, 90) + "…" : first;
+      b.addEventListener("click", () => { openChat(d.id, c); $("chats").close(); });
+      list.append(b);
+    }
+  } catch (e) { list.innerHTML = `<p class="empty">Couldn't load chats (${e?.code || e?.message || e}).</p>`; }
+});
+function openChat(id, c) {
+  chatId = id; turns = [...(c.turns || [])];
+  history.length = 0;
+  $("log").innerHTML = "";
+  say("note", `Chat from ${ago2(c.started)}. Keep talking to carry on.`);
+  for (const m of turns) {
+    if (m.who === "tj") { say("you", m.text); history.push({ role: "user", content: m.text }); }
+    else { renderReply(say("jarvis", ""), m.text); history.push({ role: "assistant", content: m.text }); }
+  }
+  showTab("comms");
+}
+$("newChat").addEventListener("click", () => {
+  chatId = new Date().toISOString().replace(/[:.]/g, "-"); turns = []; history.length = 0;
+  $("log").innerHTML = ""; say("note", "New chat. The old ones are under CHATS.");
+  $("chats").close();
+});
+$("chatsDone").addEventListener("click", () => $("chats").close());
+
 $("jobMode").addEventListener("click", () => {
   const on = $("jobMode").getAttribute("aria-pressed") !== "true";
   $("jobMode").setAttribute("aria-pressed", on);

@@ -3,6 +3,7 @@
 A talking, glowing front end for the brain. A core in the middle pulses when Jarvis listens, thinks or talks; the notes float around it as a live map of the brain, and light up when a question touches them.
 
 ## Run it
+- Anywhere, phone included: TJ's private link https://claude.ai/artifact/6BgK9h8LVgz3ondg1QqzSP. In there Jarvis thinks with TJ's Claude account (no key). If the mic button is blocked, tap the text box and use the keyboard's mic key.
 - On a computer: open `hud/index.html` in Chrome or Edge (double-click works). Voice input needs Chrome or Edge.
 - Talk: press the ◉ button (or the space bar) and speak. Or type.
 - Tap a dot to read that note.

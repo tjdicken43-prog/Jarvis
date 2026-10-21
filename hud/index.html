@@ -14,6 +14,7 @@
     --glow: #5ed0ff;
     --warm: #ffb547;
     --panel: rgba(8, 22, 34, .72);
+    color-scheme: dark;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); overflow: hidden;
@@ -315,12 +316,16 @@ if (SR) {
     if (r.isFinal) { rec.stop(); ask($("q").value); }
   };
   rec.onend = () => { if (mode === "listening") setMode("idle"); };
-  rec.onerror = (e) => { setMode("idle"); if (e.error !== "no-speech" && e.error !== "aborted") say("note", "Mic trouble: " + e.error); };
+  rec.onerror = (e) => {
+    setMode("idle");
+    if (e.error === "not-allowed" || e.error === "service-not-allowed") { rec = null; say("note", "The mic is blocked here. Tap the text box and use your keyboard's mic key instead."); }
+    else if (e.error !== "no-speech" && e.error !== "aborted") say("note", "Mic trouble: " + e.error);
+  };
 } else {
   $("mic").title = "This browser can't listen. Chrome or Edge can.";
 }
 function listen() {
-  if (!rec) { say("note", "This browser can't do voice input. Open Jarvis in Chrome or Edge."); return; }
+  if (!rec) { say("note", "No mic here. Tap the text box and use your keyboard's mic key instead."); return; }
   if (mode === "listening") { rec.stop(); return; }
   synth && synth.cancel();
   $("q").value = ""; setMode("listening");
@@ -374,7 +379,7 @@ ${notes}`;
 async function claude(q) {
   if (!sdk) {
     say("note", "Connecting to Claude…");
-    sdk = (await import("https://esm.sh/@anthropic-ai/sdk@0.134.0")).default;
+    sdk = (await import("https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@0.134.0/+esm")).default;
   }
   const client = new sdk({ apiKey: store.get("key"), dangerouslyAllowBrowser: true });
   history.push({ role: "user", content: q });
@@ -396,6 +401,21 @@ async function claude(q) {
   return text;
 }
 
+// Inside a claude.ai artifact, Jarvis can think with TJ's own Claude account (no key, no bill).
+const samplePromise = window.claude?.use ? window.claude.use("sample").catch(() => null) : Promise.resolve(null);
+async function claudeAccount(sample, q) {
+  const said = history.slice(-12).map((m) => (m.role === "user" ? "TJ: " : "Jarvis: ") + m.content).join("\n");
+  const el = say("jarvis", "");
+  const res = await sample(systemPrompt() + (said ? "\n\nConversation so far:\n" + said : "") + "\n\nTJ says: " + q, {
+    cache: false,
+    onText: ({ text }) => { el.textContent = text; el.scrollIntoView({ block: "end" }); },
+  });
+  const text = (res.text || "").trim();
+  el.textContent = text;
+  history.push({ role: "user", content: q }, { role: "assistant", content: text });
+  return text;
+}
+
 async function ask(q) {
   q = q.trim(); if (!q) return;
   $("q").value = "";
@@ -404,10 +424,12 @@ async function ask(q) {
   setMode("thinking");
   let text;
   try {
-    if (store.get("key")) text = await claude(q);
+    const sample = await samplePromise;
+    if (sample) text = await claudeAccount(sample, q);
+    else if (store.get("key")) text = await claude(q);
     else { text = offlineAnswer(q); say("jarvis", text); }
   } catch (err) {
-    history.pop();
+    if (history.at(-1)?.role === "user") history.pop();
     text = "Couldn't reach Claude: " + (err?.message || err) + ". Answering from the notes instead.";
     say("note", text);
     text = offlineAnswer(q); say("jarvis", text);
@@ -432,9 +454,9 @@ $("done").addEventListener("click", () => {
 });
 $("forget").addEventListener("click", () => { store.set("key", null); $("key").value = ""; });
 
-say("note", store.get("key")
-  ? "Online. Ask me anything, or press space to talk."
-  : "Running on the notes only. Tap SETUP to add a Claude key and I get a lot smarter.");
+samplePromise.then((sample) => say("note", sample || store.get("key")
+  ? "Online. Ask me anything, or tap ◉ to talk."
+  : "Running on the notes only. Tap SETUP to add a Claude key and I get a lot smarter."));
 </script>
 </body>
 </html>

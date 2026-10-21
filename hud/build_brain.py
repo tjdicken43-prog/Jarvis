@@ -2,9 +2,13 @@
 
 Run from anywhere: python3 hud/build_brain.py
 Re-run after the notes change.
+
+python3 hud/build_brain.py --artifact OUT.html also writes a one-file copy
+with the notes inlined, ready to publish as a private claude.ai artifact.
 """
 import json
 import re
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -38,6 +42,19 @@ def main():
     out = ROOT / "hud" / "brain.js"
     out.write_text("window.BRAIN = " + json.dumps({"notes": notes, "stats": stats}, indent=1) + ";\n", encoding="utf-8")
     print(f"Packed {stats['notes']} notes into {out.relative_to(ROOT)}")
+    if "--artifact" in sys.argv:
+        write_artifact(Path(sys.argv[sys.argv.index("--artifact") + 1]), out.read_text(encoding="utf-8"))
+
+
+def write_artifact(dest, brain_js):
+    """The artifact host adds its own doctype, head and body, so strip ours."""
+    html = (ROOT / "hud" / "index.html").read_text(encoding="utf-8")
+    for tag in ("<!doctype html>", '<html lang="en">', "</html>", "<head>", "</head>", "<body>", "</body>"):
+        html = html.replace(tag, "")
+    html = re.sub(r'<meta (charset|name="viewport")[^>]*>\n', "", html)
+    html = html.replace('<script src="brain.js"></script>', "<script>" + brain_js.replace("</", "<\\/") + "</script>")
+    dest.write_text(html.strip() + "\n", encoding="utf-8")
+    print(f"Wrote artifact copy to {dest}")
 
 
 if __name__ == "__main__":

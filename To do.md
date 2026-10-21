@@ -6,9 +6,9 @@ type: list
 Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's note.
 
 ## Now
-- [ ] Check Render deployed the Oct 20 release after the 2026-10-21 merge (site loads, admin page Storage line OK). See [[Release history]].
-- [ ] Change the exposed recorder password, admin token and the old API key (new ones go on Render, never in notes).
-- [ ] First nights at [[J Street Gym]]: run the checklist there.
+- As of 2026-10-21: nothing is running at [[J Street Gym]] yet. TJ has no laptop and no Raspberry Pi, so until TJ says otherwise only software update checks and backend proficiency tests are possible.
+- [ ] Backend proficiency tests and software update checks for [[SecurityAI]] (backend first, no hardware yet).
+- [ ] On hold until hardware is set up: first nights at [[J Street Gym]] (run the checklist there).
 - [ ] Photo of an Ashbourne denied scan.
 
 ## Setup

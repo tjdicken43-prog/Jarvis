@@ -3,7 +3,7 @@
 A talking, glowing front end for the brain. A core in the middle pulses when Jarvis listens, thinks or talks; the notes float around it as a live map of the brain, and light up when a question touches them.
 
 ## Run it
-- Voice in on the phone: claude.ai never gives a page the microphone, and Android's in-app browser has no speech recognition. So the ◉ button opens the keyboard: tap the keyboard's mic, talk, and Jarvis sends it 1.8 seconds after you stop. Voice out needs Chrome (the Claude app's built-in browser can't speak).
+- Voice in on the phone: claude.ai never gives a page the microphone, and Android's in-app browser has no speech recognition. So the ◉ button opens the keyboard: tap the keyboard's mic, talk, and Jarvis sends it 1.8 seconds after you stop. Voice out uses Jarvis's own built-in British voice (`vendor/jarvis-voice.js`, an eSpeak engine plus a light studio filter), so it works even in the Claude app. Republish that file with the page.
 - Anywhere, phone included: TJ's private link https://claude.ai/artifact/6BgK9h8LVgz3ondg1QqzSP. In there Jarvis thinks with TJ's Claude account (no key). If the mic button is blocked, tap the text box and use the keyboard's mic key.
 - On a computer: open `hud/index.html` in Chrome or Edge (double-click works). Voice input needs Chrome or Edge.
 - Talk: press the ◉ button (or the space bar) and speak. Or type.

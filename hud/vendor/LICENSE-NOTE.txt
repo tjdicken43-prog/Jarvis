@@ -1,0 +1,1 @@
+meSpeak 2.0.2 (https://www.masswerk.at/mespeak) and eSpeak are GPL. Used here for TJ's private Jarvis page.

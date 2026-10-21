@@ -101,6 +101,10 @@
   .msg.jarvis details[open] summary::before { content: "▾ "; }
   .msg.jarvis .detail { margin-top: 6px; font-size: 14px; color: #b9d9e8; white-space: pre-wrap; }
   .scan { position: fixed; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(var(--arc-rgb), .025) 0 1px, transparent 1px 3px); mix-blend-mode: screen; }
+  .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 6px; }
+  .chips button { background: var(--glass); border: 1px solid var(--line); color: var(--ink); font: 500 12.5px/1 var(--body); padding: 10px 13px; border-radius: 18px; cursor: pointer; animation: in .4s ease-out backwards; }
+  .chips button:nth-child(2) { animation-delay: .08s; } .chips button:nth-child(3) { animation-delay: .16s; } .chips button:nth-child(4) { animation-delay: .24s; }
+  .chips button:active { background: var(--faint); border-color: var(--arc); }
   .msg.note { align-self: center; font: 500 11px/1.4 var(--mono); color: var(--dim); letter-spacing: .04em; text-align: center; }
   @keyframes in { from { opacity: 0; transform: translateY(6px); } }
 
@@ -408,8 +412,16 @@ const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 /* ---------- Camera: drag to orbit, pinch or wheel to zoom, flick to spin ---------- */
 const cam = { yaw: 0.5, pitch: -0.28, vYaw: 0.0016, vPitch: 0, zoom: 1, idleAt: 0 };
 let view = null; // per-frame projection
+// Tilt the phone to look around the brain a little (Android sends this without asking).
+const tilt = { x: 0, y: 0, tx: 0, ty: 0 };
+addEventListener("deviceorientation", (e) => {
+  if (e.gamma == null) return;
+  tilt.tx = Math.max(-1, Math.min(1, e.gamma / 35)); tilt.ty = Math.max(-1, Math.min(1, ((e.beta ?? 45) - 45) / 35));
+});
 function camera(ox, oy, s) {
-  const cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw), cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+  tilt.x += (tilt.tx - tilt.x) * 0.06; tilt.y += (tilt.ty - tilt.y) * 0.06;
+  const yaw = cam.yaw + tilt.x * 0.35, pitch = Math.max(-1.4, Math.min(1.4, cam.pitch + tilt.y * 0.25));
+  const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
   return (x, y, z) => {
     const x1 = x * cy + z * sy, z1 = -x * sy + z * cy;
     const y1 = y * cp - z1 * sp, z2 = y * sp + z1 * cp;
@@ -625,7 +637,7 @@ const CORES = { arc: coreArc, agency: coreAgency, spy: coreSpy, hunter: coreHunt
 /* ---------- Frame ---------- */
 function nodeColor(n) { return n.type === "hub" || !TYPE_COLOR[n.type] ? `rgb(${ARC})` : TYPE_COLOR[n.type]; }
 function drawNode(n) {
-  const [x, y, z, f] = n.p, depth = Math.max(0.25, Math.min(1, 0.85 - z * 0.45));
+  const [x, y, z, f] = n.p, depth = Math.max(0.25, Math.min(1, 0.85 - z * 0.45)) * Math.min(1, boot * 1.6);
   const r = (2.2 + Math.sqrt(n.deg) * 1.25 + n.hot * 4) * f * cam.zoom ** 0.5, c = nodeColor(n);
   cx.globalAlpha = depth;
   cx.shadowColor = c; cx.shadowBlur = 8 + n.hot * 20; cx.fillStyle = c;
@@ -644,7 +656,7 @@ let uiBoxes = [], uiAt = -1;
 function uiRects() {
   if (t - uiAt < 0.5) return uiBoxes;
   uiAt = t; uiBoxes = [];
-  for (const el of document.querySelectorAll(".top > *, .tabs, .status, .log .msg, #ask, .mid > .panel, #card.show")) {
+  for (const el of document.querySelectorAll(".top > *, .tabs, .status, .log .msg, .chips, #ask, .mid > .panel, #card.show")) {
     const r = el.getBoundingClientRect();
     if (r.width && r.height && getComputedStyle(el).display !== "none") uiBoxes.push([r.left, r.top, r.right, r.bottom]);
   }
@@ -675,6 +687,8 @@ function drawLabels(R, ox, oy) {
 }
 
 let focus = null;
+const BOOT0 = performance.now(); // the brain assembles out of the core when the page opens
+let boot = reduce ? 1 : 0;
 const gradCache = new Map(); // gradients only change when the layout or theme does
 function cached(key, make) {
   if (!gradCache.has(key)) { if (gradCache.size > 40) gradCache.clear(); gradCache.set(key, make()); }
@@ -691,12 +705,16 @@ function draw() {
   } else if (!grab) {
     cam.yaw += cam.vYaw; cam.pitch = Math.max(-1.35, Math.min(1.35, cam.pitch + cam.vPitch));
     cam.vYaw += ((reduce ? 0 : 0.0016) - cam.vYaw) * 0.02; cam.vPitch *= 0.95;
+    // when left alone, the view drifts back to a slow breathing tilt
+    if (Math.abs(cam.vPitch) < 0.001 && !reduce) cam.pitch += (-0.28 + Math.sin(t * 0.21) * 0.14 - cam.pitch) * 0.004;
   }
   const target = MODE_COLOR[mode];
   col = col.map((c, i) => c + (target[i] - c) * 0.08);
   const C = (a) => `rgba(${col[0] | 0},${col[1] | 0},${col[2] | 0},${a})`;
   const spin = t * (mode === "thinking" ? 1.4 : 0.18);
-  const S = Math.max(Math.min(W, H) * (W < 700 ? 0.44 : 0.4), base * 3.1) * cam.zoom;
+  if (boot < 1) boot = Math.min(1, (performance.now() - BOOT0) / 2600);
+  const bootE = 1 - Math.pow(1 - boot, 3);
+  const S = Math.max(Math.min(W, H) * (W < 700 ? 0.44 : 0.4), base * 3.1) * cam.zoom * (0.08 + 0.92 * bootE);
   view = camera(ox, oy, S);
   cx.clearRect(0, 0, W, H);
 
@@ -762,6 +780,14 @@ function draw() {
   cx.fillStyle = g; cx.beginPath(); cx.arc(ox, oy, R * 2.4, 0, Math.PI * 2); cx.fill();
 
   cx.save(); cx.translate(ox, oy); cx.shadowColor = C(1); cx.shadowBlur = 16; cx.textAlign = "center";
+  if (boot < 1) { // power-up: rings sweep in, then the core lights
+    cx.globalAlpha = Math.min(1, boot * 2.2);
+    cx.save(); cx.shadowBlur = 0; cx.strokeStyle = C(0.9 * (1 - boot)); cx.lineWidth = 2;
+    cx.beginPath(); cx.arc(0, 0, R * (0.3 + boot * 2.4), 0, Math.PI * 2); cx.stroke();
+    cx.fillStyle = C(0.9); cx.font = "600 10px 'IBM Plex Mono', monospace";
+    cx.fillText(boot < 0.5 ? `MAPPING ${nodes.length} NOTES · ${Math.round(boot * 200)}%` : boot < 0.85 ? "FOLDING IN THE 4TH DIMENSION" : "ALL SYSTEMS ONLINE", 0, R * 1.25);
+    cx.restore();
+  }
   (CORES[THEME] || coreArc)(R, C, spin);
   cx.shadowBlur = 0;
 
@@ -796,7 +822,7 @@ function draw() {
     const a = i / 120 * Math.PI * 2 + spin * 0.1, r1 = R * 2.15, r2 = r1 + (i % 10 ? 3 : 9);
     cx.beginPath(); cx.moveTo(Math.cos(a) * r1, Math.sin(a) * r1); cx.lineTo(Math.cos(a) * r2, Math.sin(a) * r2); cx.stroke();
   }
-  cx.restore();
+  cx.restore(); cx.globalAlpha = 1;
 
   // near half: dust and notes in front of the core
   for (const n of sorted) if (n.p[2] <= 0) drawNode(n);
@@ -901,6 +927,7 @@ $("cardBody").addEventListener("click", (e) => {
 });
 function openNote(n) {
   light([n.name]); cardNote = n.name; touch(n.name); focus = n;
+  try { navigator.vibrate?.(8); } catch {}
   cam.go = [Math.atan2(n.x, -n.z), Math.max(-1.2, Math.min(1.2, Math.atan2(-n.y, Math.hypot(n.x, n.z))))];
   $("cardTitle").textContent = n.name.toUpperCase() + (n.isNew ? "  · NEW" : "");
   $("cardBody").innerHTML = noteHtml(n.text);
@@ -1404,6 +1431,7 @@ async function viaKey(q) {
 async function ask(q) {
   if (dictArmed) disarmDictation();
   q = q.trim(); if (!q) return;
+  document.querySelector(".chips")?.remove();
   $("q").value = "";
   say("you", q);
   showTab("comms");
@@ -1462,6 +1490,13 @@ samplePromise.then((sample) => {
   $("linkDot").classList.toggle("on", online);
   $("linkText").textContent = sample ? "online · your claude account" : online ? "online · api key" : "notes only";
   say("note", online ? "Good to see you, boss. Talk, type, or tap JOB to hand me something big." : "Running on the notes only. Open the claude.ai copy for the full Jarvis.");
+  // quick starts, so an empty screen still has somewhere to go
+  const chips = document.createElement("div"); chips.className = "chips";
+  for (const q of ["What's on my plate today?", "Brief me on SecurityAI", "One idea to make money this week", "What did you learn about me?"]) {
+    const b = document.createElement("button"); b.type = "button"; b.textContent = q;
+    b.addEventListener("click", () => ask(q)); chips.append(b);
+  }
+  $("log").append(chips);
 });
 </script>
 </body>

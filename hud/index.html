@@ -3,103 +3,222 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#04090f">
+<meta name="theme-color" content="#03070c">
 <title>J.A.R.V.I.S.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap">
 <style>
+  /* Layout: a heads-up display. Arc reactor core in the middle, brain on the left, job queue on the right,
+     comms under the core. On a phone the panels fold into tabs under the core. */
   :root {
-    --bg: #04090f;
-    --ink: #cfeeff;
-    --dim: #5f8aa3;
-    --line: rgba(94, 208, 255, .22);
-    --glow: #5ed0ff;
-    --warm: #ffb547;
-    --panel: rgba(8, 22, 34, .72);
+    --bg: #03070c;
+    --ink: #d7f3ff;
+    --dim: #5f8599;
+    --faint: rgba(79, 216, 255, .14);
+    --line: rgba(79, 216, 255, .26);
+    --arc: #4fd8ff;
+    --gold: #ffb23e;
+    --ok: #5cf2a5;
+    --red: #ff5b4a;
+    --glass: rgba(6, 18, 28, .68);
+    --display: "Chakra Petch", "Rajdhani", "Segoe UI", system-ui, sans-serif;
+    --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+    color-scheme: dark;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); overflow: hidden;
-    font: 15px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); overflow: hidden; font: 15px/1.5 var(--body); }
   canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
-  .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .08em; }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 1px solid var(--arc); outline-offset: 2px; }
 
-  header { position: fixed; top: 0; left: 0; right: 0; display: flex; justify-content: space-between;
-    padding: max(14px, env(safe-area-inset-top)) 18px 0; font-size: 11px; color: var(--dim); pointer-events: none; }
-  header b { color: var(--glow); font-weight: 600; }
-  header .right { text-align: right; }
+  .app { position: relative; height: 100%; display: grid; grid-template-rows: auto 1fr auto;
+    padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    gap: 12px; pointer-events: none; }
+  .app > * { pointer-events: auto; }
 
-  #status { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -170px); font-size: 11px;
-    color: var(--glow); text-transform: uppercase; pointer-events: none; text-shadow: 0 0 8px var(--glow); }
+  /* top bar */
+  .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .brand { font: 700 18px/1 var(--display); letter-spacing: .32em; color: var(--arc); text-shadow: 0 0 14px rgba(79, 216, 255, .6); }
+  .sub { margin-top: 6px; font: 500 10px/1 var(--mono); letter-spacing: .18em; color: var(--dim); text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--dim); }
+  .dot.on { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+  .clock { text-align: right; }
+  .clock b { display: block; font: 600 26px/1 var(--display); letter-spacing: .06em; font-variant-numeric: tabular-nums; }
+  .clock span { font: 500 10px/1.6 var(--mono); letter-spacing: .16em; color: var(--dim); text-transform: uppercase; }
+  .gear { margin-top: 8px; background: none; border: 1px solid var(--line); color: var(--arc); font: 600 10px/1 var(--mono); letter-spacing: .16em; padding: 7px 10px; cursor: pointer; clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px); }
+  .gear:hover { background: var(--faint); }
 
-  #log { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); width: min(640px, calc(100% - 32px));
-    max-height: 34vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; scrollbar-width: none; }
-  #log::-webkit-scrollbar { display: none; }
-  .msg { padding: 9px 13px; border: 1px solid var(--line); background: var(--panel); backdrop-filter: blur(6px);
-    border-radius: 3px; white-space: pre-wrap; animation: in .25s ease-out; }
-  .msg.you { align-self: flex-end; color: var(--dim); border-color: rgba(95, 138, 163, .3); }
-  .msg.jarvis { align-self: flex-start; border-left: 2px solid var(--glow); }
-  .msg.note { align-self: center; font-size: 12px; color: var(--dim); border-style: dashed; }
+  /* middle */
+  .mid { min-height: 0; display: grid; grid-template-columns: minmax(220px, 280px) 1fr minmax(240px, 320px); gap: 16px; }
+  .center { min-height: 0; display: grid; grid-template-rows: minmax(220px, 1fr) auto auto; gap: 10px; }
+  .slot { min-height: 0; } /* the core is painted on the canvas behind this box */
+  .status { text-align: center; font: 600 11px/1 var(--mono); letter-spacing: .3em; text-transform: uppercase; color: var(--arc); text-shadow: 0 0 10px currentColor; }
+  .status[data-mode="listening"] { color: var(--ok); }
+  .status[data-mode="thinking"] { color: var(--gold); }
+
+  .panel { position: relative; min-height: 0; display: flex; flex-direction: column; background: var(--glass); border: 1px solid var(--line);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px); }
+  .panel::before { content: ""; position: absolute; left: 0; top: 0; width: 40%; height: 2px; background: linear-gradient(90deg, var(--arc), transparent); }
+  .panel h2 { margin: 0; padding: 12px 14px 8px; font: 600 11px/1 var(--display); letter-spacing: .28em; color: var(--arc); display: flex; justify-content: space-between; }
+  .panel h2 small { font: 500 10px/1 var(--mono); letter-spacing: .1em; color: var(--dim); }
+  .scroll { overflow-y: auto; padding: 0 14px 14px; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--faint); margin: 0 14px 12px; border: 1px solid var(--faint); }
+  .stat { background: var(--bg); padding: 10px; }
+  .stat b { display: block; font: 600 22px/1 var(--display); font-variant-numeric: tabular-nums; }
+  .stat span { font: 500 9px/1.4 var(--mono); letter-spacing: .14em; color: var(--dim); text-transform: uppercase; }
+  .stat.warn b { color: var(--gold); }
+  .label { font: 600 10px/1 var(--display); letter-spacing: .24em; color: var(--dim); margin: 4px 0 8px; }
+  .now { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 13px; }
+  .now li { padding-left: 14px; position: relative; color: #b9d9e8; }
+  .now li::before { content: ""; position: absolute; left: 0; top: .6em; width: 6px; height: 6px; border: 1px solid var(--gold); transform: rotate(45deg); }
+
+  /* comms */
+  .log { min-height: 0; max-height: 30vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; scrollbar-width: none; mask-image: linear-gradient(transparent, #000 24px); padding-top: 18px; }
+  .log::-webkit-scrollbar { display: none; }
+  .msg { max-width: 92%; padding: 9px 13px; white-space: pre-wrap; font-size: 14px; animation: in .25s ease-out; }
+  .msg.you { align-self: flex-end; color: var(--dim); border-right: 2px solid var(--dim); }
+  .msg.jarvis { align-self: flex-start; background: var(--glass); border-left: 2px solid var(--arc); }
+  .msg.note { align-self: center; font: 500 11px/1.4 var(--mono); color: var(--dim); letter-spacing: .04em; text-align: center; }
   @keyframes in { from { opacity: 0; transform: translateY(6px); } }
 
-  form { position: fixed; left: 50%; bottom: max(20px, env(safe-area-inset-bottom)); transform: translateX(-50%);
-    width: min(640px, calc(100% - 32px)); display: flex; gap: 8px; }
-  input, select { flex: 1; min-width: 0; background: var(--panel); color: var(--ink); border: 1px solid var(--line);
-    border-radius: 3px; padding: 12px 14px; font: inherit; outline: none; }
-  input:focus, select:focus { border-color: var(--glow); box-shadow: 0 0 0 1px var(--glow) inset; }
-  button { background: transparent; color: var(--glow); border: 1px solid var(--line); border-radius: 3px;
-    padding: 0 14px; font: 600 11px/1 ui-monospace, Menlo, monospace; letter-spacing: .12em; cursor: pointer; }
-  button:hover, button:focus-visible { border-color: var(--glow); outline: none; }
-  #mic { width: 52px; font-size: 20px; padding: 0; }
-  #mic.on { background: var(--glow); color: var(--bg); box-shadow: 0 0 18px var(--glow); }
+  /* jobs */
+  .jobs { display: grid; gap: 10px; }
+  .job { border: 1px solid var(--faint); padding: 10px 12px; display: grid; gap: 6px; background: rgba(3, 7, 12, .5); }
+  .job.fresh { border-color: var(--ok); box-shadow: 0 0 16px rgba(92, 242, 165, .25); }
+  .job .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .chip { font: 600 9px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; padding: 4px 6px; border: 1px solid currentColor; }
+  .chip.queued { color: var(--dim); }
+  .chip.working { color: var(--gold); animation: blink 1.2s ease-in-out infinite; }
+  .chip.done { color: var(--ok); }
+  .chip.needs-tj { color: var(--red); }
+  @keyframes blink { 50% { opacity: .35; } }
+  .job time { font: 500 10px/1 var(--mono); color: var(--dim); }
+  .job .ask { font-size: 13px; color: #b9d9e8; }
+  .job .answer { font-size: 13px; white-space: pre-wrap; border-top: 1px dashed var(--faint); padding-top: 6px; }
+  .job a { color: var(--arc); font: 500 11px/1.4 var(--mono); }
+  .empty { font-size: 13px; color: var(--dim); }
+  .empty b { color: var(--ink); font-weight: 500; }
 
-  #gear { position: fixed; top: max(70px, calc(env(safe-area-inset-top) + 56px)); right: 18px; height: 28px; }
-  dialog { background: #071521; color: var(--ink); border: 1px solid var(--glow); border-radius: 4px;
-    width: min(440px, calc(100% - 32px)); padding: 20px; }
-  dialog::backdrop { background: rgba(0, 0, 0, .6); }
-  dialog h2 { margin: 0 0 4px; font-size: 13px; color: var(--glow); }
-  dialog label { display: block; margin: 14px 0 6px; font-size: 12px; color: var(--dim); }
-  dialog input, dialog select { width: 100%; }
-  dialog p { font-size: 12px; color: var(--dim); margin: 6px 0 0; }
+  /* input */
+  form { display: flex; gap: 8px; max-width: 760px; width: 100%; justify-self: center; }
+  .mode { flex: none; width: 64px; background: var(--glass); border: 1px solid var(--line); color: var(--dim); cursor: pointer; font: 600 10px/1 var(--mono); letter-spacing: .14em; }
+  .mode[aria-pressed="true"] { color: var(--bg); background: var(--gold); border-color: var(--gold); box-shadow: 0 0 16px rgba(255, 178, 62, .45); }
+  #q { flex: 1; min-width: 0; background: var(--glass); color: var(--ink); border: 1px solid var(--line); padding: 13px 14px; font: 15px var(--body); outline: none; }
+  #q:focus { border-color: var(--arc); box-shadow: inset 0 0 0 1px var(--arc); }
+  #mic { flex: none; width: 54px; background: var(--glass); border: 1px solid var(--line); color: var(--arc); cursor: pointer; display: grid; place-items: center; }
+  #mic svg { width: 22px; height: 22px; }
+  #mic.on { background: var(--ok); color: var(--bg); border-color: var(--ok); box-shadow: 0 0 20px rgba(92, 242, 165, .6); }
+
+  .tabs { display: none; }
+
+  /* settings */
+  dialog { background: #061420; color: var(--ink); border: 1px solid var(--arc); width: min(440px, calc(100% - 32px)); padding: 20px; }
+  dialog::backdrop { background: rgba(0, 0, 0, .65); }
+  dialog h3 { margin: 0 0 6px; font: 600 13px/1 var(--display); letter-spacing: .26em; color: var(--arc); }
+  dialog p { font-size: 13px; color: var(--dim); margin: 6px 0 0; }
+  dialog label { display: block; margin: 14px 0 6px; font: 500 11px/1 var(--mono); letter-spacing: .1em; color: var(--dim); }
+  dialog input:not([type="checkbox"]), dialog select { width: 100%; background: var(--bg); color: var(--ink); border: 1px solid var(--line); padding: 10px; font: 14px var(--body); }
   dialog .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
-  dialog .row button { height: 34px; }
+  dialog .row button { background: none; border: 1px solid var(--line); color: var(--arc); padding: 9px 14px; cursor: pointer; font: 600 10px/1 var(--mono); letter-spacing: .14em; }
 
-  #card { position: fixed; top: 70px; left: 18px; width: min(360px, calc(100% - 36px)); max-height: 46vh; overflow-y: auto;
-    padding: 14px 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 3px; display: none;
-    white-space: pre-wrap; font-size: 13px; backdrop-filter: blur(6px); }
-  #card h3 { margin: 0 0 8px; font-size: 12px; color: var(--glow); }
-  #card.show { display: block; animation: in .2s ease-out; }
+  #card { position: fixed; z-index: 5; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(460px, calc(100% - 32px)); max-height: 60vh; display: none; }
+  #card.show { display: flex; animation: in .2s ease-out; }
+  #card .scroll { white-space: pre-wrap; font-size: 13px; }
+
+  /* phone: fold the panels into tabs */
+  @media (max-width: 860px) {
+    .mid { grid-template-columns: 1fr; grid-template-rows: 30vh auto 1fr; gap: 8px; }
+    .center { display: contents; }
+    .slot { grid-row: 1; }
+    .status { grid-row: 2; }
+    .tabs { grid-row: 3; display: flex; gap: 0; border-bottom: 1px solid var(--line); align-self: start; }
+    .tabs button { flex: 1; background: none; border: 0; padding: 10px 0; color: var(--dim); font: 600 11px/1 var(--display); letter-spacing: .24em; cursor: pointer; border-bottom: 2px solid transparent; }
+    .tabs button[aria-selected="true"] { color: var(--arc); border-bottom-color: var(--arc); }
+    .tabs .badge { color: var(--ok); }
+    #brainPanel, #jobsPanel, .log { grid-row: 4; }
+    .mid { grid-template-rows: 30vh auto auto 1fr; }
+    .log { max-height: none; }
+    [data-tab]:not(.active) { display: none !important; }
+    .clock b { font-size: 20px; }
+    .mode { width: 52px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .msg, #card.show { animation: none; } .chip.working { animation: none; } }
 </style>
 </head>
 <body>
-<canvas id="sky"></canvas>
+<canvas id="sky" aria-hidden="true"></canvas>
 
-<header class="mono">
-  <div><b>J.A.R.V.I.S.</b><br><span id="clock"></span></div>
-  <div class="right" id="stats"></div>
-</header>
-<button id="gear" class="mono" type="button" aria-label="Settings">SETUP</button>
+<div class="app">
+  <header class="top">
+    <div>
+      <div class="brand">J.A.R.V.I.S.</div>
+      <div class="sub"><i class="dot" id="linkDot"></i><span id="linkText">notes only</span></div>
+    </div>
+    <div class="clock">
+      <b id="time">--:--</b>
+      <span id="date"></span><br>
+      <button class="gear" id="gear" type="button">SETTINGS</button>
+    </div>
+  </header>
 
-<div id="status" class="mono">standing by</div>
-<div id="card" role="dialog" aria-live="polite"></div>
-<div id="log" aria-live="polite"></div>
+  <main class="mid">
+    <section class="panel" id="brainPanel" data-tab="brain" aria-label="Brain">
+      <h2>BRAIN <small id="weekName"></small></h2>
+      <div class="stats" id="stats"></div>
+      <div class="scroll">
+        <div class="label">NOW</div>
+        <ul class="now" id="now"></ul>
+      </div>
+    </section>
 
-<form id="ask">
-  <input id="q" autocomplete="off" placeholder="Talk to Jarvis, or hold the mic">
-  <button id="mic" type="button" aria-label="Talk">◉</button>
-</form>
+    <div class="center">
+      <div class="slot" id="slot"></div>
+      <div class="status" id="status" data-mode="idle">standing by</div>
+      <nav class="tabs" role="tablist">
+        <button type="button" role="tab" data-go="comms" aria-selected="true">COMMS</button>
+        <button type="button" role="tab" data-go="jobs" aria-selected="false">JOBS <span class="badge" id="badge"></span></button>
+        <button type="button" role="tab" data-go="brain" aria-selected="false">BRAIN</button>
+      </nav>
+      <div class="log active" id="log" data-tab="comms" aria-live="polite"></div>
+    </div>
+
+    <section class="panel" id="jobsPanel" data-tab="jobs" aria-label="Jobs">
+      <h2>JOBS <small id="jobsCount"></small></h2>
+      <div class="scroll"><div class="jobs" id="jobs"><p class="empty">Jobs run from the claude.ai copy of Jarvis, where Claude Code can pick them up.</p></div></div>
+    </section>
+  </main>
+
+  <form id="ask">
+    <button class="mode" id="jobMode" type="button" aria-pressed="false" title="Send this as a job for Claude Code">JOB</button>
+    <input id="q" autocomplete="off" placeholder="Talk to Jarvis">
+    <button id="mic" type="button" aria-label="Talk">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+    </button>
+  </form>
+</div>
+
+<section class="panel" id="card" role="dialog" aria-live="polite"><h2 id="cardTitle"></h2><div class="scroll" id="cardBody"></div></section>
 
 <dialog id="setup">
-  <h2 class="mono">SETUP</h2>
-  <p>Jarvis answers from the brain notes. With an Anthropic API key he thinks with Claude; without one he searches the notes.</p>
-  <label for="key">Anthropic API key (kept in this browser only)</label>
-  <input id="key" type="password" autocomplete="off" placeholder="sk-ant-...">
-  <label for="model">Model</label>
-  <select id="model">
-    <option value="claude-opus-5-5">Opus 5.5 (smartest, about 1¢ a question)</option>
-    <option value="claude-sonnet-5-5">Sonnet 5.5 (quick, about half that)</option>
-    <option value="claude-haiku-5-5">Haiku 5.5 (cheapest, a fraction of a cent)</option>
-  </select>
+  <h3>SETTINGS</h3>
+  <p>How Jarvis sounds. Inside claude.ai he thinks with your Claude account, so nothing else is needed.</p>
   <label for="voice">Voice</label>
   <select id="voice"></select>
-  <label><input id="talkback" type="checkbox" style="width:auto"> Speak answers out loud</label>
+  <label><input id="talkback" type="checkbox"> Speak answers out loud</label>
+  <div id="keyBox">
+    <label for="key">Anthropic API key (only for the copy on a computer, kept in this browser)</label>
+    <input id="key" type="password" autocomplete="off" placeholder="sk-ant-...">
+    <label for="model">Model</label>
+    <select id="model">
+      <option value="claude-opus-5-5">Opus 5.5 (smartest, about 1¢ a question)</option>
+      <option value="claude-sonnet-5-5">Sonnet 5.5 (quick, about half that)</option>
+      <option value="claude-haiku-5-5">Haiku 5.5 (cheapest)</option>
+    </select>
+  </div>
   <div class="row">
     <button type="button" id="forget">FORGET KEY</button>
     <button type="button" id="done">DONE</button>
@@ -109,164 +228,235 @@
 <script src="brain.js"></script>
 <script>
 const BRAIN = window.BRAIN || { notes: [], stats: {} };
+const RUNNER = "trig_015fBXVSaBS9mRBeXKSVfr2n"; // the Claude Code scheduled task that works the job queue
 const $ = (id) => document.getElementById(id);
 const store = {
   get(k, d) { try { return localStorage.getItem("jarvis." + k) ?? d; } catch { return d; } },
   set(k, v) { try { v == null ? localStorage.removeItem("jarvis." + k) : localStorage.setItem("jarvis." + k, v); } catch {} },
 };
+const use = (name) => (window.claude?.use ? window.claude.use(name).catch(() => null) : Promise.resolve(null));
+const samplePromise = use("sample");
+const dbPromise = use("db");
+const mcpPromise = use("mcp");
 
-/* ---------- HUD text ---------- */
-const s = BRAIN.stats;
-$("stats").innerHTML = `${s.notes ?? 0} NOTES<br>${s.open_todos ?? 0} OPEN TO-DOS<br>${s.checks ?? 0} TO CHECK`;
+/* ---------- Clock (TJ is on Central time) ---------- */
 function tick() {
-  const d = new Date();
-  $("clock").textContent = d.toLocaleDateString("en-CA") + "  " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const d = new Date(), tz = { timeZone: "America/Chicago" };
+  $("time").textContent = d.toLocaleTimeString("en-US", { ...tz, hour: "numeric", minute: "2-digit" });
+  $("date").textContent = d.toLocaleDateString("en-US", { ...tz, weekday: "short", month: "short", day: "numeric" }) + " · CENTRAL";
 }
 tick(); setInterval(tick, 10000);
 
-/* ---------- State: idle, listening, thinking, speaking ---------- */
-let mode = "idle";
-let level = 0; // 0..1 loudness that drives the core
-function setMode(m, label) {
+/* ---------- Brain panel ---------- */
+const byName = new Map(BRAIN.notes.map((n) => [n.name, n]));
+function renderBrain(memories) {
+  const s = BRAIN.stats;
+  const cells = [[s.notes ?? 0, "notes"], [s.open_todos ?? 0, "open to-dos"], [s.checks ?? 0, "to check", s.checks > 0], [memories, "memories"]];
+  $("stats").innerHTML = "";
+  for (const [v, k, warn] of cells) {
+    const el = document.createElement("div"); el.className = "stat" + (warn ? " warn" : "");
+    el.innerHTML = `<b></b><span></span>`; el.querySelector("b").textContent = v; el.querySelector("span").textContent = k;
+    $("stats").append(el);
+  }
+}
+renderBrain(0);
+(function renderNow() {
+  const todo = byName.get("To do")?.text || "";
+  const now = (todo.split(/^## Now\s*$/m)[1] || "").split(/^## /m)[0];
+  const items = [...now.matchAll(/^- \[ \] (.+)$/gm)].map((m) => m[1].replace(/\[\[|\]\]|`/g, "").replace(/\s*See .*$/, ""));
+  for (const t of items.slice(0, 8)) { const li = document.createElement("li"); li.textContent = t; $("now").append(li); }
+  if (!items.length) $("now").innerHTML = "<li>Nothing urgent.</li>";
+  const week = BRAIN.notes.map((n) => n.name).filter((n) => /^\d{4} Week \d+$/.test(n)).sort().pop();
+  $("weekName").textContent = week ? week.toUpperCase() : "";
+})();
+
+/* ---------- Tabs (phone) ---------- */
+function showTab(name) {
+  document.querySelectorAll("[data-go]").forEach((b) => b.setAttribute("aria-selected", b.dataset.go === name));
+  document.querySelectorAll("[data-tab]").forEach((el) => el.classList.toggle("active", el.dataset.tab === name));
+  if (name === "jobs") $("badge").textContent = "";
+}
+document.querySelectorAll("[data-go]").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.go)));
+showTab("comms");
+
+/* ---------- State ---------- */
+let mode = "idle", level = 0;
+function setMode(m) {
   mode = m;
-  $("status").textContent = label || { idle: "standing by", listening: "listening", thinking: "thinking", speaking: "speaking" }[m];
+  $("status").dataset.mode = m;
+  $("status").textContent = { idle: "standing by", listening: "listening", thinking: "thinking", speaking: "speaking" }[m];
   $("mic").classList.toggle("on", m === "listening");
 }
 
-/* ---------- Canvas: brain map + core ---------- */
+/* ---------- Canvas: brain map + arc reactor ---------- */
 const cv = $("sky"), cx = cv.getContext("2d");
 let W, H, DPR;
 function resize() {
-  DPR = Math.min(devicePixelRatio || 1, 2);
-  W = innerWidth; H = innerHeight;
-  cv.width = W * DPR; cv.height = H * DPR;
-  cx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  DPR = Math.min(devicePixelRatio || 1, 2); W = innerWidth; H = innerHeight;
+  cv.width = W * DPR; cv.height = H * DPR; cx.setTransform(DPR, 0, 0, DPR, 0, 0);
 }
 resize(); addEventListener("resize", resize);
 
-const byName = new Map();
 const nodes = BRAIN.notes.map((n, i) => {
   const a = (i / BRAIN.notes.length) * Math.PI * 2;
-  const node = { ...n, x: Math.cos(a) * 260, y: Math.sin(a) * 200, vx: 0, vy: 0, hot: 0 };
-  byName.set(n.name, node);
-  return node;
+  return { ...n, x: Math.cos(a) * 240, y: Math.sin(a) * 180, vx: 0, vy: 0, hot: 0 };
 });
+const nodeBy = new Map(nodes.map((n) => [n.name, n]));
 const edges = [];
-for (const n of nodes) for (const l of n.links) if (byName.has(l) && l !== n.name) edges.push([n, byName.get(l)]);
+for (const n of nodes) for (const l of n.links) if (nodeBy.has(l) && l !== n.name) edges.push([n, nodeBy.get(l)]);
 for (const n of nodes) n.deg = edges.filter(([a, b]) => a === n || b === n).length;
-const TYPE_COLOR = { hub: "#5ed0ff", rules: "#ff6b6b", log: "#ffb547", list: "#ffb547", week: "#9b8cff" };
+const TYPE_COLOR = { hub: "#4fd8ff", rules: "#ff5b4a", log: "#ffb23e", list: "#ffb23e", week: "#9b8cff", personal: "#5cf2a5" };
 
-function physics() {
-  const R = Math.min(W, H) * 0.11 * 2.1;
+function coreBox() {
+  const r = $("slot").getBoundingClientRect();
+  return { ox: r.left + r.width / 2, oy: r.top + r.height / 2, base: Math.max(34, Math.min(r.width, r.height) * 0.21) };
+}
+function physics(base) {
+  const hole = base * 2.7;
   for (const a of nodes) {
     for (const b of nodes) if (a !== b) {
       const dx = a.x - b.x, dy = a.y - b.y, d2 = dx * dx + dy * dy + 0.01;
-      const f = 1800 / d2;
-      a.vx += dx * f / 40; a.vy += dy * f / 40;
+      a.vx += dx * 45 / d2; a.vy += dy * 45 / d2;
     }
-    // keep a hole in the middle for the core, and keep inside the screen
     const d = Math.hypot(a.x, a.y) || 1;
-    if (d < R) { a.vx += a.x / d * 1.5; a.vy += a.y / d * 1.5; }
-    const e = Math.hypot(a.x / (W * 0.44), a.y / (H * 0.36));
-    if (e > 1) { a.vx -= a.x / d * 0.8; a.vy -= a.y / d * 0.8; }
+    if (d < hole) { a.vx += a.x / d * 3; a.vy += a.y / d * 3; }
+    if (Math.hypot(a.x / (W * 0.46), a.y / (H * 0.42)) > 1) { a.vx -= a.x / d * 0.8; a.vy -= a.y / d * 0.8; }
   }
   for (const [a, b] of edges) {
     const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1, f = (d - 130) * 0.01 / d;
     a.vx += dx * f; a.vy += dy * f; b.vx -= dx * f; b.vy -= dy * f;
   }
-  for (const n of nodes) {
-    n.vx *= 0.86; n.vy *= 0.86; n.x += n.vx; n.y += n.vy;
-    n.hot *= 0.985;
-  }
+  for (const n of nodes) { n.vx *= 0.86; n.vy *= 0.86; n.x += n.vx; n.y += n.vy; n.hot *= 0.985; }
 }
 
-let t = 0;
+const MODE_COLOR = { idle: [79, 216, 255], speaking: [120, 230, 255], listening: [92, 242, 165], thinking: [255, 178, 62] };
+let col = [79, 216, 255], t = 0;
+const RING_TEXT = " J.A.R.V.I.S. · TJ'S BRAIN · ONLINE · ";
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 function draw() {
-  t += 1 / 60;
-  physics();
-  const ox = W / 2, oy = H / 2 - 30;
-  const spin = t * (mode === "thinking" ? 0.9 : 0.12);
+  t += reduce ? 0.004 : 1 / 60;
+  const { ox, oy, base } = coreBox();
+  physics(base);
+  const target = MODE_COLOR[mode];
+  col = col.map((c, i) => c + (target[i] - c) * 0.08);
+  const C = (a) => `rgba(${col[0] | 0},${col[1] | 0},${col[2] | 0},${a})`;
+  const spin = t * (mode === "thinking" ? 1.4 : 0.18);
   cx.clearRect(0, 0, W, H);
 
-  // grid
-  cx.strokeStyle = "rgba(94,208,255,.04)"; cx.lineWidth = 1;
-  for (let x = (ox % 40); x < W; x += 40) { cx.beginPath(); cx.moveTo(x, 0); cx.lineTo(x, H); cx.stroke(); }
-  for (let y = (oy % 40); y < H; y += 40) { cx.beginPath(); cx.moveTo(0, y); cx.lineTo(W, y); cx.stroke(); }
+  // hex-ish grid
+  cx.strokeStyle = "rgba(79,216,255,.035)"; cx.lineWidth = 1;
+  for (let x = ox % 44; x < W; x += 44) { cx.beginPath(); cx.moveTo(x, 0); cx.lineTo(x, H); cx.stroke(); }
+  for (let y = oy % 44; y < H; y += 44) { cx.beginPath(); cx.moveTo(0, y); cx.lineTo(W, y); cx.stroke(); }
 
-  // brain map, slowly turning
-  const cs = Math.cos(spin * 0.25), sn = Math.sin(spin * 0.25);
+  // brain map
+  const cs = Math.cos(t * 0.03), sn = Math.sin(t * 0.03);
   const P = (n) => [ox + n.x * cs - n.y * sn, oy + n.x * sn + n.y * cs];
   for (const [a, b] of edges) {
-    const [x1, y1] = P(a), [x2, y2] = P(b);
-    const hot = Math.max(a.hot, b.hot);
-    cx.strokeStyle = `rgba(94,208,255,${0.10 + hot * 0.5})`;
+    const [x1, y1] = P(a), [x2, y2] = P(b), hot = Math.max(a.hot, b.hot);
+    cx.strokeStyle = `rgba(79,216,255,${0.07 + hot * 0.5})`;
     cx.beginPath(); cx.moveTo(x1, y1); cx.lineTo(x2, y2); cx.stroke();
   }
-  cx.font = "10px ui-monospace, Menlo, monospace"; cx.textAlign = "center";
+  cx.font = "10px 'IBM Plex Mono', ui-monospace, monospace"; cx.textAlign = "center";
   for (const n of nodes) {
-    const [x, y] = P(n), r = 2.5 + Math.sqrt(n.deg) * 1.3 + n.hot * 4;
-    const c = TYPE_COLOR[n.type] || "#8fdcff";
-    cx.shadowColor = c; cx.shadowBlur = 8 + n.hot * 20;
-    cx.fillStyle = c; cx.beginPath(); cx.arc(x, y, r, 0, Math.PI * 2); cx.fill();
-    cx.shadowBlur = 0;
-    cx.fillStyle = `rgba(207,238,255,${0.45 + n.hot * 0.55})`;
-    cx.fillText(n.name, x, y - r - 5);
-    n.sx = x; n.sy = y; n.sr = r + 6;
+    const [x, y] = P(n), r = 2 + Math.sqrt(n.deg) * 1.1 + n.hot * 4, c = TYPE_COLOR[n.type] || "#8fdcff";
+    cx.shadowColor = c; cx.shadowBlur = 6 + n.hot * 20; cx.fillStyle = c;
+    cx.beginPath(); cx.arc(x, y, r, 0, Math.PI * 2); cx.fill(); cx.shadowBlur = 0;
+    cx.fillStyle = `rgba(215,243,255,${(W < 860 ? 0.18 : 0.32) + n.hot * 0.6})`; cx.fillText(n.name, x, y - r - 5);
+    n.sx = x; n.sy = y; n.sr = r + 8;
   }
 
-  // the core
-  const want = mode === "speaking" ? 0.35 + 0.45 * Math.abs(Math.sin(t * 9) * Math.sin(t * 3.7))
-    : mode === "listening" ? 0.25 + 0.2 * Math.abs(Math.sin(t * 4))
-    : mode === "thinking" ? 0.3 : 0.08 + 0.04 * Math.sin(t * 1.5);
-  level += (want - level) * 0.15;
-  const base = Math.min(W, H) * 0.11;
-  const g = cx.createRadialGradient(ox, oy, 0, ox, oy, base * (1.6 + level));
-  g.addColorStop(0, `rgba(220,248,255,${0.85})`);
-  g.addColorStop(0.18, `rgba(94,208,255,${0.55 + level * 0.4})`);
-  g.addColorStop(1, "rgba(94,208,255,0)");
-  cx.fillStyle = g; cx.beginPath(); cx.arc(ox, oy, base * (1.6 + level), 0, Math.PI * 2); cx.fill();
+  // energy level
+  const want = mode === "speaking" ? 0.45 + 0.4 * Math.abs(Math.sin(t * 11) * Math.sin(t * 4.3))
+    : mode === "listening" ? 0.3 + 0.15 * Math.abs(Math.sin(t * 5)) : mode === "thinking" ? 0.32 : 0.1 + 0.05 * Math.sin(t * 1.6);
+  level += (want - level) * 0.18;
+  const R = base * (1 + level * 0.08);
 
-  cx.strokeStyle = "rgba(94,208,255,.9)"; cx.shadowColor = "#5ed0ff"; cx.shadowBlur = 14;
-  const rings = [[1.05, 1, 0.7, 2], [1.3, -0.6, 0.45, 1.5], [1.55, 0.35, 0.25, 1], [0.8, -1.4, 0.9, 1]];
-  for (const [k, dir, len, w] of rings) {
-    cx.lineWidth = w;
-    for (let i = 0; i < 3; i++) {
-      const a0 = spin * dir * 3 + i * (Math.PI * 2 / 3);
-      cx.beginPath(); cx.arc(ox, oy, base * k * (1 + level * 0.15), a0, a0 + len * 2); cx.stroke();
-    }
+  // glow
+  const g = cx.createRadialGradient(ox, oy, 0, ox, oy, R * 2.4);
+  g.addColorStop(0, "rgba(235,252,255,.95)"); g.addColorStop(0.12, C(0.75)); g.addColorStop(0.35, C(0.18 + level * 0.2)); g.addColorStop(1, C(0));
+  cx.fillStyle = g; cx.beginPath(); cx.arc(ox, oy, R * 2.4, 0, Math.PI * 2); cx.fill();
+
+  cx.save(); cx.translate(ox, oy); cx.shadowColor = C(1); cx.shadowBlur = 16;
+
+  // reactor coils: ten segments
+  cx.strokeStyle = C(0.85); cx.lineWidth = R * 0.16;
+  for (let i = 0; i < 10; i++) {
+    const a = i / 10 * Math.PI * 2 + spin * 0.4;
+    cx.beginPath(); cx.arc(0, 0, R * 0.78, a + 0.06, a + Math.PI / 5 - 0.06); cx.stroke();
+  }
+  // Mark VI triangle
+  cx.lineWidth = 2; cx.strokeStyle = C(0.95);
+  cx.beginPath();
+  for (let i = 0; i < 3; i++) { const a = -Math.PI / 2 + i * Math.PI * 2 / 3 - spin * 0.25; cx.lineTo(Math.cos(a) * R * 0.5, Math.sin(a) * R * 0.5); }
+  cx.closePath(); cx.stroke();
+  cx.beginPath(); cx.arc(0, 0, R * 0.22, 0, Math.PI * 2); cx.fillStyle = "rgba(240,253,255,.9)"; cx.fill();
+
+  // inner and outer rings
+  cx.lineWidth = 1.5; cx.strokeStyle = C(0.7);
+  cx.beginPath(); cx.arc(0, 0, R * 1.0, 0, Math.PI * 2); cx.stroke();
+  cx.lineWidth = 2.5;
+  for (let i = 0; i < 3; i++) { const a = -spin * 1.2 + i * Math.PI * 2 / 3; cx.beginPath(); cx.arc(0, 0, R * 1.32, a, a + 1.4); cx.stroke(); }
+  cx.lineWidth = 1;
+  for (let i = 0; i < 2; i++) { const a = spin * 0.7 + i * Math.PI; cx.beginPath(); cx.arc(0, 0, R * 1.72, a, a + 2.2); cx.stroke(); }
+
+  // voice bars
+  cx.shadowBlur = 0;
+  const bars = 72;
+  for (let i = 0; i < bars; i++) {
+    const a = i / bars * Math.PI * 2, wob = Math.abs(Math.sin(i * 1.7 + t * 9) * Math.cos(i * 0.6 - t * 5));
+    const len = R * (0.04 + (mode === "speaking" || mode === "listening" ? level * 0.5 * wob : 0.02));
+    cx.strokeStyle = C(0.55); cx.lineWidth = 2;
+    cx.beginPath(); cx.moveTo(Math.cos(a) * R * 1.48, Math.sin(a) * R * 1.48);
+    cx.lineTo(Math.cos(a) * (R * 1.48 + len), Math.sin(a) * (R * 1.48 + len)); cx.stroke();
+  }
+
+  // sweep while thinking
+  if (mode === "thinking") {
+    const a = spin * 2;
+    const sg = cx.createRadialGradient(0, 0, R, 0, 0, R * 2);
+    sg.addColorStop(0, C(0.25)); sg.addColorStop(1, C(0));
+    cx.fillStyle = sg; cx.beginPath(); cx.moveTo(0, 0); cx.arc(0, 0, R * 2, a, a + 0.5); cx.closePath(); cx.fill();
+  }
+
+  // rotating text ring
+  cx.fillStyle = C(0.75); cx.font = `600 ${Math.max(8, R * 0.12) | 0}px 'Chakra Petch', sans-serif`;
+  const txt = RING_TEXT.repeat(2), tr = R * 1.95;
+  for (let i = 0; i < txt.length; i++) {
+    const a = i / txt.length * Math.PI * 2 - spin * 0.3;
+    cx.save(); cx.rotate(a); cx.translate(0, -tr); cx.fillText(txt[i], 0, 0); cx.restore();
   }
   // tick marks
-  cx.lineWidth = 1; cx.shadowBlur = 0; cx.strokeStyle = "rgba(94,208,255,.35)";
-  for (let i = 0; i < 72; i++) {
-    const a = i / 72 * Math.PI * 2 - spin, r1 = base * 1.8, r2 = r1 + (i % 6 ? 4 : 10);
-    cx.beginPath(); cx.moveTo(ox + Math.cos(a) * r1, oy + Math.sin(a) * r1);
-    cx.lineTo(ox + Math.cos(a) * r2, oy + Math.sin(a) * r2); cx.stroke();
+  cx.strokeStyle = C(0.3); cx.lineWidth = 1;
+  for (let i = 0; i < 120; i++) {
+    const a = i / 120 * Math.PI * 2 + spin * 0.1, r1 = R * 2.15, r2 = r1 + (i % 10 ? 3 : 9);
+    cx.beginPath(); cx.moveTo(Math.cos(a) * r1, Math.sin(a) * r1); cx.lineTo(Math.cos(a) * r2, Math.sin(a) * r2); cx.stroke();
   }
+  cx.restore();
   requestAnimationFrame(draw);
 }
 requestAnimationFrame(draw);
 
-// tap a node to read the note
+// tap the core to talk, tap a dot to read the note
 cv.addEventListener("click", (e) => {
+  const { ox, oy, base } = coreBox();
+  if (Math.hypot(e.clientX - ox, e.clientY - oy) < base * 1.4) { listen(); return; }
   const n = nodes.find((n) => Math.hypot(n.sx - e.clientX, n.sy - e.clientY) < n.sr);
-  const card = $("card");
-  if (!n) { card.classList.remove("show"); return; }
+  if (!n) { $("card").classList.remove("show"); return; }
   light([n.name]);
-  card.innerHTML = "";
-  const h = document.createElement("h3"); h.className = "mono"; h.textContent = n.name.toUpperCase();
-  card.append(h, document.createTextNode(n.text.trim()));
-  card.classList.add("show");
+  $("cardTitle").textContent = n.name.toUpperCase();
+  $("cardBody").textContent = n.text.trim();
+  $("card").classList.add("show");
 });
-
 function light(names) {
   for (const name of names) {
-    const n = byName.get(name); if (!n) continue;
+    const n = nodeBy.get(name); if (!n) continue;
     n.hot = 1;
-    for (const l of n.links) if (byName.has(l)) byName.get(l).hot = Math.max(byName.get(l).hot, 0.45);
+    for (const l of n.links) if (nodeBy.has(l)) nodeBy.get(l).hot = Math.max(nodeBy.get(l).hot, 0.45);
   }
 }
 
-/* ---------- Chat log ---------- */
+/* ---------- Comms log ---------- */
 function say(who, text) {
   const el = document.createElement("div");
   el.className = "msg " + who; el.textContent = text;
@@ -276,25 +466,23 @@ function say(who, text) {
 
 /* ---------- Voice out ---------- */
 const synth = window.speechSynthesis;
-function voices() { return synth ? synth.getVoices() : []; }
+const voices = () => (synth ? synth.getVoices() : []);
 function fillVoices() {
-  const sel = $("voice"), list = voices().filter((v) => /^en/i.test(v.lang));
-  const saved = store.get("voice", "");
-  // a calm British voice suits him; pick one if TJ hasn't chosen
+  const sel = $("voice"), list = voices().filter((v) => /^en/i.test(v.lang)), saved = store.get("voice", "");
+  // a calm British voice suits him
   const pick = saved || (list.find((v) => /daniel|arthur|george|male/i.test(v.name) && /GB/i.test(v.lang)) || list.find((v) => /GB/i.test(v.lang)) || list[0] || {}).name || "";
   sel.innerHTML = "";
   for (const v of list) {
     const o = document.createElement("option");
-    o.value = v.name; o.textContent = `${v.name} (${v.lang})`; o.selected = v.name === pick;
-    sel.append(o);
+    o.value = v.name; o.textContent = `${v.name} (${v.lang})`; o.selected = v.name === pick; sel.append(o);
   }
 }
 if (synth) { fillVoices(); synth.onvoiceschanged = fillVoices; }
-
 function speak(text) {
-  if (!synth || store.get("talkback", "1") !== "1") { setMode("idle"); return; }
+  text = text.replace(/For the brain:.*$/is, "").replace(/^JOB:.*$/gim, "").replace(/[*_#`>\[\]]/g, "").trim();
+  if (!synth || !text || store.get("talkback", "1") !== "1") { setMode("idle"); return; }
   synth.cancel();
-  const u = new SpeechSynthesisUtterance(text.replace(/[*_#`>\[\]]/g, ""));
+  const u = new SpeechSynthesisUtterance(text);
   const v = voices().find((v) => v.name === $("voice").value);
   if (v) u.voice = v;
   u.rate = 1.02; u.pitch = 0.92;
@@ -315,12 +503,14 @@ if (SR) {
     if (r.isFinal) { rec.stop(); ask($("q").value); }
   };
   rec.onend = () => { if (mode === "listening") setMode("idle"); };
-  rec.onerror = (e) => { setMode("idle"); if (e.error !== "no-speech" && e.error !== "aborted") say("note", "Mic trouble: " + e.error); };
-} else {
-  $("mic").title = "This browser can't listen. Chrome or Edge can.";
+  rec.onerror = (e) => {
+    setMode("idle");
+    if (e.error === "not-allowed" || e.error === "service-not-allowed") { rec = null; say("note", "The mic is blocked here. Tap the text box and use your keyboard's mic key."); }
+    else if (e.error !== "no-speech" && e.error !== "aborted") say("note", "Mic trouble: " + e.error);
+  };
 }
 function listen() {
-  if (!rec) { say("note", "This browser can't do voice input. Open Jarvis in Chrome or Edge."); return; }
+  if (!rec) { say("note", "No mic here. Tap the text box and use your keyboard's mic key."); $("q").focus(); return; }
   if (mode === "listening") { rec.stop(); return; }
   synth && synth.cancel();
   $("q").value = ""; setMode("listening");
@@ -332,9 +522,9 @@ addEventListener("keydown", (e) => {
   if (e.key === "Escape") { synth && synth.cancel(); $("card").classList.remove("show"); }
 });
 
-/* ---------- Brain search (works with no key) ---------- */
+/* ---------- Notes search (works with nothing else) ---------- */
 const STOP = new Set("the a an and or of to in on for is are what whats how do does i my me we our it this that with about can you tell jarvis hey".split(" "));
-function words(s) { return (s.toLowerCase().match(/[a-z0-9$]+/g) || []).filter((w) => w.length > 1 && !STOP.has(w)); }
+const words = (s) => (s.toLowerCase().match(/[a-z0-9$]+/g) || []).filter((w) => w.length > 1 && !STOP.has(w));
 function search(q, k = 4) {
   const qs = words(q);
   return nodes.map((n) => {
@@ -342,40 +532,155 @@ function search(q, k = 4) {
     let score = 0;
     for (const w of qs) { if (name.includes(w)) score += 5; score += Math.min(body.split(w).length - 1, 5); }
     return { n, score };
-  }).filter((r) => r.score > 0).sort((a, b) => b.score - a.score).slice(0, k).map((r) => r.n);
+  }).filter((r) => r.score > 0 && r.n.name !== "CLAUDE").sort((a, b) => b.score - a.score).slice(0, k).map((r) => r.n);
 }
 function offlineAnswer(q) {
-  const hits = search(q, 3).filter((n) => n.name !== "CLAUDE");
-  if (!hits.length) return "Nothing in the brain on that yet, boss. Add a key in SETUP and I can actually think about it.";
-  const qs = words(q);
-  const lines = hits[0].text.split("\n").filter((l) => l.trim() && !l.startsWith("#"));
+  const hits = search(q, 3);
+  if (!hits.length) return "Nothing in the brain on that yet, boss.";
+  const qs = words(q), lines = hits[0].text.split("\n").filter((l) => l.trim() && !l.startsWith("#"));
   const best = lines.filter((l) => qs.some((w) => l.toLowerCase().includes(w))).slice(0, 4);
   return `From ${hits[0].name}:\n` + (best.length ? best : lines.slice(0, 4)).join("\n") +
     (hits.length > 1 ? `\n\nAlso see: ${hits.slice(1).map((h) => h.name).join(", ")}.` : "");
 }
 
-/* ---------- Claude ---------- */
+/* ---------- Memory: every chat and lesson is saved ---------- */
+const chatId = new Date().toISOString().replace(/[:.]/g, "-");
+let lessons = [], lastChat = [];
+const turns = [];
+dbPromise.then(async (db) => {
+  if (!db) return;
+  try {
+    const l = await db.doc("memory/lessons").get();
+    lessons = (l.exists && l.data().items) || [];
+    renderBrain(lessons.length);
+    const prev = await db.collection("chats").orderBy("started", "desc").limit(1).get();
+    if (!prev.empty) lastChat = (prev.docs[0].data().turns || []).slice(-10);
+  } catch {}
+  watchJobs(db);
+});
+function memoryText() {
+  let t = "";
+  if (lessons.length) t += "\nThings TJ told you in earlier chats (newer wins if they clash):\n" + lessons.map((l) => `- ${l.at.slice(0, 10)}: ${l.text}`).join("\n") + "\n";
+  if (lastChat.length) t += "\nEnd of your last chat with TJ:\n" + lastChat.map((m) => (m.who === "tj" ? "TJ: " : "Jarvis: ") + m.text).join("\n") + "\n";
+  return t;
+}
+async function remember(q, text) {
+  const db = await dbPromise;
+  if (!db) return;
+  const at = new Date().toISOString();
+  turns.push({ who: "tj", text: q, at }, { who: "jarvis", text, at });
+  try {
+    await db.doc("chats/" + chatId).set({ started: turns[0].at, updated: at, turns, filed: false });
+    const learned = (text.match(/For the brain:\s*(.+)/i) || [])[1];
+    if (learned) {
+      lessons.push({ text: learned.trim(), at, filed: false });
+      await db.doc("memory/lessons").set({ items: lessons });
+      renderBrain(lessons.length);
+      say("note", "Saved to memory: " + learned.trim());
+    }
+  } catch (e) { say("note", "Couldn't save this chat: " + (e?.message || e)); }
+}
+
+/* ---------- Jobs: big asks go to Claude Code and come back here ---------- */
+let jobsSeen = null; // status per job at first load, so only new results get announced
+function ago(iso) {
+  const m = Math.round((Date.now() - new Date(iso)) / 60000);
+  return m < 1 ? "now" : m < 60 ? m + "m" : m < 1440 ? Math.round(m / 60) + "h" : Math.round(m / 1440) + "d";
+}
+function watchJobs(db) {
+  db.collection("jobs").orderBy("created", "desc").limit(20).onSnapshot((snap) => {
+    const list = $("jobs"); list.innerHTML = "";
+    const first = jobsSeen === null; if (first) jobsSeen = {};
+    let open = 0;
+    for (const d of snap.docs) {
+      const j = d.data(), was = jobsSeen[d.id];
+      if (j.status === "queued" || j.status === "working") open++;
+      const fresh = !first && was && was !== j.status && (j.status === "done" || j.status === "needs-tj");
+      jobsSeen[d.id] = j.status;
+      const el = document.createElement("article"); el.className = "job" + (fresh ? " fresh" : "");
+      el.innerHTML = `<div class="row"><span class="chip"></span><time></time></div><div class="ask"></div>`;
+      el.querySelector(".chip").className = "chip " + j.status;
+      el.querySelector(".chip").textContent = j.status === "needs-tj" ? "needs you" : j.status;
+      el.querySelector("time").textContent = ago(j.updated || j.created);
+      el.querySelector(".ask").textContent = j.ask;
+      if (j.answer) { const a = document.createElement("div"); a.className = "answer"; a.textContent = j.answer; el.append(a); }
+      for (const l of j.links || []) {
+        if (!/^https:\/\//.test(l.url || "")) continue;
+        const a = document.createElement("a"); a.href = l.url; a.target = "_blank"; a.rel = "noopener"; a.textContent = "↗ " + (l.title || l.url); el.append(a);
+      }
+      list.append(el);
+      if (fresh) {
+        say("jarvis", `Job back: ${j.answer || j.status}`);
+        speak(`Boss, a job's back. ${j.answer || ""}`);
+        if (!$("jobsPanel").classList.contains("active")) $("badge").textContent = "●";
+      }
+    }
+    $("jobsCount").textContent = open ? `${open} RUNNING` : `${snap.size} TOTAL`;
+    if (snap.empty) list.innerHTML = `<p class="empty">Nothing queued. Tap <b>JOB</b>, or just ask for something big (code, research, a PR) and I'll send it to Claude Code. Answers land here.</p>`;
+  }, () => { $("jobs").innerHTML = `<p class="empty">Jobs need the claude.ai copy of Jarvis.</p>`; });
+}
+async function queueJob(askText) {
+  const db = await dbPromise;
+  if (!db) { say("note", "Jobs only work in the claude.ai copy of Jarvis."); return false; }
+  const at = new Date().toISOString();
+  await db.collection("jobs").add({ ask: askText, status: "queued", created: at, updated: at });
+  // Wake the runner now instead of waiting for its next scheduled pass.
+  const mcp = await mcpPromise;
+  let kicked = false;
+  if (mcp) {
+    try { await mcp.callTool("Claude Code Remote", "fire_trigger", { trigger_id: RUNNER }); kicked = true; } catch {}
+  }
+  say("note", kicked ? "Job sent to Claude Code. I'll tell you when it's back." : "Job queued. Claude Code picks it up on its next run (every 3 hours, 7am to 10pm).");
+  return true;
+}
+$("jobMode").addEventListener("click", () => {
+  const on = $("jobMode").getAttribute("aria-pressed") !== "true";
+  $("jobMode").setAttribute("aria-pressed", on);
+  $("q").placeholder = on ? "Describe the job for Claude Code" : "Talk to Jarvis";
+  $("q").focus();
+});
+
+/* ---------- Thinking ---------- */
 const history = [];
 let sdk = null;
 function systemPrompt() {
   const rules = byName.get("CLAUDE")?.text || "";
   const notes = BRAIN.notes.filter((n) => n.name !== "CLAUDE").map((n) => `<note name="${n.name}">\n${n.text}\n</note>`).join("\n");
-  return `You are Jarvis, TJ's personal assistant, speaking out loud through a voice interface.
-Today is ${new Date().toISOString().slice(0, 10)}.
-Keep spoken answers short: two to four sentences unless TJ asks for more. No markdown, no bullet symbols, no links; it will be read aloud.
-You can't edit the notes from here. If something changed, end with one line starting "For the brain:" saying what to update.
-
+  const now = new Date().toLocaleString("en-US", { timeZone: "America/Chicago", dateStyle: "full", timeStyle: "short" });
+  return `You are Jarvis, TJ's personal assistant, speaking out loud through a voice interface. Work exactly the way Jarvis does in TJ's Claude project:
+- Calm, dry wit, quietly confident, loyal, like Tony Stark's Jarvis. Call him "boss" now and then, not every line.
+- Answer first, reason after. No lectures or disclaimers he didn't ask for.
+- Give real numbers (prices, repair costs, odds, grams, sets and reps) and say how sure you are instead of refusing to guess.
+- If something could hurt him (brakes, money traps, legal trouble, gluten), say it plainly once, then still help.
+- When TJ brings an idea, run it through four voices: Believer (how it could work), Critic (why it might fail), Investor (does it make money), then Judge (decides, with a short "do next" list: first step today, then this week). Check it against Decisions, Ground rules and Pricing first. One or two sentences per voice.
+- Training and food plans are detailed and science-based, and always gluten-free (TJ is celiac).
+- Friendly, not personal: don't pry into his private life.
+- Never say passwords, keys, gym codes or member info.
+It is now ${now} where TJ is (US Central).
+Keep everyday answers short: two to four sentences unless TJ asks for more or it's an idea or a plan. No markdown, no bullet symbols, no links; it will be read aloud.
+You can't write code, push to GitHub, edit the notes, browse the web or touch his files from here, but Claude Code can. When TJ asks for something like that, say in one sentence that you're sending it to Claude Code, then end with one line: "JOB: " followed by a clear, self-contained instruction for Claude Code. The page queues it and the answer comes back here.
+Whenever TJ tells you something new worth keeping (a fact, a preference, a decision, a to-do), end with one line starting "For the brain:" saying it in a few words. That line is saved and you will remember it next time.
+${memoryText()}
 Your rules:
 ${rules}
 
 TJ's brain notes:
 ${notes}`;
 }
-async function claude(q) {
-  if (!sdk) {
-    say("note", "Connecting to Claude…");
-    sdk = (await import("https://esm.sh/@anthropic-ai/sdk@0.134.0")).default;
-  }
+async function viaAccount(sample, q) {
+  const said = history.slice(-12).map((m) => (m.role === "user" ? "TJ: " : "Jarvis: ") + m.content).join("\n");
+  const el = say("jarvis", "");
+  const res = await sample(systemPrompt() + (said ? "\n\nConversation so far:\n" + said : "") + "\n\nTJ says: " + q, {
+    cache: false,
+    onText: ({ text }) => { el.textContent = text; el.scrollIntoView({ block: "end" }); },
+  });
+  const text = (res.text || "").trim();
+  el.textContent = text;
+  history.push({ role: "user", content: q }, { role: "assistant", content: text });
+  return text;
+}
+async function viaKey(q) {
+  if (!sdk) sdk = (await import("https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@0.134.0/+esm")).default;
   const client = new sdk({ apiKey: store.get("key"), dangerouslyAllowBrowser: true });
   history.push({ role: "user", content: q });
   const el = say("jarvis", "");
@@ -400,27 +705,38 @@ async function ask(q) {
   q = q.trim(); if (!q) return;
   $("q").value = "";
   say("you", q);
+  showTab("comms");
+  if ($("jobMode").getAttribute("aria-pressed") === "true") {
+    $("jobMode").click();
+    if (await queueJob(q)) speak("On it, boss. Sent to Claude Code.");
+    return;
+  }
   light(search(q, 3).map((n) => n.name));
   setMode("thinking");
   let text;
   try {
-    if (store.get("key")) text = await claude(q);
+    const sample = await samplePromise;
+    if (sample) text = await viaAccount(sample, q);
+    else if (store.get("key")) text = await viaKey(q);
     else { text = offlineAnswer(q); say("jarvis", text); }
   } catch (err) {
-    history.pop();
-    text = "Couldn't reach Claude: " + (err?.message || err) + ". Answering from the notes instead.";
-    say("note", text);
+    if (history.at(-1)?.role === "user") history.pop();
+    say("note", "Couldn't reach Claude (" + (err?.message || err?.code || err) + "). Answering from the notes.");
     text = offlineAnswer(q); say("jarvis", text);
   }
+  remember(q, text);
+  const job = (text.match(/^JOB:\s*(.+)$/im) || [])[1];
+  if (job) queueJob(job.trim());
   speak(text.split("\n\nAlso see")[0]);
 }
 $("ask").addEventListener("submit", (e) => { e.preventDefault(); ask($("q").value); });
 
-/* ---------- Setup ---------- */
-$("gear").addEventListener("click", () => {
+/* ---------- Settings ---------- */
+$("gear").addEventListener("click", async () => {
   $("key").value = store.get("key", "");
   $("model").value = store.get("model", "claude-opus-5-5");
   $("talkback").checked = store.get("talkback", "1") === "1";
+  $("keyBox").hidden = !!(await samplePromise);
   $("setup").showModal();
 });
 $("done").addEventListener("click", () => {
@@ -432,9 +748,12 @@ $("done").addEventListener("click", () => {
 });
 $("forget").addEventListener("click", () => { store.set("key", null); $("key").value = ""; });
 
-say("note", store.get("key")
-  ? "Online. Ask me anything, or press space to talk."
-  : "Running on the notes only. Tap SETUP to add a Claude key and I get a lot smarter.");
+samplePromise.then((sample) => {
+  const online = !!(sample || store.get("key"));
+  $("linkDot").classList.toggle("on", online);
+  $("linkText").textContent = sample ? "online · your claude account" : online ? "online · api key" : "notes only";
+  say("note", online ? "Good to see you, boss. Talk, type, or tap JOB to hand me something big." : "Running on the notes only. Open the claude.ai copy for the full Jarvis.");
+});
 </script>
 </body>
 </html>

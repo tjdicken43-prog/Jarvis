@@ -18,7 +18,7 @@ Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's n
 - [ ] Texting (Twilio) and alert email on the domain.
 
 ## Jarvis
-- [ ] Try the HUD: open `hud/index.html` in Chrome, press ◉ and talk. See [[Jarvis]].
+- [ ] Try the HUD on the phone: https://claude.ai/artifact/6BgK9h8LVgz3ondg1QqzSP. See [[Jarvis]].
 - [ ] Decide on an Anthropic API key for the HUD (pay as you go, about 1 cent a question on Opus).
 - [ ] Decide if Jarvis gets a movie-grade voice (ElevenLabs, about $5 to $22 a month).
 - [ ] Pick how Jarvis controls music: Spotify connector, desktop computer use, or phone shortcut. See [[Jarvis]].

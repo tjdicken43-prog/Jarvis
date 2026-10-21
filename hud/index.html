@@ -37,6 +37,11 @@
     --faint: rgba(255, 154, 60, .12); --line: rgba(255, 154, 60, .26); --glass: rgba(30, 17, 8, .72); }
   :root[data-theme="showoff"] { --bg: #020108; --ink: #f2eeff; --dim: #8a83b0; --arc: #9fe8ff; --arc-rgb: 159, 232, 255; --gold: #ff7ae6;
     --faint: rgba(170, 140, 255, .14); --line: rgba(170, 140, 255, .3); --glass: rgba(10, 6, 26, .66); }
+  /* Show off cinema: left alone, the controls fade away and the brain takes the whole screen; any tap brings them back */
+  .mid > .panel, .center > :not(.slot), #ask { transition: opacity .9s ease; }
+  body.cinema .mid > .panel, body.cinema .center > :not(.slot), body.cinema #ask { opacity: 0; pointer-events: none; }
+  :root[data-theme="showoff"] body { background: radial-gradient(60% 45% at 18% 22%, rgba(150, 90, 255, .16), transparent 70%),
+    radial-gradient(55% 40% at 85% 70%, rgba(60, 200, 255, .13), transparent 70%), radial-gradient(45% 35% at 50% 95%, rgba(255, 90, 210, .1), transparent 70%), var(--bg); }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); overflow: hidden; font: 15px/1.5 var(--body); }
   canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
@@ -386,9 +391,13 @@ for (const n of nodes) n.deg = edges.filter(([a, b]) => a === n || b === n).leng
 edges.forEach((e, i) => { e.seed = (i * 0.618) % 1; });
 const TYPE_COLOR = { hub: "#4fd8ff", rules: "#ff5b4a", log: "#ffb23e", list: "#ffb23e", week: "#9b8cff", personal: "#5cf2a5" };
 
+let cinemaK = 0; // 0 = normal layout, 1 = Show off cinema (brain centred and bigger)
 function coreBox() {
   const r = $("slot").getBoundingClientRect();
-  return { ox: r.left + r.width / 2, oy: r.top + r.height / 2, base: Math.max(34, Math.min(r.width, r.height) * 0.21) };
+  const box = { ox: r.left + r.width / 2, oy: r.top + r.height / 2, base: Math.max(34, Math.min(r.width, r.height) * 0.21) };
+  if (cinemaK < 0.001) return box;
+  const k = cinemaK * cinemaK * (3 - 2 * cinemaK), big = Math.max(box.base, Math.min(W, H * 0.62) * 0.16);
+  return { ox: box.ox + (W / 2 - box.ox) * k, oy: box.oy + (H * 0.46 - box.oy) * k, base: box.base + (big - box.base) * k };
 }
 // Linked notes pull together, every note pushes the others away, and all of them stay near the sphere's skin.
 function physics() {
@@ -683,8 +692,8 @@ const STARS = Array.from({ length: 170 }, (_, i) => { const r = rng(300 + i); re
 function warp(ox, oy) {
   const sp = 0.0022 + level * 0.012 + (mode === "thinking" ? 0.01 : 0);
   cx.lineCap = "round";
-  for (const s of STARS) {
-    const z0 = s.z; s.z -= sp;
+  for (let i = 0; i < STARS.length; i += lowPower ? 2 : 1) {
+    const s = STARS[i], z0 = s.z; s.z -= sp;
     const X = ox + s.x * W * 0.25 / s.z, Y = oy + s.y * H * 0.25 / s.z;
     if (s.z <= 0.03 || X < -20 || X > W + 20 || Y < -20 || Y > H + 20) { s.z = 1; s.x = Math.random() * 2 - 1; s.y = Math.random() * 2 - 1; continue; }
     const X0 = ox + s.x * W * 0.25 / z0, Y0 = oy + s.y * H * 0.25 / z0, near = 1 - s.z;
@@ -692,15 +701,6 @@ function warp(ox, oy) {
     cx.beginPath(); cx.moveTo(X0, Y0); cx.lineTo(X, Y); cx.stroke();
   }
   cx.lineCap = "butt";
-}
-function nebula(ox, oy) {
-  for (const [dx, dy, r, h] of [[-0.35, -0.2, 0.75, 275], [0.4, 0.25, 0.65, 195], [0.05, 0.45, 0.5, 320]]) {
-    cx.fillStyle = cached(`neb${ox}|${oy}|${W}|${h}`, () => {
-      const g = cx.createRadialGradient(ox + dx * W, oy + dy * H, 0, ox + dx * W, oy + dy * H, r * Math.max(W, H));
-      g.addColorStop(0, `rgba(${hue(h)},.10)`); g.addColorStop(1, `rgba(${hue(h)},0)`); return g;
-    });
-    cx.fillRect(0, 0, W, H);
-  }
 }
 function drawPenteract() {
   const pv = penteract(t).map(([x, y, z, v]) => [...view(x, y, z), v]);
@@ -750,19 +750,29 @@ function satellites(ox, oy) {
     const r = (on ? 7 : 4.5) * f;
     cx.globalAlpha = al; cx.fillStyle = `rgb(${c})`; cx.beginPath(); cx.moveTo(x, y - r); cx.lineTo(x + r, y); cx.lineTo(x, y + r); cx.lineTo(x - r, y); cx.closePath(); cx.fill();
     cx.strokeStyle = `rgba(${c},.8)`; cx.lineWidth = 1; cx.beginPath(); cx.arc(x, y, r + 4 + Math.sin(t * 3 + i) * 1.5, 0, Math.PI * 2); cx.stroke();
-    if (z < 0.35 || on) { const label = s.name(); cx.fillStyle = "rgba(2,1,8,.7)"; const w = cx.measureText(label).width + 10; cx.fillRect(x - w / 2, y + r + 5, w, 13); cx.fillStyle = on ? "#fff" : `rgba(${c},.95)`; cx.fillText(label, x, y + r + 15); }
+    if (on || (cinemaK > 0.9 && z < 0)) {
+      const label = s.name(), w = cx.measureText(label).width + 10, lx = Math.max(w / 2 + 4, Math.min(W - w / 2 - 4, x));
+      cx.fillStyle = "rgba(2,1,8,.75)"; cx.fillRect(lx - w / 2, y + r + 5, w, 13); cx.fillStyle = on ? "#fff" : `rgba(${c},.95)`; cx.fillText(label, lx, y + r + 15);
+    }
     cx.globalAlpha = 1;
   });
 }
 
 // the guided tour: when you leave it alone, Jarvis walks through every system, then every note
 const tour = { i: -1, at: -99, shock: -99, cap: null, sys: null };
-let lastInput = -99, capBox = null;
-cv.addEventListener("pointerdown", () => { lastInput = t; }, { passive: true });
+let lastInput = 0, capBox = null; // the controls stay up for the first few seconds after opening
+cv.addEventListener("pointerdown", () => { wokeFromCinema = cinema; lastInput = t; runCinema(); }, { passive: true });
 addEventListener("wheel", () => { lastInput = t; }, { passive: true });
 function firstLine(md) {
   const l = md.replace(/^---[\s\S]*?---\s*/, "").split("\n").map((x) => x.trim()).find((x) => x && !x.startsWith("#")) || "";
   return l.replace(/^[-*] (\[[ x]\] )?/, "").replace(/\[\[|\]\]|\*\*|`/g, "");
+}
+let cinema = false, wokeFromCinema = false;
+addEventListener("keydown", () => { lastInput = t; });
+function runCinema() {
+  const want = SHOW() && t - lastInput > 14 && mode === "idle" && !$("card").classList.contains("show") && !document.querySelector("dialog[open]") && !reduce;
+  if (want !== cinema) { cinema = want; document.body.classList.toggle("cinema", want); uiAt = -1; }
+  cinemaK += ((cinema ? 1 : 0) - cinemaK) * 0.03;
 }
 function runTour() {
   const busy = t - lastInput < 9 || $("card").classList.contains("show") || mode !== "idle" || boot < 1;
@@ -788,7 +798,8 @@ function caption(ox, oy, R) {
   capBox = null;
   const c = tour.cap; if (!c || t - tour.at > 6.2 || t - lastInput < 9) return;
   const age = t - tour.at, fade = Math.min(1, age * 3, (6.2 - age) * 2), w = Math.min(W - 24, 360), x0 = ox - w / 2;
-  let y0 = oy + R * 2.45; if (y0 + 62 > H - 130) y0 = Math.max(Math.min(110, H * 0.13), oy - R * 2.45 - 62);
+  const st = $("status").getBoundingClientRect();
+  let y0 = cinemaK > 0.5 ? H - 96 : st.top - 70;
   capBox = [x0, y0, x0 + w, y0 + 60];
   cx.globalAlpha = fade;
   cx.fillStyle = "rgba(4,2,14,.78)"; cx.fillRect(x0, y0, w, 60);
@@ -802,12 +813,13 @@ function caption(ox, oy, R) {
   if (line.length < c.line.length && age * 50 > c.line.length) line = line.replace(/\s*\S*$/, "…");
   cx.fillText(line, x0 + 10, y0 + 49);
   cx.globalAlpha = 1; cx.textAlign = "center";
+  if (cinemaK > 0.9) { cx.fillStyle = `rgba(${ARC},${0.35 + 0.25 * Math.sin(t * 2)})`; cx.font = "500 9px 'IBM Plex Mono', monospace"; cx.fillText("TAP ANYWHERE FOR THE CONTROLS", W / 2, H - 22); }
 }
 const glowCv = document.createElement("canvas"), glow = glowCv.getContext("2d");
 function bloom() {
-  const gw = Math.max(1, (W / 8) | 0), gh = Math.max(1, (H / 8) | 0);
+  const gw = Math.max(1, (W / 10) | 0), gh = Math.max(1, (H / 10) | 0);
   if (glowCv.width !== gw || glowCv.height !== gh) { glowCv.width = gw; glowCv.height = gh; }
-  glow.clearRect(0, 0, gw, gh); glow.drawImage(cv, 0, 0, gw, gh);
+  if (!(frame & 1)) { glow.clearRect(0, 0, gw, gh); glow.drawImage(cv, 0, 0, gw, gh); } // every other frame is plenty for a glow
   cx.save(); cx.globalCompositeOperation = "lighter"; cx.globalAlpha = 0.55; cx.imageSmoothingEnabled = true;
   cx.drawImage(glowCv, 0, 0, W, H); cx.restore();
 }
@@ -843,8 +855,6 @@ function coreShow(R, C, spin) {
   const p = cx.createRadialGradient(0, 0, 0, 0, 0, R * 0.3);
   p.addColorStop(0, "rgba(255,255,255,1)"); p.addColorStop(0.45, `rgba(${hue(300 + t * 30)},.85)`); p.addColorStop(1, `rgba(${hue(200)},0)`);
   cx.fillStyle = p; cx.beginPath(); cx.arc(0, 0, R * 0.3 * (1 + level * 0.25), 0, Math.PI * 2); cx.fill();
-  cx.fillStyle = "rgba(240,236,255,.75)"; cx.font = `500 ${Math.max(7, R * 0.075) | 0}px 'IBM Plex Mono', monospace`;
-  cx.fillText(`${nodes.length} NODES · ${edges.length} SYNAPSES · ${lessons.length} MEMORIES`, 0, -R * 1.2);
 }
 function loadShowStats() {
   dbPromise.then(async (db) => { if (!db) return; try { const q = await db.collection("chats").orderBy("started", "desc").limit(500).get(); showStats.chats = q.docs.length; } catch {} });
@@ -910,10 +920,16 @@ function cached(key, make) {
   if (!gradCache.has(key)) { if (gradCache.size > 40) gradCache.clear(); gradCache.set(key, make()); }
   return gradCache.get(key);
 }
+let frame = 0, lastNow = 0, frameMs = 16, lowPower = false;
 function draw() {
+  frame++;
+  // if the phone can't keep up in Show off, drop the glow pass and half the stars instead of stuttering
+  const now = performance.now(); if (lastNow) frameMs += (Math.min(100, now - lastNow) - frameMs) * 0.05; lastNow = now;
+  if (SHOW() && !lowPower && frame > 45 && frameMs > 26) lowPower = true;
   t += reduce ? 0.004 : 1 / 60;
   const { ox, oy, base } = coreBox();
   if (SHOW()) { ARC = hue(250 + Math.sin(t * 0.15) * 70); MODE_COLOR.idle = ARC.split(",").map(Number); MODE_COLOR.speaking = MODE_COLOR.idle.map((v) => Math.min(255, v + 40)); runTour(); }
+  runCinema();
   physics();
   if (cam.go && !grab) { // glide so the tapped note faces you
     let dy = cam.go[0] - cam.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
@@ -940,7 +956,7 @@ function draw() {
   const gx = (ox + cam.yaw * 60) % 44, gy = (oy + cam.pitch * 60) % 44;
   for (let x = gx; x < W; x += 44) { cx.beginPath(); cx.moveTo(x, 0); cx.lineTo(x, H); cx.stroke(); }
   for (let y = gy; y < H; y += 44) { cx.beginPath(); cx.moveTo(0, y); cx.lineTo(W, y); cx.stroke(); }
-  if (SHOW()) { nebula(ox, oy); if (!reduce) warp(ox, oy); }
+  if (SHOW() && !reduce) warp(ox, oy);
 
   // project everything
   for (const n of nodes) n.p = view(n.x, n.y, n.z);
@@ -1047,7 +1063,7 @@ function draw() {
   // near half: dust and notes in front of the core
   for (const n of sorted) if (n.p[2] <= 0) drawNode(n);
   dust.forEach((p, i) => { if (p[2] <= 0) dustDot(p, i); });
-  if (SHOW()) { satellites(ox, oy); shockwave(ox, oy, R); bloom(); }
+  if (SHOW()) { satellites(ox, oy); shockwave(ox, oy, R); if (!lowPower) bloom(); }
 
   // lessons waiting to be filed orbit the note they're about (gold sparks)
   lessons.filter((l) => !l.filed).forEach((l, i) => {
@@ -1120,6 +1136,7 @@ cv.addEventListener("pointerup", release);
 cv.addEventListener("pointercancel", release);
 cv.addEventListener("wheel", (e) => { e.preventDefault(); cam.zoom = Math.max(0.6, Math.min(2.4, cam.zoom * Math.exp(-e.deltaY * 0.0012))); }, { passive: false });
 function tap(px, py) {
+  if (wokeFromCinema) { wokeFromCinema = false; return; } // the first tap in Show off cinema just brings the controls back
   const { ox, oy, base } = coreBox();
   // nearest dot under the finger wins, front ones first
   const n = nodes.filter((n) => Math.hypot(n.sx - px, n.sy - py) < n.sr).sort((a, b) => a.sz - b.sz)[0];

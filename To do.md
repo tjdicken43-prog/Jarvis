@@ -9,7 +9,7 @@ Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's n
 - As of 2026-10-21: nothing is running at [[J Street Gym]] yet. TJ has no laptop and no Raspberry Pi, so until TJ says otherwise only software update checks and backend proficiency tests are possible.
 - [ ] Backend proficiency tests and software update checks for [[SecurityAI]] (backend first, no hardware yet).
 - [ ] On hold until hardware is set up: first nights at [[J Street Gym]] (run the checklist there).
-- [ ] Find the admin page Storage line and confirm it reads OK after the Oct 20 release (TJ could not find it, 2026-10-21) (check). See [[Release history]].
+- [ ] Storage line: admin page, sign in, "Render settings" box, first line. Good = green "Storage: /var/data — a separate disk...". If it says DATA_DIR is not set, every deploy wipes gym accounts and history; the Render disk needs the paid Starter plan (check price before paying). See [[Release history]].
 - [ ] Photo of an Ashbourne denied scan.
 
 ## Setup
@@ -28,8 +28,7 @@ Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's n
 - [ ] Finish the Gmail sign-in on claude.ai (Calendar and Drive are connected).
 - [ ] Set the Google Calendar time zone to Central (it shows UTC).
 - [ ] Brain ideas Jarvis offered 2026-10-21, not decided yet: a hardware readiness list (laptop, Pi, cards, capture stick, rough prices (check)), a backend proficiency checklist, a pilot pitch draft for [[J Street Gym]].
-- [ ] Confirm in a Jarvis backend session: TJ said in a phone chat (2026-10-21) that Jarvis may ask about his health when it helps. CLAUDE.md still says not to unless he brings it up, so it stays that way until he confirms (check).
-- [ ] Phone page opens on a blank chat every time (each open starts a new chat; saved chats are not shown). Store checked 2026-10-21: all 6 chats intact. Fix offered: reopen the last chat and add a past-chats list. Waiting on TJ's OK. See [[Jarvis]].
+- [ ] Idea: a past-chats list on the phone page (the recent chat now reopens; older ones are only in the store). See [[Jarvis]].
 - [ ] When TJ has a computer: sign in to Claude in Chrome there, then test one website job.
 
 ## Later

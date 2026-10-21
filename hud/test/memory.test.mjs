@@ -1,5 +1,5 @@
 // Checks the phone page's chat memory against a fake store that, like the real one, hands back frozen data.
-// 1) a reply with a "For the brain" line saves both the chat and the lesson (no "object is not extensible");
+// 1) a reply with a "For the brain" line saves both the chat and the lesson, as its own lessons/<id> record (no "object is not extensible");
 // 2) a reload (what tab or app switching can do on claude.ai) comes back to the same chat.
 // Run: node hud/test/memory.test.mjs   (needs Playwright; NODE_PATH=<global node_modules> for a global install,
 // CHROMIUM=/path if it can't find a browser)
@@ -53,7 +53,7 @@ await browser.close();
 
 const checks = [
   ["no save error", !/Couldn't save/.test(log1)],
-  ["lesson saved next to the old one", docs1["memory/lessons"]?.items?.length === 2],
+  ["lesson saved as its own record, old list kept", Object.keys(docs1).filter((k) => k.startsWith("lessons/")).length === 1 && docs1["memory/lessons"]?.items?.length === 1],
   ["chat saved", chats1.length === 1 && docs1[chats1[0]].turns.length === 2],
   ["same chat after reload", chats2.length === 1 && chats2[0] === chats1[0]],
   ["chat shown again after reload", log2.includes("I like lo-fi to fall asleep")],

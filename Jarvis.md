@@ -6,6 +6,9 @@ started: 2026-10-21
 
 TJ's goal: this brain grows into a real-life Jarvis. It stays current, gets more accurate and more useful, and helps with life as well as the businesses (music, chilling). Part of [[Start here]].
 
+## Names
+- 2026-10-21: TJ calls Claude Code "Jarvis backend" (his choice). The phone page is the front end; Jarvis backend does the jobs, PRs and note filing.
+
 ## What Jarvis can do now
 - Answer business questions from these notes ([[SecurityAI]], [[Basis]]).
 - Keep the notes tidy after each session (see [[CLAUDE]]).

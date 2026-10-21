@@ -164,9 +164,10 @@ window.BRAIN = {
    "name": "Personal",
    "type": "personal",
    "links": [
+    "J Street Gym",
     "Jarvis"
    ],
-   "text": "# Personal\n\nLife outside the businesses, so [[Jarvis]] can help with more than work. Nothing private about other people goes here.\n\n## Music\n- Favourite artists and playlists: (ask TJ)\n- What to play when working, training, chilling: (ask TJ)\n\n## Chilling\n- (ask TJ)\n"
+   "text": "# Personal\n\nLife outside the businesses, so [[Jarvis]] can help with more than work. Nothing private about other people goes here.\n\n## Routine\n- Time zone: US Central (America/Chicago).\n- Wakes at 6:00, showers first.\n- Works at [[J Street Gym]] 8:00 to 12:00 every morning.\n\n## Food\n- Celiac: everything gluten-free, no exceptions. Check sauces, oats and cross-contamination.\n- Likes detailed, science-based training and nutrition plans (sets, reps, grams, the why).\n\n## Music\n- Favourite artists and playlists: (ask TJ)\n- What to play when working, training, chilling: (ask TJ)\n\n## Chilling\n- (ask TJ)\n"
   },
   {
    "name": "Pricing",

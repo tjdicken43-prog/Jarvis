@@ -25,6 +25,8 @@ Calm, dry wit, quietly confident, loyal, like Tony Stark's Jarvis. Answers first
 Believer, Critic, Investor, then Judge with the decision and next steps. Set in [[CLAUDE]]. Friendly, not personal.
 
 ## Not yet (needs setup)
+- **Email, calendar and files**: Gmail, Google Calendar and Google Drive connectors offered on claude.ai 2026-10-21, not connected yet. Once on, Jarvis can triage mail, draft replies and keep the schedule.
+- **Chrome**: TJ says Claude in Chrome is set up, but no browser showed as connected on 2026-10-21 (check). Chrome open with the extension signed in should fix it. Then Jarvis can do website jobs (Render, Namecheap DNS, forms).
 - **HUD on the phone**: v1 runs on a computer. On the phone it needs hosting somewhere private; GitHub Pages would make the notes public, so not that. (check) where.
 - **Better voice**: the browser voice is free but robotic. ElevenLabs or OpenAI voices sound like the movie, about $5 to $22 a month. Needs TJ's OK before signing up.
 - **HUD brain key**: an Anthropic API key for the HUD (console.anthropic.com, pay as you go, about $5 lasts hundreds of questions). TJ's call; key lives in the browser, never in notes.
@@ -32,7 +34,7 @@ Believer, Critic, Investor, then Judge with the decision and next steps. Set in 
 - **Jarvis on the phone knows the brain**: plan is a claude.ai Project with this repo linked through GitHub, plus voice mode in the Claude app. Step-by-step page: https://claude.ai/artifact/BzFZipJaQvYBNEFX7Q3HLA (2026-10-21). Re-sync the project after the Monday tidy-up.
 - **Car noises**: describe the sound (squeal, grind, knock, click), when it happens (braking, turning, starting, speeding up) and where it comes from. A video helps if the app takes it. Jarvis gives likely causes and a cost range.
 - **Music**: a cloud session can't reach TJ's speakers or phone. Ways to get there: a Spotify connector on claude.ai (none connected yet), computer use in the Claude desktop app, or a phone shortcut. (check) which one TJ wants.
-- **Always updating on its own**: a scheduled weekly tidy-up (start the new week note, roll done items over, flag stale facts). Not set up yet.
+- **Always updating on its own**: the Monday [[Weekly tidy-up]] is built (2026-10-21). Runs Mondays 06:42 Central, first run 2026-10-26.
 - **Chilling**: playlists and moods TJ likes. Add them to a [[Personal]] note once TJ shares them.
 
 ## Secrets

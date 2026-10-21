@@ -1518,6 +1518,7 @@ samplePromise.then((sample) => {
   $("linkText").textContent = sample ? "online · your claude account" : online ? "online · api key" : "notes only";
   say("note", online ? "Good to see you, boss. Talk, type, or tap JOB to hand me something big." : "Running on the notes only. Open the claude.ai copy for the full Jarvis.");
   // quick starts, so an empty screen still has somewhere to go
+  if (turns.length) return; // a resumed chat already fills the screen
   const chips = document.createElement("div"); chips.className = "chips";
   for (const q of ["What's on my plate today?", "Brief me on SecurityAI", "One idea to make money this week", "What did you learn about me?"]) {
     const b = document.createElement("button"); b.type = "button"; b.textContent = q;

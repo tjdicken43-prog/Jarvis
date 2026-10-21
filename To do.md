@@ -27,7 +27,6 @@ Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's n
 - [ ] Tell Claude favourite music and chill routines for [[Personal]].
 - [ ] Connect Gmail, Google Calendar and Google Drive on claude.ai (cards in the Jarvis project).
 - [ ] Get Chrome showing as connected: Chrome open, Claude extension signed in. Then test one website job.
-- [ ] Tell Claude the first-version feature list for [[Basis]].
 
 ## Later
 - [ ] Staff and cleaner schedules (after real nights).

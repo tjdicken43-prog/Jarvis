@@ -8,7 +8,7 @@ Watches a gym's entrance camera during the hours the gym picks. When more people
 
 ## Where things are
 - Website: gym-security.onrender.com (Render). Custom domain bought on Namecheap, DNS being set up.
-- Code: GitHub repo "Gym-security". TJ uploads; Claude prepares the zip.
+- Code: GitHub repo "Gym-security". Claude pushes after TJ's OK, once per session. See [[CLAUDE]].
 - First gym: [[J Street Gym]] (pilot).
 
 ## How it works

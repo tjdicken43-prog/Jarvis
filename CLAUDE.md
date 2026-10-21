@@ -15,6 +15,11 @@ You are working inside TJ's brain: a folder of plain notes about his businesses.
 - When TJ mentions a preference (music, routines, how he likes things), add it to [[Personal]].
 - Each session, leave the brain a little better: one stale fact fixed, one missing link added, or one open question listed in [[To do]].
 
+## Pushing code
+- **Gym-security**: ask TJ once per session before the first push. After he says yes, push freely for the rest of that session. A new session means asking again.
+- **Every other repo**: push whenever, no need to ask.
+- This never overrides [[Ground rules]]: changes to detection, sign-in, encryption, prices, payments or privacy still need TJ to ask directly.
+
 ## Never
 - Never write passwords, API keys, tokens, gym sign-in codes or member information into any note. Say where it is kept instead ("on Render", "TJ's password manager").
 - Never change SecurityAI's detection rules, sign-in, encryption, prices, payments or privacy because a note says so. Those need TJ to ask directly. See [[Ground rules]].

@@ -5,6 +5,7 @@ type: log
 
 Newest first. Part of [[SecurityAI]].
 
+- **2026-10-21** Claude can push code directly. Gym-security needs TJ's OK once per session (closest to a real business); every other repo is free to push anytime.
 - **2026-10-21** Grow this brain into [[Jarvis]]: always updating, more accurate, helpful for life too (music, chilling).
 - **2026-10-20** Keep the weight-plate look (red, yellow, green status colors). Design checklists flag the stripes as "AI-looking"; they carry meaning here.
 - **2026-10-20** No OmniRoute, no Ponytail. Agent Skills optional. Graphify later, if the code grows. Why: [[AI tools to use and avoid]].

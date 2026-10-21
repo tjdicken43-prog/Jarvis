@@ -9,6 +9,7 @@ Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's n
 - As of 2026-10-21: nothing is running at [[J Street Gym]] yet. TJ has no laptop and no Raspberry Pi, so until TJ says otherwise only software update checks and backend proficiency tests are possible.
 - [ ] Backend proficiency tests and software update checks for [[SecurityAI]] (backend first, no hardware yet).
 - [ ] On hold until hardware is set up: first nights at [[J Street Gym]] (run the checklist there).
+- [ ] Find the admin page Storage line and confirm it reads OK after the Oct 20 release (TJ could not find it, 2026-10-21) (check). See [[Release history]].
 - [ ] Photo of an Ashbourne denied scan.
 
 ## Setup

@@ -7,7 +7,7 @@ Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's n
 
 ## Now
 - As of 2026-10-21: nothing is running at [[J Street Gym]] yet. TJ has no laptop and no Raspberry Pi, so until TJ says otherwise only software update checks and backend proficiency tests are possible.
-- [ ] Backend proficiency tests and software update checks for [[SecurityAI]] (backend first, no hardware yet).
+- [ ] Backend proficiency tests and software update checks for [[SecurityAI]]: first run done 2026-10-21, all passed. Repeat each release with the [[Backend proficiency checklist]].
 - [ ] On hold until hardware is set up: first nights at [[J Street Gym]] (run the checklist there).
 - [ ] Storage line: admin page, sign in, "Render settings" box, first line. Good = green "Storage: /var/data — a separate disk...". If it says DATA_DIR is not set, every deploy wipes gym accounts and history; the Render disk needs the paid Starter plan (check price before paying). See [[Release history]].
 - [ ] Photo of an Ashbourne denied scan.
@@ -27,11 +27,11 @@ Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's n
 - [ ] Tell Claude favourite music and chill routines for [[Personal]].
 - [ ] Finish the Gmail sign-in on claude.ai (Calendar and Drive are connected).
 - [ ] Set the Google Calendar time zone to Central (it shows UTC).
-- [ ] Brain ideas Jarvis offered 2026-10-21, not decided yet: a hardware readiness list (laptop, Pi, cards, capture stick, rough prices (check)), a backend proficiency checklist, a pilot pitch draft for [[J Street Gym]].
+- [ ] Read the three new notes and say what to change: [[Hardware readiness list]], [[Backend proficiency checklist]], [[J Street pilot pitch]].
 - [x] Past-chats list on the phone page: CHATS button reopens any saved chat (2026-10-21). See [[Jarvis]].
 - [ ] When TJ has a computer: sign in to Claude in Chrome there, then test one website job.
 
 ## Later
 - [ ] Staff and cleaner schedules (after real nights).
-- [ ] Pitch J Street's owners with the pilot counts.
+- [ ] Pitch J Street's owners with the pilot counts. Draft: [[J Street pilot pitch]].
 - [ ] A per-night "scans confirmed" line in the morning report.

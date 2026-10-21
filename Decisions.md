@@ -5,6 +5,7 @@ type: log
 
 Newest first. Covers [[SecurityAI]], [[Basis]] and [[Jarvis]].
 
+- **2026-10-21** Do every to-do that needs no hardware now; Gym-security stays read-only for this (no pushes). Why: TJ asked; nothing can run at [[J Street Gym]] until there is a laptop or Pi.
 - **2026-10-21** Boundaries for [[Jarvis]]: relationships off limits unless TJ raises them; Jarvis may ask about his health, TJ can skip any question, health notes short and factual in [[Personal]]. Why: TJ wants Jarvis more useful over time.
 - **2026-10-21** Job runner files whole phone chats on every run (every 3 hours, 7am to 10pm Central), not only on LEARN NOW and Mondays. Why: TJ said "let's keep it that way".
 - **2026-10-21** [[Jarvis]] files everything from every phone chat (facts, preferences, decisions, to-dos), not only "For the brain" lines, to understand TJ's life more fully. [[Personal]] still holds only what TJ volunteers; guesses get "(check)". Why: TJ asked for it.

@@ -529,6 +529,7 @@ function fillVoices() {
   }
 }
 if (synth) { fillVoices(); synth.onvoiceschanged = fillVoices; }
+else setTimeout(() => say("note", "This app can't speak out loud. Open the Jarvis link in Chrome to hear him."), 1500);
 function speak(text) {
   text = text.replace(/For the brain:.*$/is, "").replace(/^JOB:.*$/gim, "").replace(/^SAY:\s*/gim, "").replace(/[*_#`>\[\]]/g, "").trim();
   if (!synth || !text || store.get("talkback", "1") !== "1") { setMode("idle"); return; }
@@ -546,7 +547,8 @@ function speak(text) {
 /* ---------- Voice in ---------- */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let rec = null;
-if (SR) {
+const framed = (() => { try { return window.top !== window; } catch { return true; } })();
+if (SR && !framed) { // a framed page (claude.ai) is never granted the mic, so skip straight to dictation
   rec = new SR();
   rec.lang = "en-US"; rec.interimResults = true; rec.continuous = false;
   rec.onresult = (e) => {
@@ -557,12 +559,42 @@ if (SR) {
   rec.onend = () => { if (mode === "listening") setMode("idle"); };
   rec.onerror = (e) => {
     setMode("idle");
-    if (e.error === "not-allowed" || e.error === "service-not-allowed") { rec = null; say("note", "The mic is blocked here. Tap the text box and use your keyboard's mic key."); }
+    if (e.error === "not-allowed" || e.error === "service-not-allowed") { rec = null; armDictation(); }
     else if (e.error !== "no-speech" && e.error !== "aborted") say("note", "Mic trouble: " + e.error);
   };
 }
+// Inside claude.ai the page runs in a locked frame that is never given the microphone, and Android's in-app
+// browser has no speech recognition at all. The phone keyboard's own mic still works in any text box, so the
+// mic button arms "dictation": it opens the keyboard, and once the dictated words stop arriving Jarvis sends them.
+let dictArmed = false, dictTimer = 0, dictTipShown = false;
+function armDictation() {
+  if (dictArmed) { disarmDictation(); return; }
+  dictArmed = true;
+  synth && synth.cancel();
+  $("q").value = ""; setMode("listening"); blip("listen");
+  $("q").placeholder = "Tap the mic on your keyboard and talk";
+  $("q").focus();
+  if (!dictTipShown) { dictTipShown = true; say("note", "Tap the mic key on your keyboard and talk. I send it when you stop."); }
+}
+function disarmDictation() {
+  dictArmed = false; clearTimeout(dictTimer);
+  $("q").placeholder = "Talk to Jarvis";
+  if (mode === "listening") setMode("idle");
+}
+$("q").addEventListener("input", () => {
+  if (!dictArmed) return;
+  clearTimeout(dictTimer);
+  if ($("q").value.trim()) dictTimer = setTimeout(() => {
+    const text = $("q").value;
+    disarmDictation();
+    $("q").blur();
+    ask(text);
+  }, 1800);
+});
+$("q").addEventListener("blur", () => { if (dictArmed && !$("q").value.trim()) disarmDictation(); });
+
 function listen() {
-  if (!rec) { say("note", "No mic here. Tap the text box and use your keyboard's mic key."); $("q").focus(); return; }
+  if (!rec) { armDictation(); return; }
   if (mode === "listening") { rec.stop(); return; }
   synth && synth.cancel();
   $("q").value = ""; setMode("listening"); blip("listen");
@@ -755,6 +787,7 @@ async function viaKey(q) {
 }
 
 async function ask(q) {
+  if (dictArmed) disarmDictation();
   q = q.trim(); if (!q) return;
   $("q").value = "";
   say("you", q);

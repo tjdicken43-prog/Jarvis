@@ -14,7 +14,7 @@ This is TJ's brain: everything about the businesses, written down once so Claude
 
 ## How to use it
 - Ask Claude anything about the business. Claude reads these notes first. See [[How I work with Claude]].
-- Each week gets one note in Weekly, like [[2026 Week 43]]. Write what happened, Claude tidies it.
+- Each week gets one note in Weekly, like [[2026 Week 43]]. Write what happened, Claude tidies it every Monday ([[Weekly tidy-up]]).
 - Big calls go in [[Decisions]]. Things to do go in [[To do]].
 - New gym, new note: copy [[New gym template]].
 

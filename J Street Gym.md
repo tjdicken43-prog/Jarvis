@@ -6,6 +6,8 @@ status: pilot
 
 The first [[SecurityAI]] gym. TJ works here.
 
+- TJ's shift: 8:00 to 12:00 Central, every morning (from 2026-10-21).
+
 - Cameras: Anpviz Uprime (IP cameras on a recorder).
 - Check-in system: Ashbourne, front turnstile is Zone 1. See [[Check-in systems]].
 - Pilot: free first month is the idea; then pitch the owners with the confirmed tailgate counts.

@@ -10,7 +10,7 @@ TJ's goal: this brain grows into a real-life Jarvis. It stays current, gets more
 - Answer business questions from these notes ([[SecurityAI]], [[Basis]]).
 - Keep the notes tidy after each session (see [[CLAUDE]]).
 - Start every session with a brain check: today's date, whether this week's note exists, open [[To do]] items, facts marked "(check)", broken links, and anything that looks like a leaked key.
-- Push note changes to the Jarvis repo on GitHub from cloud sessions, once the Claude GitHub App has access (push was refused on 2026-10-21).
+- Push note changes to the Jarvis repo on GitHub from cloud sessions (Claude GitHub App installed 2026-10-21).
 
 ## How it stays accurate
 - Notes say what TJ said. Guesses get "(check)" until TJ confirms them.

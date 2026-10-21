@@ -18,7 +18,6 @@ Part of [[SecurityAI]]. Done items move to the week's note.
 - [ ] Texting (Twilio) and alert email on the domain.
 
 ## Jarvis
-- [ ] Reconnect GitHub for Claude (claude.ai/connect-github) and install the Claude GitHub App on the Jarvis repo, so sessions can push.
 - [ ] Pick how Jarvis controls music: Spotify connector, desktop computer use, or phone shortcut. See [[Jarvis]].
 - [ ] Decide whether to set up a weekly scheduled tidy-up of the brain.
 - [ ] Tell Claude favourite music and chill routines for [[Personal]].

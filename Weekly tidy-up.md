@@ -14,7 +14,7 @@ Every Monday Claude tidies the brain so it never drifts. Part of [[Jarvis]]. Rul
 5. Commits and pushes to a Claude branch on the Jarvis repo. Never touches Gym-security.
 
 ## Schedule
-Not running yet: waiting for TJ to pick the time and time zone (check). Proposed: Mondays 07:00 TJ's time, as a Claude Code scheduled task on this repo.
+On since 2026-10-21: Mondays at 06:42 US Central (America/Chicago), as a Claude Code scheduled task. Each run starts its own thread in the Jarvis project, opens a PR, and sends TJ a push and email summary. First run 2026-10-26.
 
 ## Prompt for the scheduled task
 > Run the weekly tidy-up from "Weekly tidy-up.md": run .claude/weekly-tidy.sh, then do steps 2 to 4 by hand following CLAUDE.md. Add a line to this week's note saying the tidy-up ran. Commit and push to a claude/ branch on the Jarvis repo only. End with a three-line summary for TJ: what changed, what needs his answer, anything risky.

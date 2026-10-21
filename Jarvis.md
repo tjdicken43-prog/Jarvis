@@ -28,7 +28,7 @@ Believer, Critic, Investor, then Judge with the decision and next steps. Set in 
 - **Jarvis on the phone knows the brain**: a claude.ai Project with these notes, or the GitHub connector pointed at this repo. (check) which TJ wants.
 - **Car noises**: describe the sound (squeal, grind, knock, click), when it happens (braking, turning, starting, speeding up) and where it comes from. A video helps if the app takes it. Jarvis gives likely causes and a cost range.
 - **Music**: a cloud session can't reach TJ's speakers or phone. Ways to get there: a Spotify connector on claude.ai (none connected yet), computer use in the Claude desktop app, or a phone shortcut. (check) which one TJ wants.
-- **Always updating on its own**: the Monday [[Weekly tidy-up]] is built (2026-10-21). The schedule waits on TJ's time and time zone.
+- **Always updating on its own**: the Monday [[Weekly tidy-up]] is built (2026-10-21). Runs Mondays 06:42 Central, first run 2026-10-26.
 - **Chilling**: playlists and moods TJ likes. Add them to a [[Personal]] note once TJ shares them.
 
 ## Secrets

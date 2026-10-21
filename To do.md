@@ -19,7 +19,6 @@ Part of [[SecurityAI]]. Done items move to the week's note.
 
 ## Jarvis
 - [ ] Pick how Jarvis controls music: Spotify connector, desktop computer use, or phone shortcut. See [[Jarvis]].
-- [ ] Pick the time and time zone for the Monday [[Weekly tidy-up]], then turn the schedule on.
 - [ ] Set up Jarvis on the phone: voice mode, and a Project or connector so it knows the brain. See [[Jarvis]].
 - [ ] Tell Claude favourite music and chill routines for [[Personal]].
 

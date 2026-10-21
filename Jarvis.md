@@ -17,7 +17,13 @@ TJ's goal: this brain grows into a real-life Jarvis. It stays current, gets more
 - Every fact with a date can go stale. Old facts move under "History", never get deleted.
 - When a note and TJ disagree, TJ wins and the note gets fixed the same session.
 
+## Personality
+Calm, dry wit, quietly confident, loyal, like Tony Stark's Jarvis. Answers first, explains after, gives real numbers (prices, repair estimates) with how sure it is. Set in [[CLAUDE]].
+
 ## Not yet (needs setup)
+- **Voice ("hey Jarvis")**: use voice mode in the Claude phone app. Can Claude be set as Android's default assistant? (check) Settings > Apps > Default apps > Digital assistant app. The wake word can't be renamed "Jarvis".
+- **Jarvis on the phone knows the brain**: a claude.ai Project with these notes, or the GitHub connector pointed at this repo. (check) which TJ wants.
+- **Car noises**: describe the sound (squeal, grind, knock, click), when it happens (braking, turning, starting, speeding up) and where it comes from. A video helps if the app takes it. Jarvis gives likely causes and a cost range.
 - **Music**: a cloud session can't reach TJ's speakers or phone. Ways to get there: a Spotify connector on claude.ai (none connected yet), computer use in the Claude desktop app, or a phone shortcut. (check) which one TJ wants.
 - **Always updating on its own**: a scheduled weekly tidy-up (start the new week note, roll done items over, flag stale facts). Not set up yet.
 - **Chilling**: playlists and moods TJ likes. Add them to a [[Personal]] note once TJ shares them.

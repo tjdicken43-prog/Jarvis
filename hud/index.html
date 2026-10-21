@@ -378,8 +378,8 @@ function systemPrompt() {
 It is now ${now} where TJ is (US Central).
 Keep everyday answers short: two to four sentences unless TJ asks for more or it's an idea or a plan. No markdown, no bullet symbols, no links; it will be read aloud.
 You can't edit the notes, write code, push to GitHub, run tasks or browse from here. If TJ asks for that, say it's a job for his Claude Code project and give him the one-line request to paste there.
-If something changed, end with one line starting "For the brain:" saying what to update.
-
+Whenever TJ tells you something new worth keeping (a fact, a preference, a decision, a to-do), end with one line starting "For the brain:" saying it in a few words. That line is saved and you will remember it next time.
+${memoryText()}
 Your rules:
 ${rules}
 
@@ -426,6 +426,45 @@ async function claudeAccount(sample, q) {
   return text;
 }
 
+/* ---------- Memory: every chat and lesson is saved (the shadow clone) ---------- */
+// Lives in this artifact's private store. Claude Code reads it back into the notes.
+const dbPromise = window.claude?.use ? window.claude.use("db").catch(() => null) : Promise.resolve(null);
+const chatId = new Date().toISOString().replace(/[:.]/g, "-");
+let lessons = [];   // [{text, at, filed}]
+let lastChat = [];  // turns from the previous chat, for continuity
+const turns = [];
+dbPromise.then(async (db) => {
+  if (!db) return;
+  try {
+    const l = await db.doc("memory/lessons").get();
+    lessons = (l.exists && l.data().items) || [];
+    const prev = await db.collection("chats").orderBy("started", "desc").limit(1).get();
+    if (!prev.empty) lastChat = (prev.docs[0].data().turns || []).slice(-10);
+    if (lessons.length) say("note", `I remember ${lessons.length} thing${lessons.length > 1 ? "s" : ""} from our chats.`);
+  } catch {}
+});
+function memoryText() {
+  let t = "";
+  if (lessons.length) t += "\nThings TJ told you in earlier chats (newer wins if they clash):\n" + lessons.map((l) => `- ${l.at.slice(0, 10)}: ${l.text}`).join("\n") + "\n";
+  if (lastChat.length) t += "\nEnd of your last chat with TJ:\n" + lastChat.map((m) => (m.who === "tj" ? "TJ: " : "Jarvis: ") + m.text).join("\n") + "\n";
+  return t;
+}
+async function remember(q, text) {
+  const db = await dbPromise;
+  if (!db) return;
+  const at = new Date().toISOString();
+  turns.push({ who: "tj", text: q, at }, { who: "jarvis", text, at });
+  try {
+    await db.doc("chats/" + chatId).set({ started: turns[0].at, updated: at, turns, filed: false });
+    const learned = (text.match(/For the brain:\s*(.+)/i) || [])[1];
+    if (learned) {
+      lessons.push({ text: learned.trim(), at, filed: false });
+      await db.doc("memory/lessons").set({ items: lessons });
+      say("note", "Saved to memory: " + learned.trim());
+    }
+  } catch (e) { say("note", "Couldn't save this chat: " + (e?.message || e)); }
+}
+
 async function ask(q) {
   q = q.trim(); if (!q) return;
   $("q").value = "";
@@ -444,7 +483,8 @@ async function ask(q) {
     say("note", text);
     text = offlineAnswer(q); say("jarvis", text);
   }
-  speak(text.split("\n\nAlso see")[0]);
+  remember(q, text);
+  speak(text.split("\n\nAlso see")[0].replace(/For the brain:.*$/is, ""));
 }
 $("ask").addEventListener("submit", (e) => { e.preventDefault(); ask($("q").value); });
 

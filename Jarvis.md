@@ -12,7 +12,7 @@ TJ's goal: this brain grows into a real-life Jarvis. It stays current, gets more
 - Start every session with a brain check: today's date, whether this week's note exists, open [[To do]] items, facts marked "(check)", broken links, and anything that looks like a leaked key.
 - Push note changes to the Jarvis repo on GitHub from cloud sessions (Claude GitHub App installed 2026-10-21).
 - **Talk to it and see it (HUD v1, 2026-10-21)**: `hud/index.html` in the repo. A glowing core that pulses when it listens and talks, with the notes floating around it as a live brain map. Voice in and out through the browser (free, Chrome or Edge). Works free on the notes alone, or smarter with an Anthropic API key pasted into SETUP (kept in the browser only). See `hud/README.md`.
-- **HUD on the phone (2026-10-21)**: a private claude.ai artifact copy TJ can tap from anywhere: https://claude.ai/artifact/6BgK9h8LVgz3ondg1QqzSP. Inside claude.ai, Jarvis thinks with TJ's own Claude account, so no API key or bill. Only TJ can open it. Refresh it after note changes with `python3 hud/build_brain.py --artifact <file>` and republish.
+- **HUD on the phone (2026-10-21)**: a private claude.ai artifact copy TJ can tap from anywhere: https://claude.ai/artifact/6BgK9h8LVgz3ondg1QqzSP. Inside claude.ai, Jarvis thinks with TJ's own Claude account, so no API key or bill. Only TJ can open it. It saves every chat and every "For the brain" lesson in its private store and remembers them next time; Claude Code files them into these notes (see [[CLAUDE]], Phone Jarvis memory). Refresh it after note changes with `python3 hud/build_brain.py --artifact <file>` and republish.
 
 ## How it stays accurate
 - Notes say what TJ said. Guesses get "(check)" until TJ confirms them.

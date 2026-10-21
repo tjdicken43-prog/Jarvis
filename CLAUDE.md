@@ -18,7 +18,11 @@ You are working inside TJ's brain: a folder of plain notes about his businesses.
 - When TJ mentions a preference (music, routines, how he likes things), add it to [[Personal]].
 - Each session, leave the brain a little better: one stale fact fixed, one missing link added, or one open question listed in [[To do]].
 
-## When TJ brings an idea
+## Phone Jarvis memory
+The phone Jarvis (TJ's private link in [[Jarvis]]) saves every chat and every "For the brain" lesson in its own store: `memory/lessons` (a list of lessons, each with `filed`) and `chats/<time>`.
+- When TJ says "file my Jarvis chats", and during the Monday tidy-up: read them with the ArtifactData tool, put each lesson with `filed: false` into the right note (rules above), then set it to `filed: true`.
+- Then refresh the phone page so it knows the new notes: `python3 hud/build_brain.py --artifact <scratch>/jarvis.html` and republish to the same link.
+
 Run it through four voices, in this order, then give the verdict:
 1. **Believer**: every way it could work and how we'd make it work.
 2. **Critic**: every reason it might fail or we couldn't pull it off.

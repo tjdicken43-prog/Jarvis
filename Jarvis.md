@@ -11,6 +11,7 @@ TJ's goal: this brain grows into a real-life Jarvis. It stays current, gets more
 - Keep the notes tidy after each session (see [[CLAUDE]]).
 - Start every session with a brain check: today's date, whether this week's note exists, open [[To do]] items, facts marked "(check)", broken links, and anything that looks like a leaked key.
 - Push note changes to the Jarvis repo on GitHub from cloud sessions (Claude GitHub App installed 2026-10-21).
+- **Talk to it and see it (HUD v1, 2026-10-21)**: `hud/index.html` in the repo. A glowing core that pulses when it listens and talks, with the notes floating around it as a live brain map. Voice in and out through the browser (free, Chrome or Edge). Works free on the notes alone, or smarter with an Anthropic API key pasted into SETUP (kept in the browser only). See `hud/README.md`.
 
 ## How it stays accurate
 - Notes say what TJ said. Guesses get "(check)" until TJ confirms them.
@@ -24,6 +25,9 @@ Calm, dry wit, quietly confident, loyal, like Tony Stark's Jarvis. Answers first
 Believer, Critic, Investor, then Judge with the decision and next steps. Set in [[CLAUDE]]. Friendly, not personal.
 
 ## Not yet (needs setup)
+- **HUD on the phone**: v1 runs on a computer. On the phone it needs hosting somewhere private; GitHub Pages would make the notes public, so not that. (check) where.
+- **Better voice**: the browser voice is free but robotic. ElevenLabs or OpenAI voices sound like the movie, about $5 to $22 a month. Needs TJ's OK before signing up.
+- **HUD brain key**: an Anthropic API key for the HUD (console.anthropic.com, pay as you go, about $5 lasts hundreds of questions). TJ's call; key lives in the browser, never in notes.
 - **Voice ("hey Jarvis")**: use voice mode in the Claude phone app. Can Claude be set as Android's default assistant? (check) Settings > Apps > Default apps > Digital assistant app. The wake word can't be renamed "Jarvis".
 - **Jarvis on the phone knows the brain**: a claude.ai Project with these notes, or the GitHub connector pointed at this repo. (check) which TJ wants.
 - **Car noises**: describe the sound (squeal, grind, knock, click), when it happens (braking, turning, starting, speeding up) and where it comes from. A video helps if the app takes it. Jarvis gives likely causes and a cost range.

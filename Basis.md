@@ -6,7 +6,7 @@ status: building
 
 AI workout tracking and nutrition app. Separate from [[SecurityAI]].
 
-- Code: GitHub repo `tjdicken43-prog/basis`, imported 2026-10-21 from the 2026-10-12 backup plus new screens from 2026-10-20. A redesign is underway (check).
+- Code: GitHub repo `tjdicken43-prog/basis`, imported 2026-10-21 from the 2026-10-12 backup plus new screens from 2026-10-20. Lives on Render once deployed (check whether it's deployed yet).
 - Platforms: Google Play and the App Store.
 - Price: $5 a month per person. The code also mentions "$50 a year" (check which is current). See [[Pricing]].
 - Brand: black app icon with a gold "B".
@@ -20,4 +20,11 @@ AI workout tracking and nutrition app. Separate from [[SecurityAI]].
 
 ## Next
 - [ ] Bring the existing checks into `npm test` (first item on the repo's roadmap).
-- [ ] Finish the redesign (check).
+- [ ] Deploy the latest main on Render. Migrations 0102 and 0103 are new.
+- [ ] Fill in the [brackets] on the Privacy Policy and Terms (business name, address, support email, state, launch date), then have a lawyer review them.
+- [ ] Add GOOGLE_CLIENT_ID and APPLE_SERVICE_ID on Render to turn on Apple and Google sign-in.
+- [ ] Still not wired in: the guided first-week card and progress photos.
+
+## History
+- 2026-10-21: TJ said the app looked ugly. The ugly part was the muscle body map, so it was rebuilt Fitbod-style with a bulkier figure, recovery colours and muscle splits (Basis PRs #1, #2).
+- 2026-10-21: Brought back the day planner (its server had been lost), Apple and Google sign-in, Help and What's new (PR #3), plus draft Privacy and Terms pages (PR #4). All merged.

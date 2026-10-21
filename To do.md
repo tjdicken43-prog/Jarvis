@@ -23,7 +23,7 @@ Part of [[SecurityAI]]. Done items move to the week's note.
 - [ ] Decide if Jarvis gets a movie-grade voice (ElevenLabs, about $5 to $22 a month).
 - [ ] Pick how Jarvis controls music: Spotify connector, desktop computer use, or phone shortcut. See [[Jarvis]].
 - [ ] Decide whether to set up a weekly scheduled tidy-up of the brain.
-- [ ] Set up Jarvis on the phone: voice mode, and a Project or connector so it knows the brain. See [[Jarvis]].
+- [ ] Set up Jarvis on the phone: follow the phone guide in [[Jarvis]] (Project + GitHub + voice mode), then test "What's on my to-do list?".
 - [ ] Tell Claude favourite music and chill routines for [[Personal]].
 
 ## Later

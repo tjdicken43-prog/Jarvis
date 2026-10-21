@@ -21,7 +21,9 @@ TJ's goal: this brain grows into a real-life Jarvis. It stays current, gets more
 - **3D and 4D brain (2026-10-21)**: the brain is a real 3D sphere: drag to orbit, pinch to zoom, tap a note and it turns to face you. A tesseract turns through the fourth dimension inside it. Each look has its own detailed core. Note cards show headings and bullets, and double-bracket links in them jump to that note.
 
 ## How it learns
-Since 2026-10-21 Jarvis backend files every saved phone chat, not only the "For the brain" lines: facts, preferences, decisions and to-dos go into the right note. Routine, food, music and sleep go in [[Personal]], but only what TJ said. Guesses get "(check)". Passwords, keys, gym codes and member info are skipped. Since 2026-10-21 the page keeps the open chat across tab switches and reloads for 2 hours (say "new chat" to start fresh), and saves no longer fail on locked lists. Today filing runs on LEARN NOW, "file my Jarvis chats", the job runner and the Monday [[Weekly tidy-up]].
+Since 2026-10-21 Jarvis backend files every saved phone chat, not only the "For the brain" lines: facts, preferences, decisions and to-dos go into the right note. Routine, food, music and sleep go in [[Personal]], but only what TJ said. Guesses get "(check)". Passwords, keys, gym codes and member info are skipped. Filing runs on every job runner pass (every 3 hours, 7am to 10pm Central), on LEARN NOW, "file my Jarvis chats" and the Monday [[Weekly tidy-up]]. Health questions are allowed (TJ can skip any); relationships stay off limits unless he raises them.
+
+Fixed 2026-10-21: the store hands data back frozen, so adding a lesson threw "object is not extensible" and no lesson saved after 10:32 (chats still saved). Lessons and note counts now copy before changing. Chats survive reloads: opening the page within 6 hours shows the recent chat again and keeps adding to it (2026-10-21). Older chats stay in the store and get filed; the page just starts a fresh screen.
 
 ## How it stays accurate
 - Notes say what TJ said. Guesses get "(check)" until TJ confirms them.

@@ -9,7 +9,7 @@ Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's n
 - As of 2026-10-21: nothing is running at [[J Street Gym]] yet. TJ has no laptop and no Raspberry Pi, so until TJ says otherwise only software update checks and backend proficiency tests are possible.
 - [ ] Backend proficiency tests and software update checks for [[SecurityAI]]: first run done 2026-10-21, all passed. Repeat each release with the [[Backend proficiency checklist]].
 - [ ] On hold until hardware is set up: first nights at [[J Street Gym]] (run the checklist there).
-- [ ] Look at the admin page Storage line: admin page, Render settings section, first line. It should be green and say "/var/data — a separate disk, so gym accounts, history and photos survive a deploy." Any other wording means the Render disk or DATA_DIR is missing (check). See [[Release history]].
+- [ ] Storage line: admin page, sign in, "Render settings" box, first line. Good = green "Storage: /var/data — a separate disk...". If it says DATA_DIR is not set, every deploy wipes gym accounts and history; the Render disk needs the paid Starter plan (check price before paying). See [[Release history]].
 - [ ] Photo of an Ashbourne denied scan.
 
 ## Setup
@@ -28,8 +28,7 @@ Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's n
 - [ ] Finish the Gmail sign-in on claude.ai (Calendar and Drive are connected).
 - [ ] Set the Google Calendar time zone to Central (it shows UTC).
 - [ ] Read the three new notes and say what to change: [[Hardware readiness list]], [[Backend proficiency checklist]], [[J Street pilot pitch]].
-- [ ] Confirm in a Jarvis backend session: TJ said in a phone chat (2026-10-21) that Jarvis may ask about his health when it helps. CLAUDE.md still says not to unless he brings it up, so it stays that way until he confirms (check).
-- [ ] Past-chats list on the phone page (the reopen-last-chat half is done 2026-10-21). See [[Jarvis]].
+- [x] Past-chats list on the phone page: CHATS button reopens any saved chat (2026-10-21). See [[Jarvis]].
 - [ ] When TJ has a computer: sign in to Claude in Chrome there, then test one website job.
 
 ## Later

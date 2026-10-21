@@ -3,7 +3,7 @@ type: personal
 ---
 # Personal
 
-Life outside the businesses, so [[Jarvis]] can help with more than work. Nothing private about other people goes here.
+Life outside the businesses, so [[Jarvis]] can help with more than work. Nothing private about other people goes here, and relationships stay out unless TJ brings them up.
 
 ## Routine
 - Wakes at 6:00, showers first.
@@ -19,6 +19,10 @@ Life outside the businesses, so [[Jarvis]] can help with more than work. Nothing
 ## Music
 - Favourite artists and playlists: (ask TJ)
 - What to play when working, training, chilling: (ask TJ)
+
+## Health
+- Celiac (see Food). Jarvis may ask about health when it helps training, food, sleep or recovery; TJ can skip any question (2026-10-21).
+- Only what TJ says, short and factual. Nothing else yet.
 
 ## Sleep
 - Has a hard time falling asleep without listening to something (2026-10-21).

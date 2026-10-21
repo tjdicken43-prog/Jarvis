@@ -20,6 +20,5 @@ Tap JOB (or just ask for something big) and the page queues it. The "Jarvis job 
 Run `python3 hud/build_brain.py` to repack them into `brain.js`.
 - Brain map: drag to spin it, tap a note for ASK, TEACH or JOB. Store docs used: `memory/touches` (which notes TJ opens), `memory/seen` (notes he has been debriefed on; anything else shows as NEW). LEARN NOW wakes the job runner, which also files lessons into the notes.
 - Voices and looks live in SETTINGS. The voice bundle carries British (en-rp) and American (en-us) eSpeak voices.
-
-## Check the chat save
-`NODE_PATH=$(npm root -g) node hud/tests/chat-save.test.mjs` (set `CHROMIUM` to a Chromium path if Playwright can't find one). It fakes a store that hands back locked data, then checks chats and lessons save, and the same chat comes back after Chat, Jobs, Chat and a reload. Say "new chat" on the page to start a fresh one.
+- Memory store: `chats/<time>` (whole chats, CHATS button reopens them), `lessons/<id>` (one record per "For the brain" line; the older `memory/lessons` list is still read), `memory/touches`, `memory/seen`, `memory/runner` (when the page last woke Jarvis backend). Store reads come back frozen: copy before changing.
+- Jobs: the page waits 25 seconds after the last JOB before waking the runner, and skips the wake if a run is already working; the runner keeps checking the queue until it's empty.

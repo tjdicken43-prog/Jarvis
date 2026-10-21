@@ -22,7 +22,6 @@ Part of [[SecurityAI]]. Done items move to the week's note.
 - [ ] Decide on an Anthropic API key for the HUD (pay as you go, about 1 cent a question on Opus).
 - [ ] Decide if Jarvis gets a movie-grade voice (ElevenLabs, about $5 to $22 a month).
 - [ ] Pick how Jarvis controls music: Spotify connector, desktop computer use, or phone shortcut. See [[Jarvis]].
-- [ ] Decide whether to set up a weekly scheduled tidy-up of the brain.
 - [ ] Set up Jarvis on the phone: voice mode, and a Project or connector so it knows the brain. See [[Jarvis]].
 - [ ] Tell Claude favourite music and chill routines for [[Personal]].
 

@@ -6,7 +6,7 @@ type: list
 Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's note.
 
 ## Now
-- [ ] Merge branch `claude/release-2026-10-20` into main on Gym-security (Render runs the Oct 16 code until then). See [[Release history]].
+- [ ] Check Render deployed the Oct 20 release after the 2026-10-21 merge (site loads, admin page Storage line OK). See [[Release history]].
 - [ ] Change the exposed recorder password, admin token and the old API key (new ones go on Render, never in notes).
 - [ ] First nights at [[J Street Gym]]: run the checklist there.
 - [ ] Photo of an Ashbourne denied scan.

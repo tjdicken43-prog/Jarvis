@@ -6,6 +6,7 @@ type: log
 Newest first. Covers [[SecurityAI]], [[Basis]] and [[Jarvis]].
 
 - **2026-10-21** Job runner works lean: a cheap check first, one run at a time (a lock), and the page is republished only when it or the notes' sections change. Why: TJ's usage limit; TJ asked for usage-saving jobs.
+- **2026-10-21** New AI tools from videos get vetted first (source, license, code that runs, keys, cost) with the vet-ai-tool skill; only free, read, markdown-only ones get installed. Why: TJ asked to install the ones that help; see [[AI tools to use and avoid]].
 - **2026-10-21** Do every to-do that needs no hardware now; Gym-security stays read-only for this (no pushes). Why: TJ asked; nothing can run at [[J Street Gym]] until there is a laptop or Pi.
 - **2026-10-21** Boundaries for [[Jarvis]]: relationships off limits unless TJ raises them; Jarvis may ask about his health, TJ can skip any question, health notes short and factual in [[Personal]]. Why: TJ wants Jarvis more useful over time.
 - **2026-10-21** Job runner files whole phone chats on every run (every 3 hours, 7am to 10pm Central), not only on LEARN NOW and Mondays. Why: TJ said "let's keep it that way".

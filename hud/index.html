@@ -158,6 +158,17 @@
   dialog label { display: block; margin: 14px 0 6px; font: 500 11px/1 var(--mono); letter-spacing: .1em; color: var(--dim); }
   dialog input:not([type="checkbox"]), dialog select { width: 100%; background: var(--bg); color: var(--ink); border: 1px solid var(--line); padding: 10px; font: 14px var(--body); }
   dialog .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+  #night { position: fixed; inset: 0; z-index: 60; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; color: rgba(var(--arc-rgb), .55); }
+  #night[hidden] { display: none; }
+  #night .breath { width: 150px; height: 150px; border-radius: 50%; border: 1px solid rgba(var(--arc-rgb), .35); box-shadow: 0 0 40px rgba(var(--arc-rgb), .25), inset 0 0 30px rgba(var(--arc-rgb), .15); animation: breathe 10s ease-in-out infinite; }
+  @keyframes breathe { 0%, 100% { transform: scale(.6); opacity: .35; } 40% { transform: scale(1); opacity: .9; } } /* 4s in, 6s out */
+  #night .nightSay { font: 500 13px/1 var(--display); letter-spacing: .3em; margin: 0; }
+  #night .nightCtl { display: flex; flex-direction: column; gap: 10px; align-items: center; transition: opacity .6s; }
+  #night.calm .nightCtl { opacity: 0; pointer-events: none; }
+  #night .nightRow { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  #night button { background: none; border: 1px solid rgba(var(--arc-rgb), .3); color: rgba(var(--arc-rgb), .7); padding: 9px 12px; font: 600 10px/1 var(--mono); letter-spacing: .14em; }
+  #night button.on { border-color: rgba(var(--arc-rgb), .9); color: rgba(var(--arc-rgb), 1); }
+  #night .nightTip { font-size: 11px; max-width: 260px; text-align: center; margin: 4px 0 0; color: rgba(var(--arc-rgb), .4); }
   dialog .row button { background: none; border: 1px solid var(--line); color: var(--arc); padding: 9px 14px; cursor: pointer; font: 600 10px/1 var(--mono); letter-spacing: .14em; }
 
   #card { position: fixed; z-index: 5; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(460px, calc(100% - 32px)); max-height: 60vh; display: none; }
@@ -298,11 +309,25 @@
     </select>
   </div>
   <div class="row">
+    <button type="button" id="demoBtn">SHOW ME OFF</button>
+    <button type="button" id="nightBtn">NIGHT MODE</button>
+  </div>
+  <div class="row">
     <button type="button" id="testVoice">TEST VOICE</button>
     <button type="button" id="forget">FORGET KEY</button>
     <button type="button" id="done">DONE</button>
   </div>
 </dialog>
+<div id="night" hidden>
+  <div class="breath"></div>
+  <p class="nightSay">Sleep well, boss.</p>
+  <div class="nightCtl">
+    <div class="nightRow"><button type="button" data-snd="rain">RAIN</button><button type="button" data-snd="waves">WAVES</button><button type="button" data-snd="brown">DEEP HUM</button><button type="button" data-snd="off">QUIET</button></div>
+    <div class="nightRow"><button type="button" data-min="30">30 MIN</button><button type="button" data-min="60">1 HR</button><button type="button" data-min="90">90 MIN</button><button type="button" data-min="0">ALL NIGHT</button></div>
+    <div class="nightRow"><button type="button" id="nightExit">WAKE UP</button></div>
+    <p class="nightTip">Breathe with the light: in as it grows, out as it fades. Tap the dark to hide these.</p>
+  </div>
+</div>
 
 <script src="brain.js"></script>
 <script>
@@ -770,7 +795,7 @@ function firstLine(md) {
 let cinema = false, wokeFromCinema = false;
 addEventListener("keydown", () => { lastInput = t; });
 function runCinema() {
-  const want = SHOW() && t - lastInput > 14 && mode === "idle" && !$("card").classList.contains("show") && !document.querySelector("dialog[open]") && !reduce;
+  const want = SHOW() && t - lastInput > 14 && (mode === "idle" || demo) && !$("card").classList.contains("show") && !document.querySelector("dialog[open]") && !reduce;
   if (want !== cinema) { cinema = want; document.body.classList.toggle("cinema", want); uiAt = -1; }
   cinemaK += ((cinema ? 1 : 0) - cinemaK) * 0.03;
 }
@@ -1308,6 +1333,16 @@ function drawWorld(w, i, x, y, r, lx, ly) {
   if (front) moon();
 }
 
+// SHOW ME OFF: Jarvis flies guests through the brain and narrates each world out loud, once round
+let demo = false, demoSaid = new Set();
+const DEMO_LINES = [
+  () => `Welcome inside my brain. Every star out there is one of TJ's notes, ${nodes.length} of them. Let's fly in.`,
+  () => "This is the workshop. When TJ hands me a big job, my crew in the cloud writes the code and ships it.",
+  () => "The library. Everything TJ teaches me gets shelved here, so I never forget a thing.",
+  () => `The archive. ${nodes.length} notes, all filed and cross-linked, so I can find anything in a second.`,
+  () => "And the studio. That's my voice, made right here on the phone. No cloud, no bill.",
+  () => "And this is my core, where it all comes together. Thanks for visiting. Tap anywhere when you're done.",
+];
 const flight = { on: false, t0: 0, k: -1, flash: 0, inside: null, lastP: null };
 let warpBoost = 0;
 function drawFlight() {
@@ -1317,7 +1352,10 @@ function drawFlight() {
   const inside = Math.hypot(...pose.p) < FK; // punching through the shell of notes flashes the screen
   if (flight.inside !== null && inside !== flight.inside) flight.flash = 1;
   flight.inside = inside; flight.flash *= 0.93;
-  if (!pose.moving && pose.k !== flight.k) { flight.k = pose.k; tour.cap = FSTOPS[pose.k].cap(); tour.at = t; tour.shock = t; }
+  if (!pose.moving && pose.k !== flight.k) {
+    flight.k = pose.k; tour.cap = FSTOPS[pose.k].cap(); tour.at = t; tour.shock = t;
+    if (demo && !demoSaid.has(pose.k)) { demoSaid.add(pose.k); speak(DEMO_LINES[pose.k](), true); }
+  }
   cx.clearRect(0, 0, W, H);
   warp(W / 2, H / 2);
   for (const n of nodes) n.fp = P([n.x * FK, n.y * FK, n.z * FK]);
@@ -1433,6 +1471,7 @@ function cached(key, make) {
 }
 let frame = 0, lastNow = 0, frameMs = 16, lowPower = false;
 function draw() {
+  if (!$("night").hidden) { requestAnimationFrame(draw); return; } // night mode: no brain, no battery drain
   frame++;
   // if the phone can't keep up in Show off, drop the glow pass and half the stars instead of stuttering
   const now = performance.now(); if (lastNow) frameMs += (Math.min(100, now - lastNow) - frameMs) * 0.05; lastNow = now;
@@ -1445,7 +1484,7 @@ function draw() {
     if (!flight.on) Object.assign(flight, { on: true, t0: t, k: -1, flash: 0, inside: null, lastP: null });
     physics(); drawFlight(); requestAnimationFrame(draw); return;
   }
-  if (flight.on) { flight.on = false; warpBoost = 0; tour.cap = null; }
+  if (flight.on) { flight.on = false; warpBoost = 0; tour.cap = null; if (demo) { demo = false; stopVoice(); setMode("idle"); } }
   physics();
   if (cam.go && !grab) { // glide so the tapped note faces you
     let dy = cam.go[0] - cam.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
@@ -1870,9 +1909,9 @@ function fillVoices() {
 }
 fillVoices();
 if (synth) synth.onvoiceschanged = fillVoices;
-function speak(text) {
+function speak(text, force) {
   text = text.replace(/For the brain:.*$/is, "").replace(/^JOB:.*$/gim, "").replace(/^SAY:\s*/gim, "").replace(/[*_#`>\[\]]/g, "").trim();
-  if (!text || store.get("talkback", "1") !== "1") { setMode("idle"); return; }
+  if (!text || (store.get("talkback", "1") !== "1" && !force)) { setMode("idle"); return; }
   const chosen = $("voice").value || "builtin:butler";
   if (chosen.startsWith("builtin:") || !synth) {
     jarvisSpeak(text, chosen.startsWith("builtin:") ? chosen.slice(8) : "butler").catch(() => setMode("idle"));
@@ -2326,6 +2365,59 @@ $("theme").addEventListener("change", () => {
   if (SHOW()) { loadShowStats(); lastInput = t - 11; speak("Show mode. Sit back, boss. I'll fly you through the brain."); }
 });
 if (SHOW()) loadShowStats();
+$("demoBtn").addEventListener("click", () => {
+  $("setup").close();
+  if (!SHOW()) { $("theme").value = "showoff"; setTheme("showoff"); loadShowStats(); }
+  demo = true; demoSaid = new Set(); flight.on = false; lastInput = -99;
+});
+/* ---------- Night mode: a dark screen, a light to breathe with, and sound to sleep to ---------- */
+// The sounds are made on the phone from noise (Web Audio), so there's nothing to download and nothing to pay for.
+let nightCtx = null, nightNodes = null, nightSnd = "rain", nightMin = 60;
+function noiseBuffer(ctx, brown) {
+  const n = ctx.sampleRate * 6, b = ctx.createBuffer(1, n, ctx.sampleRate), d = b.getChannelData(0);
+  let last = 0;
+  for (let i = 0; i < n; i++) { const w = Math.random() * 2 - 1; if (brown) { last = (last + 0.02 * w) / 1.02; d[i] = last * 3.5; } else d[i] = w * 0.5; }
+  return b;
+}
+function nightStop(sec = 0.4) {
+  if (!nightNodes) return;
+  const { src, gain, lfo } = nightNodes, now = nightCtx.currentTime;
+  gain.gain.cancelScheduledValues(now); gain.gain.setValueAtTime(gain.gain.value, now); gain.gain.linearRampToValueAtTime(0, now + sec);
+  setTimeout(() => { try { src.stop(); lfo?.stop(); } catch {} }, sec * 1000 + 100);
+  nightNodes = null;
+}
+function nightPlay() {
+  nightStop();
+  document.querySelectorAll("#night [data-snd]").forEach((b) => b.classList.toggle("on", b.dataset.snd === nightSnd));
+  document.querySelectorAll("#night [data-min]").forEach((b) => b.classList.toggle("on", +b.dataset.min === nightMin));
+  if (nightSnd === "off") return;
+  nightCtx ??= new (window.AudioContext || window.webkitAudioContext)(); nightCtx.resume();
+  const ctx = nightCtx, now = ctx.currentTime, src = ctx.createBufferSource(), gain = ctx.createGain();
+  src.buffer = noiseBuffer(ctx, nightSnd !== "rain"); src.loop = true;
+  let out = src, lfo = null;
+  if (nightSnd === "rain") { const f = ctx.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 1800; f.Q.value = 0.35; src.connect(f); out = f; }
+  if (nightSnd === "waves") { // brown noise swelling and falling like surf, about every 11 seconds
+    const wg = ctx.createGain(), lg = ctx.createGain(); lfo = ctx.createOscillator();
+    lfo.frequency.value = 0.09; lg.gain.value = 0.42; wg.gain.value = 0.5; lfo.connect(lg).connect(wg.gain); src.connect(wg); out = wg; lfo.start();
+  }
+  const vol = nightSnd === "rain" ? 0.28 : 0.55;
+  out.connect(gain).connect(ctx.destination);
+  gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(vol, now + 5);
+  if (nightMin) { const end = now + nightMin * 60; gain.gain.setValueAtTime(vol, end - 180); gain.gain.linearRampToValueAtTime(0, end); } // fades out over the last 3 minutes
+  src.start(); nightNodes = { src, gain, lfo };
+}
+$("nightBtn").addEventListener("click", () => {
+  $("setup").close(); stopVoice(); setMode("idle");
+  $("night").hidden = false; $("night").classList.remove("calm"); nightPlay();
+  setTimeout(() => $("night").classList.add("calm"), 12000);
+});
+$("night").addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) { $("night").classList.toggle("calm"); return; }
+  if (b.dataset.snd) { nightSnd = b.dataset.snd; nightPlay(); }
+  else if (b.dataset.min) { nightMin = +b.dataset.min; nightPlay(); }
+  else if (b.id === "nightExit") { nightStop(1.5); $("night").hidden = true; }
+});
 $("forget").addEventListener("click", () => { store.set("key", null); $("key").value = ""; });
 
 samplePromise.then((sample) => {

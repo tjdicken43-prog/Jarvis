@@ -146,7 +146,15 @@
 
   #card { position: fixed; z-index: 5; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(460px, calc(100% - 32px)); max-height: 60vh; display: none; }
   #card.show { display: flex; animation: in .2s ease-out; }
-  #card .scroll { white-space: pre-wrap; font-size: 13px; }
+  #card .scroll { font-size: 13.5px; line-height: 1.55; flex: 1; min-height: 0; }
+  #card .acts { padding-top: 10px; border-top: 1px solid var(--faint); }
+  #card .scroll p { margin: 0 0 8px; }
+  #card .scroll h4 { margin: 14px 0 6px; font: 600 10.5px/1 var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--arc); }
+  #card .scroll ul { margin: 0 0 8px; padding-left: 16px; }
+  #card .scroll li { margin: 3px 0; }
+  #card .scroll li.done { color: var(--dim); text-decoration: line-through; }
+  #card .scroll code { font: 12px var(--mono); color: var(--gold); }
+  #card .jump { background: none; border: 0; border-bottom: 1px dashed var(--arc); padding: 0; color: var(--arc); font: inherit; cursor: pointer; }
   .acts { display: flex; gap: 8px; padding: 0 14px 14px; flex-wrap: wrap; }
   .acts .gear { margin: 0; flex: 1; }
   .now.fresh li::before { border-color: var(--green, #5cf2a5); background: var(--green, #5cf2a5); }
@@ -334,7 +342,7 @@ function setMode(m) {
   $("mic").classList.toggle("on", m === "listening");
 }
 
-/* ---------- Canvas: brain map + arc reactor ---------- */
+/* ---------- Canvas: 3D brain, 4D layer and the core ---------- */
 const cv = $("sky"), cx = cv.getContext("2d");
 let W, H, DPR;
 function resize() {
@@ -343,44 +351,48 @@ function resize() {
 }
 resize(); addEventListener("resize", resize);
 
-const nodes = BRAIN.notes.map((n, i) => {
-  const a = (i / BRAIN.notes.length) * Math.PI * 2;
-  return { ...n, x: Math.cos(a) * 240, y: Math.sin(a) * 180, vx: 0, vy: 0, hot: 0 };
+/* The brain is a real 3D sphere of notes you can orbit, with a 4D tesseract turning inside it.
+   Each look (theme) has its own core, drawn between the far and near halves of the brain. */
+const nodes = BRAIN.notes.map((n, i, all) => { // even spread on a sphere (Fibonacci lattice)
+  const k = i + 0.5, phi = Math.acos(1 - 2 * k / all.length), th = Math.PI * (1 + Math.sqrt(5)) * k;
+  return { ...n, x: Math.sin(phi) * Math.cos(th), y: Math.cos(phi), z: Math.sin(phi) * Math.sin(th), vx: 0, vy: 0, vz: 0, hot: 0, la: 0 };
 });
 const nodeBy = new Map(nodes.map((n) => [n.name, n]));
 const edges = [];
 for (const n of nodes) for (const l of n.links) if (nodeBy.has(l) && l !== n.name) edges.push([n, nodeBy.get(l)]);
 for (const n of nodes) n.deg = edges.filter(([a, b]) => a === n || b === n).length;
+edges.forEach((e, i) => { e.seed = (i * 0.618) % 1; });
 const TYPE_COLOR = { hub: "#4fd8ff", rules: "#ff5b4a", log: "#ffb23e", list: "#ffb23e", week: "#9b8cff", personal: "#5cf2a5" };
 
 function coreBox() {
   const r = $("slot").getBoundingClientRect();
   return { ox: r.left + r.width / 2, oy: r.top + r.height / 2, base: Math.max(34, Math.min(r.width, r.height) * 0.21) };
 }
-function physics(base) {
-  const hole = base * 2.7;
+// Linked notes pull together, every note pushes the others away, and all of them stay near the sphere's skin.
+function physics() {
   for (const a of nodes) {
     for (const b of nodes) if (a !== b) {
-      const dx = a.x - b.x, dy = a.y - b.y, d2 = dx * dx + dy * dy + 0.01;
-      a.vx += dx * 45 / d2; a.vy += dy * 45 / d2;
+      const dx = a.x - b.x, dy = a.y - b.y, dz = a.z - b.z, d2 = dx * dx + dy * dy + dz * dz + 0.002;
+      a.vx += dx * 0.0016 / d2; a.vy += dy * 0.0016 / d2; a.vz += dz * 0.0016 / d2;
     }
-    const d = Math.hypot(a.x, a.y) || 1;
-    if (d < hole) { a.vx += a.x / d * 3; a.vy += a.y / d * 3; }
-    if (Math.hypot(a.x / (W * 0.46), a.y / (H * 0.42)) > 1) { a.vx -= a.x / d * 0.8; a.vy -= a.y / d * 0.8; }
+    const r = Math.hypot(a.x, a.y, a.z) || 1, f = (1 - r) * 0.04;
+    a.vx += a.x / r * f; a.vy += a.y / r * f; a.vz += a.z / r * f;
   }
   for (const [a, b] of edges) {
-    const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1, f = (d - 130) * 0.01 / d;
-    a.vx += dx * f; a.vy += dy * f; b.vx -= dx * f; b.vy -= dy * f;
+    const dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z, d = Math.hypot(dx, dy, dz) || 1, f = (d - 0.7) * 0.006 / d;
+    a.vx += dx * f; a.vy += dy * f; a.vz += dz * f; b.vx -= dx * f; b.vy -= dy * f; b.vz -= dz * f;
   }
-  for (const n of nodes) { n.vx *= 0.86; n.vy *= 0.86; n.x += n.vx; n.y += n.vy; n.hot *= 0.985; }
+  for (const n of nodes) { n.vx *= 0.82; n.vy *= 0.82; n.vz *= 0.82; n.x += n.vx; n.y += n.vy; n.z += n.vz; n.hot *= 0.985; }
 }
+for (let i = 0; i < 240; i++) physics(); // settle before the first frame
 
 const MODE_COLOR = { idle: [79, 216, 255], speaking: [120, 230, 255], listening: [92, 242, 165], thinking: [255, 178, 62] };
-let col = [79, 216, 255], t = 0, ARC = "79,216,255";
+let col = [79, 216, 255], t = 0, ARC = "79,216,255", THEME = "arc";
 const RINGS = { arc: " J.A.R.V.I.S. · TJ'S BRAIN · ONLINE · ", agency: " J.A.R.V.I.S. · AGENCY HQ · CLEARANCE GRANTED · ",
   spy: " J.A.R.V.I.S. · SECRET SERVICE · EYES ONLY · ", hunter: " J.A.R.V.I.S. · HUNTER'S LOG · SALT AND IRON · " };
 function setTheme(name) {
   if (!RINGS[name]) name = "arc";
+  THEME = name;
   document.documentElement.dataset.theme = name; store.set("theme", name);
   ARC = getComputedStyle(document.documentElement).getPropertyValue("--arc-rgb").trim().replace(/\s/g, "") || "79,216,255";
   const c = ARC.split(",").map(Number);
@@ -388,55 +400,298 @@ function setTheme(name) {
   RING_TEXT = RINGS[name];
   const meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.content = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
 }
-let rot = 0, rotV = 0.0005; // brain spin: drag to turn it, it drifts back to a slow idle spin
 let RING_TEXT = RINGS.arc;
 setTheme(store.get("theme", "arc"));
 const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+/* ---------- Camera: drag to orbit, pinch or wheel to zoom, flick to spin ---------- */
+const cam = { yaw: 0.5, pitch: -0.28, vYaw: 0.0016, vPitch: 0, zoom: 1, idleAt: 0 };
+let view = null; // per-frame projection
+function camera(ox, oy, s) {
+  const cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw), cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+  return (x, y, z) => {
+    const x1 = x * cy + z * sy, z1 = -x * sy + z * cy;
+    const y1 = y * cp - z1 * sp, z2 = y * sp + z1 * cp;
+    const f = 3.4 / (3.4 + z2); // z2 > 0 is away from you
+    return [ox + x1 * s * f, oy + y1 * s * f, z2, f];
+  };
+}
+
+/* ---------- 4D: a tesseract turning through the fourth dimension ---------- */
+const TV = [], TE = [];
+for (let i = 0; i < 16; i++) TV.push([i & 1 ? 1 : -1, i & 2 ? 1 : -1, i & 4 ? 1 : -1, i & 8 ? 1 : -1]);
+for (let i = 0; i < 16; i++) for (let b = 0; b < 4; b++) { const j = i ^ (1 << b); if (j > i) TE.push([i, j, b]); }
+function tesseract(time) {
+  const a = time * 0.31, b = time * 0.19, c = time * 0.13;
+  const ca = Math.cos(a), sa = Math.sin(a), cb = Math.cos(b), sb = Math.sin(b), cc = Math.cos(c), sc = Math.sin(c);
+  return TV.map(([x, y, z, w]) => {
+    [x, w] = [x * ca - w * sa, x * sa + w * ca]; // XW plane
+    [y, w] = [y * cb - w * sb, y * sb + w * cb]; // YW plane
+    [z, w] = [z * cc - w * sc, z * sc + w * cc]; // ZW plane
+    const k = 1.6 / (3 - w); // 4D to 3D perspective
+    return [x * k * 0.42, y * k * 0.42, z * k * 0.42, w];
+  });
+}
+
+/* ---------- Drifting particles: dust in the brain's own space ---------- */
+const DUST = Array.from({ length: 150 }, (_, i) => {
+  const r = 0.25 + ((i * 0.7548) % 1) * 1.5, phi = Math.acos(1 - 2 * ((i * 0.5698) % 1)), th = i * 2.399;
+  return { r, phi, th, sp: 0.02 + ((i * 0.3183) % 1) * 0.05, tw: (i * 0.1347) % 1 };
+});
+
+/* ---------- Seeded glyphs for the Agency ring and Hunter sigils ---------- */
+function rng(seed) { return () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646; }
+const GLYPHS = Array.from({ length: 28 }, (_, i) => {
+  const r = rng(97 + i * 13), strokes = [];
+  for (let s = 0; s < 3; s++) strokes.push([r() - 0.5, r() - 0.5, r() - 0.5, r() - 0.5, r() < 0.3]);
+  return strokes;
+});
+function glyph(g, size) {
+  cx.beginPath();
+  for (const [x1, y1, x2, y2, arc] of g) {
+    if (arc) { cx.moveTo(x1 * size + size * 0.2, y1 * size); cx.arc(x1 * size, y1 * size, size * 0.2, 0, Math.PI * 1.4); }
+    else { cx.moveTo(x1 * size, y1 * size); cx.lineTo(x2 * size, y2 * size); }
+  }
+  cx.stroke();
+}
+const SALT = Array.from({ length: 220 }, (_, i) => { const r = rng(7 + i); return [r() * Math.PI * 2, r(), r()]; });
+const WHEEL = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+const RED = new Set([1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]);
+
+/* ---------- Cores ---------- */
+function coreArc(R, C, spin) {
+  // ten copper-wound coils, each with its winding lines
+  cx.strokeStyle = C(0.85); cx.lineWidth = R * 0.16;
+  for (let i = 0; i < 10; i++) {
+    const a = i / 10 * Math.PI * 2 + spin * 0.4;
+    cx.beginPath(); cx.arc(0, 0, R * 0.78, a + 0.06, a + Math.PI / 5 - 0.06); cx.stroke();
+  }
+  cx.lineWidth = 0.8; cx.strokeStyle = "rgba(255,190,120,.45)"; cx.shadowBlur = 0;
+  for (let i = 0; i < 120; i++) {
+    if (i % 12 === 0 || i % 12 === 11) continue; // gaps between coils
+    const a = i / 120 * Math.PI * 2 + spin * 0.4;
+    cx.beginPath(); cx.moveTo(Math.cos(a) * R * 0.7, Math.sin(a) * R * 0.7); cx.lineTo(Math.cos(a) * R * 0.86, Math.sin(a) * R * 0.86); cx.stroke();
+  }
+  cx.shadowBlur = 16;
+  // the Mark VI triangle (the "new element" core), with a faint second triangle
+  cx.lineWidth = 2; cx.strokeStyle = C(0.95);
+  for (const [k, off, al] of [[0.5, 0, 0.95], [0.36, Math.PI, 0.35]]) {
+    cx.globalAlpha = al; cx.beginPath();
+    for (let i = 0; i < 3; i++) { const a = -Math.PI / 2 + off + i * Math.PI * 2 / 3 - spin * 0.25; cx.lineTo(Math.cos(a) * R * k, Math.sin(a) * R * k); }
+    cx.closePath(); cx.stroke();
+  }
+  cx.globalAlpha = 1;
+  cx.beginPath(); cx.arc(0, 0, R * 0.22, 0, Math.PI * 2); cx.fillStyle = "rgba(240,253,255,.9)"; cx.fill();
+  cx.lineWidth = 1.5; cx.strokeStyle = C(0.7);
+  cx.beginPath(); cx.arc(0, 0, R, 0, Math.PI * 2); cx.stroke();
+  // output readout, tiny, like the suit's diagnostics
+  cx.shadowBlur = 0; cx.fillStyle = C(0.55); cx.font = `500 ${Math.max(7, R * 0.075) | 0}px 'IBM Plex Mono', monospace`;
+  cx.fillText(`${(3 + level * 2.4).toFixed(2)} GJ/s`, 0, R * 0.52);
+}
+function coreAgency(R, C, spin) {
+  // brushed-chrome rings: a vertical gradient fakes the metal
+  const g = cx.createLinearGradient(0, -R, 0, R);
+  g.addColorStop(0, "rgba(255,255,255,.95)"); g.addColorStop(0.45, "rgba(150,160,168,.7)"); g.addColorStop(0.55, "rgba(60,66,72,.8)"); g.addColorStop(1, "rgba(220,228,234,.9)");
+  cx.shadowBlur = 0; cx.strokeStyle = g;
+  for (const [k, w] of [[1, 3], [0.9, 1], [0.62, 2]]) { cx.lineWidth = w; cx.beginPath(); cx.arc(0, 0, R * k, 0, Math.PI * 2); cx.stroke(); }
+  // alien script turning around the rim
+  cx.strokeStyle = C(0.75); cx.lineWidth = 1.1;
+  for (let i = 0; i < GLYPHS.length; i++) {
+    const a = i / GLYPHS.length * Math.PI * 2 + spin * 0.15;
+    cx.save(); cx.rotate(a); cx.translate(0, -R * 0.76); glyph(GLYPHS[i], R * 0.14); cx.restore();
+  }
+  // the galaxy on the cat's collar: a tiny two-arm spiral in the middle
+  for (let i = 0; i < 140; i++) {
+    const arm = i % 2, d = (i / 140) * R * 0.5, a = d / (R * 0.5) * 4.2 + arm * Math.PI + t * 0.6;
+    const j = Math.sin(i * 12.9) * R * 0.025;
+    cx.fillStyle = i < 20 ? "rgba(255,255,255,.95)" : `rgba(${i % 7 ? "200,220,255" : "255,200,240"},${0.85 - i / 200})`;
+    cx.fillRect(Math.cos(a) * d + j, Math.sin(a) * d * 0.62 + j, 1.4, 1.4);
+  }
+  const core = cx.createRadialGradient(0, 0, 0, 0, 0, R * 0.14); core.addColorStop(0, "rgba(255,255,255,1)"); core.addColorStop(1, "rgba(255,255,255,0)");
+  cx.fillStyle = core; cx.beginPath(); cx.arc(0, 0, R * 0.14, 0, Math.PI * 2); cx.fill();
+  // neuralyzer: a red lens at the top, and every 20 seconds a soft flash
+  const ph = (t % 20) / 20, flash = ph > 0.97 ? Math.sin((ph - 0.97) / 0.03 * Math.PI) : 0;
+  cx.fillStyle = `rgba(255,60,60,${0.55 + 0.45 * Math.sin(t * 3)})`; cx.shadowColor = "#ff3c3c"; cx.shadowBlur = 10;
+  cx.beginPath(); cx.arc(0, -R * 1.08, R * 0.045, 0, Math.PI * 2); cx.fill(); cx.shadowBlur = 0;
+  if (flash > 0) { cx.fillStyle = `rgba(255,255,255,${flash * 0.35})`; cx.beginPath(); cx.arc(0, 0, R * 3, 0, Math.PI * 2); cx.fill(); }
+}
+function coreSpy(R, C, spin) {
+  // gun barrel: dark bore with six spiral rifling grooves
+  const bore = cx.createRadialGradient(0, 0, R * 0.1, 0, 0, R);
+  bore.addColorStop(0, "rgba(0,0,0,.95)"); bore.addColorStop(0.7, "rgba(20,16,10,.9)"); bore.addColorStop(1, "rgba(60,48,30,.85)");
+  cx.shadowBlur = 0; cx.fillStyle = bore; cx.beginPath(); cx.arc(0, 0, R, 0, Math.PI * 2); cx.fill();
+  cx.strokeStyle = "rgba(216,176,74,.45)"; cx.lineWidth = 1.2;
+  for (let g = 0; g < 6; g++) {
+    cx.beginPath();
+    for (let s = 0; s <= 30; s++) { const d = R * (0.22 + s / 30 * 0.78), a = g / 6 * Math.PI * 2 + s / 30 * 1.6 + spin * 0.5; cx.lineTo(Math.cos(a) * d, Math.sin(a) * d); }
+    cx.stroke();
+  }
+  for (const k of [0.4, 0.6, 0.8]) { cx.strokeStyle = `rgba(216,176,74,${0.08 + k * 0.1})`; cx.beginPath(); cx.arc(0, 0, R * k, 0, Math.PI * 2); cx.stroke(); }
+  // the white aperture that tracks you, breathing with his voice
+  const ap = R * (0.15 + level * 0.06), jx = Math.sin(t * 0.7) * R * 0.04, jy = Math.cos(t * 0.5) * R * 0.03;
+  const w = cx.createRadialGradient(jx, jy, 0, jx, jy, ap * 1.6); w.addColorStop(0, "rgba(255,250,235,1)"); w.addColorStop(0.6, "rgba(255,245,220,.9)"); w.addColorStop(1, "rgba(255,240,210,0)");
+  cx.fillStyle = w; cx.beginPath(); cx.arc(jx, jy, ap * 1.6, 0, Math.PI * 2); cx.fill();
+  // roulette wheel (single zero, the casino royale kind) with the ball riding the track
+  const n = WHEEL.length, r1 = R * 1.1, r2 = R * 1.36, rot = -spin * 0.2;
+  for (let i = 0; i < n; i++) {
+    const a = i / n * Math.PI * 2 + rot, v = WHEEL[i];
+    cx.fillStyle = v === 0 ? "rgba(30,140,70,.8)" : RED.has(v) ? "rgba(196,48,58,.75)" : "rgba(14,10,6,.9)";
+    cx.beginPath(); cx.arc(0, 0, r2, a, a + Math.PI * 2 / n); cx.arc(0, 0, r1, a + Math.PI * 2 / n, a, true); cx.closePath(); cx.fill();
+  }
+  cx.strokeStyle = "rgba(216,176,74,.8)"; cx.lineWidth = 1;
+  for (const r of [r1, r2]) { cx.beginPath(); cx.arc(0, 0, r, 0, Math.PI * 2); cx.stroke(); }
+  if (R > 40) {
+    cx.fillStyle = "rgba(245,234,210,.85)"; cx.font = `600 ${Math.max(6, R * 0.075) | 0}px 'IBM Plex Mono', monospace`;
+    for (let i = 0; i < n; i++) { const a = (i + 0.5) / n * Math.PI * 2 + rot; cx.save(); cx.rotate(a + Math.PI / 2); cx.fillText(String(WHEEL[i]), 0, -(r1 + r2) / 2 + R * 0.03); cx.restore(); }
+  }
+  const ba = t * 1.3; cx.fillStyle = "#fff"; cx.shadowColor = "#fff"; cx.shadowBlur = 6;
+  cx.beginPath(); cx.arc(Math.cos(ba) * R * 1.43, Math.sin(ba) * R * 1.43, R * 0.035, 0, Math.PI * 2); cx.fill(); cx.shadowBlur = 0;
+}
+function coreHunter(R, C, spin) {
+  // devil's trap: double ring, pentagram, sigils between the rings
+  const turn = spin * 0.05;
+  cx.save(); cx.rotate(turn);
+  cx.shadowBlur = 12; cx.strokeStyle = C(0.9); cx.lineWidth = 2;
+  for (const k of [1, 0.84]) { cx.beginPath(); cx.arc(0, 0, R * k, 0, Math.PI * 2); cx.stroke(); }
+  cx.lineWidth = 1.6; cx.beginPath();
+  for (let i = 0; i <= 5; i++) { const a = -Math.PI / 2 + i * Math.PI * 4 / 5; cx.lineTo(Math.cos(a) * R * 0.84, Math.sin(a) * R * 0.84); }
+  cx.stroke();
+  cx.shadowBlur = 0; cx.strokeStyle = C(0.7); cx.lineWidth = 1;
+  for (let i = 0; i < 15; i++) { const a = i / 15 * Math.PI * 2; cx.save(); cx.rotate(a); cx.translate(0, -R * 0.92); glyph(GLYPHS[i], R * 0.09); cx.restore(); }
+  cx.restore();
+  // the anti-possession sun in the middle
+  cx.strokeStyle = C(0.85); cx.lineWidth = 1.2;
+  cx.beginPath(); cx.arc(0, 0, R * 0.16, 0, Math.PI * 2); cx.stroke();
+  for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2 + turn * 2, r = i % 2 ? 0.26 : 0.32; cx.beginPath(); cx.moveTo(Math.cos(a) * R * 0.18, Math.sin(a) * R * 0.18); cx.lineTo(Math.cos(a) * R * r, Math.sin(a) * R * r); cx.stroke(); }
+  // a salt line, grain by grain
+  for (const [a, u, v] of SALT) { cx.fillStyle = `rgba(255,248,235,${0.25 + v * 0.5})`; const d = R * (1.12 + u * 0.08); cx.fillRect(Math.cos(a) * d, Math.sin(a) * d, 1.1, 1.1); }
+  // EMF meter: five bars that spike when he speaks
+  const emf = Math.min(5, Math.round(1 + level * 6 + Math.max(0, Math.sin(t * 0.9)) * (mode === "idle" ? 0.6 : 0)));
+  for (let i = 0; i < 5; i++) {
+    const a = Math.PI / 2 + (i - 2) * 0.13;
+    cx.strokeStyle = i < emf ? (i > 2 ? "rgba(255,80,60,.95)" : C(0.95)) : "rgba(255,255,255,.12)"; cx.lineWidth = R * 0.05;
+    cx.beginPath(); cx.arc(0, 0, R * 1.3, a - 0.05, a + 0.05); cx.stroke();
+  }
+  cx.fillStyle = C(0.6); cx.font = `600 ${Math.max(7, R * 0.07) | 0}px 'IBM Plex Mono', monospace`; cx.fillText("EMF", 0, R * 1.46);
+  // embers rising off the trap
+  for (let i = 0; i < 26; i++) {
+    const life = (t * 0.12 + i * 0.137) % 1, x = Math.sin(i * 7.1 + t * 0.4) * R * 0.9, y = R * 0.6 - life * R * 2.4;
+    cx.fillStyle = `rgba(255,${140 + (i % 5) * 20},60,${(1 - life) * 0.8})`; cx.fillRect(x, y, 1.6, 1.6);
+  }
+}
+const CORES = { arc: coreArc, agency: coreAgency, spy: coreSpy, hunter: coreHunter };
+
+/* ---------- Frame ---------- */
+function nodeColor(n) { return n.type === "hub" || !TYPE_COLOR[n.type] ? `rgb(${ARC})` : TYPE_COLOR[n.type]; }
+function drawNode(n) {
+  const [x, y, z, f] = n.p, depth = Math.max(0.25, Math.min(1, 0.85 - z * 0.45));
+  const r = (2.2 + Math.sqrt(n.deg) * 1.25 + n.hot * 4) * f * cam.zoom ** 0.5, c = nodeColor(n);
+  cx.globalAlpha = depth;
+  cx.shadowColor = c; cx.shadowBlur = 8 + n.hot * 20; cx.fillStyle = c;
+  cx.beginPath(); cx.arc(x, y, r, 0, Math.PI * 2); cx.fill(); cx.shadowBlur = 0;
+  cx.fillStyle = "rgba(255,255,255,.85)"; cx.beginPath(); cx.arc(x - r * 0.3, y - r * 0.3, r * 0.35, 0, Math.PI * 2); cx.fill();
+  if (n === focus) { cx.strokeStyle = c; cx.lineWidth = 1; cx.beginPath(); cx.arc(x, y, r + 7 + Math.sin(t * 3) * 1.5, 0, Math.PI * 2); cx.stroke(); }
+  if (n.isNew) { // new section: pulsing green ring
+    cx.strokeStyle = `rgba(92,242,165,${0.45 + 0.4 * Math.sin(t * 4)})`; cx.lineWidth = 1.5;
+    cx.beginPath(); cx.arc(x, y, r + 6 + 2 * Math.sin(t * 4), 0, Math.PI * 2); cx.stroke();
+  }
+  cx.globalAlpha = 1;
+  n.sx = x; n.sy = y; n.sr = Math.max(r + 10, 18); n.sz = z;
+}
+// Labels never sit on top of buttons or text: collect the on-screen UI boxes now and then.
+let uiBoxes = [], uiAt = -1;
+function uiRects() {
+  if (t - uiAt < 0.5) return uiBoxes;
+  uiAt = t; uiBoxes = [];
+  for (const el of document.querySelectorAll(".top > *, .tabs, .status, .log .msg, #ask, .mid > .panel, #card.show")) {
+    const r = el.getBoundingClientRect();
+    if (r.width && r.height && getComputedStyle(el).display !== "none") uiBoxes.push([r.left, r.top, r.right, r.bottom]);
+  }
+  return uiBoxes;
+}
+function drawLabels(R, ox, oy) {
+  const phone = W < 700, max = phone ? 6 : 12, fs = phone ? 12 : 12.5;
+  cx.font = `600 ${fs}px 'Chakra Petch', sans-serif`; cx.textAlign = "center"; cx.textBaseline = "middle";
+  const order = [...nodes].sort((a, b) => score(b) - score(a));
+  function score(n) { return (n === focus ? 1e4 : 0) + n.hot * 400 + (n.isNew ? 300 : 0) + (touches?.counts?.[n.name] || 0) * 5 + n.deg * 6 - n.sz * 120; }
+  const fixed = [[ox - R * 1.25, oy - R * 1.25, ox + R * 1.25, oy + R * 1.25], [ox - 150, oy - R * 2.32 - 10, ox + 150, oy - R * 2.32 + 4], ...uiRects()];
+  const taken = [];
+  for (const n of order) {
+    const w = cx.measureText(n.name).width + 14, h = fs + 9, x0 = n.sx - w / 2, y0 = n.sy - n.sr - h + 2;
+    let ok = taken.length < max && n.sz < 0.55 && x0 > 2 && x0 + w < W - 2 && y0 > 2;
+    if (ok && n !== focus) for (const [a, b, c, d] of [...fixed, ...taken]) if (x0 < c + 4 && x0 + w > a - 4 && y0 < d + 3 && y0 + h > b - 3) { ok = false; break; }
+    if (n === focus) ok = true;
+    if (ok) taken.push([x0, y0, x0 + w, y0 + h]);
+    n.la += ((ok ? 1 : 0) - n.la) * 0.12; // fade, don't pop
+    if (n.la < 0.03) continue;
+    cx.globalAlpha = n.la;
+    cx.fillStyle = "rgba(3,7,12,.78)"; cx.strokeStyle = `rgba(${ARC},.4)`; cx.lineWidth = 1;
+    cx.beginPath(); cx.roundRect ? cx.roundRect(x0, y0, w, h, 3) : cx.rect(x0, y0, w, h); cx.fill(); cx.stroke();
+    cx.strokeStyle = `rgba(${ARC},.35)`; cx.beginPath(); cx.moveTo(n.sx, y0 + h); cx.lineTo(n.sx, n.sy - n.sr * 0.5); cx.stroke();
+    cx.fillStyle = n === focus || n.hot > 0.5 ? "#fff" : "rgba(230,246,255,.95)"; cx.fillText(n.name, n.sx, y0 + h / 2 + 0.5);
+  }
+  cx.globalAlpha = 1; cx.textBaseline = "alphabetic";
+}
+
+let focus = null;
 function draw() {
   t += reduce ? 0.004 : 1 / 60;
   const { ox, oy, base } = coreBox();
-  physics(base);
-  if (!grab) { rot += rotV; rotV += ((reduce ? 0 : 0.0005) - rotV) * 0.015; }
+  physics();
+  if (cam.go && !grab) { // glide so the tapped note faces you
+    let dy = cam.go[0] - cam.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+    cam.yaw += dy * 0.08; cam.pitch += (cam.go[1] - cam.pitch) * 0.08; cam.vYaw = 0; cam.vPitch = 0;
+    if (Math.abs(dy) < 0.003 && Math.abs(cam.go[1] - cam.pitch) < 0.003) cam.go = null;
+  } else if (!grab) {
+    cam.yaw += cam.vYaw; cam.pitch = Math.max(-1.35, Math.min(1.35, cam.pitch + cam.vPitch));
+    cam.vYaw += ((reduce ? 0 : 0.0016) - cam.vYaw) * 0.02; cam.vPitch *= 0.95;
+  }
   const target = MODE_COLOR[mode];
   col = col.map((c, i) => c + (target[i] - c) * 0.08);
   const C = (a) => `rgba(${col[0] | 0},${col[1] | 0},${col[2] | 0},${a})`;
   const spin = t * (mode === "thinking" ? 1.4 : 0.18);
+  const S = Math.max(Math.min(W, H) * (W < 700 ? 0.44 : 0.4), base * 3.1) * cam.zoom;
+  view = camera(ox, oy, S);
   cx.clearRect(0, 0, W, H);
 
-  // hex-ish grid
+  // grid with a touch of parallax as you orbit
   cx.strokeStyle = `rgba(${ARC},.035)`; cx.lineWidth = 1;
-  for (let x = ox % 44; x < W; x += 44) { cx.beginPath(); cx.moveTo(x, 0); cx.lineTo(x, H); cx.stroke(); }
-  for (let y = oy % 44; y < H; y += 44) { cx.beginPath(); cx.moveTo(0, y); cx.lineTo(W, y); cx.stroke(); }
+  const gx = (ox + cam.yaw * 60) % 44, gy = (oy + cam.pitch * 60) % 44;
+  for (let x = gx; x < W; x += 44) { cx.beginPath(); cx.moveTo(x, 0); cx.lineTo(x, H); cx.stroke(); }
+  for (let y = gy; y < H; y += 44) { cx.beginPath(); cx.moveTo(0, y); cx.lineTo(W, y); cx.stroke(); }
 
-  // brain map
-  const cs = Math.cos(rot), sn = Math.sin(rot);
-  const P = (n) => [ox + n.x * cs - n.y * sn, oy + n.x * sn + n.y * cs];
-  for (const [a, b] of edges) {
-    const [x1, y1] = P(a), [x2, y2] = P(b), hot = Math.max(a.hot, b.hot);
-    cx.strokeStyle = `rgba(${ARC},${0.07 + hot * 0.5})`;
-    cx.beginPath(); cx.moveTo(x1, y1); cx.lineTo(x2, y2); cx.stroke();
-  }
-  cx.font = "10px 'IBM Plex Mono', ui-monospace, monospace"; cx.textAlign = "center";
-  for (const n of nodes) {
-    const [x, y] = P(n), r = 2 + Math.sqrt(n.deg) * 1.1 + n.hot * 4, c = n.type === "hub" || !TYPE_COLOR[n.type] ? `rgb(${ARC})` : TYPE_COLOR[n.type];
-    cx.shadowColor = c; cx.shadowBlur = 6 + n.hot * 20; cx.fillStyle = c;
-    cx.beginPath(); cx.arc(x, y, r, 0, Math.PI * 2); cx.fill(); cx.shadowBlur = 0;
-    cx.fillStyle = `rgba(215,243,255,${(W < 860 ? 0.18 : 0.32) + n.hot * 0.6})`; cx.fillText(n.name, x, y - r - 5);
-    n.sx = x; n.sy = y; n.sr = r + 8;
-    if (n.isNew) { // new section: pulsing green ring
-      cx.strokeStyle = `rgba(92,242,165,${0.45 + 0.4 * Math.sin(t * 4)})`; cx.lineWidth = 1.5;
-      cx.beginPath(); cx.arc(x, y, r + 6 + 2 * Math.sin(t * 4), 0, Math.PI * 2); cx.stroke();
-    }
-  }
-  // lessons waiting to be filed orbit the note they're about (gold sparks)
-  const wait = lessons.filter((l) => !l.filed);
-  wait.forEach((l, i) => {
-    const host = nodeBy.get(l.note) || nodeBy.get("Jarvis") || nodes[0]; if (!host) return;
-    const a = t * 0.8 + i * 2.4, rr = host.sr + 6 + (i % 3) * 5, x = host.sx + Math.cos(a) * rr, y = host.sy + Math.sin(a) * rr;
-    cx.fillStyle = "#ffb23e"; cx.shadowColor = "#ffb23e"; cx.shadowBlur = 8;
-    cx.beginPath(); cx.arc(x, y, 1.8, 0, Math.PI * 2); cx.fill(); cx.shadowBlur = 0;
+  // project everything
+  for (const n of nodes) n.p = view(n.x, n.y, n.z);
+  const dust = DUST.map((d) => {
+    const th = d.th + t * d.sp;
+    return view(d.r * Math.sin(d.phi) * Math.cos(th), d.r * Math.cos(d.phi), d.r * Math.sin(d.phi) * Math.sin(th));
   });
+  const dustDot = ([x, y, z], i) => {
+    const a = (0.15 + 0.35 * Math.abs(Math.sin(t * 1.3 + DUST[i].tw * 9))) * Math.max(0.2, 0.8 - z * 0.4);
+    cx.fillStyle = `rgba(${ARC},${a})`; cx.fillRect(x, y, 1.3, 1.3);
+  };
+  // far half: dust, links, notes behind the core
+  dust.forEach((p, i) => { if (p[2] > 0) dustDot(p, i); });
+  for (const e of edges) {
+    const [a, b] = e, za = (a.p[2] + b.p[2]) / 2, hot = Math.max(a.hot, b.hot);
+    cx.strokeStyle = `rgba(${ARC},${(0.06 + hot * 0.5) * Math.max(0.35, 1 - za * 0.5)})`; cx.lineWidth = 1;
+    cx.beginPath(); cx.moveTo(a.p[0], a.p[1]); cx.lineTo(b.p[0], b.p[1]); cx.stroke();
+    // a pulse travels every link, so the brain looks like it's thinking
+    const u = (t * 0.22 + e.seed) % 1, px = a.p[0] + (b.p[0] - a.p[0]) * u, py = a.p[1] + (b.p[1] - a.p[1]) * u;
+    cx.fillStyle = `rgba(${ARC},${0.5 * Math.sin(u * Math.PI) * Math.max(0.3, 1 - za * 0.5)})`; cx.fillRect(px - 1, py - 1, 2, 2);
+  }
+  const sorted = [...nodes].sort((a, b) => b.p[2] - a.p[2]);
+  for (const n of sorted) if (n.p[2] > 0) drawNode(n);
+
+  // the 4D layer
+  const tv = tesseract(t).map(([x, y, z, w]) => [...view(x, y, z), w]);
+  cx.lineWidth = 1;
+  for (const [i, j, axis] of TE) {
+    const a = tv[i], b = tv[j], wv = (a[4] + b[4]) / 2;
+    cx.strokeStyle = axis === 3 ? `rgba(${ARC},.12)` : `rgba(${ARC},${0.16 + (wv + 1) * 0.1})`;
+    cx.beginPath(); cx.moveTo(a[0], a[1]); cx.lineTo(b[0], b[1]); cx.stroke();
+  }
+  for (const v of tv) { cx.fillStyle = `rgba(${ARC},${0.35 + (v[4] + 1) * 0.25})`; cx.fillRect(v[0] - 1.2, v[1] - 1.2, 2.4, 2.4); }
 
   // energy level
   const live = voiceLevel();
@@ -447,103 +702,140 @@ function draw() {
 
   // glow
   const g = cx.createRadialGradient(ox, oy, 0, ox, oy, R * 2.4);
-  g.addColorStop(0, "rgba(235,252,255,.95)"); g.addColorStop(0.12, C(0.75)); g.addColorStop(0.35, C(0.18 + level * 0.2)); g.addColorStop(1, C(0));
+  const dimCore = THEME === "spy" || THEME === "agency"; // these cores have detail in the middle, so less bloom
+  g.addColorStop(0, dimCore ? "rgba(255,250,235,.35)" : "rgba(235,252,255,.9)"); g.addColorStop(0.12, C(dimCore ? 0.22 : 0.7));
+  g.addColorStop(0.35, C(0.14 + level * 0.2)); g.addColorStop(1, C(0));
   cx.fillStyle = g; cx.beginPath(); cx.arc(ox, oy, R * 2.4, 0, Math.PI * 2); cx.fill();
 
-  cx.save(); cx.translate(ox, oy); cx.shadowColor = C(1); cx.shadowBlur = 16;
-
-  // reactor coils: ten segments
-  cx.strokeStyle = C(0.85); cx.lineWidth = R * 0.16;
-  for (let i = 0; i < 10; i++) {
-    const a = i / 10 * Math.PI * 2 + spin * 0.4;
-    cx.beginPath(); cx.arc(0, 0, R * 0.78, a + 0.06, a + Math.PI / 5 - 0.06); cx.stroke();
-  }
-  // Mark VI triangle
-  cx.lineWidth = 2; cx.strokeStyle = C(0.95);
-  cx.beginPath();
-  for (let i = 0; i < 3; i++) { const a = -Math.PI / 2 + i * Math.PI * 2 / 3 - spin * 0.25; cx.lineTo(Math.cos(a) * R * 0.5, Math.sin(a) * R * 0.5); }
-  cx.closePath(); cx.stroke();
-  cx.beginPath(); cx.arc(0, 0, R * 0.22, 0, Math.PI * 2); cx.fillStyle = "rgba(240,253,255,.9)"; cx.fill();
-
-  // inner and outer rings
-  cx.lineWidth = 1.5; cx.strokeStyle = C(0.7);
-  cx.beginPath(); cx.arc(0, 0, R * 1.0, 0, Math.PI * 2); cx.stroke();
-  cx.lineWidth = 2.5;
-  for (let i = 0; i < 3; i++) { const a = -spin * 1.2 + i * Math.PI * 2 / 3; cx.beginPath(); cx.arc(0, 0, R * 1.32, a, a + 1.4); cx.stroke(); }
-  cx.lineWidth = 1;
-  for (let i = 0; i < 2; i++) { const a = spin * 0.7 + i * Math.PI; cx.beginPath(); cx.arc(0, 0, R * 1.72, a, a + 2.2); cx.stroke(); }
-
-  // voice bars
+  cx.save(); cx.translate(ox, oy); cx.shadowColor = C(1); cx.shadowBlur = 16; cx.textAlign = "center";
+  (CORES[THEME] || coreArc)(R, C, spin);
   cx.shadowBlur = 0;
+
+  // shared rings
+  cx.lineWidth = 2.5; cx.strokeStyle = C(0.7);
+  for (let i = 0; i < 3; i++) { const a = -spin * 1.2 + i * Math.PI * 2 / 3; cx.beginPath(); cx.arc(0, 0, R * 1.58, a, a + 1.1); cx.stroke(); }
+  cx.lineWidth = 1;
+  for (let i = 0; i < 2; i++) { const a = spin * 0.7 + i * Math.PI; cx.beginPath(); cx.arc(0, 0, R * 1.78, a, a + 2.2); cx.stroke(); }
+  // voice bars
   const bars = 72;
   for (let i = 0; i < bars; i++) {
     const a = i / bars * Math.PI * 2, wob = Math.abs(Math.sin(i * 1.7 + t * 9) * Math.cos(i * 0.6 - t * 5));
     const len = R * (0.04 + (mode === "speaking" || mode === "listening" ? level * 0.5 * wob : 0.02));
-    cx.strokeStyle = C(0.55); cx.lineWidth = 2;
-    cx.beginPath(); cx.moveTo(Math.cos(a) * R * 1.48, Math.sin(a) * R * 1.48);
-    cx.lineTo(Math.cos(a) * (R * 1.48 + len), Math.sin(a) * (R * 1.48 + len)); cx.stroke();
+    cx.strokeStyle = C(0.5); cx.lineWidth = 2;
+    cx.beginPath(); cx.moveTo(Math.cos(a) * R * 1.64, Math.sin(a) * R * 1.64);
+    cx.lineTo(Math.cos(a) * (R * 1.64 + len), Math.sin(a) * (R * 1.64 + len)); cx.stroke();
   }
-
-  // sweep while thinking
-  if (mode === "thinking") {
-    const a = spin * 2;
-    const sg = cx.createRadialGradient(0, 0, R, 0, 0, R * 2);
+  if (mode === "thinking") { // radar sweep while thinking
+    const a = spin * 2, sg = cx.createRadialGradient(0, 0, R, 0, 0, R * 2);
     sg.addColorStop(0, C(0.25)); sg.addColorStop(1, C(0));
     cx.fillStyle = sg; cx.beginPath(); cx.moveTo(0, 0); cx.arc(0, 0, R * 2, a, a + 0.5); cx.closePath(); cx.fill();
   }
-
-  // rotating text ring
+  // rotating text ring and ticks
   cx.fillStyle = C(0.75); cx.font = `600 ${Math.max(8, R * 0.12) | 0}px 'Chakra Petch', sans-serif`;
-  const txt = RING_TEXT.repeat(2), tr = R * 1.95;
+  const txt = RING_TEXT.repeat(2), tr = R * 1.97;
   for (let i = 0; i < txt.length; i++) {
     const a = i / txt.length * Math.PI * 2 - spin * 0.3;
     cx.save(); cx.rotate(a); cx.translate(0, -tr); cx.fillText(txt[i], 0, 0); cx.restore();
   }
-  // tick marks
   cx.strokeStyle = C(0.3); cx.lineWidth = 1;
   for (let i = 0; i < 120; i++) {
     const a = i / 120 * Math.PI * 2 + spin * 0.1, r1 = R * 2.15, r2 = r1 + (i % 10 ? 3 : 9);
     cx.beginPath(); cx.moveTo(Math.cos(a) * r1, Math.sin(a) * r1); cx.lineTo(Math.cos(a) * r2, Math.sin(a) * r2); cx.stroke();
   }
   cx.restore();
+
+  // near half: dust and notes in front of the core
+  for (const n of sorted) if (n.p[2] <= 0) drawNode(n);
+  dust.forEach((p, i) => { if (p[2] <= 0) dustDot(p, i); });
+
+  // lessons waiting to be filed orbit the note they're about (gold sparks)
+  lessons.filter((l) => !l.filed).forEach((l, i) => {
+    const host = nodeBy.get(l.note) || nodeBy.get("Jarvis") || nodes[0]; if (!host) return;
+    const a = t * 0.8 + i * 2.4, rr = host.sr + (i % 3) * 5, x = host.sx + Math.cos(a) * rr, y = host.sy + Math.sin(a) * rr;
+    cx.fillStyle = "#ffb23e"; cx.shadowColor = "#ffb23e"; cx.shadowBlur = 8;
+    cx.beginPath(); cx.arc(x, y, 1.8, 0, Math.PI * 2); cx.fill(); cx.shadowBlur = 0;
+  });
+
+  drawLabels(R, ox, oy);
+
+  // dimension readout under the core
+  const deg = (v) => String(Math.round(((v % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2) * 180 / Math.PI)).padStart(3, "0");
+  cx.fillStyle = `rgba(${ARC},.5)`; cx.font = "500 9px 'IBM Plex Mono', monospace"; cx.textAlign = "center";
+  cx.fillText(`4D · XW ${deg(t * 0.31)}° · YW ${deg(t * 0.19)}° · ZW ${deg(t * 0.13)}° · ZOOM ${cam.zoom.toFixed(1)}×`, ox, oy - R * 2.32);
   requestAnimationFrame(draw);
 }
 requestAnimationFrame(draw);
 
-// drag to spin the brain; tap the core to talk, tap a dot to open that note
+// drag to orbit (two fingers pinch to zoom); tap the core to talk, tap a dot to open that note
 let grab = null, cardNote = null;
-const angleAt = (e) => { const { ox, oy } = coreBox(); return Math.atan2(e.clientY - oy, e.clientX - ox); };
+const pts = new Map();
 cv.addEventListener("pointerdown", (e) => {
-  grab = { x: e.clientX, y: e.clientY, a: angleAt(e), at: performance.now(), moved: 0, v: 0 };
+  pts.set(e.pointerId, [e.clientX, e.clientY]);
   cv.setPointerCapture(e.pointerId);
+  cam.go = null;
+  if (pts.size === 1) grab = { x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, moved: 0, pinch: false };
+  else if (grab) { const [a, b] = [...pts.values()]; grab.pinch = Math.hypot(a[0] - b[0], a[1] - b[1]); grab.zoom0 = cam.zoom; grab.moved = 99; }
 });
 cv.addEventListener("pointermove", (e) => {
-  if (!grab) return;
+  if (!grab || !pts.has(e.pointerId)) return;
+  pts.set(e.pointerId, [e.clientX, e.clientY]);
+  if (grab.pinch && pts.size > 1) {
+    const [a, b] = [...pts.values()];
+    cam.zoom = Math.max(0.6, Math.min(2.4, grab.zoom0 * Math.hypot(a[0] - b[0], a[1] - b[1]) / grab.pinch));
+    return;
+  }
   grab.moved = Math.max(grab.moved, Math.hypot(e.clientX - grab.x, e.clientY - grab.y));
   if (grab.moved < 8) return;
   cv.classList.add("drag");
-  const a = angleAt(e); let d = a - grab.a;
-  if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2;
-  rot += d; grab.v = d; grab.a = a;
+  const dx = e.clientX - grab.lx, dy = e.clientY - grab.ly; grab.lx = e.clientX; grab.ly = e.clientY;
+  cam.yaw -= dx * 0.0065; cam.pitch = Math.max(-1.35, Math.min(1.35, cam.pitch + dy * 0.0065));
+  cam.vYaw = -dx * 0.0065; cam.vPitch = dy * 0.0065;
 });
-cv.addEventListener("pointerup", (e) => {
+function release(e) {
+  pts.delete(e.pointerId);
+  if (pts.size) return;
   const g = grab; grab = null; cv.classList.remove("drag");
   if (!g) return;
-  if (g.moved >= 8) { rotV = Math.max(-0.08, Math.min(0.08, g.v)); return; } // fling keeps it turning
-  tap(e.clientX, e.clientY);
-});
-cv.addEventListener("pointercancel", () => { grab = null; cv.classList.remove("drag"); });
+  if (g.moved >= 8) { cam.vYaw = Math.max(-0.12, Math.min(0.12, cam.vYaw)); cam.vPitch = Math.max(-0.08, Math.min(0.08, cam.vPitch)); return; }
+  if (e.type === "pointerup") tap(e.clientX, e.clientY);
+}
+cv.addEventListener("pointerup", release);
+cv.addEventListener("pointercancel", release);
+cv.addEventListener("wheel", (e) => { e.preventDefault(); cam.zoom = Math.max(0.6, Math.min(2.4, cam.zoom * Math.exp(-e.deltaY * 0.0012))); }, { passive: false });
 function tap(px, py) {
   const { ox, oy, base } = coreBox();
+  // nearest dot under the finger wins, front ones first
+  const n = nodes.filter((n) => Math.hypot(n.sx - px, n.sy - py) < n.sr).sort((a, b) => a.sz - b.sz)[0];
+  if (n) { openNote(n); return; }
   if (Math.hypot(px - ox, py - oy) < base * 1.4) { listen(); return; }
-  const n = nodes.find((n) => Math.hypot(n.sx - px, n.sy - py) < n.sr);
-  if (!n) { $("card").classList.remove("show"); return; }
-  openNote(n);
+  focus = null; $("card").classList.remove("show");
 }
+
+// Notes are markdown: show headings, bullets, bold and [[links]] (tap a link to jump to that note).
+function noteHtml(md) {
+  const esc = (x) => x.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  const inline = (x) => esc(x).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/`(.+?)`/g, "<code>$1</code>")
+    .replace(/\[\[(.+?)\]\]/g, (m, name) => nodeBy.has(name) ? `<button type="button" class="jump" data-note="${name}">${name}</button>` : name);
+  let out = "", list = false;
+  for (const line of md.replace(/^---[\s\S]*?---\s*/, "").trim().split("\n")) {
+    const li = line.match(/^\s*[-*] (\[[ x]\] )?(.*)$/), h = line.match(/^(#{1,3}) (.*)$/);
+    if (li && !list) { out += "<ul>"; list = true; }
+    if (!li && list) { out += "</ul>"; list = false; }
+    if (h) out += h[1].length === 1 ? "" : `<h4>${inline(h[2])}</h4>`;
+    else if (li) out += `<li${li[1] ? ` class="${li[1].includes("x") ? "done" : "todo"}"` : ""}>${inline(li[2])}</li>`;
+    else if (line.trim()) out += `<p>${inline(line)}</p>`;
+  }
+  return out + (list ? "</ul>" : "");
+}
+$("cardBody").addEventListener("click", (e) => {
+  const b = e.target.closest(".jump"); if (!b) return;
+  e.stopPropagation(); openNote(nodeBy.get(b.dataset.note));
+});
 function openNote(n) {
-  light([n.name]); cardNote = n.name; touch(n.name);
+  light([n.name]); cardNote = n.name; touch(n.name); focus = n;
+  cam.go = [Math.atan2(n.x, -n.z), Math.max(-1.2, Math.min(1.2, Math.atan2(-n.y, Math.hypot(n.x, n.z))))];
   $("cardTitle").textContent = n.name.toUpperCase() + (n.isNew ? "  · NEW" : "");
-  $("cardBody").textContent = n.text.trim();
+  $("cardBody").innerHTML = noteHtml(n.text);
   $("card").classList.add("show");
 }
 $("card").addEventListener("click", (e) => {

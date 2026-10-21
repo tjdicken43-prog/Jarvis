@@ -35,6 +35,13 @@
     --faint: rgba(216, 176, 74, .12); --line: rgba(216, 176, 74, .28); --glass: rgba(20, 14, 8, .72); }
   :root[data-theme="hunter"] { --bg: #0b0704; --ink: #f3e3cf; --dim: #957457; --arc: #ff9a3c; --arc-rgb: 255, 154, 60; --gold: #d9b26f;
     --faint: rgba(255, 154, 60, .12); --line: rgba(255, 154, 60, .26); --glass: rgba(30, 17, 8, .72); }
+  :root[data-theme="showoff"] { --bg: #020108; --ink: #f2eeff; --dim: #8a83b0; --arc: #9fe8ff; --arc-rgb: 159, 232, 255; --gold: #ff7ae6;
+    --faint: rgba(170, 140, 255, .14); --line: rgba(170, 140, 255, .3); --glass: rgba(10, 6, 26, .66); }
+  /* Show off cinema: left alone, the controls fade away and the brain takes the whole screen; any tap brings them back */
+  .mid > .panel, .center > :not(.slot), #ask { transition: opacity .9s ease; }
+  body.cinema .mid > .panel, body.cinema .center > :not(.slot), body.cinema #ask { opacity: 0; pointer-events: none; }
+  :root[data-theme="showoff"] body { background: radial-gradient(60% 45% at 18% 22%, rgba(150, 90, 255, .16), transparent 70%),
+    radial-gradient(55% 40% at 85% 70%, rgba(60, 200, 255, .13), transparent 70%), radial-gradient(45% 35% at 50% 95%, rgba(255, 90, 210, .1), transparent 70%), var(--bg); }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); overflow: hidden; font: 15px/1.5 var(--body); }
   canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
@@ -277,6 +284,7 @@
     <option value="agency">Agency HQ (black and chrome)</option>
     <option value="spy">Secret service (black and gold)</option>
     <option value="hunter">Hunter's den (amber)</option>
+    <option value="showoff">Show off (everything at once)</option>
   </select>
   <label><input id="talkback" type="checkbox"> Speak answers out loud</label>
   <div id="keyBox">
@@ -299,7 +307,7 @@
 <script src="brain.js"></script>
 <script>
 const BRAIN = window.BRAIN || { notes: [], stats: {} };
-const RUNNER = "trig_01XmDbtyEAotBEyDx2phjSoF"; // the Claude Code scheduled task that works the job queue
+const RUNNER = "trig_01QocNR8n87c5LuwRCxWs1Ht"; // the Claude Code scheduled task that works the job queue
 const $ = (id) => document.getElementById(id);
 const store = {
   get(k, d) { try { return localStorage.getItem("jarvis." + k) ?? d; } catch { return d; } },
@@ -383,9 +391,13 @@ for (const n of nodes) n.deg = edges.filter(([a, b]) => a === n || b === n).leng
 edges.forEach((e, i) => { e.seed = (i * 0.618) % 1; });
 const TYPE_COLOR = { hub: "#4fd8ff", rules: "#ff5b4a", log: "#ffb23e", list: "#ffb23e", week: "#9b8cff", personal: "#5cf2a5" };
 
+let cinemaK = 0; // 0 = normal layout, 1 = Show off cinema (brain centred and bigger)
 function coreBox() {
   const r = $("slot").getBoundingClientRect();
-  return { ox: r.left + r.width / 2, oy: r.top + r.height / 2, base: Math.max(34, Math.min(r.width, r.height) * 0.21) };
+  const box = { ox: r.left + r.width / 2, oy: r.top + r.height / 2, base: Math.max(34, Math.min(r.width, r.height) * 0.21) };
+  if (cinemaK < 0.001) return box;
+  const k = cinemaK * cinemaK * (3 - 2 * cinemaK), big = Math.max(box.base, Math.min(W, H * 0.62) * 0.16);
+  return { ox: box.ox + (W / 2 - box.ox) * k, oy: box.oy + (H * 0.46 - box.oy) * k, base: box.base + (big - box.base) * k };
 }
 // Linked notes pull together, every note pushes the others away, and all of them stay near the sphere's skin.
 function physics() {
@@ -408,7 +420,8 @@ for (let i = 0; i < 240; i++) physics(); // settle before the first frame
 const MODE_COLOR = { idle: [79, 216, 255], speaking: [120, 230, 255], listening: [92, 242, 165], thinking: [255, 178, 62] };
 let col = [79, 216, 255], t = 0, ARC = "79,216,255", THEME = "arc", BG = "#03070c";
 const RINGS = { arc: " J.A.R.V.I.S. · TJ'S BRAIN · ONLINE · ", agency: " J.A.R.V.I.S. · AGENCY HQ · CLEARANCE GRANTED · ",
-  spy: " J.A.R.V.I.S. · SECRET SERVICE · EYES ONLY · ", hunter: " J.A.R.V.I.S. · HUNTER'S LOG · SALT AND IRON · " };
+  spy: " J.A.R.V.I.S. · SECRET SERVICE · EYES ONLY · ", hunter: " J.A.R.V.I.S. · HUNTER'S LOG · SALT AND IRON · ",
+  showoff: " J.A.R.V.I.S. · ALL SYSTEMS · FIVE DIMENSIONS · ONE BRAIN · " };
 function setTheme(name) {
   if (!RINGS[name]) name = "arc";
   THEME = name;
@@ -647,7 +660,205 @@ function coreHunter(R, C, spin) {
   }
   cx.globalAlpha = 1;
 }
-const CORES = { arc: coreArc, agency: coreAgency, spy: coreSpy, hunter: coreHunter };
+const CORES = { arc: coreArc, agency: coreAgency, spy: coreSpy, hunter: coreHunter, showoff: coreShow };
+
+/* ---------- Show off: every Jarvis system on screen at once ---------- */
+// Iridescent colour that drifts cyan to violet to magenta, a 5D hypercube cage around the brain, a warp
+// starfield, a scan plane, Jarvis's systems orbiting the core with live numbers, and a guided tour of every note.
+const HUE = Array.from({ length: 360 }, (_, h) => { // hsl(h, 100%, 68%) as "r,g,b"
+  const f = (n) => { const k = (n + h / 30) % 12; return Math.round(255 * (0.68 - 0.32 * Math.max(-1, Math.min(k - 3, 9 - k, 1)))); };
+  return `${f(0)},${f(8)},${f(4)}`;
+});
+const hue = (h) => HUE[(((h | 0) % 360) + 360) % 360];
+const SHOW = () => THEME === "showoff";
+edges.forEach((e, i) => { e.h = 175 + (i * 37) % 150; });
+
+// 5D: a penteract (32 corners, 80 edges) turning in five planes, folded 5D to 4D to 3D
+const PV = [], PE = [];
+for (let i = 0; i < 32; i++) PV.push([0, 1, 2, 3, 4].map((b) => (i >> b & 1 ? 1 : -1)));
+for (let i = 0; i < 32; i++) for (let b = 0; b < 5; b++) { const j = i ^ (1 << b); if (j > i) PE.push([i, j, b]); }
+const PLANES = [[0, 4, 0.23], [1, 3, 0.17], [2, 4, 0.11], [3, 4, 0.29], [0, 2, 0.07]];
+function penteract(time) {
+  return PV.map((v0) => {
+    const v = [...v0];
+    for (const [a, b, sp] of PLANES) { const c = Math.cos(time * sp), s = Math.sin(time * sp); [v[a], v[b]] = [v[a] * c - v[b] * s, v[a] * s + v[b] * c]; }
+    const k5 = 2.2 / (3.4 - v[4]), w = v[3] * k5, k4 = 1.7 / (3.2 - w) * k5 * 0.62;
+    return [v[0] * k4, v[1] * k4, v[2] * k4, v[4]];
+  });
+}
+
+// warp starfield: streaks fly out of the core, faster when he talks or thinks
+const STARS = Array.from({ length: 170 }, (_, i) => { const r = rng(300 + i); return { x: r() * 2 - 1, y: r() * 2 - 1, z: 0.05 + r() * 0.95 }; });
+function warp(ox, oy) {
+  const sp = 0.0022 + level * 0.012 + (mode === "thinking" ? 0.01 : 0);
+  cx.lineCap = "round";
+  for (let i = 0; i < STARS.length; i += lowPower ? 2 : 1) {
+    const s = STARS[i], z0 = s.z; s.z -= sp;
+    const X = ox + s.x * W * 0.25 / s.z, Y = oy + s.y * H * 0.25 / s.z;
+    if (s.z <= 0.03 || X < -20 || X > W + 20 || Y < -20 || Y > H + 20) { s.z = 1; s.x = Math.random() * 2 - 1; s.y = Math.random() * 2 - 1; continue; }
+    const X0 = ox + s.x * W * 0.25 / z0, Y0 = oy + s.y * H * 0.25 / z0, near = 1 - s.z;
+    cx.strokeStyle = `rgba(${hue(200 + s.x * 90)},${Math.min(0.85, near * 0.95)})`; cx.lineWidth = 0.4 + near * 1.6;
+    cx.beginPath(); cx.moveTo(X0, Y0); cx.lineTo(X, Y); cx.stroke();
+  }
+  cx.lineCap = "butt";
+}
+function drawPenteract() {
+  const pv = penteract(t).map(([x, y, z, v]) => [...view(x, y, z), v]);
+  cx.lineWidth = 0.8;
+  for (const [i, j, axis] of PE) {
+    const a = pv[i], b = pv[j], vv = (a[4] + b[4]) / 2, za = (a[2] + b[2]) / 2;
+    cx.strokeStyle = `rgba(${hue(200 + axis * 30 + t * 8)},${(0.1 + (vv + 1) * 0.09) * Math.max(0.35, 1 - za * 0.4)})`;
+    cx.beginPath(); cx.moveTo(a[0], a[1]); cx.lineTo(b[0], b[1]); cx.stroke();
+  }
+  for (const v of pv) { cx.fillStyle = `rgba(${hue(290 + v[4] * 40)},${0.4 + (v[4] + 1) * 0.25})`; cx.fillRect(v[0] - 1.5, v[1] - 1.5, 3, 3); }
+}
+// a scan plane sweeps the brain top to bottom; notes it crosses light up
+function scanPlane() {
+  const ys = Math.sin(t * 0.37) * 0.95, rr = Math.sqrt(1 - ys * ys) * 1.05;
+  cx.strokeStyle = `rgba(${hue(185 + t * 10)},.4)`; cx.lineWidth = 1; cx.beginPath();
+  for (let i = 0; i <= 64; i++) { const a = i / 64 * Math.PI * 2, [x, y] = view(Math.cos(a) * rr, ys, Math.sin(a) * rr); i ? cx.lineTo(x, y) : cx.moveTo(x, y); }
+  cx.stroke();
+  for (const n of nodes) if (Math.abs(n.y - ys) < 0.07) n.hot = Math.max(n.hot, 0.4);
+}
+
+// Jarvis's systems, orbiting the core with their live numbers
+const showStats = { chats: null };
+const SYSTEMS = [
+  { key: "voice", name: () => "VOICE · " + ($("voice").value || "builtin:butler").replace("builtin:", "").toUpperCase(),
+    text: "Five built-in voices, made right on the phone. No cloud voice, no bill." },
+  { key: "memory", name: () => `MEMORY · ${lessons.length} LESSON${lessons.length === 1 ? "" : "S"}`,
+    text: "Everything you tell me is saved, then filed into the notes by Jarvis backend." },
+  { key: "chats", name: () => `CHATS · ${showStats.chats ?? "…"} SAVED`,
+    text: "Every conversation kept, on every device. CHATS reopens any of them." },
+  { key: "jobs", name: () => { const v = Object.values(jobsSeen || {}); return `JOBS · ${v.filter((s) => s === "queued" || s === "working").length} LIVE · ${v.length} RUN`; },
+    text: "Big asks go to Jarvis backend in the cloud: code, research, PRs. Answers land here." },
+  { key: "brain", name: () => `BRAIN · ${nodes.length} NOTES · ${edges.length} LINKS`,
+    text: "Every note a star, every link a nerve. The pulses are me thinking." },
+  { key: "dims", name: () => "4D TESSERACT · 5D PENTERACT",
+    text: "A hypercube turning through the 4th dimension, caged in one turning through the 5th." },
+];
+function satellites(ox, oy) {
+  cx.font = "600 9px 'IBM Plex Mono', monospace"; cx.textAlign = "center";
+  SYSTEMS.forEach((s, i) => {
+    const a = t * 0.16 + i * Math.PI * 2 / SYSTEMS.length;
+    const [x, y, z, f] = view(Math.cos(a) * 1.32, Math.sin(a * 2 + i) * 0.22 - 0.05, Math.sin(a) * 1.32);
+    const on = tour.sys === s.key && t - tour.at < 6, al = Math.max(0.25, Math.min(1, 0.9 - z * 0.5)) * Math.min(1, boot * 1.6), c = hue(200 + i * 25 + t * 6);
+    // data link: a beam to the core with packets riding it
+    cx.strokeStyle = `rgba(${c},${(on ? 0.5 : 0.14) * al})`; cx.lineWidth = on ? 1.4 : 0.8;
+    cx.beginPath(); cx.moveTo(ox, oy); cx.lineTo(x, y); cx.stroke();
+    for (let k = 0; k < 2; k++) { const u = (t * 0.5 + i * 0.17 + k * 0.5) % 1; cx.fillStyle = `rgba(${c},${0.8 * al})`; cx.fillRect(ox + (x - ox) * u - 1.2, oy + (y - oy) * u - 1.2, 2.4, 2.4); }
+    const r = (on ? 7 : 4.5) * f;
+    cx.globalAlpha = al; cx.fillStyle = `rgb(${c})`; cx.beginPath(); cx.moveTo(x, y - r); cx.lineTo(x + r, y); cx.lineTo(x, y + r); cx.lineTo(x - r, y); cx.closePath(); cx.fill();
+    cx.strokeStyle = `rgba(${c},.8)`; cx.lineWidth = 1; cx.beginPath(); cx.arc(x, y, r + 4 + Math.sin(t * 3 + i) * 1.5, 0, Math.PI * 2); cx.stroke();
+    if (on || (cinemaK > 0.9 && z < 0)) {
+      const label = s.name(), w = cx.measureText(label).width + 10, lx = Math.max(w / 2 + 4, Math.min(W - w / 2 - 4, x));
+      cx.fillStyle = "rgba(2,1,8,.75)"; cx.fillRect(lx - w / 2, y + r + 5, w, 13); cx.fillStyle = on ? "#fff" : `rgba(${c},.95)`; cx.fillText(label, lx, y + r + 15);
+    }
+    cx.globalAlpha = 1;
+  });
+}
+
+// the guided tour: when you leave it alone, Jarvis walks through every system, then every note
+const tour = { i: -1, at: -99, shock: -99, cap: null, sys: null };
+let lastInput = 0, capBox = null; // the controls stay up for the first few seconds after opening
+cv.addEventListener("pointerdown", () => { wokeFromCinema = cinema; lastInput = t; runCinema(); }, { passive: true });
+addEventListener("wheel", () => { lastInput = t; }, { passive: true });
+function firstLine(md) {
+  const l = md.replace(/^---[\s\S]*?---\s*/, "").split("\n").map((x) => x.trim()).find((x) => x && !x.startsWith("#")) || "";
+  return l.replace(/^[-*] (\[[ x]\] )?/, "").replace(/\[\[|\]\]|\*\*|`/g, "");
+}
+let cinema = false, wokeFromCinema = false;
+addEventListener("keydown", () => { lastInput = t; });
+function runCinema() {
+  const want = SHOW() && t - lastInput > 14 && mode === "idle" && !$("card").classList.contains("show") && !document.querySelector("dialog[open]") && !reduce;
+  if (want !== cinema) { cinema = want; document.body.classList.toggle("cinema", want); uiAt = -1; }
+  cinemaK += ((cinema ? 1 : 0) - cinemaK) * 0.03;
+}
+function runTour() {
+  const busy = t - lastInput < 9 || $("card").classList.contains("show") || mode !== "idle" || boot < 1;
+  if (!busy) cam.zoom += ((tour.sys ? 0.92 : 1.18) - cam.zoom) * 0.02;
+  if (busy || t - tour.at < 6.5) return;
+  const order = [...nodes].sort((a, b) => b.deg - a.deg), total = SYSTEMS.length + order.length;
+  tour.i = (tour.i + 1) % total; tour.at = t; tour.shock = t;
+  if (tour.i < SYSTEMS.length) {
+    const s = SYSTEMS[tour.i]; focus = null; tour.sys = s.key;
+    tour.cap = { tag: `SYSTEM ${tour.i + 1} OF ${SYSTEMS.length}`, title: s.name(), line: s.text };
+  } else {
+    const n = order[tour.i - SYSTEMS.length]; tour.sys = null; focus = n; light([n.name]);
+    cam.go = [Math.atan2(n.x, -n.z), Math.max(-1.2, Math.min(1.2, Math.atan2(-n.y, Math.hypot(n.x, n.z))))];
+    tour.cap = { tag: `NOTE ${tour.i - SYSTEMS.length + 1} OF ${order.length} · ${(n.type || "note").toUpperCase()} · ${n.deg} LINKS`, title: n.name.toUpperCase(), line: firstLine(n.text) };
+  }
+}
+function shockwave(ox, oy, R) {
+  const k = (t - tour.shock) / 1.3; if (k < 0 || k > 1) return;
+  cx.strokeStyle = `rgba(${hue(280 + k * 60)},${(1 - k) * 0.6})`; cx.lineWidth = 2 * (1 - k) + 0.5;
+  cx.beginPath(); cx.arc(ox, oy, R * (1.2 + k * 5), 0, Math.PI * 2); cx.stroke();
+}
+function caption(ox, oy, R) {
+  capBox = null;
+  const c = tour.cap; if (!c || t - tour.at > 6.2 || t - lastInput < 9) return;
+  const age = t - tour.at, fade = Math.min(1, age * 3, (6.2 - age) * 2), w = Math.min(W - 24, 360), x0 = ox - w / 2;
+  const st = $("status").getBoundingClientRect();
+  let y0 = cinemaK > 0.5 ? H - 96 : st.top - 70;
+  capBox = [x0, y0, x0 + w, y0 + 60];
+  cx.globalAlpha = fade;
+  cx.fillStyle = "rgba(4,2,14,.78)"; cx.fillRect(x0, y0, w, 60);
+  cx.fillStyle = `rgb(${hue(190 + t * 20)})`; cx.fillRect(x0, y0, Math.min(1, age / 6) * w, 1.5); // progress to the next stop
+  cx.textAlign = "left";
+  cx.fillStyle = `rgba(${hue(300)},.9)`; cx.font = "500 8.5px 'IBM Plex Mono', monospace"; cx.fillText(c.tag, x0 + 10, y0 + 14);
+  cx.fillStyle = "#fff"; cx.font = "600 14px 'Chakra Petch', sans-serif"; cx.fillText(c.title, x0 + 10, y0 + 31);
+  cx.fillStyle = "rgba(226,220,255,.9)"; cx.font = "400 11.5px 'IBM Plex Sans', sans-serif";
+  let line = c.line.slice(0, Math.floor(age * 50)); // typed out
+  while (line && cx.measureText(line).width > w - 20) line = line.slice(0, -2);
+  if (line.length < c.line.length && age * 50 > c.line.length) line = line.replace(/\s*\S*$/, "…");
+  cx.fillText(line, x0 + 10, y0 + 49);
+  cx.globalAlpha = 1; cx.textAlign = "center";
+  if (cinemaK > 0.9) { cx.fillStyle = `rgba(${ARC},${0.35 + 0.25 * Math.sin(t * 2)})`; cx.font = "500 9px 'IBM Plex Mono', monospace"; cx.fillText("TAP ANYWHERE FOR THE CONTROLS", W / 2, H - 22); }
+}
+const glowCv = document.createElement("canvas"), glow = glowCv.getContext("2d");
+function bloom() {
+  const gw = Math.max(1, (W / 10) | 0), gh = Math.max(1, (H / 10) | 0);
+  if (glowCv.width !== gw || glowCv.height !== gh) { glowCv.width = gw; glowCv.height = gh; }
+  if (!(frame & 1)) { glow.clearRect(0, 0, gw, gh); glow.drawImage(cv, 0, 0, gw, gh); } // every other frame is plenty for a glow
+  cx.save(); cx.globalCompositeOperation = "lighter"; cx.globalAlpha = 0.55; cx.imageSmoothingEnabled = true;
+  cx.drawImage(glowCv, 0, 0, W, H); cx.restore();
+}
+function coreShow(R, C, spin) {
+  // gimbal: three rings tilting through 3D around the core
+  cx.shadowBlur = 0;
+  for (let k = 0; k < 3; k++) {
+    cx.save(); cx.rotate(k * Math.PI / 3 + spin * 0.35);
+    const sq = Math.abs(Math.cos(t * 0.6 + k * 2.1)) * 0.92 + 0.08;
+    cx.strokeStyle = `rgba(${hue(200 + k * 45 + t * 15)},.85)`; cx.lineWidth = 1.6;
+    cx.beginPath(); cx.ellipse(0, 0, R * 1.08, R * 1.08 * sq, 0, 0, Math.PI * 2); cx.stroke();
+    const ea = t * (1.4 + k * 0.4); // an electron riding each ring
+    cx.fillStyle = "#fff"; cx.beginPath(); cx.arc(Math.cos(ea) * R * 1.08, Math.sin(ea) * R * 1.08 * sq, 2.2, 0, Math.PI * 2); cx.fill();
+    cx.restore();
+  }
+  // twelve-cell reactor ring
+  cx.lineWidth = R * 0.11;
+  for (let i = 0; i < 12; i++) {
+    const a = i / 12 * Math.PI * 2 - spin * 0.5;
+    cx.strokeStyle = `rgba(${hue(250 + i * 8 + t * 25)},${0.55 + 0.35 * Math.sin(t * 2 + i)})`;
+    cx.beginPath(); cx.arc(0, 0, R * 0.74, a + 0.05, a + Math.PI / 6 - 0.05); cx.stroke();
+  }
+  // hex shield, slowly counter-turning
+  cx.lineWidth = 0.8; cx.strokeStyle = C(0.35);
+  for (let i = 0; i < 6; i++) {
+    const a = i / 6 * Math.PI * 2 + spin * 0.2, hx = Math.cos(a) * R * 0.45, hy = Math.sin(a) * R * 0.45;
+    cx.beginPath(); for (let j = 0; j < 6; j++) { const b = j * Math.PI / 3 + a; cx.lineTo(hx + Math.cos(b) * R * 0.17, hy + Math.sin(b) * R * 0.17); } cx.closePath(); cx.stroke();
+  }
+  // the element triangle and a white-hot plasma heart
+  cx.lineWidth = 2; cx.strokeStyle = "rgba(255,255,255,.9)"; cx.beginPath();
+  for (let i = 0; i < 3; i++) { const a = -Math.PI / 2 + i * Math.PI * 2 / 3 + spin * 0.3; cx.lineTo(Math.cos(a) * R * 0.36, Math.sin(a) * R * 0.36); }
+  cx.closePath(); cx.stroke();
+  const p = cx.createRadialGradient(0, 0, 0, 0, 0, R * 0.3);
+  p.addColorStop(0, "rgba(255,255,255,1)"); p.addColorStop(0.45, `rgba(${hue(300 + t * 30)},.85)`); p.addColorStop(1, `rgba(${hue(200)},0)`);
+  cx.fillStyle = p; cx.beginPath(); cx.arc(0, 0, R * 0.3 * (1 + level * 0.25), 0, Math.PI * 2); cx.fill();
+}
+function loadShowStats() {
+  dbPromise.then(async (db) => { if (!db) return; try { const q = await db.collection("chats").orderBy("started", "desc").limit(500).get(); showStats.chats = q.docs.length; } catch {} });
+}
 
 /* ---------- Frame ---------- */
 function nodeColor(n) { return n.type === "hub" || !TYPE_COLOR[n.type] ? `rgb(${ARC})` : TYPE_COLOR[n.type]; }
@@ -682,7 +893,7 @@ function drawLabels(R, ox, oy) {
   cx.font = `600 ${fs}px 'Chakra Petch', sans-serif`; cx.textAlign = "center"; cx.textBaseline = "middle";
   const order = [...nodes].sort((a, b) => score(b) - score(a));
   function score(n) { return (n === focus ? 1e4 : 0) + n.hot * 400 + (n.isNew ? 300 : 0) + (touches?.counts?.[n.name] || 0) * 5 + n.deg * 6 - n.sz * 120; }
-  const fixed = [[ox - R * 1.25, oy - R * 1.25, ox + R * 1.25, oy + R * 1.25], [ox - 150, oy - R * 2.32 - 10, ox + 150, oy - R * 2.32 + 4], ...uiRects()];
+  const fixed = [[ox - R * 1.25, oy - R * 1.25, ox + R * 1.25, oy + R * 1.25], [ox - 150, oy - R * 2.32 - 10, ox + 150, oy - R * 2.32 + 4], ...uiRects(), ...(capBox ? [capBox] : [])];
   const taken = [];
   for (const n of order) {
     const w = (n.lw ??= cx.measureText(n.name).width) + 14, h = fs + 9, x0 = n.sx - w / 2, y0 = n.sy - n.sr - h + 2;
@@ -709,9 +920,16 @@ function cached(key, make) {
   if (!gradCache.has(key)) { if (gradCache.size > 40) gradCache.clear(); gradCache.set(key, make()); }
   return gradCache.get(key);
 }
+let frame = 0, lastNow = 0, frameMs = 16, lowPower = false;
 function draw() {
+  frame++;
+  // if the phone can't keep up in Show off, drop the glow pass and half the stars instead of stuttering
+  const now = performance.now(); if (lastNow) frameMs += (Math.min(100, now - lastNow) - frameMs) * 0.05; lastNow = now;
+  if (SHOW() && !lowPower && frame > 45 && frameMs > 26) lowPower = true;
   t += reduce ? 0.004 : 1 / 60;
   const { ox, oy, base } = coreBox();
+  if (SHOW()) { ARC = hue(250 + Math.sin(t * 0.15) * 70); MODE_COLOR.idle = ARC.split(",").map(Number); MODE_COLOR.speaking = MODE_COLOR.idle.map((v) => Math.min(255, v + 40)); runTour(); }
+  runCinema();
   physics();
   if (cam.go && !grab) { // glide so the tapped note faces you
     let dy = cam.go[0] - cam.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
@@ -738,6 +956,7 @@ function draw() {
   const gx = (ox + cam.yaw * 60) % 44, gy = (oy + cam.pitch * 60) % 44;
   for (let x = gx; x < W; x += 44) { cx.beginPath(); cx.moveTo(x, 0); cx.lineTo(x, H); cx.stroke(); }
   for (let y = gy; y < H; y += 44) { cx.beginPath(); cx.moveTo(0, y); cx.lineTo(W, y); cx.stroke(); }
+  if (SHOW() && !reduce) warp(ox, oy);
 
   // project everything
   for (const n of nodes) n.p = view(n.x, n.y, n.z);
@@ -753,11 +972,12 @@ function draw() {
   dust.forEach((p, i) => { if (p[2] > 0) dustDot(p, i); });
   for (const e of edges) {
     const [a, b] = e, za = (a.p[2] + b.p[2]) / 2, hot = Math.max(a.hot, b.hot);
-    cx.strokeStyle = `rgba(${ARC},${(0.06 + hot * 0.5) * Math.max(0.35, 1 - za * 0.5)})`; cx.lineWidth = 1;
+    const ec = SHOW() ? hue(e.h + t * 12) : ARC;
+    cx.strokeStyle = `rgba(${ec},${((SHOW() ? 0.16 : 0.06) + hot * 0.5) * Math.max(0.35, 1 - za * 0.5)})`; cx.lineWidth = 1;
     cx.beginPath(); cx.moveTo(a.p[0], a.p[1]); cx.lineTo(b.p[0], b.p[1]); cx.stroke();
     // a pulse travels every link, so the brain looks like it's thinking
     const u = (t * 0.22 + e.seed) % 1, px = a.p[0] + (b.p[0] - a.p[0]) * u, py = a.p[1] + (b.p[1] - a.p[1]) * u;
-    cx.fillStyle = `rgba(${ARC},${0.5 * Math.sin(u * Math.PI) * Math.max(0.3, 1 - za * 0.5)})`; cx.fillRect(px - 1, py - 1, 2, 2);
+    cx.fillStyle = `rgba(${ec},${(SHOW() ? 0.95 : 0.5) * Math.sin(u * Math.PI) * Math.max(0.3, 1 - za * 0.5)})`; cx.fillRect(px - 1, py - 1, 2, 2);
   }
   const sorted = [...nodes].sort((a, b) => b.p[2] - a.p[2]);
   for (const n of sorted) if (n.p[2] > 0) drawNode(n);
@@ -779,6 +999,7 @@ function draw() {
     cx.beginPath(); cx.moveTo(a[0], a[1]); cx.lineTo(b[0], b[1]); cx.stroke();
   }
   for (const v of tv) { cx.fillStyle = `rgba(${ARC},${0.35 + (v[4] + 1) * 0.25})`; cx.fillRect(v[0] - 1.2, v[1] - 1.2, 2.4, 2.4); }
+  if (SHOW()) { drawPenteract(); scanPlane(); }
 
   // energy level
   const live = voiceLevel();
@@ -842,6 +1063,7 @@ function draw() {
   // near half: dust and notes in front of the core
   for (const n of sorted) if (n.p[2] <= 0) drawNode(n);
   dust.forEach((p, i) => { if (p[2] <= 0) dustDot(p, i); });
+  if (SHOW()) { satellites(ox, oy); shockwave(ox, oy, R); if (!lowPower) bloom(); }
 
   // lessons waiting to be filed orbit the note they're about (gold sparks)
   lessons.filter((l) => !l.filed).forEach((l, i) => {
@@ -859,6 +1081,7 @@ function draw() {
   cx.fillRect(0, H - 120, W, 120);
 
   drawLabels(R, ox, oy);
+  if (SHOW()) caption(ox, oy, R);
 
   // dimension readout over the core, on its own dark strip
   const deg = (v) => String(Math.round(((v % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2) * 180 / Math.PI)).padStart(3, "0");
@@ -870,7 +1093,8 @@ function draw() {
     return g;
   }); cx.fillRect(ox - rw / 2, ry - 10, rw, 14);
   cx.fillStyle = `rgba(${ARC},.6)`;
-  cx.fillText(`4D · XW ${deg(t * 0.31)}° · YW ${deg(t * 0.19)}° · ZW ${deg(t * 0.13)}° · ZOOM ${cam.zoom.toFixed(1)}×`, ox, oy - R * 2.32);
+  cx.fillText(SHOW() ? `5D · XV ${deg(t * 0.23)}° · YW ${deg(t * 0.17)}° · WV ${deg(t * 0.29)}° · ${nodes.length} NOTES · ZOOM ${cam.zoom.toFixed(1)}×`
+    : `4D · XW ${deg(t * 0.31)}° · YW ${deg(t * 0.19)}° · ZW ${deg(t * 0.13)}° · ZOOM ${cam.zoom.toFixed(1)}×`, ox, oy - R * 2.32);
   requestAnimationFrame(draw);
 }
 requestAnimationFrame(draw);
@@ -912,6 +1136,7 @@ cv.addEventListener("pointerup", release);
 cv.addEventListener("pointercancel", release);
 cv.addEventListener("wheel", (e) => { e.preventDefault(); cam.zoom = Math.max(0.6, Math.min(2.4, cam.zoom * Math.exp(-e.deltaY * 0.0012))); }, { passive: false });
 function tap(px, py) {
+  if (wokeFromCinema) { wokeFromCinema = false; return; } // the first tap in Show off cinema just brings the controls back
   const { ox, oy, base } = coreBox();
   // nearest dot under the finger wins, front ones first
   const n = nodes.filter((n) => Math.hypot(n.sx - px, n.sy - py) < n.sr).sort((a, b) => a.sz - b.sz)[0];
@@ -1406,10 +1631,11 @@ function wakeRunner(db, mcp) {
   clearTimeout(wakeTimer);
   wakeTimer = setTimeout(async () => {
     wakeTimer = 0;
-    let last = 0;
-    try { const k = await db.doc("memory/runner").get(); if (k.exists) last = Date.parse(k.data().kickedAt) || 0; } catch {}
+    let last = 0, lock = 0;
+    try { const k = await db.doc("memory/runner").get(); if (k.exists) { last = Date.parse(k.data().kickedAt) || 0; lock = Date.parse(k.data().lockAt) || 0; } } catch {}
     const busy = Object.values(jobsSeen || {}).includes("working");
-    if (busy && Date.now() - last < 20 * 60000) { say("note", "Jarvis backend is already on it; it'll take these too."); return; }
+    // a run that holds the lock keeps checking the queue until it's empty, so it will take these too
+    if ((busy && Date.now() - last < 20 * 60000) || Date.now() - lock < 25 * 60000) { say("note", "Jarvis backend is already on it; it'll take these too."); return; }
     try {
       await mcp.callTool("Claude Code Remote", "fire_trigger", { trigger_id: RUNNER });
       try { await db.doc("memory/runner").set({ kickedAt: new Date().toISOString() }); } catch {}
@@ -1579,7 +1805,11 @@ const TEST_LINE = { butler: "At your service, boss. All systems online.", agent:
   spy: "Good evening, boss. Shall we get to work?", hunter: "Alright, boss. Let's go save some people.", robot: "Systems online. Awaiting orders, boss." };
 $("testVoice").addEventListener("click", () => { store.set("voice", $("voice").value); speak(TEST_LINE[$("voice").value.replace("builtin:", "")] || TEST_LINE.butler); });
 $("voice").addEventListener("change", () => $("testVoice").click());
-$("theme").addEventListener("change", () => setTheme($("theme").value));
+$("theme").addEventListener("change", () => {
+  setTheme($("theme").value); focus = null; tour.cap = null; tour.i = -1;
+  if (SHOW()) { loadShowStats(); lastInput = t - 7; speak("Show mode. Sit back, boss. Let me walk you through everything."); }
+});
+if (SHOW()) loadShowStats();
 $("forget").addEventListener("click", () => { store.set("key", null); $("key").value = ""; });
 
 samplePromise.then((sample) => {

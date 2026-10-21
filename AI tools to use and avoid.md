@@ -10,6 +10,7 @@ Things seen on TikTok, checked before touching them.
 - **Impeccable** (design checklist) and **Emil Kowalski's** motion review: used for the Gym-security website polish on 2026-10-20.
 - **Playwright**: a real browser that checks every page on phone and desktop. Already in the cloud setup, so no Playwright MCP needed.
 - **Impeccable** and **Emil Kowalski's** `emil-design-eng` and `review-animations` skills: installed in the [[Basis]] repo on 2026-10-21 (markdown only; Impeccable's launcher, which downloads a binary, removed).
+- **Impeccable** also copied into this repo (`.claude/skills/impeccable`, markdown only) on 2026-10-21; its overdrive guide shaped the phone page's Show off look.
 - **vet-ai-tool** skill (our own, in this repo): the steps for checking any new tool TJ sends before installing.
 
 ## Fine, not needed now

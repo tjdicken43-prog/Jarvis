@@ -217,7 +217,7 @@
   <p>How Jarvis sounds. Inside claude.ai he thinks with your Claude account, so nothing else is needed.</p>
   <label for="voice">Voice</label>
   <select id="voice"></select>
-  <p>Best free voice on Android: phone Settings, search "Text-to-speech", Google engine, Language English (United Kingdom), install the voice data and pick a male voice. Then choose it here.</p>
+  <p>"Jarvis (built-in)" is his own voice and works everywhere, even in the Claude app. Your phone's voices are listed under it if you'd rather use one.</p>
   <label><input id="talkback" type="checkbox"> Speak answers out loud</label>
   <div id="keyBox">
     <label for="key">Anthropic API key (only for the copy on a computer, kept in this browser)</label>
@@ -378,7 +378,8 @@ function draw() {
   }
 
   // energy level
-  const want = mode === "speaking" ? 0.45 + 0.4 * Math.abs(Math.sin(t * 11) * Math.sin(t * 4.3))
+  const live = voiceLevel();
+  const want = mode === "speaking" ? (live !== null ? 0.3 + live * 0.7 : 0.45 + 0.4 * Math.abs(Math.sin(t * 11) * Math.sin(t * 4.3)))
     : mode === "listening" ? 0.3 + 0.15 * Math.abs(Math.sin(t * 5)) : mode === "thinking" ? 0.32 : 0.1 + 0.05 * Math.sin(t * 1.6);
   level += (want - level) * 0.18;
   const R = base * (1 + level * 0.08);
@@ -497,7 +498,7 @@ function renderReply(el, text) {
 }
 
 /* ---------- UI sounds: soft synth blips, made on the fly ---------- */
-let actx = null;
+var actx = null;
 function blip(kind) {
   try {
     actx = actx || new (window.AudioContext || window.webkitAudioContext)();
@@ -513,6 +514,69 @@ function blip(kind) {
 
 /* ---------- Voice out ---------- */
 const synth = window.speechSynthesis;
+// Jarvis's own voice: a British RP speech engine bundled with the page (works even where the phone
+// browser has no speech), run through a light studio chain for the calm AI-butler sound.
+const BUILTIN = [["builtin:m3", "Jarvis (built-in)"], ["builtin:klatt3", "Jarvis, smoother (built-in)"]];
+let engine = null, chain = null, analyser = null, playing = null;
+function loadEngine() {
+  return engine || (engine = new Promise((ok, fail) => {
+    const sc = document.createElement("script");
+    sc.src = "vendor/jarvis-voice.js"; sc.onload = () => ok(window.meSpeak); sc.onerror = fail;
+    document.head.append(sc);
+  }));
+}
+function audio() {
+  actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+  if (actx.state === "suspended") actx.resume();
+  return actx;
+}
+addEventListener("pointerdown", () => { try { audio(); } catch {} }, { passive: true });
+setTimeout(() => loadEngine().catch(() => {}), 1200);
+function buildChain(a) {
+  const input = a.createGain();
+  const hp = a.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 95;
+  const warm = a.createBiquadFilter(); warm.type = "lowshelf"; warm.frequency.value = 220; warm.gain.value = 3;
+  const air = a.createBiquadFilter(); air.type = "peaking"; air.frequency.value = 3200; air.Q.value = 0.9; air.gain.value = 2.5;
+  const lp = a.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 7200;
+  input.connect(hp).connect(warm).connect(air).connect(lp);
+  const out = a.createDynamicsCompressor(); out.threshold.value = -20; out.ratio.value = 3;
+  const dry = a.createGain(); dry.gain.value = 0.85; lp.connect(dry).connect(out);
+  // a slow chorus gives the faint "synthetic" shimmer
+  const dl = a.createDelay(); dl.delayTime.value = 0.012;
+  const lfo = a.createOscillator(), depth = a.createGain(); lfo.frequency.value = 0.3; depth.gain.value = 0.0025;
+  lfo.connect(depth).connect(dl.delayTime); lfo.start();
+  const wet = a.createGain(); wet.gain.value = 0.3; lp.connect(dl).connect(wet).connect(out);
+  // a short, bright room so he sounds like he's in the suit with you
+  const len = Math.floor(a.sampleRate * 0.5), ir = a.createBuffer(2, len, a.sampleRate);
+  for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2); }
+  const verb = a.createConvolver(); verb.buffer = ir;
+  const vg = a.createGain(); vg.gain.value = 0.14; lp.connect(verb).connect(vg).connect(out);
+  analyser = a.createAnalyser(); analyser.fftSize = 512;
+  out.connect(analyser).connect(a.destination);
+  return input;
+}
+async function jarvisSpeak(text, variant) {
+  const a = audio();
+  const me = await loadEngine();
+  const wav = me.speak(text, { voice: "en/en-rp", variant, pitch: 36, speed: 156, wordgap: 1, rawdata: "arraybuffer" });
+  if (!wav) throw new Error("no audio");
+  const buf = await a.decodeAudioData(wav);
+  chain = chain || buildChain(a);
+  stopVoice();
+  const src = a.createBufferSource(); src.buffer = buf; src.connect(chain);
+  src.onended = () => { if (playing === src) { playing = null; setMode("idle"); } };
+  playing = src; setMode("speaking"); src.start();
+}
+function stopVoice() {
+  if (synth) synth.cancel();
+  if (playing) { try { playing.stop(); } catch {} playing = null; }
+}
+function voiceLevel() {
+  if (!analyser || !playing) return null;
+  const d = new Uint8Array(analyser.fftSize); analyser.getByteTimeDomainData(d);
+  let sum = 0; for (const v of d) sum += ((v - 128) / 128) ** 2;
+  return Math.min(1, Math.sqrt(sum / d.length) * 4);
+}
 const voices = () => (synth ? synth.getVoices() : []);
 function fillVoices() {
   const sel = $("voice"), list = voices().filter((v) => /^en/i.test(v.lang)), saved = store.get("voice", "");
@@ -521,19 +585,28 @@ function fillVoices() {
   const gb = list.filter((v) => /GB/i.test(v.lang));
   let best = null;
   for (const re of rank) { best = gb.find((v) => re.test(v.name)); if (best) break; }
-  const pick = saved || (best || gb.find((v) => v.localService) || gb[0] || list[0] || {}).name || "";
+  const pick = saved || "builtin:m3";
   sel.innerHTML = "";
+  for (const [val, label] of BUILTIN) {
+    const o = document.createElement("option"); o.value = val; o.textContent = label; o.selected = val === pick; sel.append(o);
+  }
+  if (best) list.sort((a, b) => (b === best) - (a === best));
   for (const v of list) {
     const o = document.createElement("option");
     o.value = v.name; o.textContent = `${v.name} (${v.lang})`; o.selected = v.name === pick; sel.append(o);
   }
 }
-if (synth) { fillVoices(); synth.onvoiceschanged = fillVoices; }
-else setTimeout(() => say("note", "This app can't speak out loud. Open the Jarvis link in Chrome to hear him."), 1500);
+fillVoices();
+if (synth) synth.onvoiceschanged = fillVoices;
 function speak(text) {
   text = text.replace(/For the brain:.*$/is, "").replace(/^JOB:.*$/gim, "").replace(/^SAY:\s*/gim, "").replace(/[*_#`>\[\]]/g, "").trim();
-  if (!synth || !text || store.get("talkback", "1") !== "1") { setMode("idle"); return; }
-  synth.cancel();
+  if (!text || store.get("talkback", "1") !== "1") { setMode("idle"); return; }
+  const chosen = $("voice").value || "builtin:m3";
+  if (chosen.startsWith("builtin:") || !synth) {
+    jarvisSpeak(text, chosen.startsWith("builtin:") ? chosen.slice(8) : "m3").catch(() => setMode("idle"));
+    return;
+  }
+  stopVoice();
   const u = new SpeechSynthesisUtterance(text);
   const v = voices().find((v) => v.name === $("voice").value);
   if (v) u.voice = v;
@@ -570,7 +643,7 @@ let dictArmed = false, dictTimer = 0, dictTipShown = false;
 function armDictation() {
   if (dictArmed) { disarmDictation(); return; }
   dictArmed = true;
-  synth && synth.cancel();
+  stopVoice();
   $("q").value = ""; setMode("listening"); blip("listen");
   $("q").placeholder = "Tap the mic on your keyboard and talk";
   $("q").focus();
@@ -596,14 +669,14 @@ $("q").addEventListener("blur", () => { if (dictArmed && !$("q").value.trim()) d
 function listen() {
   if (!rec) { armDictation(); return; }
   if (mode === "listening") { rec.stop(); return; }
-  synth && synth.cancel();
+  stopVoice();
   $("q").value = ""; setMode("listening"); blip("listen");
   try { rec.start(); } catch {}
 }
 $("mic").addEventListener("click", listen);
 addEventListener("keydown", (e) => {
   if (e.code === "Space" && document.activeElement === document.body) { e.preventDefault(); listen(); }
-  if (e.key === "Escape") { synth && synth.cancel(); $("card").classList.remove("show"); }
+  if (e.key === "Escape") { stopVoice(); $("card").classList.remove("show"); }
 });
 
 /* ---------- Notes search (works with nothing else) ---------- */

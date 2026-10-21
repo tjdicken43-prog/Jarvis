@@ -20,7 +20,8 @@ You are working inside TJ's brain: a folder of plain notes about his businesses.
 
 ## Phone Jarvis memory
 The phone Jarvis (TJ's private link in [[Jarvis]]) saves every chat and every "For the brain" lesson in its own store: `memory/lessons` (a list of lessons, each with `filed`) and `chats/<time>`.
-- When TJ says "file my Jarvis chats", and during the Monday tidy-up: read them with the ArtifactData tool, put each lesson with `filed: false` into the right note (rules above), then set it to `filed: true`.
+- When TJ says "file my Jarvis chats", when the job runner runs, and during the Monday tidy-up: read them with the ArtifactData tool. File every lesson with `filed: false` AND every chat with `filed: false` (whole chat, not only its "For the brain" lines): durable facts, preferences, decisions and to-dos go into the right note (rules above). Only what TJ said; guesses get "(check)". Then set each to `filed: true`.
+- TJ calls Claude Code "Jarvis backend". Use that name in phone answers.
 - Then refresh the phone page so it knows the new notes: `python3 hud/build_brain.py --artifact <scratch>/jarvis.html` and republish to the same link.
 
 ## Phone Jarvis jobs

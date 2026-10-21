@@ -5,6 +5,8 @@ type: log
 
 Newest first. Covers [[SecurityAI]], [[Basis]] and [[Jarvis]].
 
+- **2026-10-21** [[Jarvis]] files everything from every phone chat (facts, preferences, decisions, to-dos), not only "For the brain" lines, to understand TJ's life more fully. [[Personal]] still holds only what TJ volunteers; guesses get "(check)". Why: TJ asked for it.
+- **2026-10-21** Claude Code is called "Jarvis backend" from now on. Why: TJ's choice, keeps the effect.
 - **2026-10-21** [[Jarvis]] gets the lean voice pack: five built-in voice styles plus four looks, free and inside the phone page. Not a paid lifelike voice for now, and never a clone of a real actor. Why: TJ picked it after seeing the trade-off; no money or outside hosting needed.
 - **2026-10-21** Put the [[Jarvis]] HUD on the phone as a private claude.ai artifact, not GitHub Pages. Why: only TJ can open it, and it uses his Claude account instead of a paid key.
 - **2026-10-21** Build the [[Jarvis]] HUD as a free web page first (browser voice, notes-only mode), Claude key optional. No paid voice or hosting until TJ says so. Why: costs nothing to try, and the notes stay private.

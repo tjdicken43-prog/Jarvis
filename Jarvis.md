@@ -20,6 +20,9 @@ TJ's goal: this brain grows into a real-life Jarvis. It stays current, gets more
 - **Voices and looks (2026-10-21)**: five built-in voices in SETTINGS: Butler (Jarvis), Agent (MIB-style radio), Spy (Bond-style), Hunter (gravelly, Bobby-style) and Robot. Styles only, not copies of any actor. Four looks: Arc reactor, Agency HQ, Secret service, Hunter's den.
 - **3D and 4D brain (2026-10-21)**: the brain is a real 3D sphere: drag to orbit, pinch to zoom, tap a note and it turns to face you. A tesseract turns through the fourth dimension inside it. Each look has its own detailed core. Note cards show headings and bullets, and double-bracket links in them jump to that note.
 
+## How it learns
+Since 2026-10-21 Jarvis backend files every saved phone chat, not only the "For the brain" lines: facts, preferences, decisions and to-dos go into the right note. Routine, food, music and sleep go in [[Personal]], but only what TJ said. Guesses get "(check)". Passwords, keys, gym codes and member info are skipped. Today filing runs on LEARN NOW, "file my Jarvis chats", the job runner and the Monday [[Weekly tidy-up]].
+
 ## How it stays accurate
 - Notes say what TJ said. Guesses get "(check)" until TJ confirms them.
 - Every fact with a date can go stale. Old facts move under "History", never get deleted.

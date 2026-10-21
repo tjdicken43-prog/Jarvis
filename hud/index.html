@@ -1217,20 +1217,28 @@ function offlineAnswer(q) {
 }
 
 /* ---------- Memory: every chat and lesson is saved ---------- */
-const chatId = new Date().toISOString().replace(/[:.]/g, "-");
+// The store hands back frozen data; copy it before changing it ("cannot add property 1, object is not extensible").
+const thaw = (v) => JSON.parse(JSON.stringify(v ?? null));
+const RESUME_MIN = 45; // a chat touched this recently is picked up again after a reload or app switch
+let chatId = new Date().toISOString().replace(/[:.]/g, "-");
 let lessons = [], lastChat = [], touches = { counts: {} }, aboutNote = null, touchTimer = 0;
 const turns = [];
 dbPromise.then(async (db) => {
   if (!db) return;
   try {
     const l = await db.doc("memory/lessons").get();
-    lessons = (l.exists && l.data().items) || [];
+    lessons = thaw((l.exists && l.data().items) || []);
     renderBrain(lessons.length);
     const tc = await db.doc("memory/touches").get();
-    if (tc.exists) touches = { counts: {}, ...tc.data() };
+    if (tc.exists) touches = { counts: {}, ...thaw(tc.data()) };
     await checkNew(db);
     const prev = await db.collection("chats").orderBy("started", "desc").limit(1).get();
-    if (!prev.empty) lastChat = (prev.docs[0].data().turns || []).slice(-10);
+    if (!prev.empty) {
+      const p = thaw(prev.docs[0].data()), pt = p.turns || [];
+      const fresh = pt.length && Date.now() - new Date(p.updated || p.started) < RESUME_MIN * 60000;
+      if (fresh && !turns.length) resumeChat(prev.docs[0].id, pt);
+      else lastChat = pt.slice(-10);
+    }
   } catch {}
   watchJobs(db);
 });
@@ -1288,6 +1296,15 @@ function memoryText() {
   if (lessons.length) t += "\nThings TJ told you in earlier chats (newer wins if they clash):\n" + lessons.map((l) => `- ${l.at.slice(0, 10)}: ${l.text}`).join("\n") + "\n";
   if (lastChat.length) t += "\nEnd of your last chat with TJ:\n" + lastChat.map((m) => (m.who === "tj" ? "TJ: " : "Jarvis: ") + m.text).join("\n") + "\n";
   return t;
+}
+// Pick the last chat back up, so a reload or a trip to another tab doesn't start a new one.
+function resumeChat(id, pt) {
+  chatId = id; turns.push(...pt);
+  document.querySelector(".chips")?.remove();
+  for (const t of pt) {
+    if (t.who === "tj") { say("you", t.text); history.push({ role: "user", content: t.text }); }
+    else { renderReply(say("jarvis", ""), t.text); history.push({ role: "assistant", content: t.text }); }
+  }
 }
 async function remember(q, text) {
   const db = await dbPromise;

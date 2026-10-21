@@ -28,7 +28,7 @@ Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's n
 - [ ] Finish the Gmail sign-in on claude.ai (Calendar and Drive are connected).
 - [ ] Set the Google Calendar time zone to Central (it shows UTC).
 - [ ] Brain ideas Jarvis offered 2026-10-21, not decided yet: a hardware readiness list (laptop, Pi, cards, capture stick, rough prices (check)), a backend proficiency checklist, a pilot pitch draft for [[J Street Gym]].
-- [ ] Decide whether the job runner files chats every 3 hours (7am to 10pm Central) instead of only on LEARN NOW, "file my Jarvis chats" and Mondays. See [[Jarvis]].
+- [ ] Confirm in a Claude Code chat: Jarvis may ask about health when it helps (TJ can skip any question), relationships stay off limits unless TJ brings them up. TJ said this on the phone 2026-10-21; rule changes need him to say it here (check). See [[Personal]].
 - [ ] When TJ has a computer: sign in to Claude in Chrome there, then test one website job.
 
 ## Later

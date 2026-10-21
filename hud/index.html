@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#04090f">
+<title>J.A.R.V.I.S.</title>
+<style>
+  :root {
+    --bg: #04090f;
+    --ink: #cfeeff;
+    --dim: #5f8aa3;
+    --line: rgba(94, 208, 255, .22);
+    --glow: #5ed0ff;
+    --warm: #ffb547;
+    --panel: rgba(8, 22, 34, .72);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); overflow: hidden;
+    font: 15px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .08em; }
+
+  header { position: fixed; top: 0; left: 0; right: 0; display: flex; justify-content: space-between;
+    padding: max(14px, env(safe-area-inset-top)) 18px 0; font-size: 11px; color: var(--dim); pointer-events: none; }
+  header b { color: var(--glow); font-weight: 600; }
+  header .right { text-align: right; }
+
+  #status { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -170px); font-size: 11px;
+    color: var(--glow); text-transform: uppercase; pointer-events: none; text-shadow: 0 0 8px var(--glow); }
+
+  #log { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); width: min(640px, calc(100% - 32px));
+    max-height: 34vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; scrollbar-width: none; }
+  #log::-webkit-scrollbar { display: none; }
+  .msg { padding: 9px 13px; border: 1px solid var(--line); background: var(--panel); backdrop-filter: blur(6px);
+    border-radius: 3px; white-space: pre-wrap; animation: in .25s ease-out; }
+  .msg.you { align-self: flex-end; color: var(--dim); border-color: rgba(95, 138, 163, .3); }
+  .msg.jarvis { align-self: flex-start; border-left: 2px solid var(--glow); }
+  .msg.note { align-self: center; font-size: 12px; color: var(--dim); border-style: dashed; }
+  @keyframes in { from { opacity: 0; transform: translateY(6px); } }
+
+  form { position: fixed; left: 50%; bottom: max(20px, env(safe-area-inset-bottom)); transform: translateX(-50%);
+    width: min(640px, calc(100% - 32px)); display: flex; gap: 8px; }
+  input, select { flex: 1; min-width: 0; background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 3px; padding: 12px 14px; font: inherit; outline: none; }
+  input:focus, select:focus { border-color: var(--glow); box-shadow: 0 0 0 1px var(--glow) inset; }
+  button { background: transparent; color: var(--glow); border: 1px solid var(--line); border-radius: 3px;
+    padding: 0 14px; font: 600 11px/1 ui-monospace, Menlo, monospace; letter-spacing: .12em; cursor: pointer; }
+  button:hover, button:focus-visible { border-color: var(--glow); outline: none; }
+  #mic { width: 52px; font-size: 20px; padding: 0; }
+  #mic.on { background: var(--glow); color: var(--bg); box-shadow: 0 0 18px var(--glow); }
+
+  #gear { position: fixed; top: max(70px, calc(env(safe-area-inset-top) + 56px)); right: 18px; height: 28px; }
+  dialog { background: #071521; color: var(--ink); border: 1px solid var(--glow); border-radius: 4px;
+    width: min(440px, calc(100% - 32px)); padding: 20px; }
+  dialog::backdrop { background: rgba(0, 0, 0, .6); }
+  dialog h2 { margin: 0 0 4px; font-size: 13px; color: var(--glow); }
+  dialog label { display: block; margin: 14px 0 6px; font-size: 12px; color: var(--dim); }
+  dialog input, dialog select { width: 100%; }
+  dialog p { font-size: 12px; color: var(--dim); margin: 6px 0 0; }
+  dialog .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+  dialog .row button { height: 34px; }
+
+  #card { position: fixed; top: 70px; left: 18px; width: min(360px, calc(100% - 36px)); max-height: 46vh; overflow-y: auto;
+    padding: 14px 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 3px; display: none;
+    white-space: pre-wrap; font-size: 13px; backdrop-filter: blur(6px); }
+  #card h3 { margin: 0 0 8px; font-size: 12px; color: var(--glow); }
+  #card.show { display: block; animation: in .2s ease-out; }
+</style>
+</head>
+<body>
+<canvas id="sky"></canvas>
+
+<header class="mono">
+  <div><b>J.A.R.V.I.S.</b><br><span id="clock"></span></div>
+  <div class="right" id="stats"></div>
+</header>
+<button id="gear" class="mono" type="button" aria-label="Settings">SETUP</button>
+
+<div id="status" class="mono">standing by</div>
+<div id="card" role="dialog" aria-live="polite"></div>
+<div id="log" aria-live="polite"></div>
+
+<form id="ask">
+  <input id="q" autocomplete="off" placeholder="Talk to Jarvis, or hold the mic">
+  <button id="mic" type="button" aria-label="Talk">◉</button>
+</form>
+
+<dialog id="setup">
+  <h2 class="mono">SETUP</h2>
+  <p>Jarvis answers from the brain notes. With an Anthropic API key he thinks with Claude; without one he searches the notes.</p>
+  <label for="key">Anthropic API key (kept in this browser only)</label>
+  <input id="key" type="password" autocomplete="off" placeholder="sk-ant-...">
+  <label for="model">Model</label>
+  <select id="model">
+    <option value="claude-opus-5-5">Opus 5.5 (smartest, about 1¢ a question)</option>
+    <option value="claude-sonnet-5-5">Sonnet 5.5 (quick, about half that)</option>
+    <option value="claude-haiku-5-5">Haiku 5.5 (cheapest, a fraction of a cent)</option>
+  </select>
+  <label for="voice">Voice</label>
+  <select id="voice"></select>
+  <label><input id="talkback" type="checkbox" style="width:auto"> Speak answers out loud</label>
+  <div class="row">
+    <button type="button" id="forget">FORGET KEY</button>
+    <button type="button" id="done">DONE</button>
+  </div>
+</dialog>
+
+<script src="brain.js"></script>
+<script>
+const BRAIN = window.BRAIN || { notes: [], stats: {} };
+const $ = (id) => document.getElementById(id);
+const store = {
+  get(k, d) { try { return localStorage.getItem("jarvis." + k) ?? d; } catch { return d; } },
+  set(k, v) { try { v == null ? localStorage.removeItem("jarvis." + k) : localStorage.setItem("jarvis." + k, v); } catch {} },
+};
+
+/* ---------- HUD text ---------- */
+const s = BRAIN.stats;
+$("stats").innerHTML = `${s.notes ?? 0} NOTES<br>${s.open_todos ?? 0} OPEN TO-DOS<br>${s.checks ?? 0} TO CHECK`;
+function tick() {
+  const d = new Date();
+  $("clock").textContent = d.toLocaleDateString("en-CA") + "  " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+tick(); setInterval(tick, 10000);
+
+/* ---------- State: idle, listening, thinking, speaking ---------- */
+let mode = "idle";
+let level = 0; // 0..1 loudness that drives the core
+function setMode(m, label) {
+  mode = m;
+  $("status").textContent = label || { idle: "standing by", listening: "listening", thinking: "thinking", speaking: "speaking" }[m];
+  $("mic").classList.toggle("on", m === "listening");
+}
+
+/* ---------- Canvas: brain map + core ---------- */
+const cv = $("sky"), cx = cv.getContext("2d");
+let W, H, DPR;
+function resize() {
+  DPR = Math.min(devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight;
+  cv.width = W * DPR; cv.height = H * DPR;
+  cx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+resize(); addEventListener("resize", resize);
+
+const byName = new Map();
+const nodes = BRAIN.notes.map((n, i) => {
+  const a = (i / BRAIN.notes.length) * Math.PI * 2;
+  const node = { ...n, x: Math.cos(a) * 260, y: Math.sin(a) * 200, vx: 0, vy: 0, hot: 0 };
+  byName.set(n.name, node);
+  return node;
+});
+const edges = [];
+for (const n of nodes) for (const l of n.links) if (byName.has(l) && l !== n.name) edges.push([n, byName.get(l)]);
+for (const n of nodes) n.deg = edges.filter(([a, b]) => a === n || b === n).length;
+const TYPE_COLOR = { hub: "#5ed0ff", rules: "#ff6b6b", log: "#ffb547", list: "#ffb547", week: "#9b8cff" };
+
+function physics() {
+  const R = Math.min(W, H) * 0.11 * 2.1;
+  for (const a of nodes) {
+    for (const b of nodes) if (a !== b) {
+      const dx = a.x - b.x, dy = a.y - b.y, d2 = dx * dx + dy * dy + 0.01;
+      const f = 1800 / d2;
+      a.vx += dx * f / 40; a.vy += dy * f / 40;
+    }
+    // keep a hole in the middle for the core, and keep inside the screen
+    const d = Math.hypot(a.x, a.y) || 1;
+    if (d < R) { a.vx += a.x / d * 1.5; a.vy += a.y / d * 1.5; }
+    const e = Math.hypot(a.x / (W * 0.44), a.y / (H * 0.36));
+    if (e > 1) { a.vx -= a.x / d * 0.8; a.vy -= a.y / d * 0.8; }
+  }
+  for (const [a, b] of edges) {
+    const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1, f = (d - 130) * 0.01 / d;
+    a.vx += dx * f; a.vy += dy * f; b.vx -= dx * f; b.vy -= dy * f;
+  }
+  for (const n of nodes) {
+    n.vx *= 0.86; n.vy *= 0.86; n.x += n.vx; n.y += n.vy;
+    n.hot *= 0.985;
+  }
+}
+
+let t = 0;
+function draw() {
+  t += 1 / 60;
+  physics();
+  const ox = W / 2, oy = H / 2 - 30;
+  const spin = t * (mode === "thinking" ? 0.9 : 0.12);
+  cx.clearRect(0, 0, W, H);
+
+  // grid
+  cx.strokeStyle = "rgba(94,208,255,.04)"; cx.lineWidth = 1;
+  for (let x = (ox % 40); x < W; x += 40) { cx.beginPath(); cx.moveTo(x, 0); cx.lineTo(x, H); cx.stroke(); }
+  for (let y = (oy % 40); y < H; y += 40) { cx.beginPath(); cx.moveTo(0, y); cx.lineTo(W, y); cx.stroke(); }
+
+  // brain map, slowly turning
+  const cs = Math.cos(spin * 0.25), sn = Math.sin(spin * 0.25);
+  const P = (n) => [ox + n.x * cs - n.y * sn, oy + n.x * sn + n.y * cs];
+  for (const [a, b] of edges) {
+    const [x1, y1] = P(a), [x2, y2] = P(b);
+    const hot = Math.max(a.hot, b.hot);
+    cx.strokeStyle = `rgba(94,208,255,${0.10 + hot * 0.5})`;
+    cx.beginPath(); cx.moveTo(x1, y1); cx.lineTo(x2, y2); cx.stroke();
+  }
+  cx.font = "10px ui-monospace, Menlo, monospace"; cx.textAlign = "center";
+  for (const n of nodes) {
+    const [x, y] = P(n), r = 2.5 + Math.sqrt(n.deg) * 1.3 + n.hot * 4;
+    const c = TYPE_COLOR[n.type] || "#8fdcff";
+    cx.shadowColor = c; cx.shadowBlur = 8 + n.hot * 20;
+    cx.fillStyle = c; cx.beginPath(); cx.arc(x, y, r, 0, Math.PI * 2); cx.fill();
+    cx.shadowBlur = 0;
+    cx.fillStyle = `rgba(207,238,255,${0.45 + n.hot * 0.55})`;
+    cx.fillText(n.name, x, y - r - 5);
+    n.sx = x; n.sy = y; n.sr = r + 6;
+  }
+
+  // the core
+  const want = mode === "speaking" ? 0.35 + 0.45 * Math.abs(Math.sin(t * 9) * Math.sin(t * 3.7))
+    : mode === "listening" ? 0.25 + 0.2 * Math.abs(Math.sin(t * 4))
+    : mode === "thinking" ? 0.3 : 0.08 + 0.04 * Math.sin(t * 1.5);
+  level += (want - level) * 0.15;
+  const base = Math.min(W, H) * 0.11;
+  const g = cx.createRadialGradient(ox, oy, 0, ox, oy, base * (1.6 + level));
+  g.addColorStop(0, `rgba(220,248,255,${0.85})`);
+  g.addColorStop(0.18, `rgba(94,208,255,${0.55 + level * 0.4})`);
+  g.addColorStop(1, "rgba(94,208,255,0)");
+  cx.fillStyle = g; cx.beginPath(); cx.arc(ox, oy, base * (1.6 + level), 0, Math.PI * 2); cx.fill();
+
+  cx.strokeStyle = "rgba(94,208,255,.9)"; cx.shadowColor = "#5ed0ff"; cx.shadowBlur = 14;
+  const rings = [[1.05, 1, 0.7, 2], [1.3, -0.6, 0.45, 1.5], [1.55, 0.35, 0.25, 1], [0.8, -1.4, 0.9, 1]];
+  for (const [k, dir, len, w] of rings) {
+    cx.lineWidth = w;
+    for (let i = 0; i < 3; i++) {
+      const a0 = spin * dir * 3 + i * (Math.PI * 2 / 3);
+      cx.beginPath(); cx.arc(ox, oy, base * k * (1 + level * 0.15), a0, a0 + len * 2); cx.stroke();
+    }
+  }
+  // tick marks
+  cx.lineWidth = 1; cx.shadowBlur = 0; cx.strokeStyle = "rgba(94,208,255,.35)";
+  for (let i = 0; i < 72; i++) {
+    const a = i / 72 * Math.PI * 2 - spin, r1 = base * 1.8, r2 = r1 + (i % 6 ? 4 : 10);
+    cx.beginPath(); cx.moveTo(ox + Math.cos(a) * r1, oy + Math.sin(a) * r1);
+    cx.lineTo(ox + Math.cos(a) * r2, oy + Math.sin(a) * r2); cx.stroke();
+  }
+  requestAnimationFrame(draw);
+}
+requestAnimationFrame(draw);
+
+// tap a node to read the note
+cv.addEventListener("click", (e) => {
+  const n = nodes.find((n) => Math.hypot(n.sx - e.clientX, n.sy - e.clientY) < n.sr);
+  const card = $("card");
+  if (!n) { card.classList.remove("show"); return; }
+  light([n.name]);
+  card.innerHTML = "";
+  const h = document.createElement("h3"); h.className = "mono"; h.textContent = n.name.toUpperCase();
+  card.append(h, document.createTextNode(n.text.trim()));
+  card.classList.add("show");
+});
+
+function light(names) {
+  for (const name of names) {
+    const n = byName.get(name); if (!n) continue;
+    n.hot = 1;
+    for (const l of n.links) if (byName.has(l)) byName.get(l).hot = Math.max(byName.get(l).hot, 0.45);
+  }
+}
+
+/* ---------- Chat log ---------- */
+function say(who, text) {
+  const el = document.createElement("div");
+  el.className = "msg " + who; el.textContent = text;
+  $("log").append(el); el.scrollIntoView({ block: "end" });
+  return el;
+}
+
+/* ---------- Voice out ---------- */
+const synth = window.speechSynthesis;
+function voices() { return synth ? synth.getVoices() : []; }
+function fillVoices() {
+  const sel = $("voice"), list = voices().filter((v) => /^en/i.test(v.lang));
+  const saved = store.get("voice", "");
+  // a calm British voice suits him; pick one if TJ hasn't chosen
+  const pick = saved || (list.find((v) => /daniel|arthur|george|male/i.test(v.name) && /GB/i.test(v.lang)) || list.find((v) => /GB/i.test(v.lang)) || list[0] || {}).name || "";
+  sel.innerHTML = "";
+  for (const v of list) {
+    const o = document.createElement("option");
+    o.value = v.name; o.textContent = `${v.name} (${v.lang})`; o.selected = v.name === pick;
+    sel.append(o);
+  }
+}
+if (synth) { fillVoices(); synth.onvoiceschanged = fillVoices; }
+
+function speak(text) {
+  if (!synth || store.get("talkback", "1") !== "1") { setMode("idle"); return; }
+  synth.cancel();
+  const u = new SpeechSynthesisUtterance(text.replace(/[*_#`>\[\]]/g, ""));
+  const v = voices().find((v) => v.name === $("voice").value);
+  if (v) u.voice = v;
+  u.rate = 1.02; u.pitch = 0.92;
+  u.onstart = () => setMode("speaking");
+  u.onend = u.onerror = () => setMode("idle");
+  synth.speak(u);
+}
+
+/* ---------- Voice in ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null;
+if (SR) {
+  rec = new SR();
+  rec.lang = "en-US"; rec.interimResults = true; rec.continuous = false;
+  rec.onresult = (e) => {
+    const r = e.results[e.results.length - 1];
+    $("q").value = r[0].transcript;
+    if (r.isFinal) { rec.stop(); ask($("q").value); }
+  };
+  rec.onend = () => { if (mode === "listening") setMode("idle"); };
+  rec.onerror = (e) => { setMode("idle"); if (e.error !== "no-speech" && e.error !== "aborted") say("note", "Mic trouble: " + e.error); };
+} else {
+  $("mic").title = "This browser can't listen. Chrome or Edge can.";
+}
+function listen() {
+  if (!rec) { say("note", "This browser can't do voice input. Open Jarvis in Chrome or Edge."); return; }
+  if (mode === "listening") { rec.stop(); return; }
+  synth && synth.cancel();
+  $("q").value = ""; setMode("listening");
+  try { rec.start(); } catch {}
+}
+$("mic").addEventListener("click", listen);
+addEventListener("keydown", (e) => {
+  if (e.code === "Space" && document.activeElement === document.body) { e.preventDefault(); listen(); }
+  if (e.key === "Escape") { synth && synth.cancel(); $("card").classList.remove("show"); }
+});
+
+/* ---------- Brain search (works with no key) ---------- */
+const STOP = new Set("the a an and or of to in on for is are what whats how do does i my me we our it this that with about can you tell jarvis hey".split(" "));
+function words(s) { return (s.toLowerCase().match(/[a-z0-9$]+/g) || []).filter((w) => w.length > 1 && !STOP.has(w)); }
+function search(q, k = 4) {
+  const qs = words(q);
+  return nodes.map((n) => {
+    const name = n.name.toLowerCase(), body = n.text.toLowerCase();
+    let score = 0;
+    for (const w of qs) { if (name.includes(w)) score += 5; score += Math.min(body.split(w).length - 1, 5); }
+    return { n, score };
+  }).filter((r) => r.score > 0).sort((a, b) => b.score - a.score).slice(0, k).map((r) => r.n);
+}
+function offlineAnswer(q) {
+  const hits = search(q, 3).filter((n) => n.name !== "CLAUDE");
+  if (!hits.length) return "Nothing in the brain on that yet, boss. Add a key in SETUP and I can actually think about it.";
+  const qs = words(q);
+  const lines = hits[0].text.split("\n").filter((l) => l.trim() && !l.startsWith("#"));
+  const best = lines.filter((l) => qs.some((w) => l.toLowerCase().includes(w))).slice(0, 4);
+  return `From ${hits[0].name}:\n` + (best.length ? best : lines.slice(0, 4)).join("\n") +
+    (hits.length > 1 ? `\n\nAlso see: ${hits.slice(1).map((h) => h.name).join(", ")}.` : "");
+}
+
+/* ---------- Claude ---------- */
+const history = [];
+let sdk = null;
+function systemPrompt() {
+  const rules = byName.get("CLAUDE")?.text || "";
+  const notes = BRAIN.notes.filter((n) => n.name !== "CLAUDE").map((n) => `<note name="${n.name}">\n${n.text}\n</note>`).join("\n");
+  return `You are Jarvis, TJ's personal assistant, speaking out loud through a voice interface.
+Today is ${new Date().toISOString().slice(0, 10)}.
+Keep spoken answers short: two to four sentences unless TJ asks for more. No markdown, no bullet symbols, no links; it will be read aloud.
+You can't edit the notes from here. If something changed, end with one line starting "For the brain:" saying what to update.
+
+Your rules:
+${rules}
+
+TJ's brain notes:
+${notes}`;
+}
+async function claude(q) {
+  if (!sdk) {
+    say("note", "Connecting to Claude…");
+    sdk = (await import("https://esm.sh/@anthropic-ai/sdk@0.134.0")).default;
+  }
+  const client = new sdk({ apiKey: store.get("key"), dangerouslyAllowBrowser: true });
+  history.push({ role: "user", content: q });
+  const el = say("jarvis", "");
+  const stream = client.beta.messages.stream({
+    model: store.get("model", "claude-opus-5-5"),
+    max_tokens: 2000,
+    output_config: { effort: "low" },
+    betas: ["server-side-fallback-2026-07-01"],
+    fallbacks: "default",
+    system: [{ type: "text", text: systemPrompt(), cache_control: { type: "ephemeral" } }],
+    messages: history.slice(-20),
+  });
+  stream.on("text", (d) => { el.textContent += d; el.scrollIntoView({ block: "end" }); });
+  const msg = await stream.finalMessage();
+  if (msg.stop_reason === "refusal") el.textContent = "I can't help with that one, boss.";
+  const text = el.textContent.trim();
+  history.push({ role: "assistant", content: text || "(no answer)" });
+  return text;
+}
+
+async function ask(q) {
+  q = q.trim(); if (!q) return;
+  $("q").value = "";
+  say("you", q);
+  light(search(q, 3).map((n) => n.name));
+  setMode("thinking");
+  let text;
+  try {
+    if (store.get("key")) text = await claude(q);
+    else { text = offlineAnswer(q); say("jarvis", text); }
+  } catch (err) {
+    history.pop();
+    text = "Couldn't reach Claude: " + (err?.message || err) + ". Answering from the notes instead.";
+    say("note", text);
+    text = offlineAnswer(q); say("jarvis", text);
+  }
+  speak(text.split("\n\nAlso see")[0]);
+}
+$("ask").addEventListener("submit", (e) => { e.preventDefault(); ask($("q").value); });
+
+/* ---------- Setup ---------- */
+$("gear").addEventListener("click", () => {
+  $("key").value = store.get("key", "");
+  $("model").value = store.get("model", "claude-opus-5-5");
+  $("talkback").checked = store.get("talkback", "1") === "1";
+  $("setup").showModal();
+});
+$("done").addEventListener("click", () => {
+  store.set("key", $("key").value.trim() || null);
+  store.set("model", $("model").value);
+  store.set("voice", $("voice").value);
+  store.set("talkback", $("talkback").checked ? "1" : "0");
+  $("setup").close();
+});
+$("forget").addEventListener("click", () => { store.set("key", null); $("key").value = ""; });
+
+say("note", store.get("key")
+  ? "Online. Ask me anything, or press space to talk."
+  : "Running on the notes only. Tap SETUP to add a Claude key and I get a lot smarter.");
+</script>
+</body>
+</html>

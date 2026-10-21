@@ -1228,7 +1228,7 @@ dbPromise.then(async (db) => {
     lessons = (l.exists && l.data().items) || [];
     renderBrain(lessons.length);
     const tc = await db.doc("memory/touches").get();
-    if (tc.exists) touches = { counts: {}, ...tc.data() };
+    if (tc.exists) { const t = structuredClone(tc.data()); touches = { ...t, counts: { ...(t.counts || {}) } }; } // store data comes back frozen
     await checkNew(db);
     const prev = await db.collection("chats").orderBy("started", "desc").limit(1).get();
     if (!prev.empty) {

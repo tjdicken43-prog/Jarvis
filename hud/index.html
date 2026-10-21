@@ -307,7 +307,7 @@
 <script src="brain.js"></script>
 <script>
 const BRAIN = window.BRAIN || { notes: [], stats: {} };
-const RUNNER = "trig_01XmDbtyEAotBEyDx2phjSoF"; // the Claude Code scheduled task that works the job queue
+const RUNNER = "trig_01QocNR8n87c5LuwRCxWs1Ht"; // the Claude Code scheduled task that works the job queue
 const $ = (id) => document.getElementById(id);
 const store = {
   get(k, d) { try { return localStorage.getItem("jarvis." + k) ?? d; } catch { return d; } },
@@ -1631,10 +1631,11 @@ function wakeRunner(db, mcp) {
   clearTimeout(wakeTimer);
   wakeTimer = setTimeout(async () => {
     wakeTimer = 0;
-    let last = 0;
-    try { const k = await db.doc("memory/runner").get(); if (k.exists) last = Date.parse(k.data().kickedAt) || 0; } catch {}
+    let last = 0, lock = 0;
+    try { const k = await db.doc("memory/runner").get(); if (k.exists) { last = Date.parse(k.data().kickedAt) || 0; lock = Date.parse(k.data().lockAt) || 0; } } catch {}
     const busy = Object.values(jobsSeen || {}).includes("working");
-    if (busy && Date.now() - last < 20 * 60000) { say("note", "Jarvis backend is already on it; it'll take these too."); return; }
+    // a run that holds the lock keeps checking the queue until it's empty, so it will take these too
+    if ((busy && Date.now() - last < 20 * 60000) || Date.now() - lock < 25 * 60000) { say("note", "Jarvis backend is already on it; it'll take these too."); return; }
     try {
       await mcp.callTool("Claude Code Remote", "fire_trigger", { trigger_id: RUNNER });
       try { await db.doc("memory/runner").set({ kickedAt: new Date().toISOString() }); } catch {}

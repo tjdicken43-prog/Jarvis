@@ -23,7 +23,7 @@ TJ's goal: this brain grows into a real-life Jarvis. It stays current, gets more
 ## How it learns
 Since 2026-10-21 Jarvis backend files every saved phone chat, not only the "For the brain" lines: facts, preferences, decisions and to-dos go into the right note. Routine, food, music and sleep go in [[Personal]], but only what TJ said. Guesses get "(check)". Passwords, keys, gym codes and member info are skipped. Filing runs on every job runner pass (every 3 hours, 7am to 10pm Central), on LEARN NOW, "file my Jarvis chats" and the Monday [[Weekly tidy-up]]. Health questions are allowed (TJ can skip any); relationships stay off limits unless he raises them.
 
-Chats survive reloads: opening the page within 6 hours shows the recent chat again and keeps adding to it (2026-10-21). Older chats stay in the store and get filed; the page just starts a fresh screen.
+Fixed 2026-10-21: the store hands data back frozen, so adding a lesson threw "object is not extensible" and no lesson saved after 10:32 (chats still saved). Lessons and note counts now copy before changing. Chats survive reloads: opening the page within 6 hours shows the recent chat again and keeps adding to it (2026-10-21). Older chats stay in the store and get filed; the page just starts a fresh screen.
 
 ## How it stays accurate
 - Notes say what TJ said. Guesses get "(check)" until TJ confirms them.

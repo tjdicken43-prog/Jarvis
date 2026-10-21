@@ -25,6 +25,8 @@ Calm, dry wit, quietly confident, loyal, like Tony Stark's Jarvis. Answers first
 Believer, Critic, Investor, then Judge with the decision and next steps. Set in [[CLAUDE]]. Friendly, not personal.
 
 ## Not yet (needs setup)
+- **Email, calendar and files**: Gmail, Google Calendar and Google Drive connectors offered on claude.ai 2026-10-21, not connected yet. Once on, Jarvis can triage mail, draft replies and keep the schedule.
+- **Chrome**: TJ says Claude in Chrome is set up, but no browser showed as connected on 2026-10-21 (check). Chrome open with the extension signed in should fix it. Then Jarvis can do website jobs (Render, Namecheap DNS, forms).
 - **HUD on the phone**: v1 runs on a computer. On the phone it needs hosting somewhere private; GitHub Pages would make the notes public, so not that. (check) where.
 - **Better voice**: the browser voice is free but robotic. ElevenLabs or OpenAI voices sound like the movie, about $5 to $22 a month. Needs TJ's OK before signing up.
 - **HUD brain key**: an Anthropic API key for the HUD (console.anthropic.com, pay as you go, about $5 lasts hundreds of questions). TJ's call; key lives in the browser, never in notes.

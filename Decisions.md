@@ -3,7 +3,7 @@ type: log
 ---
 # Decisions
 
-Newest first. Part of [[SecurityAI]].
+Newest first. Covers [[SecurityAI]], [[Basis]] and [[Jarvis]].
 
 - **2026-10-21** Build the [[Jarvis]] HUD as a free web page first (browser voice, notes-only mode), Claude key optional. No paid voice or hosting until TJ says so. Why: costs nothing to try, and the notes stay private.
 - **2026-10-21** Claude can push code directly. Gym-security needs TJ's OK once per session (closest to a real business); every other repo is free to push anytime.

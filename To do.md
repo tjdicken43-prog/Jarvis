@@ -28,6 +28,7 @@ Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's n
 - [ ] Finish the Gmail sign-in on claude.ai (Calendar and Drive are connected).
 - [ ] Set the Google Calendar time zone to Central (it shows UTC).
 - [ ] Brain ideas Jarvis offered 2026-10-21, not decided yet: a hardware readiness list (laptop, Pi, cards, capture stick, rough prices (check)), a backend proficiency checklist, a pilot pitch draft for [[J Street Gym]].
+- [ ] Idea: a past-chats list on the phone page (the recent chat now reopens; older ones are only in the store). See [[Jarvis]].
 - [ ] When TJ has a computer: sign in to Claude in Chrome there, then test one website job.
 
 ## Later

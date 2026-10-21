@@ -9,7 +9,7 @@ Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's n
 - As of 2026-10-21: nothing is running at [[J Street Gym]] yet. TJ has no laptop and no Raspberry Pi, so until TJ says otherwise only software update checks and backend proficiency tests are possible.
 - [ ] Backend proficiency tests and software update checks for [[SecurityAI]] (backend first, no hardware yet).
 - [ ] On hold until hardware is set up: first nights at [[J Street Gym]] (run the checklist there).
-- [ ] Find the admin page Storage line and confirm it reads OK after the Oct 20 release (TJ could not find it, 2026-10-21) (check). See [[Release history]].
+- [ ] Storage line: admin page, sign in, "Render settings" box, first line. Good = green "Storage: /var/data — a separate disk...". If it says DATA_DIR is not set, every deploy wipes gym accounts and history; the Render disk needs the paid Starter plan (check price before paying). See [[Release history]].
 - [ ] Photo of an Ashbourne denied scan.
 
 ## Setup
@@ -28,7 +28,6 @@ Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's n
 - [ ] Finish the Gmail sign-in on claude.ai (Calendar and Drive are connected).
 - [ ] Set the Google Calendar time zone to Central (it shows UTC).
 - [ ] Brain ideas Jarvis offered 2026-10-21, not decided yet: a hardware readiness list (laptop, Pi, cards, capture stick, rough prices (check)), a backend proficiency checklist, a pilot pitch draft for [[J Street Gym]].
-- [ ] Decide whether the job runner files chats every 3 hours (7am to 10pm Central) instead of only on LEARN NOW, "file my Jarvis chats" and Mondays. See [[Jarvis]].
 - [ ] When TJ has a computer: sign in to Claude in Chrome there, then test one website job.
 
 ## Later

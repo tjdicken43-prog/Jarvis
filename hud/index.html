@@ -1217,7 +1217,8 @@ function offlineAnswer(q) {
 }
 
 /* ---------- Memory: every chat and lesson is saved ---------- */
-const chatId = new Date().toISOString().replace(/[:.]/g, "-");
+let chatId = new Date().toISOString().replace(/[:.]/g, "-");
+const RESUME_MS = 6 * 3600e3; // reopening the page within 6 hours picks the same chat back up
 let lessons = [], lastChat = [], touches = { counts: {} }, aboutNote = null, touchTimer = 0;
 const turns = [];
 dbPromise.then(async (db) => {
@@ -1230,10 +1231,25 @@ dbPromise.then(async (db) => {
     if (tc.exists) touches = { counts: {}, ...tc.data() };
     await checkNew(db);
     const prev = await db.collection("chats").orderBy("started", "desc").limit(1).get();
-    if (!prev.empty) lastChat = (prev.docs[0].data().turns || []).slice(-10);
+    if (!prev.empty) {
+      const doc = prev.docs[0], last = doc.data(), past = last.turns || [];
+      if (!turns.length && past.length && Date.now() - Date.parse(last.updated || last.started) < RESUME_MS) resumeChat(doc.id, past);
+      else lastChat = past.slice(-10);
+    }
   } catch {}
   watchJobs(db);
 });
+// Show the recent chat again instead of a blank screen, and keep saving into it.
+function resumeChat(id, past) {
+  chatId = id;
+  turns.push(...past);
+  document.querySelector(".chips")?.remove();
+  say("note", "Picked up your chat from " + new Date(past[0].at).toLocaleTimeString("en-US", { timeZone: "America/Chicago", hour: "numeric", minute: "2-digit" }) + ". Everything is saved.");
+  for (const t of past) {
+    if (t.who === "tj") { say("you", t.text); history.push({ role: "user", content: t.text }); }
+    else { renderReply(say("jarvis", ""), t.text); history.push({ role: "assistant", content: t.text }); }
+  }
+}
 function touch(name) {
   touches.counts[name] = (touches.counts[name] || 0) + 1; touches.last = name;
   clearTimeout(touchTimer);
@@ -1296,14 +1312,25 @@ async function remember(q, text) {
   turns.push({ who: "tj", text: q, at }, { who: "jarvis", text, at });
   try {
     await db.doc("chats/" + chatId).set({ started: turns[0].at, updated: at, turns, filed: false });
-    const learned = (text.match(/For the brain:\s*(.+)/i) || [])[1];
-    if (learned) {
-      lessons.push({ text: learned.trim(), at, filed: false, ...(aboutNote ? { note: aboutNote } : {}) });
-      await db.doc("memory/lessons").set({ items: lessons });
-      renderBrain(lessons.length);
-      say("note", "Saved to memory: " + learned.trim());
+  } catch (e) { say("note", "Couldn't save this chat: " + (e?.code || e?.message || e)); }
+  const learned = (text.match(/For the brain:\s*(.+)/i) || [])[1];
+  if (learned) {
+    const item = { text: learned.trim(), at, filed: false, ...(aboutNote ? { note: aboutNote } : {}) };
+    // Re-read first so a lesson Claude Code just marked filed isn't put back as unfiled.
+    for (let tries = 0; tries < 2; tries++) {
+      try {
+        const cur = await db.doc("memory/lessons").get();
+        lessons = [...((cur.exists && cur.data().items) || []), item];
+        await db.doc("memory/lessons").set({ items: lessons });
+        renderBrain(lessons.length);
+        say("note", "Saved to memory: " + item.text);
+        break;
+      } catch (e) {
+        if (tries) say("note", "Lesson kept in the chat only (" + (e?.code || e?.message || e) + "). Jarvis backend still files it from the chat.");
+        else await new Promise((r) => setTimeout(r, 800 + Math.random() * 800));
+      }
     }
-  } catch (e) { say("note", "Couldn't save this chat: " + (e?.message || e)); }
+  }
   aboutNote = null;
 }
 

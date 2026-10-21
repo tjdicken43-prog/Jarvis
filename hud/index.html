@@ -152,6 +152,15 @@
   .chatList { max-height: 55vh; overflow-y: auto; margin: 14px 0 4px; display: grid; gap: 6px; }
   .chatList button { text-align: left; background: var(--glass); border: 1px solid var(--line); color: var(--ink); padding: 10px 12px; font: 400 13px/1.35 var(--body); cursor: pointer; }
   .chatList button.current { border-color: var(--arc); }
+  .memList { max-height: 55vh; overflow-y: auto; margin: 10px 0 4px; display: grid; gap: 6px; }
+  .memList h4 { margin: 10px 0 2px; font: 600 10px/1 var(--display); letter-spacing: .22em; color: var(--arc); }
+  .memItem { display: flex; gap: 8px; align-items: flex-start; background: var(--glass); border: 1px solid var(--faint); padding: 8px 10px; font: 400 13px/1.4 var(--body); }
+  .memItem span { flex: 1; }
+  .memItem small { display: block; font: 500 9.5px/1.5 var(--mono); letter-spacing: .1em; color: var(--dim); text-transform: uppercase; }
+  .memItem button { flex: none; background: none; border: 1px solid var(--line); color: var(--gold); font: 600 9.5px/1 var(--mono); letter-spacing: .12em; padding: 6px 8px; cursor: pointer; }
+  .memFix { display: flex; gap: 6px; margin-top: 6px; }
+  .memFix input { flex: 1; min-width: 0; }
+  .msg.jarvis.brief { border-left-color: var(--gold); }
   .chatList time { display: block; font: 500 10px/1.4 var(--mono); letter-spacing: .1em; color: var(--dim); text-transform: uppercase; }
   dialog h3 { margin: 0 0 6px; font: 600 13px/1 var(--display); letter-spacing: .26em; color: var(--arc); }
   dialog p { font-size: 13px; color: var(--dim); margin: 6px 0 0; }
@@ -203,6 +212,8 @@
     .log { max-height: none; }
     [data-tab]:not(.active) { display: none !important; }
     .clock b { font-size: 20px; }
+    .clock .btns { gap: 4px; }
+    .clock .btns .gear { padding: 7px 6px; letter-spacing: .08em; }
     .mode { width: 52px; }
   }
   @media (prefers-reduced-motion: reduce) { .msg, #card.show { animation: none; } .chip.working { animation: none; } }
@@ -221,7 +232,7 @@
     <div class="clock">
       <b id="time">--:--</b>
       <span id="date"></span><br>
-      <span class="btns"><button class="gear" id="chatsBtn" type="button">CHATS</button><button class="gear" id="gear" type="button">SETTINGS</button></span>
+      <span class="btns"><button class="gear" id="memBtn" type="button">MEMORY</button><button class="gear" id="chatsBtn" type="button">CHATS</button><button class="gear" id="gear" type="button">SETTINGS</button></span>
     </div>
   </header>
 
@@ -283,6 +294,13 @@
   </div>
 </dialog>
 
+<dialog id="memory">
+  <h3>WHAT I KNOW</h3>
+  <p>Everything I remember about you. Tap WRONG on anything that's off and tell me what's right; Jarvis backend fixes the notes on its next run.</p>
+  <div class="memList" id="memList"><p class="empty">Loading…</p></div>
+  <div class="row"><button type="button" id="memDone">CLOSE</button></div>
+</dialog>
+
 <dialog id="setup">
   <h3>SETTINGS</h3>
   <p>How Jarvis sounds. Inside claude.ai he thinks with your Claude account, so nothing else is needed.</p>
@@ -332,7 +350,7 @@
 <script src="brain.js"></script>
 <script>
 const BRAIN = window.BRAIN || { notes: [], stats: {} };
-const RUNNER = "trig_01QocNR8n87c5LuwRCxWs1Ht"; // the Claude Code scheduled task that works the job queue
+const RUNNER = "trig_01RRHsSJ2oBQTDWENSivmbgA"; // the Claude Code scheduled task that works the job queue
 const $ = (id) => document.getElementById(id);
 const store = {
   get(k, d) { try { return localStorage.getItem("jarvis." + k) ?? d; } catch { return d; } },
@@ -2173,7 +2191,7 @@ async function queueJob(askText) {
   const at = new Date().toISOString();
   await db.collection("jobs").add({ ask: askText, status: "queued", created: at, updated: at, ...(aboutNote ? { note: aboutNote } : {}) });
   const mcp = await mcpPromise;
-  if (!mcp) { say("note", "Job queued. Jarvis backend picks it up on its next run (every 3 hours, 7am to 10pm)."); return true; }
+  if (!mcp) { say("note", "Job queued. Jarvis backend picks it up on its next run (every 3 hours, 6:15am to 9:15pm)."); return true; }
   wakeRunner(db, mcp);
   return true;
 }
@@ -2195,9 +2213,126 @@ function wakeRunner(db, mcp) {
       await mcp.callTool("Claude Code Remote", "fire_trigger", { trigger_id: RUNNER });
       try { await db.doc("memory/runner").set({ kickedAt: new Date().toISOString() }); } catch {}
       say("note", "Sent to Jarvis backend. I'll tell you when it's back.");
-    } catch { say("note", "Couldn't wake Jarvis backend; it picks the jobs up on its next run (every 3 hours, 7am to 10pm)."); }
+    } catch { say("note", "Couldn't wake Jarvis backend; it picks the jobs up on its next run (every 3 hours, 6:15am to 9:15pm)."); }
   }, WAKE_QUIET);
 }
+/* ---------- Morning brief: Jarvis backend writes briefs/<date> at 6:15; the page shows it once a day ---------- */
+const CENTRAL = "America/Chicago";
+const today = () => new Date().toLocaleDateString("en-CA", { timeZone: CENTRAL }); // YYYY-MM-DD
+let todayCal = null; // today's calendar, fetched when TJ asks for a brief, for the system prompt
+function showBriefDoc(b) {
+  const el = say("jarvis", "");
+  el.classList.add("brief");
+  renderReply(el, `SAY: ${b.say || "Morning, boss. Here's your day."}\n${(b.lines || []).join("\n")}`);
+  return el;
+}
+async function loadBrief(db) {
+  try {
+    const d = await db.doc("briefs/" + today()).get();
+    return d.exists ? d.data() : null;
+  } catch { return null; }
+}
+async function calendarToday() {
+  const mcp = await mcpPromise;
+  if (!mcp) return null;
+  const day = today();
+  const res = await mcp.callTool("Google Calendar", "list_events",
+    { startTime: day + "T00:00:00", endTime: day + "T23:59:59", timeZone: CENTRAL, orderBy: "startTime", pageSize: 25 });
+  const list = res?.payload?.events || res?.payload?.items || [];
+  return list.map((e) => {
+    const at = e.start?.dateTime ? new Date(e.start.dateTime).toLocaleTimeString("en-US", { timeZone: CENTRAL, hour: "numeric", minute: "2-digit" }) : "all day";
+    return `${at}: ${e.summary || "(no title)"}`;
+  });
+}
+async function briefMe() {
+  const db = await dbPromise, b = db && (await loadBrief(db));
+  if (b) { say("you", "Brief me"); showBriefDoc(b); speak(b.say || "Morning, boss. Here's your day."); store.set("briefShown", today()); return; }
+  try { todayCal = await calendarToday(); } catch { todayCal = null; }
+  ask("Brief me on today: my calendar, J Street, my top to-dos and anything waiting on me.");
+}
+dbPromise.then(async (db) => {
+  if (!db || store.get("briefShown") === today()) return;
+  const b = await loadBrief(db);
+  if (!b) return;
+  store.set("briefShown", today());
+  document.querySelector(".chips")?.remove();
+  showBriefDoc(b);
+});
+
+/* ---------- Reminders: "REMIND:" lines become Google Calendar events that pop up on the phone at that minute ---------- */
+const REMIND_RE = /^REMIND:\s*(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})\s*\|\s*(.+)$/gim;
+function pad(n) { return String(n).padStart(2, "0"); }
+function plus15(local) { // "2026-10-21T15:00" -> "2026-10-21T15:15:00", wall-clock math with no time zone
+  const [d, t] = local.split("T"), [y, mo, da] = d.split("-").map(Number), [h, mi] = t.split(":").map(Number);
+  const x = new Date(Date.UTC(y, mo - 1, da, h, mi + 15));
+  return `${x.getUTCFullYear()}-${pad(x.getUTCMonth() + 1)}-${pad(x.getUTCDate())}T${pad(x.getUTCHours())}:${pad(x.getUTCMinutes())}:00`;
+}
+function whenText(local) {
+  const [d, t] = local.split("T"), [h, mi] = t.split(":").map(Number);
+  const time = `${h % 12 || 12}:${pad(mi)} ${h < 12 ? "AM" : "PM"}`;
+  return d === today() ? `today at ${time}` : `${d} at ${time}`;
+}
+async function setReminder(local, text) {
+  const mcp = await mcpPromise;
+  try {
+    if (!mcp) throw new Error("no connectors here");
+    await mcp.callTool("Google Calendar", "create_event", {
+      summary: "⏰ " + text, startTime: local + ":00", endTime: plus15(local), timeZone: CENTRAL,
+      overrideReminders: [{ method: "popup", minutes: 0 }], description: "Set by Jarvis from your phone page.",
+    });
+    say("note", `Reminder set for ${whenText(local)}: ${text}. Your calendar app will ping you.`);
+  } catch (e) {
+    const code = e?.code || e?.message || e;
+    if (await queueJob(`Create a Google Calendar event on TJ's primary calendar titled "⏰ ${text}" at ${local} America/Chicago, 15 minutes long, with a popup reminder at 0 minutes.`))
+      say("note", `Couldn't reach Google Calendar from here (${code}), so Jarvis backend will add the reminder.`);
+  }
+}
+
+/* ---------- Memory panel: what Jarvis knows, and a way to correct it ---------- */
+function memItem(text, meta, note) {
+  const row = document.createElement("div"); row.className = "memItem";
+  row.innerHTML = `<span></span><button type="button">WRONG</button>`;
+  row.querySelector("span").textContent = text;
+  if (meta) { const m = document.createElement("small"); m.textContent = meta; row.querySelector("span").append(m); }
+  row.querySelector("button").addEventListener("click", () => {
+    if (row.nextElementSibling?.classList.contains("memFix")) return;
+    const fix = document.createElement("form"); fix.className = "memFix";
+    fix.innerHTML = `<input placeholder="What's right? (blank = just remove it)"><button type="submit" class="gear" style="margin:0">SAVE</button>`;
+    fix.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const right = fix.querySelector("input").value.trim();
+      const db = await dbPromise;
+      if (!db) return;
+      const lesson = { text: `Correction: "${text}" is wrong.${right ? " TJ says: " + right : " TJ wants it removed."}`, at: new Date().toISOString(), filed: false, correction: true, ...(note ? { note } : {}) };
+      try {
+        const ref = await db.collection("lessons").add(lesson);
+        lessons.push({ id: ref?.id, ...lesson }); renderBrain(lessons.length);
+        fix.replaceWith(Object.assign(document.createElement("p"), { className: "empty", textContent: "Got it. Jarvis backend fixes it on the next run, or tap LEARN NOW." }));
+      } catch (err) { fix.querySelector("input").value = ""; fix.querySelector("input").placeholder = "Couldn't save (" + (err?.code || err?.message || err) + ")"; }
+    });
+    row.after(fix); fix.querySelector("input").focus();
+  });
+  return row;
+}
+$("memBtn").addEventListener("click", () => {
+  const list = $("memList"); list.innerHTML = "";
+  const head = (t) => list.append(Object.assign(document.createElement("h4"), { textContent: t }));
+  const personal = byName.get("Personal")?.text || "";
+  for (const part of personal.split(/^## /m).slice(1)) {
+    const [title, ...rest] = part.split("\n");
+    const items = rest.filter((l) => /^- /.test(l) && !/\(ask TJ\)/.test(l)).map((l) => l.slice(2).replace(/\[\[|\]\]/g, ""));
+    if (!items.length) continue;
+    head(title.trim().toUpperCase());
+    for (const t of items) list.append(memItem(t, "", "Personal"));
+  }
+  const recent = lessons.filter((l) => !l.correction).slice(-25).reverse();
+  if (recent.length) head("LEARNED IN CHATS");
+  for (const l of recent) list.append(memItem(l.text, `${(l.at || "").slice(0, 10)} · ${l.filed ? "filed in the notes" : "waiting to be filed"}`, l.note));
+  if (!list.children.length) list.innerHTML = `<p class="empty">Nothing yet. Tell me about yourself and I'll remember it.</p>`;
+  $("memory").showModal();
+});
+$("memDone").addEventListener("click", () => $("memory").close());
+
 /* ---------- Past chats: reopen any saved chat and carry on ---------- */
 function ago2(iso) { return new Date(iso).toLocaleString("en-US", { timeZone: "America/Chicago", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }); }
 $("chatsBtn").addEventListener("click", async () => {
@@ -2263,7 +2398,8 @@ function systemPrompt() {
 It is now ${now} where TJ is (US Central).
 How to reply (always): the first line is "SAY: " plus one short spoken line in the manner of Jarvis in the Iron Man films, at most 18 words: the answer itself, or what you're about to do ("Running the numbers now, boss. Short version: about $40 a month."). Only that line is read out loud. Put any detail on the following lines for the screen: plain text, no markdown, no links. For a simple question the SAY line can be the whole reply. Ideas get the four voices in the detail, with the Judge's call in the SAY line.
 You can't write code, push to GitHub, edit the notes, browse the web or touch his files from here, but Claude Code can. When TJ asks for something like that, say in one sentence that you're sending it to Claude Code, then end with one line: "JOB: " followed by a clear, self-contained instruction for Claude Code. The page queues it and the answer comes back here.
-Whenever TJ tells you something new worth keeping (a fact, a preference, a decision, a to-do), end with one line starting "For the brain:" saying it in a few words. That line is saved and you will remember it next time.
+When TJ asks to be reminded of something at a time, say when in one sentence, then end with one line: "REMIND: YYYY-MM-DDTHH:MM | what to remind him" in his Central time (24-hour clock; "in 2 hours" means from now; no date given means the next time that clock time comes round). The page puts it on his Google Calendar with a pop-up at that minute. One REMIND line per reminder.
+${todayCal ? "TJ's Google Calendar today: " + (todayCal.length ? todayCal.join("; ") : "nothing booked") + "\n" : ""}Whenever TJ tells you something new worth keeping (a fact, a preference, a decision, a to-do), end with one line starting "For the brain:" saying it in a few words. That line is saved and you will remember it next time.
 ${memoryText()}
 Your rules:
 ${rules}
@@ -2335,6 +2471,7 @@ async function ask(q) {
   remember(q, text);
   const job = (text.match(/^JOB:\s*(.+)$/im) || [])[1];
   if (job) queueJob(job.trim());
+  for (const m of text.matchAll(REMIND_RE)) setReminder(m[1], m[2].trim());
   blip("done");
   speak(splitReply(text.split("\n\nAlso see")[0]).line);
 }
@@ -2428,9 +2565,9 @@ samplePromise.then((sample) => {
   // quick starts, so an empty screen still has somewhere to go
   if (turns.length) return; // a resumed chat already fills the screen
   const chips = document.createElement("div"); chips.className = "chips";
-  for (const q of ["What's on my plate today?", "Brief me on SecurityAI", "One idea to make money this week", "What did you learn about me?"]) {
+  for (const q of ["Brief me", "Remind me to stretch in 2 hours", "One idea to make money this week", "What did you learn about me?"]) {
     const b = document.createElement("button"); b.type = "button"; b.textContent = q;
-    b.addEventListener("click", () => ask(q)); chips.append(b);
+    b.addEventListener("click", () => (q === "Brief me" ? briefMe() : ask(q))); chips.append(b);
   }
   $("log").append(chips);
 });

@@ -25,7 +25,7 @@ The phone Jarvis (TJ's private link in [[Jarvis]]) saves every chat and every "F
 - Then refresh the phone page so it knows the new notes: `python3 hud/build_brain.py --artifact <scratch>/jarvis.html` and republish to the same link.
 
 ## Phone Jarvis jobs
-The phone page queues big asks in its `jobs` store. The "Jarvis job runner" scheduled task (every 3 hours, 7am to 10pm Central, and woken by the page when a job is queued) does them and writes the answer back. Its full instructions live in the scheduled task.
+The phone page queues big asks in its `jobs` store. The "Jarvis job runner" scheduled task (every 3 hours, 6:15am to 9:15pm Central, and woken by the page when a job is queued) does them and writes the answer back. Its full instructions live in the scheduled task.
 
 ## When TJ brings an idea
 Run it through four voices, in this order, then give the verdict:

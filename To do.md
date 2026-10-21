@@ -26,7 +26,7 @@ Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's n
 - [ ] Set up Jarvis on the phone: follow the phone guide in [[Jarvis]] (Project + GitHub + voice mode), then test "What's on my to-do list?".
 - [ ] Tell Claude favourite music and chill routines for [[Personal]].
 - [ ] Finish the Gmail sign-in on claude.ai (Calendar and Drive are connected).
-- [ ] Set the Google Calendar time zone to Central (it shows UTC).
+- [ ] Set the Google Calendar time zone to Central (it shows UTC). Reminders already fire at the right Central time; this fixes how times look in the calendar app and the brief. Calendar app > Settings > General > Time zone.
 - [ ] Read the three new notes and say what to change: [[Hardware readiness list]], [[Backend proficiency checklist]], [[J Street pilot pitch]].
 - [x] Past-chats list on the phone page: CHATS button reopens any saved chat (2026-10-21). See [[Jarvis]].
 - [ ] When TJ has a computer: sign in to Claude in Chrome there, then test one website job.

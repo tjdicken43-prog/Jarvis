@@ -45,7 +45,7 @@ const docs1 = await page.evaluate(() => window.__docs);
 const chats1 = Object.keys(docs1).filter((k) => k.startsWith("chats/"));
 
 await page.reload();
-await page.waitForTimeout(800);
+await page.waitForFunction(() => document.querySelector("#log").innerText.includes("lo-fi"), null, { timeout: 5000 }).catch(() => {});
 const log2 = await page.locator("#log").innerText();
 const docs2 = await page.evaluate(() => window.__docs);
 const chats2 = Object.keys(docs2).filter((k) => k.startsWith("chats/"));

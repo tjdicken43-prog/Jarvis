@@ -1,89 +1,89 @@
 # NWA prospects
-Made 2026-10-22. 622 independent shops in Bentonville, Rogers, Bella Vista, Centerton, Lowell, Springdale and Fayetteville. Data: © OpenStreetMap contributors (ODbL); OSM misses some shops.
+Made 2026-10-22. 1778 independent shops in Bentonville, Rogers, Bella Vista, Centerton, Lowell, Springdale and Fayetteville. Data: © OpenStreetMap contributors (ODbL) and Overture Maps (CDLA Permissive 2.0); both miss some shops.
 
-Site states: BROKEN 73, DATED 22, GOOD 83, NO SITE 251, OK-ISH 97, SOCIAL ONLY 52, UNKNOWN 44
+Site states: BROKEN 273, DATED 176, GOOD 224, NO SITE 530, OK-ISH 333, SOCIAL ONLY 96, UNKNOWN 146
 
 OSM's "no website listed" can be out of date: the agent checks by web search before building.
 
 | Score | Shop | Trade | City | km | Site | Why | Phone | Status |
 |---|---|---|---|---|---|---|---|---|
-| 10 | Kennedy Coffee | Cafe | Bentonville | 2.9 | BROKEN | parked, empty or coming-soon page | +1-479-464-9015 | new |
+| 10 | Fairchild Construction | Home improvement | Bentonville | 1.8 | BROKEN | parked, empty or coming-soon page | +14792710700 | new |
+| 10 | Palisades Construction | Home improvement | Bentonville | 2.2 | NO SITE | no website listed | +14796198049 | new |
+| 10 | All My Brothers Movers Bentonville | Movers | Bentonville | 2.5 | BROKEN | page error (HTTP 404) | (479) 250-1465 | new |
+| 10 | FedEx Ship Center | Movers | Bentonville | 2.9 | BROKEN | page error (HTTP 404) | (800) 463-3339 | new |
+| 10 | Morrison-Shipley Engineers | Home improvement | Bentonville | 3.2 | BROKEN | site didn't load in 20 seconds | +14792732209 | new |
+| 10 | Bloomfield Portable Buildings | Home improvement | Bentonville | 4.0 | BROKEN | domain doesn't work (no DNS) | +14798416290 | new |
+| 10 | Cloverleaf Express USA Inc | Movers | Centerton | 7.3 | BROKEN | domain doesn't work (no DNS) | +14797950412 | new |
 | 10 | The Bearded Buffalo Barbershop | Barber/salon | Rogers | 8.1 | SOCIAL ONLY |  | +1-479-925-6044 | new |
+| 10 | Beekman Builders | Home improvement | Rogers | 8.2 | BROKEN | parked, empty or coming-soon page | +14795319119 | new |
+| 10 | Kurt Puttkammer Homes | Home improvement | Rogers | 9.2 | BROKEN | parked, empty or coming-soon page | +14796363292 | new |
+| 10 | Omni Engineers | Home improvement | Rogers | 9.2 | BROKEN | parked, empty or coming-soon page | 14796967873 | new |
+| 10 | Harris Home Inspections | Home improvement | Bella Vista | 9.5 | BROKEN | parked, empty or coming-soon page | 4792009200 | new |
+| 10 | Thrifty Backyard Portable Buildings | Home improvement | Rogers | 9.9 | SOCIAL ONLY |  | +14796365050 | new |
+| 10 | Nickel Custom Homes, Inc. | Home improvement | Bella Vista | 10.0 | NO SITE | no website listed | +14796331429 | new |
+| 10 | Highway 12 East Storage | Movers | Rogers | 10.9 | BROKEN | page error (HTTP 404) | (479) 925-1626 | new |
+| 10 | Survival Swimmers | Pools | Rogers | 10.9 | SOCIAL ONLY |  | +17026004495 | new |
+| 10 | Securecare Self Storage | Movers | Hiwasse | 11.8 | BROKEN | parked, empty or coming-soon page | +14798550990 | new |
 | 10 | Ramirez Diagnostic & Repair | Auto repair | Lowell | 14.3 | NO SITE | no website listed | +1-909-440-4925 | new |
 | 10 | Mount Comfort Veterinary Care | Vet | Fayetteville | 31.1 | NO SITE | no website listed | +1 479 275 3530 | new |
 | 10 | Advanced Veterinary Surgery & Rehabilitation Center | Vet | Fayetteville | 31.4 | SOCIAL ONLY |  | +1 479 966 4325 | new |
 | 9 | Wright's Barbecue | Restaurant | Bentonville | 0.3 | BROKEN | secure connection fails | +14793672619 | new |
 | 9 | Archie’s Sandwichery | Food | Bentonville | 1.1 | NO SITE | no website listed | +1-479-360-5201 | new |
+| 9 | Blessings Dispatch Services Llc | Movers | Bentonville | 1.1 | NO SITE | no website listed | 4793832122 | new |
+| 9 | The Bentonville Clipper | Beauty | Bentonville | 1.1 | BROKEN | page error (HTTP 307) | +14792718366 | new |
+| 9 | The Muse Salon & Apothecary | Beauty | Bentonville | 1.1 | NO SITE | no website listed | +14796211451 | new |
+| 9 | Polished Nail Spa | Beauty | Bentonville | 1.2 | BROKEN | parked, empty or coming-soon page | +14793640545 | new |
+| 9 | Serenity Suites | Beauty | Bentonville | 1.2 | NO SITE | no website listed | +14793261777 | new |
+| 9 | Muneton Construction Llc | Home improvement | Bentonville | 1.3 | NO SITE | no website listed | 14792861293 | new |
+| 9 | #1 Nails | Beauty | Bentonville | 1.5 | BROKEN | page error (HTTP 404) | +14792719600 | new |
+| 9 | Cellini Nail Lounge Bentonville | Beauty | Bentonville | 1.6 | SOCIAL ONLY |  | +14799952718 | new |
+| 9 | Pur O Now | Movers | Bentonville | 1.6 | NO SITE | no website listed | 4792710022 | new |
+| 9 | Redwood Ventures | Home improvement | Bentonville | 1.6 | NO SITE | no website listed | 18558768124 | new |
+| 9 | Hair by Natalie Darling | Beauty | Bentonville | 1.7 | NO SITE | no website listed | +14796440915 | new |
+| 9 | Steel Wheelz | Movers | Bentonville | 1.7 | BROKEN | page error (HTTP 400) | 18887993727 | new |
+| 9 | Collective Ink | Beauty | Bentonville | 1.8 | NO SITE | no website listed | +14792871476 | new |
+| 9 | Lashes By Leanna NWA | Beauty | Bentonville | 1.8 | SOCIAL ONLY |  | +19185337985 | new |
+| 9 | Rlp Investments | Home improvement | Bentonville | 1.8 | BROKEN | domain doesn't work (no DNS) | 14795444779 | new |
+| 9 | Alexander Grace Hair Design | Beauty | Bentonville | 1.9 | BROKEN | domain doesn't work (no DNS) | +14792684090 | new |
+| 9 | Gorilla | Beauty | Bentonville | 1.9 | BROKEN | parked, empty or coming-soon page | (479) 273-5531 | new |
+| 9 | Jennifer Lynn Lashes & Hair | Beauty | Bentonville | 1.9 | NO SITE | no website listed | +14794668200 | new |
+| 9 | Soft Arch | Beauty | Bentonville | 1.9 | NO SITE | no website listed | +14793640330 | new |
+| 9 | Illusions for Hair | Beauty | Bentonville | 2.0 | NO SITE | no website listed | +14792732577 | new |
+| 9 | Perfect Tan | Beauty | Bentonville | 2.1 | BROKEN | domain doesn't work (no DNS) | +14792730088 | new |
+| 9 | Marvelcutz | Beauty | Bentonville | 2.2 | SOCIAL ONLY |  | +14792781453 | new |
+| 9 | Aesthetic’s by Izzi | Beauty | Gallatin | 2.3 | BROKEN | domain doesn't work (no DNS) | +16152021307 | new |
+| 9 | Eye candy lashes | Beauty | Bentonville | 2.4 | NO SITE | no website listed | +14794594354 | new |
+| 9 | Queen Bee Tattoo and Piercing Studio | Beauty | Bentonville | 2.5 | BROKEN | domain doesn't work (no DNS) | +14792739271 | new |
+| 9 | A to Z Self Storage | Movers | Bentonville | 2.6 | NO SITE | no website listed | 4792731582 | new |
+| 9 | Mell's Beauty Studio | Beauty | Bentonville | 2.7 | BROKEN | domain doesn't work (no DNS) | +14792072403 | new |
 | 9 | BBQ King | Restaurant | Bentonville | 2.9 | NO SITE | no website listed | +1 479-364-0380 | new |
+| 9 | Kennedy Coffee | Cafe | Bentonville | 2.9 | BROKEN | secure connection fails | +1-479-464-9015 | new |
+| 9 | Salon Anew | Beauty | Bentonville | 2.9 | NO SITE | no website listed | +19135584455 | new |
+| 9 | Cei Engineering Associates, Inc. | Home improvement | Bentonville | 3.0 | NO SITE | no website listed | 18004334173 | new |
+| 9 | Flawless Look NWA | Beauty | Springdale | 3.2 | NO SITE | no website listed | +14792835959 | new |
+| 9 | Halff | Home improvement | Bentonville | 3.2 | DATED | no https, no tap-to-call | +1 479-273-2209 | new |
+| 9 | Charlton Development Llc | Home improvement | Bentonville | 3.4 | BROKEN | domain doesn't work (no DNS) | 14792548880 | new |
+| 9 | Salon Athena | Beauty | Bentonville | 3.4 | BROKEN | parked, empty or coming-soon page | +14792733340 | new |
+| 9 | PMU By Bamby | Beauty | Bentonville | 3.6 | NO SITE | no website listed | +14792241753 | new |
+| 9 | Cei Engineering Associates, Inc. | Home improvement | Bentonville | 3.7 | NO SITE | no website listed | +14792739472 | new |
+| 9 | Baileigh Cato Hair | Beauty | Bentonville | 4.1 | BROKEN | domain doesn't work (no DNS) | +14793100146 | new |
+| 9 | T.T.S. Tire & Auto | Movers | Bentonville | 4.1 | NO SITE | no website listed | 4794648284 | new |
+| 9 | BurnGlo Bentonville | Beauty | Bentonville | 4.3 | BROKEN | page error (HTTP 404) | +14792505870 | new |
+| 9 | Diamond Nails & Spa | Beauty | Bentonville | 4.3 | SOCIAL ONLY |  | +14798768223 | new |
+| 9 | Extra Space Storage | Movers | Bentonville | 4.3 | DATED | © 2006, slow (5.95s) | 4793267942 | new |
+| 9 | MistyDibbs NWACosmetologist | Beauty | Fayetteville | 4.3 | NO SITE | no website listed | +14794595438 | new |
+| 9 | Pure the Salon and Spa | Beauty | Bentonville | 4.3 | BROKEN | page error (HTTP 404) | +14792684440 | new |
+| 9 | Ronald Williams Design Studio | Beauty | Bentonville | 4.3 | BROKEN | domain doesn't work (no DNS) | +12697882882 | new |
+| 9 | Vanessa Beauty House | Beauty | Bentonville | 4.4 | NO SITE | no website listed | +14795868817 | new |
+| 9 | John David's Salon & Spa | Beauty | Bentonville | 4.6 | BROKEN | domain doesn't work (no DNS) | (479) 273-7600 | new |
+| 9 | Best Brows Salon and Spa | Beauty | Centerton | 4.7 | BROKEN | browsers show a security warning (bad certificate) | +14792242522 | new |
+| 9 | GiGi's Lash Lounge | Beauty | Bentonville | 4.7 | SOCIAL ONLY |  | +14796850947 | new |
+| 9 | True Colors | Beauty | Centerton | 4.7 | BROKEN | domain doesn't work (no DNS) | (479) 795-1228 | new |
 | 9 | Custom Cruzers | Bike shop | Bentonville | 4.8 | NO SITE | no website listed | +14793674694 | new |
+| 9 | Artifacts Self Storage - 45th Street | Movers | Rogers | 5.3 | BROKEN | page error (HTTP 404) | (479) 372-6362 | new |
 | 9 | Bike Works | Bike shop | Bentonville | 5.3 | BROKEN | page error (HTTP 404) | +14796167780 | new |
-| 9 | Top China | Restaurant | Bella Vista | 7.8 | NO SITE | no website listed | +1-479-855-6868; +1-479-855-4704 | new |
-| 9 | MidiCi - Wood Fired Pizza | Restaurant | Rogers | 8.2 | BROKEN | page error (HTTP 404) | +1 479-877-6733 | new |
-| 9 | A Cut Above | Barber/salon | Rogers | 8.3 | BROKEN | secure connection fails | +1 479-372-6309 | new |
-| 9 | Big Orange | Restaurant | Rogers | 8.3 | BROKEN | page error (HTTP 404) | +1 479-202-5339 | new |
-| 9 | Java Dudes Coffee Company | Cafe | Rogers | 9.0 | NO SITE | no website listed | +14792782665 | new |
-| 9 | Miraflores | Restaurant | Rogers | 10.1 | SOCIAL ONLY |  | +1-479-636-1783 | new |
-| 9 | Lovely Pets Grooming | Pet grooming | Bella Vista | 11.8 | BROKEN | browsers show a security warning (bad certificate) | +1 479 553 7280 | new |
-| 9 | Acambaro Mexican Restaurant | Restaurant | Lowell | 14.0 | NO SITE | no website listed | +1-479-659-8919 | new |
-| 9 | Tater's Fresh Grill | Restaurant | Lowell | 14.7 | SOCIAL ONLY |  | +1 479 361 8800 | new |
-| 9 | Injections By Hannah | Beauty | Springdale | 21.9 | NO SITE | no website listed | +1-479-334-0017 | new |
-| 9 | Lightning Lube | Auto repair | Springdale | 23.5 | NO SITE | no website listed | +1-479-756-0943 | new |
-| 9 | Shogun | Restaurant | Fayetteville | 27.9 | BROKEN | parked, empty or coming-soon page | +1 479 442 9999 | new |
-| 9 | Auto Plaza Sales | Car dealer | Fayetteville | 31.1 | NO SITE | no website listed | +1-479-443-6950 | new |
-| 9 | GLITZ Beauty Bar | Barber/salon | Fayetteville | 31.3 | SOCIAL ONLY |  | +1 870 692 8661 | new |
-| 9 | Mane | Barber/salon | Fayetteville | 31.4 | SOCIAL ONLY |  | +1 479 301 2199 | new |
-| 9 | The Diva Dive | Gym | Fayetteville | 31.4 | DATED | no tap-to-call, © 2023 | +1 479 856 4308 | new |
-| 9 | Car Avenue Auto Sales | Car dealer | Fayetteville | 31.6 | BROKEN | site didn't load in 20 seconds | +1 479 332 4311 | new |
-| 9 | Mermaids | Restaurant | Fayetteville | 31.6 | BROKEN | secure connection fails | +1 479 443 3737 | new |
-| 9 | Parker Motor Company | Car dealer | Fayetteville | 32.2 | BROKEN | domain doesn't work (no DNS) | +1 479 521 6047 | new |
-| 9 | Bushido Gardens | Landscaping | Fayetteville | 32.6 | BROKEN | domain doesn't work (no DNS) | +1-479-966-8561 | new |
-| 9 | University Auto | Auto repair | Fayetteville | 33.8 | SOCIAL ONLY |  | +1 479 521 3163 | new |
-| 9 | Maple Street Auto | Auto repair | Fayetteville | 34.0 | SOCIAL ONLY |  | +1 479 442 5586 | new |
-| 9 | Bent Wrench Garage | Auto repair | Fayetteville | 34.1 | SOCIAL ONLY |  | +1 479 287 4591 | new |
-| 9 | Chicot Hibachi Express | Food | Fayetteville | 35.5 | BROKEN | browsers show a security warning (bad certificate) | +1 479 935 3316 | new |
-| 8 | The Meteor Bike Shop | Bike shop | Bentonville | 0.7 | OK-ISH | no tap-to-call | +14792684747 | new |
-| 8 | Table on 6th | Restaurant | Bentonville | 0.8 | OK-ISH | no tap-to-call | +1-479-273-0553 | new |
-| 8 | The Witching Hour Food Truck | Food | Bentonville | 0.9 | OK-ISH | no tap-to-call | +1 479-802-2874 | new |
-| 8 | OZ Suspension Solutions | Bike shop | Bentonville | 1.2 | OK-ISH | no tap-to-call | +1 479 367 2892 | new |
-| 8 | The HUB Bike Shop | Bike shop | Bentonville | 1.2 | BROKEN | page error (HTTP 404) | +14793640394 | new |
-| 8 | Pizza Lottie's | Restaurant | Bentonville | 1.6 | NO SITE | no website listed | +1-479-326-8399 | new |
-| 8 | Mojo Cycling | Bike shop | Bentonville | 1.7 | OK-ISH | no tap-to-call | +14792717201 | new |
-| 8 | One Call Heating, Cooling & Refrigeration | HVAC | Bentonville | 2.4 | DATED | not mobile-friendly, no tap-to-call | +1 479 2732914 | new |
-| 8 | Rick's Bakery | Cafe | Rogers | 4.4 | DATED | no tap-to-call, © 2023 | +1-479-202-4010 | new |
-| 8 | P&D HVAC | HVAC | Bentonville | 6.6 | GOOD |  | +1 479-936-4932 | new |
-| 8 | Bacchus Kitchen & Bar | Restaurant | Rogers | 7.6 | OK-ISH | no tap-to-call | +1-479-582-4838 | new |
-| 8 | HALO by Cabin Red A Salon | Barber/salon | Rogers | 7.7 | NO SITE | no website listed | +14797604769 | new |
-| 8 | Pinnacle Nail Spa | Beauty | Rogers | 8.2 | OK-ISH | no tap-to-call | +1 479-202-5321 | new |
-| 8 | Hi-Tea | Cafe | Rogers | 8.3 | OK-ISH | no tap-to-call | +1 479-899-6363 | new |
-| 8 | Texas de Brazil - Rogers | Restaurant | Rogers | 8.3 | OK-ISH | no tap-to-call | +14793377889 | new |
-| 8 | Phat Tire Bike Shop | Bike shop | Bella Vista | 8.6 | OK-ISH | no tap-to-call | +1 479-268-3800 | new |
-| 8 | Acambaro Mexican Restaurant | Restaurant | Rogers | 8.8 | BROKEN | site didn't load in 20 seconds | +1-479-986-9901 | new |
-| 8 | All Pets Animal Hospital | Vet | Lowell | 10.3 | NO SITE | no website listed |  | new |
-| 8 | Neal's Cafe | Restaurant | Springdale | 21.1 | NO SITE | no website listed | +1-479-751-9996; +1-479-750-0090 | new |
-| 8 | Shamrock Roofing and Construction | Roofer | Springdale | 21.9 | UNKNOWN | blocked our checker (HTTP 403); check by hand | +1 479-319-5100 | new |
-| 8 | Mama Z's Cafe | Restaurant | Springdale | 22.0 | NO SITE | no website listed | +1-479-361-2750 | new |
-| 8 | Northwest Athletic Club | Gym | Springdale | 26.1 | DATED | no tap-to-call, slow (4.41s) | +1 479 756 6920 | new |
-| 8 | PortSide 5 | Car wash | Springdale | 27.0 | DATED | no tap-to-call, © 2020 | +1-479-361-3000 | new |
-| 8 | Wright's Barbecue | Restaurant | Fayetteville | 27.0 | BROKEN | secure connection fails | +1 479 313 8618 | new |
-| 8 | Best Nails | Beauty | Springdale | 27.8 | SOCIAL ONLY |  | +1 479 442 5880 | new |
-| 8 | Conscious Coco | Cafe | Fayetteville | 28.1 | NO SITE | no website listed | +1 479 601 1591 | new |
-| 8 | Nu Nails | Beauty | Fayetteville | 28.5 | BROKEN | parked, empty or coming-soon page | +1 479 443 9657 | new |
-| 8 | Kobe Hibachi & Sushi | Restaurant | Fayetteville | 28.9 | BROKEN | domain doesn't work (no DNS) | +1 479 443 5623 | new |
-| 8 | ZenStudio | Gym | Fayetteville | 29.0 | BROKEN | domain doesn't work (no DNS) | +1 479 301 2798 | new |
-| 8 | House Of Taste | Restaurant | Fayetteville | 29.7 | SOCIAL ONLY |  | +1 479 935 4262 | new |
-| 8 | KJ Sushi & Korean BBQ | Restaurant | Fayetteville | 29.8 | SOCIAL ONLY |  | +1 479 301 2008 | new |
-| 8 | Lee Nails | Beauty | Fayetteville | 30.0 | BROKEN | domain doesn't work (no DNS) | +1 479 442 6229 | new |
-| 8 | Mong Dynasty | Restaurant | Fayetteville | 30.0 | BROKEN | domain doesn't work (no DNS) | +1 479 443 7666 | new |
-| 8 | Whole Hog Café | Restaurant | Fayetteville | 30.1 | BROKEN | secure connection fails | +1 479 439 9270 | new |
-| 8 | American Tire | Tires | Fayetteville | 30.5 | NO SITE | no website listed | +1 479 443 4361 | new |
-| 8 | Beauty World | Beauty | Fayetteville | 31.0 | BROKEN | domain doesn't work (no DNS) | +1-479-442-9421 | new |
-| 8 | Elevated Grooming Studio | Barber/salon | Fayetteville | 31.4 | BROKEN | page error (HTTP 307) | +1 501 215 6154 | new |
-| 8 | Thai E-San | Restaurant | Fayetteville | 31.4 | NO SITE | no website listed | +1 479 587 8177 | new |
-| 8 | PIGMINT | Florist | Fayetteville | 31.9 | SOCIAL ONLY |  | +1 479 444 0404 | new |
-| 8 | Moonlight Cafe on The Trail | Cafe | Fayetteville | 32.0 | NO SITE | no website listed | +1 479 249 9899 | new |
-| 8 | Pesto Cafe | Restaurant | Fayetteville | 32.1 | NO SITE | no website listed | +1 479 582 3330 | new |
-| 8 | Fitness 4 Less | Gym | Fayetteville | 32.4 | BROKEN | parked, empty or coming-soon page | +1 479 571 2348 | new |
-| 8 | Donuts Donuts | Cafe | Fayetteville | 32.5 | NO SITE | no website listed | +1 479 442 1794 | new |
-| 8 | FFO Home | Furniture | Fayetteville | 32.7 | BROKEN | page error (HTTP 404) | +1 479 444 9220 | new |
-| 8 | Lion's Mane Barber Shop | Barber/salon | Fayetteville | 32.7 | SOCIAL ONLY |  | +14794434475 | new |
-| 8 | Six Twelve Coffeehouse & Bar | Cafe | Fayetteville | 32.7 | NO SITE | no website listed | +14798566382 | new |
+| 9 | Jlc Logistical Services Inc | Movers | Rogers | 5.3 | NO SITE | no website listed | 14799869884 | new |
+| 9 | Extra Space Storage | Movers | Bentonville | 5.5 | DATED | © 2006, slow (6.5s) | 4792750221 | new |
+| 9 | T's Nails and Spa | Beauty | Bentonville | 5.6 | BROKEN | domain doesn't work (no DNS) | +14792509940 | new |
+| 9 | Red 5 Construction | Home improvement | Bentonville | 5.7 | DATED | © 2023, slow (7.82s) | +14792955674 | new |
+| 9 | David Harris Construction Company | Home improvement | Rogers | 5.8 | BROKEN | page error (HTTP 404) | 14796960680 | new |

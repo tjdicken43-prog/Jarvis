@@ -9,7 +9,7 @@
 | beauty_salon | 327 | Beauty |
 | historic_site | 307 |  |
 | social_or_community_service | 281 |  |
-| contractor | 256 |  |
+| contractor | 256 | Home improvement |
 | hair_salon | 240 | Beauty |
 | professional_service | 232 |  |
 | automotive_repair | 229 | Auto |

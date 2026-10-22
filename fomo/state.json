@@ -9,25 +9,36 @@
    "wins": 0,
    "losses": 1,
    "fees": 1.9,
-   "cooldown": {
-    "GNE7e774tkGyxMMzP36ofhNuRrUZ15H4e1LE1xekpump": 1792688797405
-   },
+   "cooldown": {},
    "equity": 930.22
   },
   "fresh_launch": {
-   "cash": 900.0,
-   "open": [],
+   "cash": 850.0,
+   "open": [
+    {
+     "chain": "solana",
+     "pair": "4UPijxPh3AcSHtXzLFHSjbDibZUNnFFYVhzTjpCqDBbH",
+     "token": "HKh5uh37FyRhRbDPcmPCoTcfByRLdY65RFZj9AvZpump",
+     "symbol": "BTC",
+     "entry": 0.0008293978683599289,
+     "qty": 59139.2887191676,
+     "cost": 50,
+     "entry_liq": 81439.64,
+     "opened_ms": 1792712159312,
+     "url": "https://dexscreener.com/solana/4upijxph3acshtxzlfhsjbdibzunnffyvhztjpcqdbbh"
+    }
+   ],
    "peak": 1000,
-   "max_dd": 0.09999999999999998,
+   "max_dd": 0.10100901322504163,
    "wins": 0,
    "losses": 2,
-   "fees": 3.8,
+   "fees": 4.75,
    "cooldown": {
     "BpsCTaPPniHEkYR7eQP27TwpxxsLateaJcjGzYTcpump": 1792701186626,
     "4krFcF31xNiRQseavbJ579r9fYfaqmbycXEZi49gpump": 1792701186626
    },
-   "equity": 900.0
+   "equity": 898.99
   }
  },
- "updated": "2026-10-22T20:33:06Z"
+ "updated": "2026-10-22T23:35:59Z"
 }

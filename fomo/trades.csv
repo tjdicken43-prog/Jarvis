@@ -5,3 +5,4 @@ time,strategy,side,chain,symbol,token,usd,pnl,reason,held_h
 2026-10-22T17:06:37,fresh_launch,BUY,solana,MI,4krFcF31xNiRQseavbJ579r9fYfaqmbycXEZi49gpump,50,,"liq $65,415, vol1h $207,913, 1h +183%, buys/sells 4.08",0
 2026-10-22T20:33:06,fresh_launch,SELL,solana,tinfoilcat,BpsCTaPPniHEkYR7eQP27TwpxxsLateaJcjGzYTcpump,0.0,-50.0,liquidity pulled (rug),3.4
 2026-10-22T20:33:06,fresh_launch,SELL,solana,MI,4krFcF31xNiRQseavbJ579r9fYfaqmbycXEZi49gpump,0.0,-50.0,liquidity pulled (rug),3.4
+2026-10-22T23:35:59,fresh_launch,BUY,solana,BTC,HKh5uh37FyRhRbDPcmPCoTcfByRLdY65RFZj9AvZpump,50,,"liq $81,440, vol1h $508,851, 1h +144%, buys/sells 3.01",0

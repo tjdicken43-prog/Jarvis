@@ -26,4 +26,7 @@ assert ov.place_from_row(base | {"categories": {"primary": "restaurant", "altern
 # alternate category rescues a vague primary one
 assert ov.place_from_row(base | {"categories": {"primary": "professional_services", "alternate": ["pest_control_service"]}})["trade"] == "Pest control"
 assert ov.trade_of("moving_company") == ("Movers", 2) and ov.trade_of("nail_salon") == ("Beauty", 1)
+assert ov.place_from_row(base | {"categories": None, "basic_category": "home_service"})["trade"] == "Home services"
+assert ov.place_from_row(base | {"categories": None, "basic_category": "storage_facility"}) is None
+assert ov.place_from_row(base | {"categories": None, "taxonomy": {"primary": "electrician", "hierarchy": ["home_service", "electrician"]}})["trade"] == "Electrician"
 print("overture ok")

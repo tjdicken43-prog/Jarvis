@@ -27,10 +27,13 @@ TRADES = [
     (r"remodel|general_contractor|home_builder|construction|carpent|flooring|drywall|concrete|painting|"
      r"siding|insulation|cabinet|countertop|foundation|window_installation|blinds|shutters|masonry|deck",
      "Home improvement", 2),
-    (r"mover|moving|storage", "Movers", 2),
+    (r"mover|moving_(company|service)", "Movers", 2),
     (r"towing|auto_(repair|body|glass|detail)|automotive_repair|car_repair|mechanic|tire|body_shop|oil_change|"
      r"transmission|brake|car_wash|detailing", "Auto", 2),
     (r"barber|hair|nail|beauty|lash|brow|wax|esthetic|tanning", "Beauty", 1),
+    # coarse fallbacks when only basic_category is known
+    (r"^home_service$|building_or_construction_service", "Home services", 2),
+    (r"^automotive_service$|^vehicle_service$", "Auto", 2),
 ]
 TRADE_RES = [(re.compile(p), label, ticket) for p, label, ticket in TRADES]
 
@@ -55,9 +58,18 @@ def trade_of(cat):
 
 
 def category(row):
-    """Overture moved from categories.primary to basic_category; accept either."""
+    """Most detailed category available: categories.primary (e.g. hvac_services), then the newer
+    taxonomy.primary, then the coarse basic_category (e.g. home_service)."""
     cats = row.get("categories") or {}
-    return row.get("basic_category") or cats.get("primary") or ""
+    tax = row.get("taxonomy") or {}
+    return cats.get("primary") or tax.get("primary") or row.get("basic_category") or ""
+
+
+def all_categories(row):
+    cats = row.get("categories") or {}
+    tax = row.get("taxonomy") or {}
+    return " ".join([category(row)] + list(cats.get("alternate") or []) + list(tax.get("hierarchy") or [])
+                    + list(tax.get("alternates") or []) + [row.get("basic_category") or ""])
 
 
 def first(xs):
@@ -66,7 +78,7 @@ def first(xs):
 
 def place_from_row(row):
     """Turn one Overture row (a dict) into the scout's place shape, or None to skip it."""
-    t = trade_of(category(row)) or trade_of(" ".join((row.get("categories") or {}).get("alternate") or []))
+    t = trade_of(category(row)) or trade_of(all_categories(row))
     if not t:
         return None
     if (row.get("confidence") or 0) < 0.6:

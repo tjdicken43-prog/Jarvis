@@ -24,7 +24,7 @@ TRADES = [
     (r"pool|hot_tub", "Pools", 2),
     (r"garage_door", "Garage doors", 2),
     (r"handyman", "Handyman", 1),
-    (r"remodel|general_contractor|home_builder|construction|carpent|flooring|drywall|concrete|painting|"
+    (r"^contractor$|remodel|general_contractor|home_builder|construction|carpent|flooring|drywall|concrete|painting|"
      r"siding|insulation|cabinet|countertop|foundation|window_installation|blinds|shutters|masonry|deck",
      "Home improvement", 2),
     (r"mover|moving_(company|service)", "Movers", 2),

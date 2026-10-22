@@ -29,4 +29,5 @@ assert ov.trade_of("moving_company") == ("Movers", 2) and ov.trade_of("nail_salo
 assert ov.place_from_row(base | {"categories": None, "basic_category": "home_service"})["trade"] == "Home services"
 assert ov.place_from_row(base | {"categories": None, "basic_category": "storage_facility"}) is None
 assert ov.place_from_row(base | {"categories": None, "taxonomy": {"primary": "electrician", "hierarchy": ["home_service", "electrician"]}})["trade"] == "Electrician"
+assert ov.trade_of("contractor") == ("Home improvement", 2)
 print("overture ok")

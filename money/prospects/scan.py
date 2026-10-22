@@ -25,6 +25,16 @@ import urllib.request
 BBOX = (36.03, -94.32, 36.50, -94.05)  # south, west, north, east
 OVERPASS = "https://overpass-api.de/api/interpreter"
 UA = "SitesByTJ-prospect-scout/1.0 (local web design research)"
+# Many hosts block unknown bots (403/429), which says nothing about the site, so audits use a normal browser UA.
+BROWSER_UA = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Mobile Safari/537.36"
+HOME = (36.3729, -94.2088)  # Bentonville square
+TOWNS = {"Bentonville": (36.3729, -94.2088), "Rogers": (36.3320, -94.1185), "Bella Vista": (36.4812, -94.2733),
+         "Centerton": (36.3598, -94.2852), "Lowell": (36.2554, -94.1308), "Springdale": (36.1867, -94.1288),
+         "Fayetteville": (36.0626, -94.1574), "Cave Springs": (36.2634, -94.2319), "Pea Ridge": (36.4540, -94.1169)}
+FRANCHISE = re.compile(r"\b(chevrolet|chevy|ford|toyota|honda|nissan|hyundai|kia|chrysler|dodge|jeep|ram|buick|gmc|cadillac|"
+                       r"subaru|mazda|volkswagen|vw|bmw|mercedes|lexus|acura|infiniti|audi|volvo|mitsubishi|carmax|"
+                       r"great clips|supercuts|sport clips|planet fitness|anytime fitness|orangetheory)\b", re.I)
+SKIP_WORDS = re.compile(r"\b(injection|botox|medspa|med spa|dental|dentist|chiropract|doctor)\b", re.I)
 
 # tag -> (label, ticket points: how much a site is worth to them)
 CATEGORIES = {
@@ -74,8 +84,9 @@ def overpass_query():
     return "[out:json][timeout:120];(" + "".join(parts) + ");out center tags;"
 
 
-def http_get(url, timeout=20, data=None):
-    req = urllib.request.Request(url, data=data, headers={"User-Agent": UA, "Accept": "*/*"})
+def http_get(url, timeout=20, data=None, ua=UA):
+    req = urllib.request.Request(url, data=data, headers={"User-Agent": ua, "Accept": "text/html,*/*;q=0.8",
+                                                          "Accept-Language": "en-US,en;q=0.9"})
     ctx = ssl.create_default_context()
     t0 = time.time()
     with urllib.request.urlopen(req, timeout=timeout, context=ctx) as r:
@@ -119,12 +130,28 @@ def audit(url):
         a["state"] = "SOCIAL ONLY"
         return a
     try:
-        status, final, body, secs = http_get(url, timeout=20)
+        status, final, body, secs = http_get(url, timeout=20, ua=BROWSER_UA)
     except urllib.error.HTTPError as ex:
-        a.update(state="BROKEN", error=f"HTTP {ex.code}")
+        if ex.code in (401, 403, 429, 503):
+            a.update(state="UNKNOWN", error=f"blocked our checker (HTTP {ex.code}); check by hand")
+        else:
+            a.update(state="BROKEN", error=f"page error (HTTP {ex.code})")
+        return a
+    except ssl.SSLCertVerificationError:
+        a.update(state="BROKEN", error="browsers show a security warning (bad certificate)")
         return a
     except Exception as ex:
-        a.update(state="BROKEN", error=type(ex).__name__ + ": " + str(ex)[:120])
+        msg = str(ex)
+        if "CERTIFICATE_VERIFY_FAILED" in msg:
+            a.update(state="BROKEN", error="browsers show a security warning (bad certificate)")
+        elif "Name or service not known" in msg or "nodename nor servname" in msg:
+            a.update(state="BROKEN", error="domain doesn't work (no DNS)")
+        elif "timed out" in msg:
+            a.update(state="BROKEN", error="site didn't load in 20 seconds")
+        elif "SSL" in msg or "EOF" in msg:
+            a.update(state="BROKEN", error="secure connection fails")
+        else:
+            a.update(state="UNKNOWN", error=(type(ex).__name__ + ": " + msg)[:100])
         return a
     text = body.decode("utf-8", "ignore")
     low = text.lower()
@@ -168,39 +195,56 @@ def audit(url):
 def score(p):
     s = 0
     state = p["site"]["state"]
-    s += {"NO SITE": 3, "BROKEN": 3, "SOCIAL ONLY": 3, "DATED": 2, "OK-ISH": 1}.get(state, 0)
+    s += {"NO SITE": 3, "BROKEN": 3, "SOCIAL ONLY": 3, "DATED": 2, "OK-ISH": 1, "UNKNOWN": 1}.get(state, 0)
     s += p["ticket"]
     s += 2 if p.get("phone") else 0
     s += 1 if p["site"].get("emails") or p.get("email") else 0
     s += 1 if p.get("street") else 0
     s += 1 if p.get("hours") else 0  # a filled-in listing usually means an active business
+    s += 1 if p.get("km_home", 99) <= 15 else 0  # close to Bentonville: easy to walk in
     return min(s, 10)
+
+
+def km(a, b):
+    import math
+    dlat, dlon = math.radians(b[0] - a[0]), math.radians(b[1] - a[1])
+    h = math.sin(dlat / 2) ** 2 + math.cos(math.radians(a[0])) * math.cos(math.radians(b[0])) * math.sin(dlon / 2) ** 2
+    return 6371 * 2 * math.asin(math.sqrt(h))
 
 
 def place_from(el):
     t = el.get("tags", {})
     if t.get("brand") or t.get("brand:wikidata") or t.get("operator:wikidata"):
         return None  # chains don't buy local websites
+    name = re.sub(r"\s+", " ", t.get("name") or "").strip()
+    if not name or FRANCHISE.search(name) or SKIP_WORDS.search(name):
+        return None  # franchise dealers and medical offices: not our customers
     label, ticket = classify(t)
     lat = el.get("lat") or (el.get("center") or {}).get("lat")
     lon = el.get("lon") or (el.get("center") or {}).get("lon")
     site = norm_site(t.get("website") or t.get("contact:website") or t.get("url"))
     return {
         "id": f"{el['type']}/{el['id']}",
-        "name": t.get("name"),
+        "name": name,
         "trade": label,
         "ticket": ticket,
         "phone": t.get("phone") or t.get("contact:phone"),
         "email": t.get("email") or t.get("contact:email"),
         "website": site,
         "street": " ".join(x for x in [t.get("addr:housenumber"), t.get("addr:street")] if x),
-        "city": t.get("addr:city"),
         "zip": t.get("addr:postcode"),
         "hours": t.get("opening_hours"),
         "facebook": t.get("contact:facebook"),
         "lat": lat,
         "lon": lon,
-    }
+    } | where(lat, lon, t.get("addr:city"))
+
+
+def where(lat, lon, city):
+    if lat is None or lon is None:
+        return {"km_home": 99, "city": city}
+    near = min(TOWNS, key=lambda n: km((lat, lon), TOWNS[n]))
+    return {"km_home": round(km((lat, lon), HOME), 1), "city": city or near}
 
 
 def main():
@@ -214,7 +258,7 @@ def main():
     places = [p for p in (place_from(e) for e in fetch_places()) if p and p["name"]]
     seen, uniq = set(), []
     for p in places:
-        key = (p["name"].lower(), (p["street"] or "").lower())
+        key = (re.sub(r"[^a-z0-9]", "", p["name"].lower()), (p["phone"] or p["street"] or "").replace(" ", "")[-10:])
         if key not in seen:
             seen.add(key)
             uniq.append(p)
@@ -243,7 +287,7 @@ def main():
         p["first_seen"] = o.get("first_seen", today)
         p["status"] = o.get("status", "new")  # TJ/runner set: approved, built, contacted, won, lost, skip
 
-    uniq.sort(key=lambda p: (-p["score"], p["trade"], p["name"]))
+    uniq.sort(key=lambda p: (-p["score"], p.get("km_home", 99), p["name"]))
     (out / "nwa.json").write_text(json.dumps(
         {"made": dt.datetime.utcnow().isoformat(timespec="seconds") + "Z", "bbox": BBOX,
          "source": "OpenStreetMap contributors (ODbL) via Overpass", "prospects": uniq}, indent=1))
@@ -258,14 +302,16 @@ def main():
         "",
         "Site states: " + ", ".join(f"{k} {v}" for k, v in sorted(counts.items())),
         "",
-        "| Score | Shop | Trade | City | Site | Why | Phone | Status |",
-        "|---|---|---|---|---|---|---|---|",
+        "OSM's \"no website listed\" can be out of date: the agent checks by web search before building.",
+        "",
+        "| Score | Shop | Trade | City | km | Site | Why | Phone | Status |",
+        "|---|---|---|---|---|---|---|---|---|",
     ]
     for p in uniq[:80]:
         s = p["site"]
         why = s.get("error") or ", ".join(s.get("flags", [])) or ("no website listed" if s["state"] == "NO SITE" else "")
         lines.append(
-            f"| {p['score']} | {p['name']} | {p['trade']} | {p.get('city') or ''} | {s['state']} | {why} | "
+            f"| {p['score']} | {p['name']} | {p['trade']} | {p.get('city') or ''} | {p.get('km_home', '')} | {s['state']} | {why} | "
             f"{p.get('phone') or ''} | {p['status']} |"
         )
     (out / "nwa.md").write_text("\n".join(lines) + "\n")

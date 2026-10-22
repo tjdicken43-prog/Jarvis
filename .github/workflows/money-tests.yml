@@ -1,0 +1,15 @@
+name: money-tests
+on:
+  push:
+    paths: ["money/**", ".github/workflows/money-*.yml"]
+  pull_request:
+    paths: ["money/**", ".github/workflows/money-*.yml"]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 money/test/test_paper.py
+      - run: python3 money/test/test_scan.py
+      - run: python3 money/sites/build.py

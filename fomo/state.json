@@ -2,40 +2,54 @@
  "started": "2026-10-22T12:08:00Z",
  "strategies": {
   "steady_momentum": {
+   "cash": 930.2165170310824,
+   "open": [],
+   "peak": 1000,
+   "max_dd": 0.06978348296891757,
+   "wins": 0,
+   "losses": 1,
+   "fees": 1.9,
+   "cooldown": {
+    "GNE7e774tkGyxMMzP36ofhNuRrUZ15H4e1LE1xekpump": 1792688797405
+   },
+   "equity": 930.22
+  },
+  "fresh_launch": {
    "cash": 900,
    "open": [
     {
      "chain": "solana",
-     "pair": "Ds6CaQYBQL7GjDATf9CVH189S9ef1mz7dkTrSoV7RWEM",
-     "token": "GNE7e774tkGyxMMzP36ofhNuRrUZ15H4e1LE1xekpump",
-     "symbol": "KIMCHIBULL",
-     "entry": 0.006604305072686849,
-     "qty": 14997.792941097918,
-     "cost": 100,
-     "entry_liq": 246417.34,
-     "opened_ms": 1792670880318,
-     "url": "https://dexscreener.com/solana/ds6caqybql7gjdatf9cvh189s9ef1mz7dktrsov7rwem"
+     "pair": "7Zz8rgcjANwdsnsNF7Znf6q9Dgpo8UzQEvR8foUAbh9d",
+     "token": "BpsCTaPPniHEkYR7eQP27TwpxxsLateaJcjGzYTcpump",
+     "symbol": "tinfoilcat",
+     "entry": 0.0004662618352894071,
+     "qty": 105198.40202995561,
+     "cost": 50,
+     "entry_liq": 59941.5,
+     "opened_ms": 1792688797405,
+     "url": "https://dexscreener.com/solana/7zz8rgcjanwdsnsnf7znf6q9dgpo8uzqevr8fouabh9d"
+    },
+    {
+     "chain": "solana",
+     "pair": "DBFD4YE8Y6U6ipmaoH3s9jKQJwcK61Gsxgiss1bBuLUB",
+     "token": "4krFcF31xNiRQseavbJ579r9fYfaqmbycXEZi49gpump",
+     "symbol": "MI",
+     "entry": 0.0005883810487329041,
+     "qty": 83364.34374565702,
+     "cost": 50,
+     "entry_liq": 65414.94,
+     "opened_ms": 1792688797405,
+     "url": "https://dexscreener.com/solana/dbfd4ye8y6u6ipmaoh3s9jkqjwck61gsxgiss1bbulub"
     }
    ],
    "peak": 1000,
-   "max_dd": 0.0010295643816948807,
+   "max_dd": 0.002053591904482066,
    "wins": 0,
    "losses": 0,
-   "fees": 0.95,
+   "fees": 1.9,
    "cooldown": {},
-   "equity": 998.97
-  },
-  "fresh_launch": {
-   "cash": 1000,
-   "open": [],
-   "peak": 1000,
-   "max_dd": 0.0,
-   "wins": 0,
-   "losses": 0,
-   "fees": 0.0,
-   "cooldown": {},
-   "equity": 1000
+   "equity": 997.95
   }
  },
- "updated": "2026-10-22T12:08:00Z"
+ "updated": "2026-10-22T17:06:37Z"
 }

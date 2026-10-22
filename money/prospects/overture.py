@@ -1,0 +1,119 @@
+"""Second lead source for the scout: Overture Maps places (free, open data).
+
+OpenStreetMap barely lists NWA trades (2 roofers, 4 HVAC in the first scan), so this
+pulls home-service, trade, auto, beauty and moving businesses from Overture's places
+theme, which carries phones, websites and categories. Runs on GitHub Actions
+(needs `pip install duckdb`). Data: Overture Maps Foundation, CDLA Permissive 2.0.
+"""
+import re
+import urllib.request
+
+BUCKET = "https://overturemaps-us-west-2.s3.amazonaws.com"
+
+# (pattern on the category, label, ticket). First match wins, so specific trades go first.
+TRADES = [
+    (r"hvac|heating|air_condition|furnace", "HVAC", 2),
+    (r"plumb|water_heater|septic|drain", "Plumber", 2),
+    (r"roof", "Roofer", 2),
+    (r"electric(ian|al_(contractor|service))", "Electrician", 2),
+    (r"fenc", "Fencing", 2),
+    (r"landscap|lawn|gardener|tree_(service|trimming)|irrigation|sprinkler", "Landscaping", 2),
+    (r"pest|extermin|termite", "Pest control", 2),
+    (r"pressure_wash|power_wash|window_wash|carpet_clean|gutter", "Exterior cleaning", 1),
+    (r"house_clean|home_clean|maid|cleaning_service|janitor", "Cleaning", 1),
+    (r"pool|hot_tub", "Pools", 2),
+    (r"garage_door", "Garage doors", 2),
+    (r"handyman", "Handyman", 1),
+    (r"remodel|general_contractor|home_builder|construction|carpent|flooring|drywall|concrete|painting|"
+     r"siding|insulation|cabinet|countertop|foundation|window_installation|blinds|shutters|masonry|deck",
+     "Home improvement", 2),
+    (r"mover|moving|storage", "Movers", 2),
+    (r"towing|auto_(repair|body|glass|detail)|automotive_repair|car_repair|mechanic|tire|body_shop|oil_change|"
+     r"transmission|brake|car_wash|detailing", "Auto", 2),
+    (r"barber|hair|nail|beauty|lash|brow|wax|esthetic|tanning", "Beauty", 1),
+]
+TRADE_RES = [(re.compile(p), label, ticket) for p, label, ticket in TRADES]
+
+
+def latest_release():
+    """Newest release folder name, e.g. 2026-09-17.0, from the public bucket listing."""
+    url = f"{BUCKET}/?list-type=2&prefix=release/&delimiter=/"
+    with urllib.request.urlopen(url, timeout=30) as r:
+        xml = r.read().decode()
+    rels = re.findall(r"<Prefix>release/([^/<]+)/</Prefix>", xml)
+    if not rels:
+        raise RuntimeError("no Overture releases listed")
+    return sorted(rels)[-1]
+
+
+def trade_of(cat):
+    cat = (cat or "").lower()
+    for rx, label, ticket in TRADE_RES:
+        if rx.search(cat):
+            return label, ticket
+    return None
+
+
+def category(row):
+    """Overture moved from categories.primary to basic_category; accept either."""
+    cats = row.get("categories") or {}
+    return row.get("basic_category") or cats.get("primary") or ""
+
+
+def first(xs):
+    return (xs or [None])[0]
+
+
+def place_from_row(row):
+    """Turn one Overture row (a dict) into the scout's place shape, or None to skip it."""
+    t = trade_of(category(row)) or trade_of(" ".join((row.get("categories") or {}).get("alternate") or []))
+    if not t:
+        return None
+    if (row.get("confidence") or 0) < 0.6:
+        return None  # low confidence usually means closed or stale
+    brand = row.get("brand") or {}
+    if (brand.get("names") or {}).get("primary") or brand.get("wikidata"):
+        return None  # chains don't buy local websites
+    name = re.sub(r"\s+", " ", ((row.get("names") or {}).get("primary") or "")).strip()
+    if not name:
+        return None
+    addr = first(row.get("addresses")) or {}
+    bbox = row.get("bbox") or {}
+    lat, lon = bbox.get("ymin"), bbox.get("xmin")
+    socials = row.get("socials") or []
+    return {
+        "id": f"overture/{row.get('id')}",
+        "name": name,
+        "trade": t[0],
+        "ticket": t[1],
+        "phone": first(row.get("phones")),
+        "email": first(row.get("emails")),
+        "website": first(row.get("websites")),
+        "street": addr.get("freeform") or "",
+        "zip": (addr.get("postcode") or "")[:5] or None,
+        "hours": None,
+        "facebook": next((s for s in socials if "facebook.com" in (s or "")), None),
+        "lat": lat,
+        "lon": lon,
+        "city_hint": (addr.get("locality") or "").title() or None,
+        "source": "overture",
+    }
+
+
+def fetch_rows(bbox, release=None):
+    """All Overture places inside bbox (south, west, north, east) as dicts."""
+    import duckdb
+
+    release = release or latest_release()
+    s, w, n, e = bbox
+    con = duckdb.connect()
+    con.execute("INSTALL httpfs; LOAD httpfs; SET s3_region='us-west-2';")
+    cur = con.execute(
+        f"""SELECT * FROM read_parquet('s3://overturemaps-us-west-2/release/{release}/theme=places/type=place/*',
+                                     hive_partitioning=1)
+            WHERE bbox.xmin BETWEEN {w} AND {e} AND bbox.ymin BETWEEN {s} AND {n}"""
+    )
+    cols = [d[0] for d in cur.description]
+    rows = [dict(zip(cols, r)) for r in cur.fetchall()]
+    print(f"Overture {release}: {len(rows)} places in the box")
+    return rows

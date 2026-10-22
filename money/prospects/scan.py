@@ -240,6 +240,25 @@ def place_from(el):
     } | where(lat, lon, t.get("addr:city"))
 
 
+def overture_places():
+    """Trades and home services from Overture (OSM barely lists them). Skipped if it fails."""
+    try:
+        import overture
+        rows = overture.fetch_rows(BBOX)
+    except Exception as ex:
+        print("Overture skipped:", ex)
+        return []
+    out = []
+    for r in rows:
+        p = overture.place_from_row(r)
+        if not p or FRANCHISE.search(p["name"]) or SKIP_WORDS.search(p["name"]):
+            continue
+        p["website"] = norm_site(p["website"])
+        out.append(p | where(p["lat"], p["lon"], p.pop("city_hint")))
+    print(f"Overture: {len(out)} independent trades and home services")
+    return out
+
+
 def where(lat, lon, city):
     if lat is None or lon is None:
         return {"km_home": 99, "city": city}
@@ -251,14 +270,18 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True)
     ap.add_argument("--limit", type=int, default=0, help="audit at most N sites (0 = all)")
+    ap.add_argument("--no-overture", action="store_true", help="OpenStreetMap only")
     args = ap.parse_args()
     out = pathlib.Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
 
     places = [p for p in (place_from(e) for e in fetch_places()) if p and p["name"]]
+    if not args.no_overture:
+        places += overture_places()
     seen, uniq = set(), []
     for p in places:
-        key = (re.sub(r"[^a-z0-9]", "", p["name"].lower()), (p["phone"] or p["street"] or "").replace(" ", "")[-10:])
+        contact = re.sub(r"\D", "", p["phone"] or "")[-10:] or re.sub(r"[^a-z0-9]", "", (p["street"] or "").lower())
+        key = (re.sub(r"[^a-z0-9]", "", p["name"].lower()), contact)
         if key not in seen:
             seen.add(key)
             uniq.append(p)
@@ -267,7 +290,7 @@ def main():
     with_site = [p for p in uniq if p["website"]]
     if args.limit:
         with_site = with_site[: args.limit]
-    with cf.ThreadPoolExecutor(max_workers=8) as ex:
+    with cf.ThreadPoolExecutor(max_workers=16) as ex:
         for p, a in zip(with_site, ex.map(lambda p: audit(p["website"]), with_site)):
             p["site"] = a
     for p in uniq:
@@ -290,7 +313,7 @@ def main():
     uniq.sort(key=lambda p: (-p["score"], p.get("km_home", 99), p["name"]))
     (out / "nwa.json").write_text(json.dumps(
         {"made": dt.datetime.utcnow().isoformat(timespec="seconds") + "Z", "bbox": BBOX,
-         "source": "OpenStreetMap contributors (ODbL) via Overpass", "prospects": uniq}, indent=1))
+         "source": "OpenStreetMap contributors (ODbL) via Overpass; Overture Maps Foundation (CDLA Permissive 2.0)", "prospects": uniq}, indent=1))
 
     counts = {}
     for p in uniq:
@@ -298,7 +321,7 @@ def main():
     lines = [
         "# NWA prospects",
         f"Made {today}. {len(uniq)} independent shops in Bentonville, Rogers, Bella Vista, Centerton, Lowell, "
-        "Springdale and Fayetteville. Data: © OpenStreetMap contributors (ODbL); OSM misses some shops.",
+        "Springdale and Fayetteville. Data: © OpenStreetMap contributors (ODbL) and Overture Maps (CDLA Permissive 2.0); both miss some shops.",
         "",
         "Site states: " + ", ".join(f"{k} {v}" for k, v in sorted(counts.items())),
         "",

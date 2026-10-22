@@ -15,41 +15,19 @@
    "equity": 930.22
   },
   "fresh_launch": {
-   "cash": 900,
-   "open": [
-    {
-     "chain": "solana",
-     "pair": "7Zz8rgcjANwdsnsNF7Znf6q9Dgpo8UzQEvR8foUAbh9d",
-     "token": "BpsCTaPPniHEkYR7eQP27TwpxxsLateaJcjGzYTcpump",
-     "symbol": "tinfoilcat",
-     "entry": 0.0004662618352894071,
-     "qty": 105198.40202995561,
-     "cost": 50,
-     "entry_liq": 59941.5,
-     "opened_ms": 1792688797405,
-     "url": "https://dexscreener.com/solana/7zz8rgcjanwdsnsnf7znf6q9dgpo8uzqevr8fouabh9d"
-    },
-    {
-     "chain": "solana",
-     "pair": "DBFD4YE8Y6U6ipmaoH3s9jKQJwcK61Gsxgiss1bBuLUB",
-     "token": "4krFcF31xNiRQseavbJ579r9fYfaqmbycXEZi49gpump",
-     "symbol": "MI",
-     "entry": 0.0005883810487329041,
-     "qty": 83364.34374565702,
-     "cost": 50,
-     "entry_liq": 65414.94,
-     "opened_ms": 1792688797405,
-     "url": "https://dexscreener.com/solana/dbfd4ye8y6u6ipmaoh3s9jkqjwck61gsxgiss1bbulub"
-    }
-   ],
+   "cash": 900.0,
+   "open": [],
    "peak": 1000,
-   "max_dd": 0.002053591904482066,
+   "max_dd": 0.09999999999999998,
    "wins": 0,
-   "losses": 0,
-   "fees": 1.9,
-   "cooldown": {},
-   "equity": 997.95
+   "losses": 2,
+   "fees": 3.8,
+   "cooldown": {
+    "BpsCTaPPniHEkYR7eQP27TwpxxsLateaJcjGzYTcpump": 1792701186626,
+    "4krFcF31xNiRQseavbJ579r9fYfaqmbycXEZi49gpump": 1792701186626
+   },
+   "equity": 900.0
   }
  },
- "updated": "2026-10-22T17:06:37Z"
+ "updated": "2026-10-22T20:33:06Z"
 }

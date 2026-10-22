@@ -3,3 +3,5 @@ time,strategy,side,chain,symbol,token,usd,pnl,reason,held_h
 2026-10-22T17:06:37,steady_momentum,SELL,solana,KIMCHIBULL,GNE7e774tkGyxMMzP36ofhNuRrUZ15H4e1LE1xekpump,30.22,-69.78,stop loss,5.0
 2026-10-22T17:06:37,fresh_launch,BUY,solana,tinfoilcat,BpsCTaPPniHEkYR7eQP27TwpxxsLateaJcjGzYTcpump,50,,"liq $59,942, vol1h $506,425, 1h +116%, buys/sells 1.97",0
 2026-10-22T17:06:37,fresh_launch,BUY,solana,MI,4krFcF31xNiRQseavbJ579r9fYfaqmbycXEZi49gpump,50,,"liq $65,415, vol1h $207,913, 1h +183%, buys/sells 4.08",0
+2026-10-22T20:33:06,fresh_launch,SELL,solana,tinfoilcat,BpsCTaPPniHEkYR7eQP27TwpxxsLateaJcjGzYTcpump,0.0,-50.0,liquidity pulled (rug),3.4
+2026-10-22T20:33:06,fresh_launch,SELL,solana,MI,4krFcF31xNiRQseavbJ579r9fYfaqmbycXEZi49gpump,0.0,-50.0,liquidity pulled (rug),3.4

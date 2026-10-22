@@ -2,6 +2,8 @@
 
 The scheduled task "Money agent" opens this repo and follows this file. Edit this file to change the agent; the task itself only says "follow money/AGENT.md".
 
+**The crew** (each run does them in this order): Checker (`money/agents/checker.md`) → Builder (section 1) → Scribe (section 1b) → Auditor (every card follows the rules) → Keeper (section 3). The **Overseer** (`money/agents/overseer.md`) is a separate daily task that checks all of them. The Scout is the weekly GitHub bot.
+
 Read first: [[Sites by TJ]] (prices, rules), `money/README.md`. Ground rules always win. Never send email, never post, never trade real money, never put keys or passwords in the repo.
 
 ## 0. Get the bot output
@@ -14,11 +16,7 @@ If a bot's last run failed (GitHub tools: list workflow runs), read its log and 
 
 ## 1. Sites: build up to 10 previews a week
 1. **Pick from the cold list** (`prospects/cold-list.csv` on money-data; refreshed every Monday). Take `status: new` rows from the top of "Trades & home services" first (they pay monthly), then "Shops & food". Skip anything already in `money/sites/shops/`.
-2. **Check each one by web search before building** (the list is machine-made from OpenStreetMap + Overture Maps and is never hand-checked):
-   - Still open? Real phone? Not a chain or a branch of a bigger company (e.g. a supply-house branch). Not a medical office.
-   - Is the site really down, dated or weak **in a normal browser**? "DOWN" can be a slow server. If it works fine, set `status: "skip"` with the reason.
-   - **Find a working email**: their site's contact page, Facebook "About", Google profile. Never guess an address (no info@ guesses), and never use one on a dead domain. No email found: `status: "no-email"`; it can still be a walk-in or call lead.
-   - Real services, hours, area and public rating.
+2. **Checker first** (follow `money/agents/checker.md`). TJ never checks leads; the Checker does. Build only leads with `verdict: pass` in `prospects/checked/`, using the facts it gathered.
 3. Write `money/sites/shops/<slug>/content.json`. The sample shop's file shows the format.
    - Use only true public facts. Leave out anything you can't confirm.
    - **Reviews:** only short real quotes from public reviews, credited "First name L. · Google". If you can't quote reliably, leave reviews out. Never invent one.

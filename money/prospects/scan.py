@@ -103,7 +103,8 @@ def fetch_places():
         except Exception as ex:  # Overpass is busy at times
             print("overpass retry", attempt, ex)
             time.sleep(10 * (attempt + 1))
-    raise SystemExit("Overpass failed")
+    print("Overpass failed: reusing last week's OpenStreetMap shops")
+    return None
 
 
 def classify(tags):
@@ -240,6 +241,17 @@ def place_from(el):
     } | where(lat, lon, t.get("addr:city"))
 
 
+def last_osm_places(prev):
+    """OSM shops from the previous run, re-audited this run (used when Overpass is down)."""
+    try:
+        old = json.loads(prev.read_text()).get("prospects", [])
+    except Exception:
+        return []
+    keep = ("id", "name", "trade", "ticket", "phone", "email", "website", "street", "zip", "hours", "facebook", "lat", "lon",
+            "km_home", "city")
+    return [{k: p.get(k) for k in keep} for p in old if not p["id"].startswith("overture/")]
+
+
 def overture_places():
     """Trades and home services from Overture (OSM barely lists them). Skipped if it fails."""
     try:
@@ -275,7 +287,11 @@ def main():
     out = pathlib.Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
 
-    places = [p for p in (place_from(e) for e in fetch_places()) if p and p["name"]]
+    elements = fetch_places()
+    if elements is not None:
+        places = [p for p in (place_from(e) for e in elements) if p and p["name"]]
+    else:
+        places = last_osm_places(out / "nwa.json")
     if not args.no_overture:
         places += overture_places()
     seen, uniq = set(), []
@@ -286,6 +302,8 @@ def main():
             seen.add(key)
             uniq.append(p)
     print(f"{len(uniq)} independent places found")
+    if not uniq:
+        raise SystemExit("No places from any source: keeping last week's list untouched")
 
     with_site = [p for p in uniq if p["website"]]
     if args.limit:

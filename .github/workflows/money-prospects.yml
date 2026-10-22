@@ -23,4 +23,5 @@ jobs:
       - run: python3 money/prospects/overture.py data/prospects
         continue-on-error: true
       - run: python3 money/prospects/scan.py --out data/prospects --limit "${{ github.event.inputs.limit || '0' }}"
+      - run: python3 money/prospects/coldlist.py data/prospects/nwa.json data/prospects
       - run: 'money/ci/data-branch.sh save "prospects: NWA scan $(date -u +%F)"'

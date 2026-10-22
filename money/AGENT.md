@@ -12,12 +12,13 @@ The cloud session can't reach the data hosts, so the bots run on GitHub Actions 
 - `rugcheck/<token>.md`: rug checks.
 If a bot's last run failed (GitHub tools: list workflow runs), read its log and fix the code on a branch, test, PR, merge.
 
-## 1. Sites: build up to 5 previews a week
-1. From `nwa.json`, take shops with `status: "new"`, score ≥ 7, Bentonville/Rogers/Bella Vista/Centerton first, trades with ticket 2 first. Skip anything already in `money/sites/shops/`.
-2. Check each one by web search before building:
-   - Is the shop still open?
-   - Does it really have no site or a weak one? (OSM can be out of date. If it has a good site, set `status: "skip"` with a reason.)
-   - What are its real services, hours and area, and how is it rated publicly?
+## 1. Sites: build up to 10 previews a week
+1. **Pick from the cold list** (`prospects/cold-list.csv` on money-data; refreshed every Monday). Take `status: new` rows from the top of "Trades & home services" first (they pay monthly), then "Shops & food". Skip anything already in `money/sites/shops/`.
+2. **Check each one by web search before building** (the list is machine-made from OpenStreetMap + Overture Maps and is never hand-checked):
+   - Still open? Real phone? Not a chain or a branch of a bigger company (e.g. a supply-house branch). Not a medical office.
+   - Is the site really down, dated or weak **in a normal browser**? "DOWN" can be a slow server. If it works fine, set `status: "skip"` with the reason.
+   - **Find a working email**: their site's contact page, Facebook "About", Google profile. Never guess an address (no info@ guesses), and never use one on a dead domain. No email found: `status: "no-email"`; it can still be a walk-in or call lead.
+   - Real services, hours, area and public rating.
 3. Write `money/sites/shops/<slug>/content.json`. The sample shop's file shows the format.
    - Use only true public facts. Leave out anything you can't confirm.
    - **Reviews:** only short real quotes from public reviews, credited "First name L. · Google". If you can't quote reliably, leave reviews out. Never invent one.
@@ -29,11 +30,18 @@ If a bot's last run failed (GitHub tools: list workflow runs), read its log and 
    - An email draft (playbook template, under 125 words, CAN-SPAM footer with "[mailing address]").
    - The two follow-ups.
    - Price to quote: launch $299 while fewer than 3 clients, else Starter $499.
-6. Set the shop's `status: "built"` in `money-data/prospects/nwa.json` and push money-data.
+6. Set the shop's `status: "built"` in `money-data/prospects/nwa.json` (match by `id`; ids start with `node/`, `way/` or `overture/`) and push money-data. Statuses: new, skip, no-email, built, approved, emailed, replied, won, lost, unsubscribed.
 7. Commit the shops on a branch, open a PR, wait for `money-tests` to pass, merge. Jarvis is TJ's own repo: merging is fine.
 8. Previews TJ can show:
    - Until Cloudflare is set up, publish each preview as a private Artifact so TJ can show it on his phone. List the links in the brief.
    - Once a Cloudflare Pages project is connected (see [[Sites by TJ]]), the merged site goes live at its preview link.
+
+## 1b. Pitch angle by site problem (Scribe)
+- **DOWN**: "Your site isn't loading for customers right now ([what we saw]). Here's a working version: [preview]." Only if a normal browser confirms it.
+- **DATED**: point to one visible thing (old year, no tap-to-call, not phone-friendly), then the preview.
+- **WEAK**: lead with what they'd gain (calls from the phone, hours, reviews), then the preview.
+- Trades and home services also get the Front Desk line ("never lose a caller"); food and shops get the one-time price.
+- Every email: under 80 words, one question, real mailing address, opt-out line. Nothing is sent until TJ approves it.
 
 ## 2. Fomo paper bot (every run, 1 minute)
 - Read `fomo/summary.md`. Put a one-line paper P&L and win/loss in the morning brief.

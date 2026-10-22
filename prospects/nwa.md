@@ -1,7 +1,7 @@
 # NWA prospects
 Made 2026-10-22. 1778 independent shops in Bentonville, Rogers, Bella Vista, Centerton, Lowell, Springdale and Fayetteville. Data: © OpenStreetMap contributors (ODbL) and Overture Maps (CDLA Permissive 2.0); both miss some shops.
 
-Site states: BROKEN 273, DATED 176, GOOD 224, NO SITE 530, OK-ISH 333, SOCIAL ONLY 96, UNKNOWN 146
+Site states: BROKEN 272, DATED 169, GOOD 224, NO SITE 530, OK-ISH 337, SOCIAL ONLY 96, UNKNOWN 150
 
 OSM's "no website listed" can be out of date: the agent checks by web search before building.
 
@@ -11,6 +11,7 @@ OSM's "no website listed" can be out of date: the agent checks by web search bef
 | 10 | Palisades Construction | Home improvement | Bentonville | 2.2 | NO SITE | no website listed | +14796198049 | new |
 | 10 | All My Brothers Movers Bentonville | Movers | Bentonville | 2.5 | BROKEN | page error (HTTP 404) | (479) 250-1465 | new |
 | 10 | FedEx Ship Center | Movers | Bentonville | 2.9 | BROKEN | page error (HTTP 404) | (800) 463-3339 | new |
+| 10 | Kennedy Coffee | Cafe | Bentonville | 2.9 | BROKEN | parked, empty or coming-soon page | +1-479-464-9015 | new |
 | 10 | Morrison-Shipley Engineers | Home improvement | Bentonville | 3.2 | BROKEN | site didn't load in 20 seconds | +14792732209 | new |
 | 10 | Bloomfield Portable Buildings | Home improvement | Bentonville | 4.0 | BROKEN | domain doesn't work (no DNS) | +14798416290 | new |
 | 10 | Cloverleaf Express USA Inc | Movers | Centerton | 7.3 | BROKEN | domain doesn't work (no DNS) | +14797950412 | new |
@@ -57,7 +58,6 @@ OSM's "no website listed" can be out of date: the agent checks by web search bef
 | 9 | A to Z Self Storage | Movers | Bentonville | 2.6 | NO SITE | no website listed | 4792731582 | new |
 | 9 | Mell's Beauty Studio | Beauty | Bentonville | 2.7 | BROKEN | domain doesn't work (no DNS) | +14792072403 | new |
 | 9 | BBQ King | Restaurant | Bentonville | 2.9 | NO SITE | no website listed | +1 479-364-0380 | new |
-| 9 | Kennedy Coffee | Cafe | Bentonville | 2.9 | BROKEN | secure connection fails | +1-479-464-9015 | new |
 | 9 | Salon Anew | Beauty | Bentonville | 2.9 | NO SITE | no website listed | +19135584455 | new |
 | 9 | Cei Engineering Associates, Inc. | Home improvement | Bentonville | 3.0 | NO SITE | no website listed | 18004334173 | new |
 | 9 | Flawless Look NWA | Beauty | Springdale | 3.2 | NO SITE | no website listed | +14792835959 | new |
@@ -70,7 +70,6 @@ OSM's "no website listed" can be out of date: the agent checks by web search bef
 | 9 | T.T.S. Tire & Auto | Movers | Bentonville | 4.1 | NO SITE | no website listed | 4794648284 | new |
 | 9 | BurnGlo Bentonville | Beauty | Bentonville | 4.3 | BROKEN | page error (HTTP 404) | +14792505870 | new |
 | 9 | Diamond Nails & Spa | Beauty | Bentonville | 4.3 | SOCIAL ONLY |  | +14798768223 | new |
-| 9 | Extra Space Storage | Movers | Bentonville | 4.3 | DATED | © 2006, slow (5.95s) | 4793267942 | new |
 | 9 | MistyDibbs NWACosmetologist | Beauty | Fayetteville | 4.3 | NO SITE | no website listed | +14794595438 | new |
 | 9 | Pure the Salon and Spa | Beauty | Bentonville | 4.3 | BROKEN | page error (HTTP 404) | +14792684440 | new |
 | 9 | Ronald Williams Design Studio | Beauty | Bentonville | 4.3 | BROKEN | domain doesn't work (no DNS) | +12697882882 | new |
@@ -83,7 +82,8 @@ OSM's "no website listed" can be out of date: the agent checks by web search bef
 | 9 | Artifacts Self Storage - 45th Street | Movers | Rogers | 5.3 | BROKEN | page error (HTTP 404) | (479) 372-6362 | new |
 | 9 | Bike Works | Bike shop | Bentonville | 5.3 | BROKEN | page error (HTTP 404) | +14796167780 | new |
 | 9 | Jlc Logistical Services Inc | Movers | Rogers | 5.3 | NO SITE | no website listed | 14799869884 | new |
-| 9 | Extra Space Storage | Movers | Bentonville | 5.5 | DATED | © 2006, slow (6.5s) | 4792750221 | new |
+| 9 | Extra Space Storage | Movers | Bentonville | 5.5 | DATED | © 2006, slow (12.91s) | 4792750221 | new |
 | 9 | T's Nails and Spa | Beauty | Bentonville | 5.6 | BROKEN | domain doesn't work (no DNS) | +14792509940 | new |
-| 9 | Red 5 Construction | Home improvement | Bentonville | 5.7 | DATED | © 2023, slow (7.82s) | +14792955674 | new |
+| 9 | Red 5 Construction | Home improvement | Bentonville | 5.7 | DATED | © 2023, slow (22.22s) | +14792955674 | new |
 | 9 | David Harris Construction Company | Home improvement | Rogers | 5.8 | BROKEN | page error (HTTP 404) | 14796960680 | new |
+| 9 | Jrily Enterprises | Movers | Rogers | 5.9 | BROKEN | site didn't load in 20 seconds | 5014120087 | new |

@@ -11,7 +11,8 @@ Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's n
 - [ ] On hold until hardware is set up: first nights at [[J Street Gym]] (run the checklist there).
 - [ ] Storage line: admin page, sign in, "Render settings" box, first line. Good = green "Storage: /var/data — a separate disk...". If it says DATA_DIR is not set, every deploy wipes gym accounts and history; the Render disk needs the paid Starter plan (check price before paying). See [[Release history]].
 - [ ] Photo of an Ashbourne denied scan.
-- [ ] Idea "Sites by TJ" (spec websites for local shops, from a TikTok) waits on TJ's go. Plan: video-research/2026-10-22-four-videos-plan.md in project files. First step: TJ names 3 local shops with bad or no sites (check).
+- [ ] [[Sites by TJ]]: TJ sets up Cloudflare (free), Stripe and a business Gmail; walks into the first shop. Jarvis backend builds previews from the Monday prospect list.
+- [ ] Jarvis repo is public, so brain notes (including [[Personal]]) are visible to anyone: TJ to decide on making it private (check).
 
 ## Setup
 - [ ] Tailscale: turn off key expiry.

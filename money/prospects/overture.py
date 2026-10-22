@@ -97,6 +97,7 @@ def place_from_row(row):
         "lon": lon,
         "city_hint": (addr.get("locality") or "").title() or None,
         "source": "overture",
+        "category": category(row),
     }
 
 
@@ -117,3 +118,18 @@ def fetch_rows(bbox, release=None):
     rows = [dict(zip(cols, r)) for r in cur.fetchall()]
     print(f"Overture {release}: {len(rows)} places in the box")
     return rows
+
+
+if __name__ == "__main__":
+    # Debug aid: which categories exist in the box, and what each one maps to.
+    import collections, json, pathlib, sys
+    bbox = (36.03, -94.32, 36.50, -94.05)
+    rows = fetch_rows(bbox)
+    counts = collections.Counter(category(r) or "(none)" for r in rows)
+    lines = ["| Category | Places | Our label |", "|---|---|---|"]
+    for cat, n in counts.most_common():
+        lines.append(f"| {cat} | {n} | {(trade_of(cat) or ('',))[0]} |")
+    out = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else ".")
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "overture_categories.md").write_text("\n".join(lines) + "\n")
+    print("\n".join(lines[:60]))

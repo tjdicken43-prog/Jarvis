@@ -16,7 +16,7 @@ Websites for local shops in Bentonville and NWA. Started 2026-10-22. See [[Decis
 - Front Desk: $299 setup + $149/mo (site, hosting, after-hours receptionist, 300 min, missed-call text-back).
 - Front Desk Plus: $299 setup + $249/mo (24/7, 800 min, calendar booking, review requests). Over the minutes: $0.25/min.
 - Our cost per client about $29 to $58/mo (Plus $41 to $129), fixed about $60/mo (check). See [[Decisions]].
-- Code: money/agency/ (step 1 schema + import done, PR #62).
+- Code: money/agency/ (step 1 schema + import, PR #62; step 2 API + email drafts + Approval Queue dashboard, PR #64). Not deployed yet. Sending starts paused, cap 5 a day, weekdays 9-11am Central, from the Google Workspace inbox on the cold domain.
 
 ## History
 ### Prices (set 2026-10-22, TJ said "competitive")

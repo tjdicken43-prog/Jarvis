@@ -1,0 +1,23 @@
+name: money-prospects
+on:
+  schedule:
+    - cron: "0 11 * * 1"   # Mondays 6am Central
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Audit at most N websites (0 = all)"
+        default: "0"
+permissions:
+  contents: write
+concurrency:
+  group: money-data
+  cancel-in-progress: false
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - run: money/ci/data-branch.sh open
+      - run: python3 money/prospects/scan.py --out data/prospects --limit "${{ github.event.inputs.limit || '0' }}"
+      - run: 'money/ci/data-branch.sh save "prospects: NWA scan $(date -u +%F)"'

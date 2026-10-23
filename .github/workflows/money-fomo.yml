@@ -1,0 +1,19 @@
+name: money-fomo-paper
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: money-data
+  cancel-in-progress: false
+jobs:
+  paper:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - run: money/ci/data-branch.sh open
+      - run: python3 money/fomo/paper.py --state data/fomo
+      - run: 'money/ci/data-branch.sh save "fomo paper: $(date -u +%FT%H:%MZ)"'

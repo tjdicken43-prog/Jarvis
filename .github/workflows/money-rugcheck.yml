@@ -1,0 +1,27 @@
+name: money-rugcheck
+on:
+  workflow_dispatch:
+    inputs:
+      token:
+        description: "Token address"
+        required: true
+      chain:
+        description: "solana, base or bsc"
+        default: "solana"
+permissions:
+  contents: write
+concurrency:
+  group: money-data
+  cancel-in-progress: false
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: money/ci/data-branch.sh open
+      - env:
+          TOKEN: ${{ github.event.inputs.token }}
+          CHAIN: ${{ github.event.inputs.chain }}
+        run: python3 money/fomo/rugcheck.py --chain "$CHAIN" --token "$TOKEN" --out data/rugcheck
+      - run: 'money/ci/data-branch.sh save "rugcheck: ${{ github.event.inputs.chain }}"'

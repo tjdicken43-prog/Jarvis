@@ -1,0 +1,53 @@
+{
+  "name": "Ozark Ridge Auto Care",
+  "trade": "Auto repair",
+  "city": "Bentonville",
+  "state": "AR",
+  "street": "100 Example Rd",
+  "zip": "72712",
+  "area": "Bentonville, Rogers, Bella Vista and Centerton",
+  "phone": "(479) 555-0142",
+  "schema_type": "AutoRepair",
+  "preview": true,
+  "sample_note": "This is a sample for a made-up shop; the phone, address and reviews are examples.",
+  "accent": "#c8562e",
+  "ink": "#1f2a2e",
+  "paper": "#f6f3ee",
+  "kicker": "Auto repair · Bentonville, AR",
+  "headline": "Honest repairs. Straight answers. Back on the road.",
+  "subhead": "Brakes, diagnostics, oil changes and tires for Bentonville drivers. We call before we fix, show you the old part, and stand behind the work.",
+  "stats": [
+    {"value": "12-mo", "label": "parts & labor warranty"},
+    {"value": "Same day", "label": "most oil changes and brakes"},
+    {"value": "Free", "label": "check-engine light scan"}
+  ],
+  "services_title": "What we fix",
+  "services": [
+    {"name": "Brakes", "desc": "Pads, rotors and fluid. We measure before we sell you anything."},
+    {"name": "Check-engine diagnostics", "desc": "Free code scan, then a plain-English answer and a quote."},
+    {"name": "Oil changes", "desc": "Conventional and synthetic, with a free 20-point check."},
+    {"name": "Tires & alignment", "desc": "Mount, balance, rotate and align. Most brands ordered next day."},
+    {"name": "AC & heating", "desc": "Arkansas summers are no joke. Recharge, leak checks, repairs."},
+    {"name": "Fleet & work trucks", "desc": "Priority slots for local businesses that can't wait."}
+  ],
+  "reasons_title": "Why Bentonville drivers come back",
+  "reasons": [
+    {"title": "We call first", "text": "No surprise bills. You approve every repair before we touch it."},
+    {"title": "You see the old part", "text": "We keep it so you can look at what was wrong."},
+    {"title": "Written warranty", "text": "12 months on parts and labor, in writing."},
+    {"title": "Local and straight", "text": "Family-run, and we tell you when something can wait."}
+  ],
+  "reviews_title": "What customers say",
+  "reviews": [
+    {"quote": "They told me my brakes had another 10,000 miles in them. Who does that?", "who": "Example review", "source": "sample"},
+    {"quote": "Free scan, clear answer, fixed the same afternoon.", "who": "Example review", "source": "sample"},
+    {"quote": "Fair price and they showed me the cracked belt.", "who": "Example review", "source": "sample"}
+  ],
+  "faq": [
+    {"q": "Do I need an appointment?", "a": "Walk-ins welcome for oil changes and scans. Call ahead for bigger jobs and we'll give you a time."},
+    {"q": "Do you work on trucks and SUVs?", "a": "Yes, most cars, trucks and SUVs, gas and hybrid."},
+    {"q": "How do I pay?", "a": "Card, cash or tap to pay."}
+  ],
+  "hours": [["Mon", "07:30 - 17:30"], ["Tue", "07:30 - 17:30"], ["Wed", "07:30 - 17:30"], ["Thu", "07:30 - 17:30"], ["Fri", "07:30 - 17:00"], ["Sat", "08:00 - 12:00"], ["Sun", "Closed"]],
+  "year": "2026"
+}

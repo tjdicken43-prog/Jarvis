@@ -3,270 +3,1769 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#04090f">
+<meta name="theme-color" content="#03070c">
 <title>J.A.R.V.I.S.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap">
 <style>
+  /* Layout: a heads-up display. Arc reactor core in the middle, brain on the left, job queue on the right,
+     comms under the core. On a phone the panels fold into tabs under the core. */
   :root {
-    --bg: #04090f;
-    --ink: #cfeeff;
-    --dim: #5f8aa3;
-    --line: rgba(94, 208, 255, .22);
-    --glow: #5ed0ff;
-    --warm: #ffb547;
-    --panel: rgba(8, 22, 34, .72);
+    --bg: #03070c;
+    --ink: #d7f3ff;
+    --dim: #5f8599;
+    --faint: rgba(79, 216, 255, .14);
+    --line: rgba(79, 216, 255, .26);
+    --arc: #4fd8ff;
+    --arc-rgb: 79, 216, 255;
+    --gold: #ffb23e;
+    --ok: #5cf2a5;
+    --red: #ff5b4a;
+    --glass: rgba(6, 18, 28, .68);
+    --display: "Chakra Petch", "Rajdhani", "Segoe UI", system-ui, sans-serif;
+    --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+    color-scheme: dark;
   }
+  /* Themes, picked in SETTINGS */
+  :root[data-theme="agency"] { --bg: #050506; --ink: #f1f4f6; --dim: #7d868d; --arc: #e6edf2; --arc-rgb: 230, 237, 242; --gold: #a9b4bc;
+    --faint: rgba(230, 237, 242, .1); --line: rgba(230, 237, 242, .24); --glass: rgba(14, 15, 17, .74); }
+  :root[data-theme="spy"] { --bg: #070504; --ink: #f5ead2; --dim: #8f7f5c; --arc: #d8b04a; --arc-rgb: 216, 176, 74; --gold: #c4303a;
+    --faint: rgba(216, 176, 74, .12); --line: rgba(216, 176, 74, .28); --glass: rgba(20, 14, 8, .72); }
+  :root[data-theme="hunter"] { --bg: #0b0704; --ink: #f3e3cf; --dim: #957457; --arc: #ff9a3c; --arc-rgb: 255, 154, 60; --gold: #d9b26f;
+    --faint: rgba(255, 154, 60, .12); --line: rgba(255, 154, 60, .26); --glass: rgba(30, 17, 8, .72); }
+  :root[data-theme="showoff"] { --bg: #020108; --ink: #f2eeff; --dim: #8a83b0; --arc: #9fe8ff; --arc-rgb: 159, 232, 255; --gold: #ff7ae6;
+    --faint: rgba(170, 140, 255, .14); --line: rgba(170, 140, 255, .3); --glass: rgba(10, 6, 26, .66); }
+  /* Show off cinema: left alone, the controls fade away and the brain takes the whole screen; any tap brings them back */
+  .mid > .panel, .center > :not(.slot), #ask { transition: opacity .9s ease; }
+  body.cinema .mid > .panel, body.cinema .center > :not(.slot), body.cinema #ask { opacity: 0; pointer-events: none; }
+  :root[data-theme="showoff"] body { background: radial-gradient(60% 45% at 18% 22%, rgba(150, 90, 255, .16), transparent 70%),
+    radial-gradient(55% 40% at 85% 70%, rgba(60, 200, 255, .13), transparent 70%), radial-gradient(45% 35% at 50% 95%, rgba(255, 90, 210, .1), transparent 70%), var(--bg); }
   * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); overflow: hidden;
-    font: 15px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
-  .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: .08em; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); overflow: hidden; font: 15px/1.5 var(--body); }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+  canvas.drag { cursor: grabbing; }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 1px solid var(--arc); outline-offset: 2px; }
 
-  header { position: fixed; top: 0; left: 0; right: 0; display: flex; justify-content: space-between;
-    padding: max(14px, env(safe-area-inset-top)) 18px 0; font-size: 11px; color: var(--dim); pointer-events: none; }
-  header b { color: var(--glow); font-weight: 600; }
-  header .right { text-align: right; }
+  .app { position: relative; height: 100%; display: grid; grid-template-rows: auto 1fr auto;
+    padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    gap: 12px; pointer-events: none; }
+  .app > * { pointer-events: auto; }
 
-  #status { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -170px); font-size: 11px;
-    color: var(--glow); text-transform: uppercase; pointer-events: none; text-shadow: 0 0 8px var(--glow); }
+  /* top bar */
+  .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .brand { font: 700 18px/1 var(--display); letter-spacing: .32em; color: var(--arc); text-shadow: 0 0 14px rgba(var(--arc-rgb), .6); }
+  .sub { margin-top: 6px; font: 500 10px/1 var(--mono); letter-spacing: .18em; color: var(--dim); text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--dim); }
+  .dot.on { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+  .clock { text-align: right; }
+  .clock b { display: block; font: 600 26px/1 var(--display); letter-spacing: .06em; font-variant-numeric: tabular-nums; }
+  .clock span { font: 500 10px/1.6 var(--mono); letter-spacing: .16em; color: var(--dim); text-transform: uppercase; }
+  .gear { margin-top: 8px; background: none; border: 1px solid var(--line); color: var(--arc); font: 600 10px/1 var(--mono); letter-spacing: .16em; padding: 7px 10px; cursor: pointer; clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px); }
+  .gear:hover { background: var(--faint); }
+  .clock .btns { display: inline-flex; gap: 6px; }
 
-  #log { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); width: min(640px, calc(100% - 32px));
-    max-height: 34vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; scrollbar-width: none; }
-  #log::-webkit-scrollbar { display: none; }
-  .msg { padding: 9px 13px; border: 1px solid var(--line); background: var(--panel); backdrop-filter: blur(6px);
-    border-radius: 3px; white-space: pre-wrap; animation: in .25s ease-out; }
-  .msg.you { align-self: flex-end; color: var(--dim); border-color: rgba(95, 138, 163, .3); }
-  .msg.jarvis { align-self: flex-start; border-left: 2px solid var(--glow); }
-  .msg.note { align-self: center; font-size: 12px; color: var(--dim); border-style: dashed; }
+  /* middle */
+  .mid { min-height: 0; display: grid; grid-template-columns: minmax(220px, 280px) 1fr minmax(240px, 320px); gap: 16px; }
+  .center { min-height: 0; display: grid; grid-template-rows: minmax(220px, 1fr) auto auto; gap: 10px; }
+  .slot { min-height: 0; } /* the core is painted on the canvas behind this box */
+  .mid, .center, .slot { pointer-events: none; } /* let taps and drags through to the brain map */
+  .mid > .panel, .center > :not(.slot) { pointer-events: auto; }
+  .status { text-align: center; font: 600 11px/1 var(--mono); letter-spacing: .3em; text-transform: uppercase; color: var(--arc); text-shadow: 0 0 10px currentColor; }
+  .status[data-mode="listening"] { color: var(--ok); }
+  .status[data-mode="thinking"] { color: var(--gold); }
+
+  .panel { position: relative; min-height: 0; display: flex; flex-direction: column; background: var(--glass); border: 1px solid var(--line);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px); }
+  .panel::before { content: ""; position: absolute; left: 0; top: 0; width: 40%; height: 2px; background: linear-gradient(90deg, var(--arc), transparent); }
+  .panel h2 { margin: 0; padding: 12px 14px 8px; font: 600 11px/1 var(--display); letter-spacing: .28em; color: var(--arc); display: flex; justify-content: space-between; }
+  .panel h2 small { font: 500 10px/1 var(--mono); letter-spacing: .1em; color: var(--dim); }
+  .scroll { overflow-y: auto; padding: 0 14px 14px; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--faint); margin: 0 14px 12px; border: 1px solid var(--faint); }
+  .stat { background: var(--bg); padding: 10px; }
+  .stat b { display: block; font: 600 22px/1 var(--display); font-variant-numeric: tabular-nums; }
+  .stat span { font: 500 9px/1.4 var(--mono); letter-spacing: .14em; color: var(--dim); text-transform: uppercase; }
+  .stat.warn b { color: var(--gold); }
+  .label { font: 600 10px/1 var(--display); letter-spacing: .24em; color: var(--dim); margin: 4px 0 8px; }
+  .now { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 13px; }
+  .now li { padding-left: 14px; position: relative; color: #b9d9e8; }
+  .now li::before { content: ""; position: absolute; left: 0; top: .6em; width: 6px; height: 6px; border: 1px solid var(--gold); transform: rotate(45deg); }
+
+  /* comms */
+  .log { min-height: 0; max-height: 30vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; scrollbar-width: none; mask-image: linear-gradient(transparent, #000 24px); padding-top: 18px; }
+  .log::-webkit-scrollbar { display: none; }
+  .msg { max-width: 92%; padding: 9px 13px; white-space: pre-wrap; font-size: 14px; animation: in .25s ease-out; }
+  .msg.you { align-self: flex-end; color: var(--dim); border-right: 2px solid var(--dim); }
+  .msg.jarvis { align-self: flex-start; background: var(--glass); border-left: 2px solid var(--arc); }
+  .msg.jarvis .line { font: 500 17px/1.35 var(--display); letter-spacing: .02em; color: #eafaff; text-shadow: 0 0 12px rgba(var(--arc-rgb), .35); }
+  .msg.jarvis details { margin-top: 8px; border-top: 1px dashed var(--faint); padding-top: 6px; }
+  .msg.jarvis summary { cursor: pointer; font: 600 10px/1.6 var(--mono); letter-spacing: .2em; color: var(--arc); list-style: none; }
+  .msg.jarvis summary::-webkit-details-marker { display: none; }
+  .msg.jarvis summary::before { content: "▸ "; }
+  .msg.jarvis details[open] summary::before { content: "▾ "; }
+  .msg.jarvis .detail { margin-top: 6px; font-size: 14px; color: #b9d9e8; white-space: pre-wrap; }
+  .scan { position: fixed; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(var(--arc-rgb), .025) 0 1px, transparent 1px 3px); mix-blend-mode: screen; }
+  .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 6px; }
+  .chips button { background: var(--glass); border: 1px solid var(--line); color: var(--ink); font: 500 12.5px/1 var(--body); padding: 10px 13px; border-radius: 18px; cursor: pointer; animation: in .4s ease-out backwards; }
+  .chips button:nth-child(2) { animation-delay: .08s; } .chips button:nth-child(3) { animation-delay: .16s; } .chips button:nth-child(4) { animation-delay: .24s; }
+  .chips button:active { background: var(--faint); border-color: var(--arc); }
+  .msg.note { align-self: center; font: 500 11px/1.4 var(--mono); color: var(--dim); letter-spacing: .04em; text-align: center; }
   @keyframes in { from { opacity: 0; transform: translateY(6px); } }
 
-  form { position: fixed; left: 50%; bottom: max(20px, env(safe-area-inset-bottom)); transform: translateX(-50%);
-    width: min(640px, calc(100% - 32px)); display: flex; gap: 8px; }
-  input, select { flex: 1; min-width: 0; background: var(--panel); color: var(--ink); border: 1px solid var(--line);
-    border-radius: 3px; padding: 12px 14px; font: inherit; outline: none; }
-  input:focus, select:focus { border-color: var(--glow); box-shadow: 0 0 0 1px var(--glow) inset; }
-  button { background: transparent; color: var(--glow); border: 1px solid var(--line); border-radius: 3px;
-    padding: 0 14px; font: 600 11px/1 ui-monospace, Menlo, monospace; letter-spacing: .12em; cursor: pointer; }
-  button:hover, button:focus-visible { border-color: var(--glow); outline: none; }
-  #mic { width: 52px; font-size: 20px; padding: 0; }
-  #mic.on { background: var(--glow); color: var(--bg); box-shadow: 0 0 18px var(--glow); }
+  /* jobs */
+  .jobs { display: grid; gap: 10px; }
+  .job { border: 1px solid var(--faint); padding: 10px 12px; display: grid; gap: 6px; background: rgba(3, 7, 12, .5); }
+  .job.fresh { border-color: var(--ok); box-shadow: 0 0 16px rgba(92, 242, 165, .25); }
+  .job .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .chip { font: 600 9px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; padding: 4px 6px; border: 1px solid currentColor; }
+  .chip.queued { color: var(--dim); }
+  .chip.working { color: var(--gold); animation: blink 1.2s ease-in-out infinite; }
+  .chip.done { color: var(--ok); }
+  .chip.needs-tj { color: var(--red); }
+  @keyframes blink { 50% { opacity: .35; } }
+  .job time { font: 500 10px/1 var(--mono); color: var(--dim); }
+  .job .ask { font-size: 13px; color: #b9d9e8; }
+  .job .answer { font-size: 13px; white-space: pre-wrap; border-top: 1px dashed var(--faint); padding-top: 6px; }
+  .job a { color: var(--arc); font: 500 11px/1.4 var(--mono); }
+  .empty { font-size: 13px; color: var(--dim); }
+  .empty b { color: var(--ink); font-weight: 500; }
 
-  #gear { position: fixed; top: max(70px, calc(env(safe-area-inset-top) + 56px)); right: 18px; height: 28px; }
-  dialog { background: #071521; color: var(--ink); border: 1px solid var(--glow); border-radius: 4px;
-    width: min(440px, calc(100% - 32px)); padding: 20px; }
-  dialog::backdrop { background: rgba(0, 0, 0, .6); }
-  dialog h2 { margin: 0 0 4px; font-size: 13px; color: var(--glow); }
-  dialog label { display: block; margin: 14px 0 6px; font-size: 12px; color: var(--dim); }
-  dialog input, dialog select { width: 100%; }
-  dialog p { font-size: 12px; color: var(--dim); margin: 6px 0 0; }
+  /* input */
+  form { display: flex; gap: 8px; max-width: 760px; width: 100%; justify-self: center; }
+  .mode { flex: none; width: 64px; background: var(--glass); border: 1px solid var(--line); color: var(--dim); cursor: pointer; font: 600 10px/1 var(--mono); letter-spacing: .14em; }
+  .mode[aria-pressed="true"] { color: var(--bg); background: var(--gold); border-color: var(--gold); box-shadow: 0 0 16px rgba(255, 178, 62, .45); }
+  #q { flex: 1; min-width: 0; background: var(--glass); color: var(--ink); border: 1px solid var(--line); padding: 13px 14px; font: 15px var(--body); outline: none; }
+  #q:focus { border-color: var(--arc); box-shadow: inset 0 0 0 1px var(--arc); }
+  #mic { flex: none; width: 54px; background: var(--glass); border: 1px solid var(--line); color: var(--arc); cursor: pointer; display: grid; place-items: center; }
+  #mic svg { width: 22px; height: 22px; }
+  #mic.on { background: var(--ok); color: var(--bg); border-color: var(--ok); box-shadow: 0 0 20px rgba(92, 242, 165, .6); }
+
+  .tabs { display: none; }
+
+  /* settings */
+  dialog { background: #061420; color: var(--ink); border: 1px solid var(--arc); width: min(440px, calc(100% - 32px)); padding: 20px; }
+  dialog::backdrop { background: rgba(0, 0, 0, .65); }
+  .chatList { max-height: 55vh; overflow-y: auto; margin: 14px 0 4px; display: grid; gap: 6px; }
+  .chatList button { text-align: left; background: var(--glass); border: 1px solid var(--line); color: var(--ink); padding: 10px 12px; font: 400 13px/1.35 var(--body); cursor: pointer; }
+  .chatList button.current { border-color: var(--arc); }
+  .memList { max-height: 55vh; overflow-y: auto; margin: 10px 0 4px; display: grid; gap: 6px; }
+  .memList h4 { margin: 10px 0 2px; font: 600 10px/1 var(--display); letter-spacing: .22em; color: var(--arc); }
+  .memItem { display: flex; gap: 8px; align-items: flex-start; background: var(--glass); border: 1px solid var(--faint); padding: 8px 10px; font: 400 13px/1.4 var(--body); }
+  .memItem span { flex: 1; }
+  .memItem small { display: block; font: 500 9.5px/1.5 var(--mono); letter-spacing: .1em; color: var(--dim); text-transform: uppercase; }
+  .memItem button { flex: none; background: none; border: 1px solid var(--line); color: var(--gold); font: 600 9.5px/1 var(--mono); letter-spacing: .12em; padding: 6px 8px; cursor: pointer; }
+  .memFix { display: flex; gap: 6px; margin-top: 6px; }
+  .memFix input { flex: 1; min-width: 0; }
+  .msg.jarvis.brief { border-left-color: var(--gold); }
+  .chatList time { display: block; font: 500 10px/1.4 var(--mono); letter-spacing: .1em; color: var(--dim); text-transform: uppercase; }
+  dialog h3 { margin: 0 0 6px; font: 600 13px/1 var(--display); letter-spacing: .26em; color: var(--arc); }
+  dialog p { font-size: 13px; color: var(--dim); margin: 6px 0 0; }
+  dialog label { display: block; margin: 14px 0 6px; font: 500 11px/1 var(--mono); letter-spacing: .1em; color: var(--dim); }
+  dialog input:not([type="checkbox"]), dialog select { width: 100%; background: var(--bg); color: var(--ink); border: 1px solid var(--line); padding: 10px; font: 14px var(--body); }
   dialog .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
-  dialog .row button { height: 34px; }
+  #night { position: fixed; inset: 0; z-index: 60; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; color: rgba(var(--arc-rgb), .55); }
+  #night[hidden] { display: none; }
+  #night .breath { width: 150px; height: 150px; border-radius: 50%; border: 1px solid rgba(var(--arc-rgb), .35); box-shadow: 0 0 40px rgba(var(--arc-rgb), .25), inset 0 0 30px rgba(var(--arc-rgb), .15); animation: breathe 10s ease-in-out infinite; }
+  @keyframes breathe { 0%, 100% { transform: scale(.6); opacity: .35; } 40% { transform: scale(1); opacity: .9; } } /* 4s in, 6s out */
+  #night .nightSay { font: 500 13px/1 var(--display); letter-spacing: .3em; margin: 0; }
+  #night .nightCtl { display: flex; flex-direction: column; gap: 10px; align-items: center; transition: opacity .6s; }
+  #night.calm .nightCtl { opacity: 0; pointer-events: none; }
+  #night .nightRow { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  #night button { background: none; border: 1px solid rgba(var(--arc-rgb), .3); color: rgba(var(--arc-rgb), .7); padding: 9px 12px; font: 600 10px/1 var(--mono); letter-spacing: .14em; }
+  #night button.on { border-color: rgba(var(--arc-rgb), .9); color: rgba(var(--arc-rgb), 1); }
+  #night .nightTip { font-size: 11px; max-width: 260px; text-align: center; margin: 4px 0 0; color: rgba(var(--arc-rgb), .4); }
+  dialog .row button { background: none; border: 1px solid var(--line); color: var(--arc); padding: 9px 14px; cursor: pointer; font: 600 10px/1 var(--mono); letter-spacing: .14em; }
 
-  #card { position: fixed; top: 70px; left: 18px; width: min(360px, calc(100% - 36px)); max-height: 46vh; overflow-y: auto;
-    padding: 14px 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 3px; display: none;
-    white-space: pre-wrap; font-size: 13px; backdrop-filter: blur(6px); }
-  #card h3 { margin: 0 0 8px; font-size: 12px; color: var(--glow); }
-  #card.show { display: block; animation: in .2s ease-out; }
+  #card { position: fixed; z-index: 5; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(460px, calc(100% - 32px)); max-height: 60vh; display: none; }
+  #card.show { display: flex; animation: in .2s ease-out; }
+  #card .scroll { font-size: 13.5px; line-height: 1.55; flex: 1; min-height: 0; }
+  #card .acts { padding-top: 10px; border-top: 1px solid var(--faint); }
+  #card .scroll p { margin: 0 0 8px; }
+  #card .scroll h4 { margin: 14px 0 6px; font: 600 10.5px/1 var(--display); letter-spacing: .22em; text-transform: uppercase; color: var(--arc); }
+  #card .scroll ul { margin: 0 0 8px; padding-left: 16px; }
+  #card .scroll li { margin: 3px 0; }
+  #card .scroll li.done { color: var(--dim); text-decoration: line-through; }
+  #card .scroll code { font: 12px var(--mono); color: var(--gold); }
+  #card .jump { background: none; border: 0; border-bottom: 1px dashed var(--arc); padding: 0; color: var(--arc); font: inherit; cursor: pointer; }
+  .acts { display: flex; gap: 8px; padding: 0 14px 14px; flex-wrap: wrap; }
+  .acts .gear { margin: 0; flex: 1; }
+  .now.fresh li::before { border-color: var(--green, #5cf2a5); background: var(--green, #5cf2a5); }
+  .brainActs { display: flex; gap: 8px; margin: 12px 0 4px; flex-wrap: wrap; }
+  .brainActs .gear { margin: 0; flex: 1; }
+
+  /* phone: fold the panels into tabs */
+  @media (max-width: 860px) {
+    .mid { grid-template-columns: 1fr; grid-template-rows: 30vh auto 1fr; gap: 8px; }
+    .center { display: contents; }
+    .slot { grid-row: 1; }
+    .status { grid-row: 2; }
+    .tabs { grid-row: 3; display: flex; gap: 0; border-bottom: 1px solid var(--line); align-self: start; }
+    .tabs button { flex: 1; background: none; border: 0; padding: 10px 0; color: var(--dim); font: 600 11px/1 var(--display); letter-spacing: .24em; cursor: pointer; border-bottom: 2px solid transparent; }
+    .tabs button[aria-selected="true"] { color: var(--arc); border-bottom-color: var(--arc); }
+    .tabs .badge { color: var(--ok); }
+    #brainPanel, #jobsPanel, .log { grid-row: 4; }
+    .mid { grid-template-rows: 30vh auto auto 1fr; }
+    .log { max-height: none; }
+    [data-tab]:not(.active) { display: none !important; }
+    .clock b { font-size: 20px; }
+    .clock .btns { gap: 4px; }
+    .clock .btns .gear { padding: 7px 6px; letter-spacing: .08em; }
+    .mode { width: 52px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .msg, #card.show { animation: none; } .chip.working { animation: none; } }
 </style>
 </head>
 <body>
-<canvas id="sky"></canvas>
+<canvas id="sky" aria-hidden="true"></canvas>
+<div class="scan" aria-hidden="true"></div>
 
-<header class="mono">
-  <div><b>J.A.R.V.I.S.</b><br><span id="clock"></span></div>
-  <div class="right" id="stats"></div>
-</header>
-<button id="gear" class="mono" type="button" aria-label="Settings">SETUP</button>
+<div class="app">
+  <header class="top">
+    <div>
+      <div class="brand">J.A.R.V.I.S.</div>
+      <div class="sub"><i class="dot" id="linkDot"></i><span id="linkText">notes only</span></div>
+    </div>
+    <div class="clock">
+      <b id="time">--:--</b>
+      <span id="date"></span><br>
+      <span class="btns"><button class="gear" id="memBtn" type="button">MEMORY</button><button class="gear" id="chatsBtn" type="button">CHATS</button><button class="gear" id="gear" type="button">SETTINGS</button></span>
+    </div>
+  </header>
 
-<div id="status" class="mono">standing by</div>
-<div id="card" role="dialog" aria-live="polite"></div>
-<div id="log" aria-live="polite"></div>
+  <main class="mid">
+    <section class="panel" id="brainPanel" data-tab="brain" aria-label="Brain">
+      <h2>BRAIN <small id="weekName"></small></h2>
+      <div class="stats" id="stats"></div>
+      <div class="scroll">
+        <div class="label">NOW</div>
+        <ul class="now" id="now"></ul>
+        <div id="newBox" hidden>
+          <div class="label" style="margin-top:14px">NEW SECTIONS</div>
+          <ul class="now fresh" id="newList"></ul>
+        </div>
+        <div class="brainActs">
+          <button class="gear" id="debrief" type="button" hidden>DEBRIEF ME</button>
+          <button class="gear" id="learn" type="button">LEARN NOW</button>
+        </div>
+        <p class="label" id="growth" style="letter-spacing:.12em;line-height:1.5;margin-top:10px"></p>
+      </div>
+    </section>
 
-<form id="ask">
-  <input id="q" autocomplete="off" placeholder="Talk to Jarvis, or hold the mic">
-  <button id="mic" type="button" aria-label="Talk">◉</button>
-</form>
+    <div class="center">
+      <div class="slot" id="slot"></div>
+      <div class="status" id="status" data-mode="idle">standing by</div>
+      <nav class="tabs" role="tablist">
+        <button type="button" role="tab" data-go="comms" aria-selected="true">COMMS</button>
+        <button type="button" role="tab" data-go="jobs" aria-selected="false">JOBS <span class="badge" id="badge"></span></button>
+        <button type="button" role="tab" data-go="brain" aria-selected="false">BRAIN</button>
+      </nav>
+      <div class="log active" id="log" data-tab="comms" aria-live="polite"></div>
+    </div>
+
+    <section class="panel" id="jobsPanel" data-tab="jobs" aria-label="Jobs">
+      <h2>JOBS <small id="jobsCount"></small></h2>
+      <div class="scroll"><div class="jobs" id="jobs"><p class="empty">Jobs run from the claude.ai copy of Jarvis, where Claude Code can pick them up.</p></div></div>
+    </section>
+  </main>
+
+  <form id="ask">
+    <button class="mode" id="jobMode" type="button" aria-pressed="false" title="Send this as a job for Claude Code">JOB</button>
+    <input id="q" autocomplete="off" placeholder="Talk to Jarvis">
+    <button id="mic" type="button" aria-label="Talk">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+    </button>
+  </form>
+</div>
+
+<section class="panel" id="card" role="dialog" aria-live="polite"><h2 id="cardTitle"></h2><div class="scroll" id="cardBody"></div>
+  <div class="acts"><button class="gear" type="button" data-act="ask">ASK</button><button class="gear" type="button" data-act="teach">TEACH</button><button class="gear" type="button" data-act="job">JOB</button><button class="gear" type="button" data-act="close">CLOSE</button></div></section>
+
+<dialog id="chats">
+  <h3>PAST CHATS</h3>
+  <p>Every chat is saved. Tap one to read it and carry on where you left off.</p>
+  <div class="chatList" id="chatList"><p class="empty">Loading…</p></div>
+  <div class="row">
+    <button type="button" id="newChat">NEW CHAT</button>
+    <button type="button" id="chatsDone">CLOSE</button>
+  </div>
+</dialog>
+
+<dialog id="memory">
+  <h3>WHAT I KNOW</h3>
+  <p>Everything I remember about you. Tap WRONG on anything that's off and tell me what's right; Jarvis backend fixes the notes on its next run.</p>
+  <div class="memList" id="memList"><p class="empty">Loading…</p></div>
+  <div class="row"><button type="button" id="memDone">CLOSE</button></div>
+</dialog>
 
 <dialog id="setup">
-  <h2 class="mono">SETUP</h2>
-  <p>Jarvis answers from the brain notes. With an Anthropic API key he thinks with Claude; without one he searches the notes.</p>
-  <label for="key">Anthropic API key (kept in this browser only)</label>
-  <input id="key" type="password" autocomplete="off" placeholder="sk-ant-...">
-  <label for="model">Model</label>
-  <select id="model">
-    <option value="claude-opus-5-5">Opus 5.5 (smartest, about 1¢ a question)</option>
-    <option value="claude-sonnet-5-5">Sonnet 5.5 (quick, about half that)</option>
-    <option value="claude-haiku-5-5">Haiku 5.5 (cheapest, a fraction of a cent)</option>
-  </select>
+  <h3>SETTINGS</h3>
+  <p>How Jarvis sounds. Inside claude.ai he thinks with your Claude account, so nothing else is needed.</p>
   <label for="voice">Voice</label>
   <select id="voice"></select>
-  <label><input id="talkback" type="checkbox" style="width:auto"> Speak answers out loud</label>
+  <p>The five built-in voices work everywhere, even in the Claude app. They're styles, not copies of real actors. Your phone's voices are listed under them if it has any.</p>
+  <label for="theme">Look</label>
+  <select id="theme">
+    <option value="arc">Arc reactor (blue)</option>
+    <option value="agency">Agency HQ (black and chrome)</option>
+    <option value="spy">Secret service (black and gold)</option>
+    <option value="hunter">Hunter's den (amber)</option>
+    <option value="showoff">Show off (everything at once)</option>
+  </select>
+  <label><input id="talkback" type="checkbox"> Speak answers out loud</label>
+  <div id="keyBox">
+    <label for="key">Anthropic API key (only for the copy on a computer, kept in this browser)</label>
+    <input id="key" type="password" autocomplete="off" placeholder="sk-ant-...">
+    <label for="model">Model</label>
+    <select id="model">
+      <option value="claude-opus-5-5">Opus 5.5 (smartest, about 1¢ a question)</option>
+      <option value="claude-sonnet-5-5">Sonnet 5.5 (quick, about half that)</option>
+      <option value="claude-haiku-5-5">Haiku 5.5 (cheapest)</option>
+    </select>
+  </div>
   <div class="row">
+    <button type="button" id="demoBtn">SHOW ME OFF</button>
+    <button type="button" id="nightBtn">NIGHT MODE</button>
+  </div>
+  <div class="row">
+    <button type="button" id="testVoice">TEST VOICE</button>
     <button type="button" id="forget">FORGET KEY</button>
     <button type="button" id="done">DONE</button>
   </div>
 </dialog>
+<div id="night" hidden>
+  <div class="breath"></div>
+  <p class="nightSay">Sleep well, boss.</p>
+  <div class="nightCtl">
+    <div class="nightRow"><button type="button" data-snd="rain">RAIN</button><button type="button" data-snd="waves">WAVES</button><button type="button" data-snd="brown">DEEP HUM</button><button type="button" data-snd="off">QUIET</button></div>
+    <div class="nightRow"><button type="button" data-min="30">30 MIN</button><button type="button" data-min="60">1 HR</button><button type="button" data-min="90">90 MIN</button><button type="button" data-min="0">ALL NIGHT</button></div>
+    <div class="nightRow"><button type="button" id="nightExit">WAKE UP</button></div>
+    <p class="nightTip">Breathe with the light: in as it grows, out as it fades. Tap the dark to hide these.</p>
+  </div>
+</div>
 
 <script src="brain.js"></script>
 <script>
 const BRAIN = window.BRAIN || { notes: [], stats: {} };
+const RUNNER = "trig_01RRHsSJ2oBQTDWENSivmbgA"; // the Claude Code scheduled task that works the job queue
 const $ = (id) => document.getElementById(id);
 const store = {
   get(k, d) { try { return localStorage.getItem("jarvis." + k) ?? d; } catch { return d; } },
   set(k, v) { try { v == null ? localStorage.removeItem("jarvis." + k) : localStorage.setItem("jarvis." + k, v); } catch {} },
 };
+const use = (name) => (window.claude?.use ? window.claude.use(name).catch(() => null) : Promise.resolve(null));
+const samplePromise = use("sample");
+const dbPromise = use("db");
+const mcpPromise = use("mcp");
 
-/* ---------- HUD text ---------- */
-const s = BRAIN.stats;
-$("stats").innerHTML = `${s.notes ?? 0} NOTES<br>${s.open_todos ?? 0} OPEN TO-DOS<br>${s.checks ?? 0} TO CHECK`;
+/* ---------- Clock (TJ is on Central time) ---------- */
 function tick() {
-  const d = new Date();
-  $("clock").textContent = d.toLocaleDateString("en-CA") + "  " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const d = new Date(), tz = { timeZone: "America/Chicago" };
+  $("time").textContent = d.toLocaleTimeString("en-US", { ...tz, hour: "numeric", minute: "2-digit" });
+  $("date").textContent = d.toLocaleDateString("en-US", { ...tz, weekday: "short", month: "short", day: "numeric" }) + " · CENTRAL";
 }
 tick(); setInterval(tick, 10000);
 
-/* ---------- State: idle, listening, thinking, speaking ---------- */
-let mode = "idle";
-let level = 0; // 0..1 loudness that drives the core
-function setMode(m, label) {
+/* ---------- Brain panel ---------- */
+const byName = new Map(BRAIN.notes.map((n) => [n.name, n]));
+function renderBrain(memories) {
+  const s = BRAIN.stats;
+  const cells = [[s.notes ?? 0, "notes"], [s.open_todos ?? 0, "open to-dos"], [s.checks ?? 0, "to check", s.checks > 0], [memories, "memories"]];
+  $("stats").innerHTML = "";
+  for (const [v, k, warn] of cells) {
+    const el = document.createElement("div"); el.className = "stat" + (warn ? " warn" : "");
+    el.innerHTML = `<b></b><span></span>`; el.querySelector("b").textContent = v; el.querySelector("span").textContent = k;
+    $("stats").append(el);
+  }
+  let waiting = 0; try { waiting = lessons.filter((l) => !l.filed).length; } catch {} // lessons isn't set up on the first call
+  $("growth").textContent = waiting ? `${waiting} lesson${waiting > 1 ? "s" : ""} orbiting, waiting to be learned. Tap LEARN NOW or I file them on my next run.` : "Everything I've learned is filed in the notes.";
+}
+renderBrain(0);
+(function renderNow() {
+  const todo = byName.get("To do")?.text || "";
+  const now = (todo.split(/^## Now\s*$/m)[1] || "").split(/^## /m)[0];
+  const items = [...now.matchAll(/^- \[ \] (.+)$/gm)].map((m) => m[1].replace(/\[\[|\]\]|`/g, "").replace(/\s*See .*$/, ""));
+  for (const t of items.slice(0, 8)) { const li = document.createElement("li"); li.textContent = t; $("now").append(li); }
+  if (!items.length) $("now").innerHTML = "<li>Nothing urgent.</li>";
+  const week = BRAIN.notes.map((n) => n.name).filter((n) => /^\d{4} Week \d+$/.test(n)).sort().pop();
+  $("weekName").textContent = week ? week.toUpperCase() : "";
+})();
+
+/* ---------- Tabs (phone) ---------- */
+function showTab(name) {
+  document.querySelectorAll("[data-go]").forEach((b) => b.setAttribute("aria-selected", b.dataset.go === name));
+  document.querySelectorAll("[data-tab]").forEach((el) => el.classList.toggle("active", el.dataset.tab === name));
+  if (name === "jobs") $("badge").textContent = "";
+}
+document.querySelectorAll("[data-go]").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.go)));
+showTab("comms");
+
+/* ---------- State ---------- */
+let mode = "idle", level = 0;
+function setMode(m) {
   mode = m;
-  $("status").textContent = label || { idle: "standing by", listening: "listening", thinking: "thinking", speaking: "speaking" }[m];
+  $("status").dataset.mode = m;
+  $("status").textContent = { idle: "standing by", listening: "listening", thinking: "thinking", speaking: "speaking" }[m];
   $("mic").classList.toggle("on", m === "listening");
 }
 
-/* ---------- Canvas: brain map + core ---------- */
+/* ---------- Canvas: 3D brain, 4D layer and the core ---------- */
 const cv = $("sky"), cx = cv.getContext("2d");
 let W, H, DPR;
 function resize() {
-  DPR = Math.min(devicePixelRatio || 1, 2);
-  W = innerWidth; H = innerHeight;
-  cv.width = W * DPR; cv.height = H * DPR;
-  cx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  DPR = Math.min(devicePixelRatio || 1, 2); W = innerWidth; H = innerHeight;
+  cv.width = W * DPR; cv.height = H * DPR; cx.setTransform(DPR, 0, 0, DPR, 0, 0);
 }
 resize(); addEventListener("resize", resize);
 
-const byName = new Map();
-const nodes = BRAIN.notes.map((n, i) => {
-  const a = (i / BRAIN.notes.length) * Math.PI * 2;
-  const node = { ...n, x: Math.cos(a) * 260, y: Math.sin(a) * 200, vx: 0, vy: 0, hot: 0 };
-  byName.set(n.name, node);
-  return node;
+/* The brain is a real 3D sphere of notes you can orbit, with a 4D tesseract turning inside it.
+   Each look (theme) has its own core, drawn between the far and near halves of the brain. */
+const nodes = BRAIN.notes.map((n, i, all) => { // even spread on a sphere (Fibonacci lattice)
+  const k = i + 0.5, phi = Math.acos(1 - 2 * k / all.length), th = Math.PI * (1 + Math.sqrt(5)) * k;
+  return { ...n, x: Math.sin(phi) * Math.cos(th), y: Math.cos(phi), z: Math.sin(phi) * Math.sin(th), vx: 0, vy: 0, vz: 0, hot: 0, la: 0 };
 });
+const nodeBy = new Map(nodes.map((n) => [n.name, n]));
 const edges = [];
-for (const n of nodes) for (const l of n.links) if (byName.has(l) && l !== n.name) edges.push([n, byName.get(l)]);
+for (const n of nodes) for (const l of n.links) if (nodeBy.has(l) && l !== n.name) edges.push([n, nodeBy.get(l)]);
 for (const n of nodes) n.deg = edges.filter(([a, b]) => a === n || b === n).length;
-const TYPE_COLOR = { hub: "#5ed0ff", rules: "#ff6b6b", log: "#ffb547", list: "#ffb547", week: "#9b8cff" };
+edges.forEach((e, i) => { e.seed = (i * 0.618) % 1; });
+const TYPE_COLOR = { hub: "#4fd8ff", rules: "#ff5b4a", log: "#ffb23e", list: "#ffb23e", week: "#9b8cff", personal: "#5cf2a5" };
 
+let cinemaK = 0; // 0 = normal layout, 1 = Show off cinema (brain centred and bigger)
+function coreBox() {
+  const r = $("slot").getBoundingClientRect();
+  const box = { ox: r.left + r.width / 2, oy: r.top + r.height / 2, base: Math.max(34, Math.min(r.width, r.height) * 0.21) };
+  if (cinemaK < 0.001) return box;
+  const k = cinemaK * cinemaK * (3 - 2 * cinemaK), big = Math.max(box.base, Math.min(W, H * 0.62) * 0.16);
+  return { ox: box.ox + (W / 2 - box.ox) * k, oy: box.oy + (H * 0.46 - box.oy) * k, base: box.base + (big - box.base) * k };
+}
+// Linked notes pull together, every note pushes the others away, and all of them stay near the sphere's skin.
 function physics() {
-  const R = Math.min(W, H) * 0.11 * 2.1;
   for (const a of nodes) {
     for (const b of nodes) if (a !== b) {
-      const dx = a.x - b.x, dy = a.y - b.y, d2 = dx * dx + dy * dy + 0.01;
-      const f = 1800 / d2;
-      a.vx += dx * f / 40; a.vy += dy * f / 40;
+      const dx = a.x - b.x, dy = a.y - b.y, dz = a.z - b.z, d2 = dx * dx + dy * dy + dz * dz + 0.002;
+      a.vx += dx * 0.0016 / d2; a.vy += dy * 0.0016 / d2; a.vz += dz * 0.0016 / d2;
     }
-    // keep a hole in the middle for the core, and keep inside the screen
-    const d = Math.hypot(a.x, a.y) || 1;
-    if (d < R) { a.vx += a.x / d * 1.5; a.vy += a.y / d * 1.5; }
-    const e = Math.hypot(a.x / (W * 0.44), a.y / (H * 0.36));
-    if (e > 1) { a.vx -= a.x / d * 0.8; a.vy -= a.y / d * 0.8; }
+    const r = Math.hypot(a.x, a.y, a.z) || 1, f = (1 - r) * 0.04;
+    a.vx += a.x / r * f; a.vy += a.y / r * f; a.vz += a.z / r * f;
   }
   for (const [a, b] of edges) {
-    const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1, f = (d - 130) * 0.01 / d;
-    a.vx += dx * f; a.vy += dy * f; b.vx -= dx * f; b.vy -= dy * f;
+    const dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z, d = Math.hypot(dx, dy, dz) || 1, f = (d - 0.7) * 0.006 / d;
+    a.vx += dx * f; a.vy += dy * f; a.vz += dz * f; b.vx -= dx * f; b.vy -= dy * f; b.vz -= dz * f;
   }
-  for (const n of nodes) {
-    n.vx *= 0.86; n.vy *= 0.86; n.x += n.vx; n.y += n.vy;
-    n.hot *= 0.985;
-  }
+  for (const n of nodes) { n.vx *= 0.82; n.vy *= 0.82; n.vz *= 0.82; n.x += n.vx; n.y += n.vy; n.z += n.vz; n.hot *= 0.985; }
+}
+for (let i = 0; i < 240; i++) physics(); // settle before the first frame
+
+const MODE_COLOR = { idle: [79, 216, 255], speaking: [120, 230, 255], listening: [92, 242, 165], thinking: [255, 178, 62] };
+let col = [79, 216, 255], t = 0, ARC = "79,216,255", THEME = "arc", BG = "#03070c";
+const RINGS = { arc: " J.A.R.V.I.S. · TJ'S BRAIN · ONLINE · ", agency: " J.A.R.V.I.S. · AGENCY HQ · CLEARANCE GRANTED · ",
+  spy: " J.A.R.V.I.S. · SECRET SERVICE · EYES ONLY · ", hunter: " J.A.R.V.I.S. · HUNTER'S LOG · SALT AND IRON · ",
+  showoff: " J.A.R.V.I.S. · ALL SYSTEMS · FIVE DIMENSIONS · ONE BRAIN · " };
+function setTheme(name) {
+  if (!RINGS[name]) name = "arc";
+  THEME = name;
+  document.documentElement.dataset.theme = name; store.set("theme", name);
+  ARC = getComputedStyle(document.documentElement).getPropertyValue("--arc-rgb").trim().replace(/\s/g, "") || "79,216,255";
+  const c = ARC.split(",").map(Number);
+  MODE_COLOR.idle = c; MODE_COLOR.speaking = c.map((v) => Math.min(255, v + 40));
+  RING_TEXT = RINGS[name];
+  BG = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#03070c";
+  const meta = document.querySelector('meta[name="theme-color"]'); if (meta) meta.content = BG;
+}
+let RING_TEXT = RINGS.arc;
+setTheme(store.get("theme", "arc"));
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- Camera: drag to orbit, pinch or wheel to zoom, flick to spin ---------- */
+const cam = { yaw: 0.5, pitch: -0.28, vYaw: 0.0016, vPitch: 0, zoom: 1, idleAt: 0 };
+let view = null; // per-frame projection
+// Tilt the phone to look around the brain a little (Android sends this without asking).
+const tilt = { x: 0, y: 0, tx: 0, ty: 0 };
+addEventListener("deviceorientation", (e) => {
+  if (e.gamma == null) return;
+  tilt.tx = Math.max(-1, Math.min(1, e.gamma / 35)); tilt.ty = Math.max(-1, Math.min(1, ((e.beta ?? 45) - 45) / 35));
+});
+function camera(ox, oy, s) {
+  tilt.x += (tilt.tx - tilt.x) * 0.06; tilt.y += (tilt.ty - tilt.y) * 0.06;
+  const yaw = cam.yaw + tilt.x * 0.35, pitch = Math.max(-1.4, Math.min(1.4, cam.pitch + tilt.y * 0.25));
+  const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+  return (x, y, z) => {
+    const x1 = x * cy + z * sy, z1 = -x * sy + z * cy;
+    const y1 = y * cp - z1 * sp, z2 = y * sp + z1 * cp;
+    const f = 3.4 / (3.4 + z2); // z2 > 0 is away from you
+    return [ox + x1 * s * f, oy + y1 * s * f, z2, f];
+  };
 }
 
-let t = 0;
-function draw() {
-  t += 1 / 60;
-  physics();
-  const ox = W / 2, oy = H / 2 - 30;
-  const spin = t * (mode === "thinking" ? 0.9 : 0.12);
+/* ---------- 4D: a tesseract turning through the fourth dimension ---------- */
+const TV = [], TE = [];
+for (let i = 0; i < 16; i++) TV.push([i & 1 ? 1 : -1, i & 2 ? 1 : -1, i & 4 ? 1 : -1, i & 8 ? 1 : -1]);
+for (let i = 0; i < 16; i++) for (let b = 0; b < 4; b++) { const j = i ^ (1 << b); if (j > i) TE.push([i, j, b]); }
+function tesseract(time) {
+  const a = time * 0.31, b = time * 0.19, c = time * 0.13;
+  const ca = Math.cos(a), sa = Math.sin(a), cb = Math.cos(b), sb = Math.sin(b), cc = Math.cos(c), sc = Math.sin(c);
+  return TV.map(([x, y, z, w]) => {
+    [x, w] = [x * ca - w * sa, x * sa + w * ca]; // XW plane
+    [y, w] = [y * cb - w * sb, y * sb + w * cb]; // YW plane
+    [z, w] = [z * cc - w * sc, z * sc + w * cc]; // ZW plane
+    const k = 1.6 / (3 - w); // 4D to 3D perspective
+    return [x * k * 0.42, y * k * 0.42, z * k * 0.42, w];
+  });
+}
+
+/* ---------- Drifting particles: dust in the brain's own space ---------- */
+const DUST = Array.from({ length: 150 }, (_, i) => {
+  const r = 0.25 + ((i * 0.7548) % 1) * 1.5, phi = Math.acos(1 - 2 * ((i * 0.5698) % 1)), th = i * 2.399;
+  return { r, phi, th, sp: 0.02 + ((i * 0.3183) % 1) * 0.05, tw: (i * 0.1347) % 1 };
+});
+
+/* ---------- Seeded glyphs for the Agency ring and Hunter sigils ---------- */
+function rng(seed) { // Park-Miller, scrambled and warmed up so nearby seeds don't start out alike
+  seed = (Math.imul(seed + 1, 2654435761) >>> 0) % 2147483646 + 1;
+  const next = () => ((seed = (seed * 16807) % 2147483647) - 1) / 2147483646;
+  for (let i = 0; i < 4; i++) next();
+  return next;
+}
+const GLYPHS = Array.from({ length: 28 }, (_, i) => {
+  const r = rng(97 + i * 13), strokes = [];
+  for (let s = 0; s < 3; s++) strokes.push([r() - 0.5, r() - 0.5, r() - 0.5, r() - 0.5, r() < 0.3]);
+  return strokes;
+});
+function glyph(g, size) {
+  cx.beginPath();
+  for (const [x1, y1, x2, y2, arc] of g) {
+    if (arc) { cx.moveTo(x1 * size + size * 0.2, y1 * size); cx.arc(x1 * size, y1 * size, size * 0.2, 0, Math.PI * 1.4); }
+    else { cx.moveTo(x1 * size, y1 * size); cx.lineTo(x2 * size, y2 * size); }
+  }
+  cx.stroke();
+}
+const SALT = Array.from({ length: 220 }, (_, i) => { const r = rng(7 + i); return [r() * Math.PI * 2, r(), r()]; });
+const WHEEL = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+const RED = new Set([1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]);
+
+/* ---------- Cores ---------- */
+function coreArc(R, C, spin) {
+  // ten copper-wound coils, each with its winding lines
+  cx.strokeStyle = C(0.85); cx.lineWidth = R * 0.16;
+  for (let i = 0; i < 10; i++) {
+    const a = i / 10 * Math.PI * 2 + spin * 0.4;
+    cx.beginPath(); cx.arc(0, 0, R * 0.78, a + 0.06, a + Math.PI / 5 - 0.06); cx.stroke();
+  }
+  cx.lineWidth = 0.8; cx.strokeStyle = "rgba(255,190,120,.45)"; cx.shadowBlur = 0;
+  for (let i = 0; i < 120; i++) {
+    if (i % 12 === 0 || i % 12 === 11) continue; // gaps between coils
+    const a = i / 120 * Math.PI * 2 + spin * 0.4;
+    cx.beginPath(); cx.moveTo(Math.cos(a) * R * 0.7, Math.sin(a) * R * 0.7); cx.lineTo(Math.cos(a) * R * 0.86, Math.sin(a) * R * 0.86); cx.stroke();
+  }
+  cx.shadowBlur = 16;
+  // the Mark VI triangle (the "new element" core), with a faint second triangle
+  cx.lineWidth = 2; cx.strokeStyle = C(0.95);
+  for (const [k, off, al] of [[0.5, 0, 0.95], [0.36, Math.PI, 0.35]]) {
+    cx.globalAlpha = al; cx.beginPath();
+    for (let i = 0; i < 3; i++) { const a = -Math.PI / 2 + off + i * Math.PI * 2 / 3 - spin * 0.25; cx.lineTo(Math.cos(a) * R * k, Math.sin(a) * R * k); }
+    cx.closePath(); cx.stroke();
+  }
+  cx.globalAlpha = 1;
+  // faint hex lattice behind the triangle, the element as Howard drew it
+  cx.strokeStyle = C(0.18); cx.lineWidth = 0.6; cx.shadowBlur = 0;
+  for (let q = -2; q <= 2; q++) for (let r = -2; r <= 2; r++) {
+    const hx = (q + r / 2) * R * 0.17, hy = r * R * 0.147; if (Math.hypot(hx, hy) > R * 0.42) continue;
+    cx.beginPath(); for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3 + Math.PI / 6; cx.lineTo(hx + Math.cos(a) * R * 0.085, hy + Math.sin(a) * R * 0.085); } cx.closePath(); cx.stroke();
+  }
+  cx.shadowBlur = 16;
+  cx.beginPath(); cx.arc(0, 0, R * 0.22, 0, Math.PI * 2); cx.fillStyle = "rgba(240,253,255,.9)"; cx.fill();
+  cx.lineWidth = 1.5; cx.strokeStyle = C(0.7);
+  cx.beginPath(); cx.arc(0, 0, R, 0, Math.PI * 2); cx.stroke();
+  // output readout, tiny, like the suit's diagnostics
+  cx.shadowBlur = 0; cx.fillStyle = C(0.55); cx.font = `500 ${Math.max(7, R * 0.075) | 0}px 'IBM Plex Mono', monospace`;
+  cx.fillText(`${(3 + level * 2.4).toFixed(2)} GJ/s`, 0, R * 0.52);
+  // the new element replaced palladium, so blood toxicity reads zero
+  cx.fillText("Pd TOXICITY 0.0% · NEW ELEMENT STABLE", 0, -R * 1.1);
+}
+function coreAgency(R, C, spin) {
+  // brushed-chrome rings: a vertical gradient fakes the metal
+  const g = cx.createLinearGradient(0, -R, 0, R);
+  g.addColorStop(0, "rgba(255,255,255,.95)"); g.addColorStop(0.45, "rgba(150,160,168,.7)"); g.addColorStop(0.55, "rgba(60,66,72,.8)"); g.addColorStop(1, "rgba(220,228,234,.9)");
+  cx.shadowBlur = 0; cx.strokeStyle = g;
+  for (const [k, w] of [[1, 3], [0.9, 1], [0.62, 2]]) { cx.lineWidth = w; cx.beginPath(); cx.arc(0, 0, R * k, 0, Math.PI * 2); cx.stroke(); }
+  // alien script turning around the rim
+  cx.strokeStyle = C(0.75); cx.lineWidth = 1.1;
+  for (let i = 0; i < GLYPHS.length; i++) {
+    const a = i / GLYPHS.length * Math.PI * 2 + spin * 0.15;
+    cx.save(); cx.rotate(a); cx.translate(0, -R * 0.76); glyph(GLYPHS[i], R * 0.14); cx.restore();
+  }
+  // the galaxy on the cat's collar: a tiny two-arm spiral in the middle
+  for (let i = 0; i < 140; i++) {
+    const arm = i % 2, d = (i / 140) * R * 0.5, a = d / (R * 0.5) * 4.2 + arm * Math.PI + t * 0.6;
+    const j = Math.sin(i * 12.9) * R * 0.025;
+    cx.fillStyle = i < 20 ? "rgba(255,255,255,.95)" : `rgba(${i % 7 ? "200,220,255" : "255,200,240"},${0.85 - i / 200})`;
+    cx.fillRect(Math.cos(a) * d + j, Math.sin(a) * d * 0.62 + j, 1.4, 1.4);
+  }
+  const core = cx.createRadialGradient(0, 0, 0, 0, 0, R * 0.14); core.addColorStop(0, "rgba(255,255,255,1)"); core.addColorStop(1, "rgba(255,255,255,0)");
+  cx.fillStyle = core; cx.beginPath(); cx.arc(0, 0, R * 0.14, 0, Math.PI * 2); cx.fill();
+  // neuralyzer: a red lens at the top, and every 20 seconds a soft flash
+  const ph = (t % 20) / 20, flash = ph > 0.97 ? Math.sin((ph - 0.97) / 0.03 * Math.PI) : 0;
+  cx.fillStyle = `rgba(255,60,60,${0.55 + 0.45 * Math.sin(t * 3)})`; cx.shadowColor = "#ff3c3c"; cx.shadowBlur = 10;
+  cx.beginPath(); cx.arc(0, -R * 1.08, R * 0.045, 0, Math.PI * 2); cx.fill(); cx.shadowBlur = 0;
+  if (flash > 0) { cx.fillStyle = `rgba(255,255,255,${flash * 0.35})`; cx.beginPath(); cx.arc(0, 0, R * 3, 0, Math.PI * 2); cx.fill(); }
+  cx.fillStyle = "rgba(255,120,120,.75)"; cx.font = `600 ${Math.max(7, R * 0.07) | 0}px 'IBM Plex Mono', monospace`;
+  cx.fillText(flash > 0 ? "LOOK HERE" : `NEURALYZE IN ${Math.ceil(20 - t % 20)}s`, 0, -R * 1.16);
+  // unregistered alien activity: blips ping on the galaxy, logged with a case number
+  const k = Math.floor(t / 3), bp = (t % 3) / 3, br = rng(k + 11);
+  const bx = (br() - 0.5) * R * 0.8, by = (br() - 0.5) * R * 0.5;
+  cx.strokeStyle = `rgba(120,255,170,${(1 - bp) * 0.9})`; cx.lineWidth = 1;
+  cx.beginPath(); cx.arc(bx, by, 2 + bp * R * 0.12, 0, Math.PI * 2); cx.stroke();
+  cx.fillStyle = `rgba(120,255,170,${(1 - bp) * 0.8})`; cx.font = `500 ${Math.max(6, R * 0.06) | 0}px 'IBM Plex Mono', monospace`;
+  cx.fillText(`CASE ${String(4000 + (k * 37) % 997)}`, bx, by - 6 - bp * R * 0.12);
+}
+function coreSpy(R, C, spin) {
+  // gun barrel: dark bore with six spiral rifling grooves
+  const bore = cx.createRadialGradient(0, 0, R * 0.1, 0, 0, R);
+  bore.addColorStop(0, "rgba(0,0,0,.95)"); bore.addColorStop(0.7, "rgba(20,16,10,.9)"); bore.addColorStop(1, "rgba(60,48,30,.85)");
+  cx.shadowBlur = 0; cx.fillStyle = bore; cx.beginPath(); cx.arc(0, 0, R, 0, Math.PI * 2); cx.fill();
+  cx.strokeStyle = "rgba(216,176,74,.45)"; cx.lineWidth = 1.2;
+  for (let g = 0; g < 6; g++) {
+    cx.beginPath();
+    for (let s = 0; s <= 30; s++) { const d = R * (0.22 + s / 30 * 0.78), a = g / 6 * Math.PI * 2 + s / 30 * 1.6 + spin * 0.5; cx.lineTo(Math.cos(a) * d, Math.sin(a) * d); }
+    cx.stroke();
+  }
+  for (const k of [0.4, 0.6, 0.8]) { cx.strokeStyle = `rgba(216,176,74,${0.08 + k * 0.1})`; cx.beginPath(); cx.arc(0, 0, R * k, 0, Math.PI * 2); cx.stroke(); }
+  // the white aperture that tracks you, breathing with his voice
+  const ap = R * (0.15 + level * 0.06), jx = Math.sin(t * 0.7) * R * 0.04, jy = Math.cos(t * 0.5) * R * 0.03;
+  const w = cx.createRadialGradient(jx, jy, 0, jx, jy, ap * 1.6); w.addColorStop(0, "rgba(255,250,235,1)"); w.addColorStop(0.6, "rgba(255,245,220,.9)"); w.addColorStop(1, "rgba(255,240,210,0)");
+  cx.fillStyle = w; cx.beginPath(); cx.arc(jx, jy, ap * 1.6, 0, Math.PI * 2); cx.fill();
+  // roulette wheel (single zero, the casino royale kind) with the ball riding the track
+  const n = WHEEL.length, r1 = R * 1.1, r2 = R * 1.36, rot = -spin * 0.2;
+  for (let i = 0; i < n; i++) {
+    const a = i / n * Math.PI * 2 + rot, v = WHEEL[i];
+    cx.fillStyle = v === 0 ? "rgba(30,140,70,.8)" : RED.has(v) ? "rgba(196,48,58,.75)" : "rgba(14,10,6,.9)";
+    cx.beginPath(); cx.arc(0, 0, r2, a, a + Math.PI * 2 / n); cx.arc(0, 0, r1, a + Math.PI * 2 / n, a, true); cx.closePath(); cx.fill();
+  }
+  cx.strokeStyle = "rgba(216,176,74,.8)"; cx.lineWidth = 1;
+  for (const r of [r1, r2]) { cx.beginPath(); cx.arc(0, 0, r, 0, Math.PI * 2); cx.stroke(); }
+  if (R > 40) {
+    cx.fillStyle = "rgba(245,234,210,.85)"; cx.font = `600 ${Math.max(6, R * 0.075) | 0}px 'IBM Plex Mono', monospace`;
+    for (let i = 0; i < n; i++) { const a = (i + 0.5) / n * Math.PI * 2 + rot; cx.save(); cx.rotate(a + Math.PI / 2); cx.fillText(String(WHEEL[i]), 0, -(r1 + r2) / 2 + R * 0.03); cx.restore(); }
+  }
+  // every 15 seconds a laser creeps across the bore ("No, I expect you to die")
+  const lp = (t % 15) / 15;
+  if (lp < 0.25) {
+    const lx = -R * 0.9 + lp / 0.25 * R * 1.8, half = Math.sqrt(Math.max(0, R * R * 0.81 - lx * lx));
+    cx.strokeStyle = "rgba(255,40,40,.85)"; cx.shadowColor = "#ff2828"; cx.shadowBlur = 10; cx.lineWidth = 1.4;
+    cx.beginPath(); cx.moveTo(lx, -half); cx.lineTo(lx, half); cx.stroke(); cx.shadowBlur = 0;
+  }
+  cx.fillStyle = "rgba(216,176,74,.7)"; cx.font = `600 ${Math.max(7, R * 0.07) | 0}px 'IBM Plex Mono', monospace`;
+  cx.fillText("00 SECTION · LICENCE ISSUED", 0, R * 1.52);
+  const ba = t * 1.3; cx.fillStyle = "#fff"; cx.shadowColor = "#fff"; cx.shadowBlur = 6;
+  cx.beginPath(); cx.arc(Math.cos(ba) * R * 1.43, Math.sin(ba) * R * 1.43, R * 0.035, 0, Math.PI * 2); cx.fill(); cx.shadowBlur = 0;
+}
+function coreHunter(R, C, spin) {
+  // the lights flicker now and then: something's here
+  if ((t % 9) < 0.35 && Math.sin(t * 90) > 0) cx.globalAlpha = 0.35;
+  // devil's trap: double ring, pentagram, sigils between the rings
+  const turn = spin * 0.05;
+  cx.save(); cx.rotate(turn);
+  cx.shadowBlur = 12; cx.strokeStyle = C(0.9); cx.lineWidth = 2;
+  for (const k of [1, 0.84]) { cx.beginPath(); cx.arc(0, 0, R * k, 0, Math.PI * 2); cx.stroke(); }
+  cx.lineWidth = 1.6; cx.beginPath();
+  for (let i = 0; i <= 5; i++) { const a = -Math.PI / 2 + i * Math.PI * 4 / 5; cx.lineTo(Math.cos(a) * R * 0.84, Math.sin(a) * R * 0.84); }
+  cx.stroke();
+  cx.shadowBlur = 0; cx.strokeStyle = C(0.7); cx.lineWidth = 1;
+  for (let i = 0; i < 15; i++) { const a = i / 15 * Math.PI * 2; cx.save(); cx.rotate(a); cx.translate(0, -R * 0.92); glyph(GLYPHS[i], R * 0.09); cx.restore(); }
+  cx.restore(); cx.shadowBlur = 0; // blur on hundreds of grains would cost frames
+  // the anti-possession sun in the middle
+  cx.strokeStyle = C(0.85); cx.lineWidth = 1.2;
+  cx.beginPath(); cx.arc(0, 0, R * 0.16, 0, Math.PI * 2); cx.stroke();
+  for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2 + turn * 2, r = i % 2 ? 0.26 : 0.32; cx.beginPath(); cx.moveTo(Math.cos(a) * R * 0.18, Math.sin(a) * R * 0.18); cx.lineTo(Math.cos(a) * R * r, Math.sin(a) * R * r); cx.stroke(); }
+  // a salt line, grain by grain
+  // when the EMF climbs, something breaks the salt line, and the lights flicker
+  const emfNow = level * 6, gap = emfNow > 3 ? 0.5 : 0, gapAt = -Math.PI / 4;
+  for (const [a, u, v] of SALT) {
+    if (gap && Math.abs(Math.atan2(Math.sin(a - gapAt), Math.cos(a - gapAt))) < gap) continue;
+    cx.fillStyle = `rgba(255,248,235,${0.25 + v * 0.5})`; const d = R * (1.12 + u * 0.08); cx.fillRect(Math.cos(a) * d, Math.sin(a) * d, 1.1, 1.1);
+  }
+  // EMF meter: five bars that spike when he speaks
+  const emf = Math.min(5, Math.round(1 + level * 6 + Math.max(0, Math.sin(t * 0.9)) * (mode === "idle" ? 0.6 : 0)));
+  for (let i = 0; i < 5; i++) {
+    const a = Math.PI / 2 + (i - 2) * 0.13;
+    cx.strokeStyle = i < emf ? (i > 2 ? "rgba(255,80,60,.95)" : C(0.95)) : "rgba(255,255,255,.12)"; cx.lineWidth = R * 0.05;
+    cx.beginPath(); cx.arc(0, 0, R * 1.3, a - 0.05, a + 0.05); cx.stroke();
+  }
+  cx.fillStyle = C(0.6); cx.font = `600 ${Math.max(7, R * 0.07) | 0}px 'IBM Plex Mono', monospace`; cx.fillText("EMF", 0, R * 1.46);
+  // embers rising off the trap
+  for (let i = 0; i < 26; i++) {
+    const life = (t * 0.12 + i * 0.137) % 1, x = Math.sin(i * 7.1 + t * 0.4) * R * 0.9, y = R * 0.6 - life * R * 2.4;
+    cx.fillStyle = `rgba(255,${140 + (i % 5) * 20},60,${(1 - life) * 0.8})`; cx.fillRect(x, y, 1.6, 1.6);
+  }
+  cx.globalAlpha = 1;
+}
+const CORES = { arc: coreArc, agency: coreAgency, spy: coreSpy, hunter: coreHunter, showoff: coreShow };
+
+/* ---------- Show off: every Jarvis system on screen at once ---------- */
+// Iridescent colour that drifts cyan to violet to magenta, a 5D hypercube cage around the brain, a warp
+// starfield, a scan plane, Jarvis's systems orbiting the core with live numbers, and a guided tour of every note.
+const HUE = Array.from({ length: 360 }, (_, h) => { // hsl(h, 100%, 68%) as "r,g,b"
+  const f = (n) => { const k = (n + h / 30) % 12; return Math.round(255 * (0.68 - 0.32 * Math.max(-1, Math.min(k - 3, 9 - k, 1)))); };
+  return `${f(0)},${f(8)},${f(4)}`;
+});
+const hue = (h) => HUE[(((h | 0) % 360) + 360) % 360];
+const SHOW = () => THEME === "showoff";
+edges.forEach((e, i) => { e.h = 175 + (i * 37) % 150; });
+
+// 5D: a penteract (32 corners, 80 edges) turning in five planes, folded 5D to 4D to 3D
+const PV = [], PE = [];
+for (let i = 0; i < 32; i++) PV.push([0, 1, 2, 3, 4].map((b) => (i >> b & 1 ? 1 : -1)));
+for (let i = 0; i < 32; i++) for (let b = 0; b < 5; b++) { const j = i ^ (1 << b); if (j > i) PE.push([i, j, b]); }
+const PLANES = [[0, 4, 0.23], [1, 3, 0.17], [2, 4, 0.11], [3, 4, 0.29], [0, 2, 0.07]];
+function penteract(time) {
+  return PV.map((v0) => {
+    const v = [...v0];
+    for (const [a, b, sp] of PLANES) { const c = Math.cos(time * sp), s = Math.sin(time * sp); [v[a], v[b]] = [v[a] * c - v[b] * s, v[a] * s + v[b] * c]; }
+    const k5 = 2.2 / (3.4 - v[4]), w = v[3] * k5, k4 = 1.7 / (3.2 - w) * k5 * 0.62;
+    return [v[0] * k4, v[1] * k4, v[2] * k4, v[4]];
+  });
+}
+
+// warp starfield: streaks fly out of the core, faster when he talks or thinks
+const STARS = Array.from({ length: 170 }, (_, i) => { const r = rng(300 + i); return { x: r() * 2 - 1, y: r() * 2 - 1, z: 0.05 + r() * 0.95 }; });
+function warp(ox, oy) {
+  const sp = 0.0022 + warpBoost + level * 0.012 + (mode === "thinking" ? 0.01 : 0);
+  cx.lineCap = "round";
+  for (let i = 0; i < STARS.length; i += lowPower ? 2 : 1) {
+    const s = STARS[i], z0 = s.z; s.z -= sp;
+    const X = ox + s.x * W * 0.25 / s.z, Y = oy + s.y * H * 0.25 / s.z;
+    if (s.z <= 0.03 || X < -20 || X > W + 20 || Y < -20 || Y > H + 20) { s.z = 1; s.x = Math.random() * 2 - 1; s.y = Math.random() * 2 - 1; continue; }
+    const X0 = ox + s.x * W * 0.25 / z0, Y0 = oy + s.y * H * 0.25 / z0, near = 1 - s.z;
+    cx.strokeStyle = `rgba(${hue(200 + s.x * 90)},${Math.min(0.85, near * 0.95)})`; cx.lineWidth = 0.4 + near * 1.6;
+    cx.beginPath(); cx.moveTo(X0, Y0); cx.lineTo(X, Y); cx.stroke();
+  }
+  cx.lineCap = "butt";
+}
+function drawPenteract() {
+  const pv = penteract(t).map(([x, y, z, v]) => [...view(x, y, z), v]);
+  cx.lineWidth = 0.8;
+  for (const [i, j, axis] of PE) {
+    const a = pv[i], b = pv[j], vv = (a[4] + b[4]) / 2, za = (a[2] + b[2]) / 2;
+    cx.strokeStyle = `rgba(${hue(200 + axis * 30 + t * 8)},${(0.1 + (vv + 1) * 0.09) * Math.max(0.35, 1 - za * 0.4)})`;
+    cx.beginPath(); cx.moveTo(a[0], a[1]); cx.lineTo(b[0], b[1]); cx.stroke();
+  }
+  for (const v of pv) { cx.fillStyle = `rgba(${hue(290 + v[4] * 40)},${0.4 + (v[4] + 1) * 0.25})`; cx.fillRect(v[0] - 1.5, v[1] - 1.5, 3, 3); }
+}
+// a scan plane sweeps the brain top to bottom; notes it crosses light up
+function scanPlane() {
+  const ys = Math.sin(t * 0.37) * 0.95, rr = Math.sqrt(1 - ys * ys) * 1.05;
+  cx.strokeStyle = `rgba(${hue(185 + t * 10)},.4)`; cx.lineWidth = 1; cx.beginPath();
+  for (let i = 0; i <= 64; i++) { const a = i / 64 * Math.PI * 2, [x, y] = view(Math.cos(a) * rr, ys, Math.sin(a) * rr); i ? cx.lineTo(x, y) : cx.moveTo(x, y); }
+  cx.stroke();
+  for (const n of nodes) if (Math.abs(n.y - ys) < 0.07) n.hot = Math.max(n.hot, 0.4);
+}
+
+// Jarvis's systems, orbiting the core with their live numbers
+const showStats = { chats: null };
+const SYSTEMS = [
+  { key: "voice", name: () => "VOICE · " + ($("voice").value || "builtin:butler").replace("builtin:", "").toUpperCase(),
+    text: "Five built-in voices, made right on the phone. No cloud voice, no bill." },
+  { key: "memory", name: () => `MEMORY · ${lessons.length} LESSON${lessons.length === 1 ? "" : "S"}`,
+    text: "Everything you tell me is saved, then filed into the notes by Jarvis backend." },
+  { key: "chats", name: () => `CHATS · ${showStats.chats ?? "…"} SAVED`,
+    text: "Every conversation kept, on every device. CHATS reopens any of them." },
+  { key: "jobs", name: () => { const v = Object.values(jobsSeen || {}); return `JOBS · ${v.filter((s) => s === "queued" || s === "working").length} LIVE · ${v.length} RUN`; },
+    text: "Big asks go to Jarvis backend in the cloud: code, research, PRs. Answers land here." },
+  { key: "brain", name: () => `BRAIN · ${nodes.length} NOTES · ${edges.length} LINKS`,
+    text: "Every note a star, every link a nerve. The pulses are me thinking." },
+  { key: "dims", name: () => "4D TESSERACT · 5D PENTERACT",
+    text: "A hypercube turning through the 4th dimension, caged in one turning through the 5th." },
+];
+function satellites(ox, oy) {
+  cx.font = "600 9px 'IBM Plex Mono', monospace"; cx.textAlign = "center";
+  SYSTEMS.forEach((s, i) => {
+    const a = t * 0.16 + i * Math.PI * 2 / SYSTEMS.length;
+    const [x, y, z, f] = view(Math.cos(a) * 1.32, Math.sin(a * 2 + i) * 0.22 - 0.05, Math.sin(a) * 1.32);
+    const on = tour.sys === s.key && t - tour.at < 6, al = Math.max(0.25, Math.min(1, 0.9 - z * 0.5)) * Math.min(1, boot * 1.6), c = hue(200 + i * 25 + t * 6);
+    // data link: a beam to the core with packets riding it
+    cx.strokeStyle = `rgba(${c},${(on ? 0.5 : 0.14) * al})`; cx.lineWidth = on ? 1.4 : 0.8;
+    cx.beginPath(); cx.moveTo(ox, oy); cx.lineTo(x, y); cx.stroke();
+    for (let k = 0; k < 2; k++) { const u = (t * 0.5 + i * 0.17 + k * 0.5) % 1; cx.fillStyle = `rgba(${c},${0.8 * al})`; cx.fillRect(ox + (x - ox) * u - 1.2, oy + (y - oy) * u - 1.2, 2.4, 2.4); }
+    const r = (on ? 7 : 4.5) * f;
+    cx.globalAlpha = al; cx.fillStyle = `rgb(${c})`; cx.beginPath(); cx.moveTo(x, y - r); cx.lineTo(x + r, y); cx.lineTo(x, y + r); cx.lineTo(x - r, y); cx.closePath(); cx.fill();
+    cx.strokeStyle = `rgba(${c},.8)`; cx.lineWidth = 1; cx.beginPath(); cx.arc(x, y, r + 4 + Math.sin(t * 3 + i) * 1.5, 0, Math.PI * 2); cx.stroke();
+    if (on || (cinemaK > 0.9 && z < 0)) {
+      const label = s.name(), w = cx.measureText(label).width + 10, lx = Math.max(w / 2 + 4, Math.min(W - w / 2 - 4, x));
+      cx.fillStyle = "rgba(2,1,8,.75)"; cx.fillRect(lx - w / 2, y + r + 5, w, 13); cx.fillStyle = on ? "#fff" : `rgba(${c},.95)`; cx.fillText(label, lx, y + r + 15);
+    }
+    cx.globalAlpha = 1;
+  });
+}
+
+// the guided tour: when you leave it alone, Jarvis walks through every system, then every note
+const tour = { i: -1, at: -99, shock: -99, cap: null, sys: null };
+let lastInput = 0, capBox = null; // the controls stay up for the first few seconds after opening
+cv.addEventListener("pointerdown", () => { wokeFromCinema = cinema; lastInput = t; runCinema(); }, { passive: true });
+addEventListener("wheel", () => { lastInput = t; }, { passive: true });
+function firstLine(md) {
+  const l = md.replace(/^---[\s\S]*?---\s*/, "").split("\n").map((x) => x.trim()).find((x) => x && !x.startsWith("#")) || "";
+  return l.replace(/^[-*] (\[[ x]\] )?/, "").replace(/\[\[|\]\]|\*\*|`/g, "");
+}
+let cinema = false, wokeFromCinema = false;
+addEventListener("keydown", () => { lastInput = t; });
+function runCinema() {
+  const want = SHOW() && t - lastInput > 14 && (mode === "idle" || demo) && !$("card").classList.contains("show") && !document.querySelector("dialog[open]") && !reduce;
+  if (want !== cinema) { cinema = want; document.body.classList.toggle("cinema", want); uiAt = -1; }
+  cinemaK += ((cinema ? 1 : 0) - cinemaK) * 0.03;
+}
+function runTour() {
+  const busy = t - lastInput < 9 || $("card").classList.contains("show") || mode !== "idle" || boot < 1;
+  if (!busy) cam.zoom += ((tour.sys ? 0.92 : 1.18) - cam.zoom) * 0.02;
+  if (busy || t - tour.at < 6.5) return;
+  const order = [...nodes].sort((a, b) => b.deg - a.deg), total = SYSTEMS.length + order.length;
+  tour.i = (tour.i + 1) % total; tour.at = t; tour.shock = t;
+  if (tour.i < SYSTEMS.length) {
+    const s = SYSTEMS[tour.i]; focus = null; tour.sys = s.key;
+    tour.cap = { tag: `SYSTEM ${tour.i + 1} OF ${SYSTEMS.length}`, title: s.name(), line: s.text };
+  } else {
+    const n = order[tour.i - SYSTEMS.length]; tour.sys = null; focus = n; light([n.name]);
+    cam.go = [Math.atan2(n.x, -n.z), Math.max(-1.2, Math.min(1.2, Math.atan2(-n.y, Math.hypot(n.x, n.z))))];
+    tour.cap = { tag: `NOTE ${tour.i - SYSTEMS.length + 1} OF ${order.length} · ${(n.type || "note").toUpperCase()} · ${n.deg} LINKS`, title: n.name.toUpperCase(), line: firstLine(n.text) };
+  }
+}
+function shockwave(ox, oy, R) {
+  const k = (t - tour.shock) / 1.3; if (k < 0 || k > 1) return;
+  cx.strokeStyle = `rgba(${hue(280 + k * 60)},${(1 - k) * 0.6})`; cx.lineWidth = 2 * (1 - k) + 0.5;
+  cx.beginPath(); cx.arc(ox, oy, R * (1.2 + k * 5), 0, Math.PI * 2); cx.stroke();
+}
+function caption(ox, oy, R) {
+  capBox = null;
+  const c = tour.cap; if (!c || t - tour.at > 6.2 || t - lastInput < 9) return;
+  const age = t - tour.at, fade = Math.min(1, age * 3, (6.2 - age) * 2), w = Math.min(W - 24, 360), x0 = ox - w / 2;
+  const st = $("status").getBoundingClientRect();
+  let y0 = cinemaK > 0.5 ? H - 96 : st.top - 70;
+  capBox = [x0, y0, x0 + w, y0 + 60];
+  cx.globalAlpha = fade;
+  cx.fillStyle = "rgba(4,2,14,.78)"; cx.fillRect(x0, y0, w, 60);
+  cx.fillStyle = `rgb(${hue(190 + t * 20)})`; cx.fillRect(x0, y0, Math.min(1, age / 6) * w, 1.5); // progress to the next stop
+  cx.textAlign = "left";
+  cx.fillStyle = `rgba(${hue(300)},.9)`; cx.font = "500 8.5px 'IBM Plex Mono', monospace"; cx.fillText(c.tag, x0 + 10, y0 + 14);
+  cx.fillStyle = "#fff"; cx.font = "600 14px 'Chakra Petch', sans-serif"; cx.fillText(c.title, x0 + 10, y0 + 31);
+  cx.fillStyle = "rgba(226,220,255,.9)"; cx.font = "400 11.5px 'IBM Plex Sans', sans-serif";
+  let line = c.line.slice(0, Math.floor(age * 50)); // typed out
+  while (line && cx.measureText(line).width > w - 20) line = line.slice(0, -2);
+  if (line.length < c.line.length && age * 50 > c.line.length) line = line.replace(/\s*\S*$/, "…");
+  cx.fillText(line, x0 + 10, y0 + 49);
+  cx.globalAlpha = 1; cx.textAlign = "center";
+  if (cinemaK > 0.9) { cx.fillStyle = `rgba(${ARC},${0.35 + 0.25 * Math.sin(t * 2)})`; cx.font = "500 9px 'IBM Plex Mono', monospace"; cx.fillText("TAP ANYWHERE FOR THE CONTROLS", W / 2, H - 22); }
+}
+const glowCv = document.createElement("canvas"), glow = glowCv.getContext("2d");
+function bloom() {
+  const gw = Math.max(1, (W / 10) | 0), gh = Math.max(1, (H / 10) | 0);
+  if (glowCv.width !== gw || glowCv.height !== gh) { glowCv.width = gw; glowCv.height = gh; }
+  if (!(frame & 1)) { glow.clearRect(0, 0, gw, gh); glow.drawImage(cv, 0, 0, gw, gh); } // every other frame is plenty for a glow
+  cx.save(); cx.globalCompositeOperation = "lighter"; cx.globalAlpha = 0.55; cx.imageSmoothingEnabled = true;
+  cx.drawImage(glowCv, 0, 0, W, H); cx.restore();
+}
+function coreShow(R, C, spin) {
+  // gimbal: three rings tilting through 3D around the core
+  cx.shadowBlur = 0;
+  for (let k = 0; k < 3; k++) {
+    cx.save(); cx.rotate(k * Math.PI / 3 + spin * 0.35);
+    const sq = Math.abs(Math.cos(t * 0.6 + k * 2.1)) * 0.92 + 0.08;
+    cx.strokeStyle = `rgba(${hue(200 + k * 45 + t * 15)},.85)`; cx.lineWidth = 1.6;
+    cx.beginPath(); cx.ellipse(0, 0, R * 1.08, R * 1.08 * sq, 0, 0, Math.PI * 2); cx.stroke();
+    const ea = t * (1.4 + k * 0.4); // an electron riding each ring
+    cx.fillStyle = "#fff"; cx.beginPath(); cx.arc(Math.cos(ea) * R * 1.08, Math.sin(ea) * R * 1.08 * sq, 2.2, 0, Math.PI * 2); cx.fill();
+    cx.restore();
+  }
+  // twelve-cell reactor ring
+  cx.lineWidth = R * 0.11;
+  for (let i = 0; i < 12; i++) {
+    const a = i / 12 * Math.PI * 2 - spin * 0.5;
+    cx.strokeStyle = `rgba(${hue(250 + i * 8 + t * 25)},${0.55 + 0.35 * Math.sin(t * 2 + i)})`;
+    cx.beginPath(); cx.arc(0, 0, R * 0.74, a + 0.05, a + Math.PI / 6 - 0.05); cx.stroke();
+  }
+  // hex shield, slowly counter-turning
+  cx.lineWidth = 0.8; cx.strokeStyle = C(0.35);
+  for (let i = 0; i < 6; i++) {
+    const a = i / 6 * Math.PI * 2 + spin * 0.2, hx = Math.cos(a) * R * 0.45, hy = Math.sin(a) * R * 0.45;
+    cx.beginPath(); for (let j = 0; j < 6; j++) { const b = j * Math.PI / 3 + a; cx.lineTo(hx + Math.cos(b) * R * 0.17, hy + Math.sin(b) * R * 0.17); } cx.closePath(); cx.stroke();
+  }
+  // the element triangle and a white-hot plasma heart
+  cx.lineWidth = 2; cx.strokeStyle = "rgba(255,255,255,.9)"; cx.beginPath();
+  for (let i = 0; i < 3; i++) { const a = -Math.PI / 2 + i * Math.PI * 2 / 3 + spin * 0.3; cx.lineTo(Math.cos(a) * R * 0.36, Math.sin(a) * R * 0.36); }
+  cx.closePath(); cx.stroke();
+  const p = cx.createRadialGradient(0, 0, 0, 0, 0, R * 0.3);
+  p.addColorStop(0, "rgba(255,255,255,1)"); p.addColorStop(0.45, `rgba(${hue(300 + t * 30)},.85)`); p.addColorStop(1, `rgba(${hue(200)},0)`);
+  cx.fillStyle = p; cx.beginPath(); cx.arc(0, 0, R * 0.3 * (1 + level * 0.25), 0, Math.PI * 2); cx.fill();
+}
+function loadShowStats() {
+  dbPromise.then(async (db) => { if (!db) return; try { const q = await db.collection("chats").orderBy("started", "desc").limit(500).get(); showStats.chats = q.docs.length; } catch {} });
+}
+
+/* ---------- Show off flight: into the brain, where tiny worlds do the work ---------- */
+// In cinema the camera flies through the shell of notes to the core. Each Jarvis system is a tiny planet orbiting
+// it, with a dome house, a round tree, a road round the middle, and little workers doing that job live.
+const FK = 6; // the brain's radius in flight space
+const V = {
+  add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]], sub: (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
+  mul: (a, k) => [a[0] * k, a[1] * k, a[2] * k], dot: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
+  cross: (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]],
+  norm: (a) => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; },
+  lerp: (a, b, u) => [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u],
+};
+const ease = (u) => u * u * (3 - 2 * u);
+const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+const jobCounts = () => { const v = Object.values(jobsSeen || {}); return [v.filter((s) => s === "queued" || s === "working").length, v.filter((s) => s === "done").length]; };
+const CREW = { // the little people: each one dressed for their job
+  coder: { suit: "#2d7dd2", pants: "#24324a", hair: "#2b1b10", style: "spiky", skin: "#f6d2b0", phones: true },
+  courier: { suit: "#ff8c42", pants: "#3a3a48", hair: "#e8c070", style: "short", skin: "#c98e62", hat: "hard" },
+  reader: { suit: "#e0a030", pants: "#5a3e2b", hair: "#7a2e1a", style: "bun", skin: "#ffe0bd", glasses: true },
+  filer: { suit: "#7d6ae0", pants: "#2e2a48", hair: "#151018", style: "curly", skin: "#8d5a3b" },
+  singer: { suit: "#ff5fa2", pants: "#2a1830", hair: "#f2f2f2", style: "long", skin: "#f6d2b0", phones: true },
+  jogger: { suit: "#f4f4f8", pants: "#3a6ea5", hair: "#3b2416", style: "short", skin: "#c98e62", band: true },
+};
+const WORLDS = [
+  { tag: "JOBS", name: "THE WORKSHOP", grass: [92, 206, 118], sky: 190, roof: "#ff6b5a", deco: "gears", fly: "packets",
+    line: () => { const [l, d] = jobCounts(); return `${plural(l, "job")} live, ${d} done. Jarvis backend builds here.`; },
+    says: ["Pushing the PR!", "Tests are green ✓", "On it, boss.", "Shipping it."],
+    items: [["pine", -0.8], ["rack", -0.62], ["lamp", -0.5], ["desk", -0.4], ["house", 0.12], ["dish", 0.5], ["pond", 0.7], ["courier", -0.14, 0.36]] },
+  { tag: "LEARNING", name: "THE LIBRARY", grass: [132, 210, 92], sky: 45, roof: "#ffb23e", deco: "sign", fly: "books",
+    line: () => `${plural(lessons.length, "lesson")} learned, ${lessons.filter((l) => !l.filed).length} waiting to be shelved.`,
+    says: ["Noted, boss.", "Ooh, that's new.", "Shelving that.", "Learned it ✓"],
+    items: [["tree", -0.78], ["house", -0.52], ["globe", -0.28], ["reader", -0.13], ["shelf", 0.2], ["lamp", 0.4], ["pine", 0.58], ["pond", 0.75]] },
+  { tag: "NOTES", name: "THE ARCHIVE", grass: [86, 196, 156], sky: 280, roof: "#9b8cff", deco: "files", fly: "planes",
+    line: () => `${nodes.length} notes, ${edges.length} links, filed and cross-linked.`,
+    says: ["Filed under J.", "Linking notes…", "Cross-linked ✓", "One more!"],
+    items: [["pine", -0.78], ["lamp", -0.6], ["papers", -0.44], ["cabinet", 0.16], ["cabinet", 0.3], ["house", 0.6], ["tree", 0.85], ["filer", -0.38, 0.06]] },
+  { tag: "VOICE", name: "THE STUDIO", grass: [104, 220, 140], sky: 330, roof: "#ff5fa2", deco: "eq", fly: "notes",
+    line: () => `${($("voice").value || "builtin:butler").replace("builtin:", "")} voice on air. ${showStats.chats == null ? "Every chat" : plural(showStats.chats, "chat")} saved.`,
+    says: ["Testing, 1, 2…", "At your service.", "♪ la la ♪", "Loud and clear."],
+    items: [["tree", -0.8], ["house", -0.55], ["speaker", -0.33], ["tower", -0.18], ["singer", 0.06], ["speaker", 0.3], ["lamp", 0.44], ["pond", 0.66]] },
+];
+WORLDS.forEach((w, i) => {
+  const a = i * Math.PI / 2 + 0.5, out = [Math.cos(a), 0, Math.sin(a)], tan = [-out[2], 0, out[0]];
+  w.pos = [out[0] * 2.9, i % 2 ? -0.55 : 0.5, out[2] * 2.9]; w.r = 0.5;
+  w.light = w.grass.map((c) => Math.round(c + (255 - c) * 0.45)).join(","); w.dark = w.grass.map((c) => Math.round(c * 0.28)).join(",");
+  // the camera parks beside the world, a little above, looking at its top where the work happens
+  w.stop = { p: V.add(w.pos, V.add(V.mul(tan, 0.56), [0, 0.64, 0])), l: V.add(w.pos, [0, 0.62, 0]), hold: 10, w,
+    cap: () => ({ tag: `SYSTEM ${i + 1} OF ${WORLDS.length} · ${w.tag}`, title: w.name, line: w.line() }) };
+});
+const FSTOPS = [
+  { p: [0, 2, -15], l: [0, 0, 0], hold: 2.6, cap: () => ({ tag: "LIVE DEMO · FLYING IN", title: `THE BRAIN · ${nodes.length} NOTES`, line: "Every star a note, every line a link. Going in." }) },
+  ...WORLDS.map((w) => w.stop),
+  { p: [0, 0.8, -2.6], l: [0, 0, 0], hold: 5, cap: () => ({ tag: "THE CENTRE", title: "JARVIS CORE", line: "Every world wires its work in here. This is me thinking." }) },
+];
+const TRAVEL = 3.6;
+function orbitAround(p, l, a) { const d = V.sub(p, l), c = Math.cos(a), s = Math.sin(a); return V.add(l, [d[0] * c - d[2] * s, d[1], d[0] * s + d[2] * c]); }
+function flightPose(ft) {
+  const period = FSTOPS.reduce((a, s) => a + s.hold + TRAVEL, 0);
+  let x = ft % period, k = 0;
+  while (x > FSTOPS[k].hold + TRAVEL) { x -= FSTOPS[k].hold + TRAVEL; k++; }
+  const A = FSTOPS[k], B = FSTOPS[(k + 1) % FSTOPS.length];
+  if (x < A.hold) return { p: orbitAround(A.p, A.l, Math.sin(x / A.hold * Math.PI - Math.PI / 2) * 0.18), l: A.l, k, moving: false };
+  const raw = (x - A.hold) / TRAVEL, u = ease(raw), ul = ease(Math.min(1, raw * 1.3)); // the eyes turn a moment before the body
+  const p = V.lerp(orbitAround(A.p, A.l, 0.18), orbitAround(B.p, B.l, -0.18), u);
+  return { p: V.add(p, [0, Math.sin(raw * Math.PI) * 1.4, 0]), l: V.lerp(A.l, B.l, ul), k, moving: true };
+}
+function lookAt(p, l, fl) {
+  const F = V.norm(V.sub(l, p)), R = V.norm(V.cross([0, 1, 0], F)), U = V.cross(F, R);
+  return (X) => { const d = V.sub(X, p), z = V.dot(d, F); if (z < 0.06) return null; const s = fl / z; return [W / 2 + V.dot(d, R) * s, H / 2 - V.dot(d, U) * s, z, s]; };
+}
+
+// little workers: feet at 0, facing right, h = standing height in px. Real bodies, faces that blink, hair, kit.
+const shade = (hex, k) => { const n = parseInt(hex.slice(1), 16); return `rgb(${(n >> 16 & 255) * k | 0},${(n >> 8 & 255) * k | 0},${(n & 255) * k | 0})`; };
+for (const o of Object.values(CREW)) { o.suit2 = shade(o.suit, 0.72); o.pants2 = shade(o.pants, 0.72); o.skin2 = shade(o.skin, 0.85); o.seed = Math.random() * 9; }
+function limb(p, w, c) { cx.strokeStyle = c; cx.lineWidth = w; cx.beginPath(); cx.moveTo(p[0], p[1]); for (let k = 2; k < p.length; k += 2) cx.lineTo(p[k], p[k + 1]); cx.stroke(); }
+function blob(x, y, r, c) { cx.fillStyle = c; cx.beginPath(); cx.arc(x, y, r, 0, Math.PI * 2); cx.fill(); }
+function person(h, pose, ph, o) {
+  const sit = pose === "type" || pose === "read", stride = pose === "jog" ? 0.32 : pose === "walk" || pose === "carry" ? 0.2 : 0;
+  cx.lineCap = "round"; cx.lineJoin = "round";
+  if (!sit) { cx.fillStyle = "rgba(0,0,0,.25)"; cx.beginPath(); cx.ellipse(0, 0, 0.24 * h, 0.045 * h, 0, 0, Math.PI * 2); cx.fill(); }
+  const bob = stride ? Math.abs(Math.sin(ph)) * 0.035 * h : 0;
+  cx.save(); cx.translate(0, -bob);
+  const hipY = sit ? -0.3 * h : -0.47 * h, shY = hipY - 0.32 * h, lw = h * 0.12;
+  const leg = (s, c) => {
+    let fx, fy;
+    if (sit) { fx = 0.25 * h + s * 0.03 * h; fy = -0.02 * h; limb([0, hipY, 0.24 * h, hipY - 0.02 * h, fx, fy], lw, c); }
+    else {
+      const sw = Math.sin(ph) * s * stride * h, lift = Math.max(0, Math.cos(ph) * s) * stride * 0.45 * h;
+      fx = sw; fy = -lift; limb([0, hipY, sw * 0.5 + 0.05 * h, hipY * 0.48 - lift * 0.5, fx, fy], lw, c);
+    }
+    cx.fillStyle = "#1c1c26"; cx.beginPath(); cx.ellipse(fx + 0.045 * h, fy - 0.015 * h, 0.085 * h, 0.042 * h, 0, 0, Math.PI * 2); cx.fill();
+  };
+  const sx = 0, sy = shY + 0.04 * h, swing = Math.sin(ph) * stride * 1.3 * h;
+  const arm = (s, c) => { // s = 1 front arm, -1 back arm
+    let e, hd;
+    if (pose === "type") { const b = Math.sin(ph * (s > 0 ? 1 : 1.3)) * 0.035 * h; e = [0.12 * h, sy + 0.2 * h]; hd = [0.31 * h, hipY - 0.07 * h + b]; }
+    else if (pose === "read") { e = [0.1 * h, sy + 0.22 * h]; hd = [0.26 * h, sy + 0.12 * h]; }
+    else if (pose === "carry") { e = [s * 0.1 * h, sy - 0.12 * h]; hd = [s * 0.07 * h, sy - 0.3 * h]; }
+    else if (pose === "talk") {
+      if (s > 0) { e = [0.14 * h, sy + 0.14 * h]; hd = [0.3 * h, sy - 0.02 * h]; }
+      else { e = [-0.14 * h, sy - 0.04 * h]; hd = [-0.2 * h, sy - 0.24 * h + Math.sin(ph) * 0.08 * h]; }
+    } else { const k = -s * swing; e = [k * 0.5, sy + 0.17 * h]; hd = [k, sy + 0.32 * h]; }
+    limb([sx, sy, e[0], e[1], hd[0], hd[1]], h * 0.095, c);
+    blob(hd[0], hd[1], 0.05 * h, s > 0 ? o.skin : o.skin2);
+  };
+  arm(-1, o.suit2); leg(-1, o.pants2);
+  // torso, with a little Jarvis badge that glows
+  cx.fillStyle = o.suit; cx.beginPath(); cx.roundRect ? cx.roundRect(-0.12 * h, shY - 0.02 * h, 0.24 * h, hipY - shY + 0.06 * h, 0.07 * h) : cx.rect(-0.12 * h, shY - 0.02 * h, 0.24 * h, hipY - shY + 0.06 * h); cx.fill();
+  cx.fillStyle = "rgba(0,0,0,.18)"; cx.fillRect(-0.12 * h, shY + 0.02 * h, 0.07 * h, hipY - shY - 0.02 * h);
+  cx.fillStyle = o.pants; cx.fillRect(-0.12 * h, hipY - 0.01 * h, 0.24 * h, 0.05 * h);
+  blob(0.06 * h, shY + 0.1 * h, 0.028 * h, `rgb(${ARC})`);
+  leg(1, o.pants);
+  // head
+  const hx = 0.02 * h, hy = shY - 0.17 * h, R = 0.155 * h;
+  cx.fillStyle = o.skin2; cx.fillRect(-0.03 * h, shY - 0.06 * h, 0.07 * h, 0.07 * h);
+  blob(hx, hy, R, o.skin);
+  blob(hx - 0.04 * h, hy + 0.01 * h, 0.04 * h, o.skin2); // ear
+  cx.fillStyle = o.hair; cx.beginPath();
+  if (o.style === "spiky") { for (let k = 0; k < 5; k++) { const a = Math.PI * (0.9 + k * 0.22); cx.moveTo(hx + Math.cos(a - 0.25) * R, hy + Math.sin(a - 0.25) * R); cx.lineTo(hx + Math.cos(a) * R * 1.55, hy + Math.sin(a) * R * 1.55); cx.lineTo(hx + Math.cos(a + 0.25) * R, hy + Math.sin(a + 0.25) * R); } cx.arc(hx, hy, R * 1.04, Math.PI * 0.95, Math.PI * 1.95); }
+  else if (o.style === "curly") { for (let k = 0; k < 7; k++) { const a = Math.PI * (0.85 + k * 0.18); cx.moveTo(hx + Math.cos(a) * R * 1.02 + R * 0.38, hy + Math.sin(a) * R * 1.02); cx.arc(hx + Math.cos(a) * R * 1.02, hy + Math.sin(a) * R * 1.02, R * 0.38, 0, Math.PI * 2); } }
+  else { cx.arc(hx, hy, R * 1.07, Math.PI * 0.82, Math.PI * 1.98); cx.closePath(); }
+  cx.fill();
+  if (o.style === "bun") blob(hx - R * 0.75, hy - R * 0.8, R * 0.45, o.hair);
+  if (o.style === "long") { cx.fillStyle = o.hair; cx.fillRect(hx - R * 1.05, hy - R * 0.2, R * 0.75, R * 1.6); }
+  if (o.band) { cx.strokeStyle = "#ff4b5c"; cx.lineWidth = 0.05 * h; cx.beginPath(); cx.arc(hx, hy, R * 0.98, Math.PI * 1.05, Math.PI * 1.95); cx.stroke(); }
+  // face: eye that blinks, a cheek, a mouth that moves when they talk
+  const ex = hx + 0.08 * h, ey = hy - 0.015 * h;
+  if ((t + o.seed) % 3.7 < 0.13) limb([ex - 0.025 * h, ey, ex + 0.025 * h, ey], 0.018 * h, "#1c1c26");
+  else { blob(ex, ey, 0.026 * h, "#1c1c26"); blob(ex + 0.009 * h, ey - 0.009 * h, 0.009 * h, "#fff"); }
+  blob(hx + 0.05 * h, hy + 0.055 * h, 0.03 * h, "rgba(255,120,120,.35)");
+  if (pose === "talk") { cx.fillStyle = "#5a1a22"; cx.beginPath(); cx.ellipse(hx + 0.1 * h, hy + 0.07 * h, 0.03 * h, (0.01 + Math.abs(Math.sin(t * 9)) * 0.025) * h, 0, 0, Math.PI * 2); cx.fill(); }
+  else { cx.strokeStyle = "#5a1a22"; cx.lineWidth = 0.016 * h; cx.beginPath(); cx.arc(hx + 0.08 * h, hy + 0.04 * h, 0.035 * h, 0.3, 1.5); cx.stroke(); }
+  if (o.glasses) { cx.strokeStyle = "#222"; cx.lineWidth = 0.014 * h; cx.beginPath(); cx.arc(ex, ey, 0.045 * h, 0, Math.PI * 2); cx.moveTo(ex - 0.045 * h, ey); cx.lineTo(hx - 0.03 * h, ey); cx.stroke(); }
+  if (o.phones) {
+    cx.strokeStyle = "#2a2a34"; cx.lineWidth = 0.035 * h; cx.beginPath(); cx.arc(hx, hy, R * 1.12, Math.PI * 1.05, Math.PI * 1.95); cx.stroke();
+    cx.fillStyle = "#2a2a34"; cx.fillRect(hx - 0.13 * h, hy - 0.05 * h, 0.07 * h, 0.12 * h); blob(hx - 0.095 * h, hy + 0.01 * h, 0.015 * h, `rgba(${ARC},.8)`);
+  }
+  if (o.hat === "hard") {
+    cx.fillStyle = "#ffcc33"; cx.beginPath(); cx.ellipse(hx, hy - R * 0.25, R * 1.08, R * 0.95, 0, Math.PI, Math.PI * 2); cx.fill();
+    limb([hx - R * 1.15, hy - R * 0.25, hx + R * 1.45, hy - R * 0.25], 0.04 * h, "#e0a800");
+  }
+  cx.restore();
+  return shY - bob;
+}
+// a speech bubble that pops up every few seconds
+function bubble(w, h, x, y, k) {
+  const cyc = (t + k * 1.7) % 7; if (cyc > 3.6) return;
+  const s = Math.min(1, cyc * 6, (3.6 - cyc) * 6), txt = w.says[Math.floor((t + k * 1.7) / 7) % w.says.length];
+  cx.save(); cx.translate(x, y); cx.scale(s, s);
+  cx.font = `600 ${Math.max(8, h * 0.19) | 0}px 'IBM Plex Sans', sans-serif`; cx.textAlign = "center";
+  const tw = cx.measureText(txt).width + h * 0.24, th = h * 0.32;
+  cx.fillStyle = "rgba(255,255,255,.96)"; cx.beginPath(); cx.roundRect ? cx.roundRect(-tw / 2, -th, tw, th, th / 2) : cx.rect(-tw / 2, -th, tw, th); cx.fill();
+  cx.beginPath(); cx.moveTo(-0.06 * h, -0.01 * h); cx.lineTo(0.02 * h, 0.1 * h); cx.lineTo(0.06 * h, -0.01 * h); cx.fill();
+  cx.fillStyle = "#1c1c26"; cx.fillText(txt, 0, -th * 0.3);
+  cx.restore();
+}
+// Jarvis's helper drone: hovers over each world and scans it
+function drone(h) {
+  const y = -2.1 * h + Math.sin(t * 1.6) * 0.12 * h, x = Math.sin(t * 0.5) * 0.4 * h;
+  const beam = cx.createLinearGradient(0, y, 0, 0);
+  beam.addColorStop(0, `rgba(${ARC},.28)`); beam.addColorStop(1, `rgba(${ARC},0)`);
+  cx.fillStyle = beam; cx.beginPath(); cx.moveTo(x - 0.06 * h, y); cx.lineTo(x + 0.06 * h, y); cx.lineTo(x + 0.45 * h + Math.sin(t) * 0.3 * h, 0); cx.lineTo(x - 0.45 * h + Math.sin(t) * 0.3 * h, 0); cx.fill();
+  cx.fillStyle = "#cfd6e6"; cx.beginPath(); cx.ellipse(x, y, 0.22 * h, 0.12 * h, 0, 0, Math.PI * 2); cx.fill();
+  cx.fillStyle = "#8a93a8"; cx.beginPath(); cx.ellipse(x, y + 0.04 * h, 0.22 * h, 0.06 * h, 0, 0, Math.PI); cx.fill();
+  blob(x + 0.08 * h, y - 0.01 * h, 0.06 * h, "#10141e"); blob(x + 0.08 * h, y - 0.01 * h, 0.035 * h, `rgb(${ARC})`);
+  for (const s of [-1, 1]) {
+    limb([x + s * 0.2 * h, y - 0.06 * h, x + s * 0.2 * h, y - 0.14 * h], 0.03 * h, "#8a93a8");
+    const sp = Math.abs(Math.sin(t * 40 + s)) * 0.16 * h + 0.04 * h; limb([x + s * 0.2 * h - sp, y - 0.15 * h, x + s * 0.2 * h + sp, y - 0.15 * h], 0.025 * h, "rgba(230,240,255,.8)");
+  }
+}
+const SPINES = ["#ff6b5a", "#ffd166", "#4fd8ff", "#9b8cff", "#5cf2a5", "#ff9bd0"];
+function tree(h) {
+  cx.rotate(Math.sin(t * 1.3) * 0.03);
+  cx.fillStyle = "#6b3f22"; cx.beginPath(); cx.moveTo(-0.11 * h, 0); cx.lineTo(-0.06 * h, -0.8 * h); cx.lineTo(0.06 * h, -0.8 * h); cx.lineTo(0.11 * h, 0); cx.fill();
+  limb([0, -0.6 * h, 0.22 * h, -0.85 * h], 0.05 * h, "#6b3f22");
+  for (const [x, y, r, c] of [[-0.3, -0.82, 0.32, "#25784a"], [0.3, -0.86, 0.34, "#25784a"], [0, -1.18, 0.46, "#2f8f4e"], [-0.18, -1.0, 0.3, "#3fae5c"], [0.2, -1.1, 0.28, "#3fae5c"], [0.06, -1.32, 0.22, "#6fd486"]]) blob(x * h, y * h, r * h, c);
+  for (let k = 0; k < 5; k++) blob(Math.sin(k * 2.3) * 0.32 * h, -1.0 * h + Math.cos(k * 1.7) * 0.22 * h, 0.045 * h, "#ff5f5f"); // apples
+}
+function pine(h) {
+  cx.rotate(Math.sin(t * 1.1 + 2) * 0.025);
+  cx.fillStyle = "#5a3a20"; cx.fillRect(-0.06 * h, -0.3 * h, 0.12 * h, 0.3 * h);
+  for (let k = 0; k < 3; k++) {
+    const y = -0.25 * h - k * 0.36 * h, wd = (0.46 - k * 0.11) * h;
+    cx.fillStyle = k % 2 ? "#2a7d4a" : "#1f6a3e"; cx.beginPath(); cx.moveTo(-wd, y); cx.lineTo(0, y - 0.6 * h); cx.lineTo(wd, y); cx.fill();
+    cx.fillStyle = "rgba(255,255,255,.12)"; cx.beginPath(); cx.moveTo(0, y - 0.6 * h); cx.lineTo(wd, y); cx.lineTo(wd * 0.3, y); cx.fill();
+  }
+}
+function house(h, w) {
+  const g = cx.createLinearGradient(-h, -h, h, 0);
+  g.addColorStop(0, shade(w.roof, 1.15)); g.addColorStop(1, shade(w.roof, 0.65));
+  cx.fillStyle = g; cx.beginPath(); cx.ellipse(0, 0, 0.95 * h, 1.05 * h, 0, Math.PI, Math.PI * 2); cx.fill();
+  cx.strokeStyle = "rgba(0,0,0,.15)"; cx.lineWidth = 0.025 * h; // dome panels
+  for (const k of [-0.5, 0, 0.5]) { cx.beginPath(); cx.ellipse(0, 0, Math.abs(k) * 0.95 * h + 0.01, 1.05 * h, 0, Math.PI, Math.PI * 2); cx.stroke(); }
+  cx.beginPath(); cx.ellipse(0, 0, 0.95 * h, 0.55 * h, 0, Math.PI, Math.PI * 2); cx.stroke();
+  cx.fillStyle = "rgba(255,255,255,.28)"; cx.beginPath(); cx.ellipse(-0.35 * h, -0.65 * h, 0.18 * h, 0.3 * h, -0.5, 0, Math.PI * 2); cx.fill();
+  cx.fillStyle = "#f4ead8"; cx.fillRect(-0.98 * h, -0.14 * h, 1.96 * h, 0.14 * h);
+  cx.fillStyle = "#2a1c3a"; cx.beginPath(); cx.roundRect ? cx.roundRect(0.16 * h, -0.58 * h, 0.34 * h, 0.58 * h, [0.17 * h, 0.17 * h, 0, 0]) : cx.rect(0.16 * h, -0.58 * h, 0.34 * h, 0.58 * h); cx.fill();
+  blob(0.43 * h, -0.28 * h, 0.03 * h, "#ffcc33");
+  const lit = cx.createRadialGradient(-0.42 * h, -0.5 * h, 0, -0.42 * h, -0.5 * h, 0.35 * h);
+  lit.addColorStop(0, "rgba(255,226,140,.5)"); lit.addColorStop(1, "rgba(255,226,140,0)");
+  cx.fillStyle = lit; cx.beginPath(); cx.arc(-0.42 * h, -0.5 * h, 0.35 * h, 0, Math.PI * 2); cx.fill();
+  blob(-0.42 * h, -0.5 * h, 0.17 * h, "#e8e2d4"); blob(-0.42 * h, -0.5 * h, 0.13 * h, "rgba(255,220,130,.95)");
+  limb([-0.42 * h, -0.63 * h, -0.42 * h, -0.37 * h, -0.42 * h, -0.5 * h, -0.55 * h, -0.5 * h, -0.29 * h, -0.5 * h], 0.02 * h, "#e8e2d4");
+  limb([0, -1.04 * h, 0, -1.42 * h], Math.max(1, h * 0.04), "#ddd");
+  blob(0, -1.44 * h, 0.07 * h, Math.sin(t * 4) > 0 ? "#ff4b5c" : "#5a1a22");
+  if (w.deco === "gears") for (const [x, y, r, sp] of [[0.62, -0.62, 0.17, 1], [0.78, -0.38, 0.11, -1.55]]) {
+    cx.save(); cx.translate(x * h, y * h); cx.rotate(t * sp); cx.fillStyle = "#b8c0cc";
+    for (let k = 0; k < 8; k++) { cx.rotate(Math.PI / 4); cx.fillRect(-0.035 * h, -r * h * 1.3, 0.07 * h, r * h * 0.5); }
+    blob(0, 0, r * h, "#b8c0cc"); blob(0, 0, r * h * 0.4, "#555"); cx.restore();
+  } else if (w.deco === "eq") for (let k = 0; k < 7; k++) {
+    const v = 0.15 + Math.abs(Math.sin(t * 6 + k * 1.3)) * (0.25 + level * 0.4);
+    cx.fillStyle = `rgba(${hue(300 + k * 12)},.95)`; cx.fillRect(-0.85 * h + k * 0.1 * h, -0.2 * h - v * h, 0.07 * h, v * h);
+  } else if (w.deco === "sign" || w.deco === "files") {
+    limb([0.75 * h, 0, 0.75 * h, -0.55 * h], 0.05 * h, "#6b3f22");
+    cx.fillStyle = "#f4ead8"; cx.fillRect(0.55 * h, -0.78 * h, 0.5 * h, 0.26 * h);
+    cx.fillStyle = "#3a2a1a"; cx.font = `700 ${Math.max(6, h * 0.13) | 0}px 'IBM Plex Mono', monospace`; cx.textAlign = "center";
+    cx.fillText(w.deco === "sign" ? "BOOKS" : "FILES", 0.8 * h, -0.6 * h);
+  }
+}
+function lamp(h) {
+  limb([0, 0, 0, -1.1 * h, 0.14 * h, -1.18 * h], 0.05 * h, "#3a3f4c");
+  const g = cx.createRadialGradient(0.18 * h, -1.12 * h, 0, 0.18 * h, -1.12 * h, 0.45 * h);
+  g.addColorStop(0, "rgba(255,230,150,.7)"); g.addColorStop(1, "rgba(255,230,150,0)");
+  cx.fillStyle = g; cx.beginPath(); cx.arc(0.18 * h, -1.12 * h, 0.45 * h, 0, Math.PI * 2); cx.fill();
+  blob(0.18 * h, -1.12 * h, 0.07 * h, "#fff3c4");
+}
+function pond(h) {
+  cx.fillStyle = "#2b78c8"; cx.beginPath(); cx.ellipse(0, 0.02 * h, 0.5 * h, 0.12 * h, 0, 0, Math.PI * 2); cx.fill();
+  cx.fillStyle = "#5fb3f0"; cx.beginPath(); cx.ellipse(-0.05 * h, 0, 0.4 * h, 0.07 * h, 0, 0, Math.PI * 2); cx.fill();
+  for (let k = 0; k < 3; k++) { const u = (t * 0.4 + k / 3) % 1; cx.strokeStyle = `rgba(255,255,255,${(1 - u) * 0.8})`; cx.lineWidth = 0.015 * h; cx.beginPath(); cx.ellipse(0.1 * h - k * 0.15 * h, 0, u * 0.14 * h, u * 0.03 * h, 0, 0, Math.PI * 2); cx.stroke(); }
+  blob(0.3 * h, -0.02 * h, 0.07 * h, "#3fae5c"); blob(0.3 * h, -0.05 * h, 0.03 * h, "#ff9bd0"); // a lily pad and flower
+}
+function flower(h, c, k) {
+  const s = Math.sin(t * 2 + k) * 0.04 * h;
+  limb([0, 0, s, -0.28 * h], 0.025 * h, "#2f8f4e");
+  for (let p = 0; p < 5; p++) { const a = p * Math.PI * 0.4 + t * 0.3; blob(s + Math.cos(a) * 0.05 * h, -0.28 * h + Math.sin(a) * 0.05 * h, 0.04 * h, c); }
+  blob(s, -0.28 * h, 0.03 * h, "#ffd166");
+}
+function rising(h, x0, y0, glyphs, c) { // little symbols drifting up off the work
+  cx.font = `700 ${Math.max(7, h * 0.24) | 0}px 'IBM Plex Mono', monospace`; cx.textAlign = "center";
+  for (let k = 0; k < 3; k++) { const u = (t * 0.45 + k / 3) % 1; cx.fillStyle = `rgba(${c},${1 - u})`; cx.fillText(glyphs[k % glyphs.length], x0 + Math.sin(u * 6 + k) * 0.12 * h, y0 - u * 0.9 * h); }
+}
+function screen(x, y, wd, ht, k) { // a monitor full of scrolling, colour-coded code
+  cx.fillStyle = "#1a2030"; cx.fillRect(x - 0.02 * ht, y - 0.02 * ht, wd + 0.04 * ht, ht + 0.04 * ht);
+  cx.fillStyle = "#0b1220"; cx.fillRect(x, y, wd, ht);
+  const rows = 6, rh = ht / rows, off = (t * 2.2 + k) % 1;
+  cx.save(); cx.beginPath(); cx.rect(x, y, wd, ht); cx.clip();
+  for (let r = -1; r < rows; r++) {
+    const n = Math.floor(t * 2.2 + k) + r, ind = (n * 7 % 3) * 0.12 * wd;
+    cx.fillStyle = SPINES[(n * 5) % 6]; cx.fillRect(x + 0.06 * wd + ind, y + (r + 1 - off) * rh + rh * 0.3, (0.2 + (n * 13 % 7) * 0.08) * wd, rh * 0.38);
+    cx.fillStyle = "rgba(220,230,255,.7)"; cx.fillRect(x + 0.3 * wd + ind + (n * 13 % 7) * 0.08 * wd, y + (r + 1 - off) * rh + rh * 0.3, 0.18 * wd, rh * 0.38);
+  }
+  cx.restore();
+  cx.fillStyle = `rgba(${ARC},.12)`; cx.fillRect(x, y, wd, ht);
+}
+function worldItem(type, h, w, i) {
+  if (type === "tree") tree(h);
+  else if (type === "pine") pine(h);
+  else if (type === "house") house(h, w);
+  else if (type === "lamp") lamp(h);
+  else if (type === "pond") pond(h);
+  else if (type === "desk") {
+    cx.fillStyle = "#8a6a4a"; cx.fillRect(0.05 * h, -0.44 * h, 0.85 * h, 0.07 * h); cx.fillStyle = "#6b4f36"; cx.fillRect(0.1 * h, -0.37 * h, 0.06 * h, 0.37 * h); cx.fillRect(0.8 * h, -0.37 * h, 0.06 * h, 0.37 * h);
+    screen(0.36 * h, -0.86 * h, 0.4 * h, 0.3 * h, 0); limb([0.56 * h, -0.55 * h, 0.56 * h, -0.44 * h], 0.04 * h, "#1a2030");
+    screen(0.62 * h, -0.98 * h, 0.26 * h, 0.36 * h, 3.3); limb([0.75 * h, -0.6 * h, 0.75 * h, -0.44 * h], 0.04 * h, "#1a2030");
+    cx.fillStyle = "#e8eef8"; cx.fillRect(0.2 * h, -0.52 * h, 0.1 * h, 0.08 * h); // coffee, steaming
+    for (let k = 0; k < 2; k++) { const u = (t * 0.6 + k * 0.5) % 1; cx.strokeStyle = `rgba(255,255,255,${(1 - u) * 0.6})`; cx.lineWidth = 0.015 * h; cx.beginPath(); cx.moveTo(0.23 * h + k * 0.04 * h, -0.54 * h - u * 0.2 * h); cx.quadraticCurveTo(0.28 * h, -0.6 * h - u * 0.25 * h, 0.24 * h + k * 0.04 * h, -0.66 * h - u * 0.3 * h); cx.stroke(); }
+    // office chair, then the coder at the keys
+    limb([-0.2 * h, -0.3 * h, -0.2 * h, -0.06 * h], 0.04 * h, "#333"); limb([-0.34 * h, -0.03 * h, -0.06 * h, -0.03 * h], 0.035 * h, "#333");
+    blob(-0.34 * h, -0.02 * h, 0.025 * h, "#111"); blob(-0.06 * h, -0.02 * h, 0.025 * h, "#111");
+    cx.fillStyle = "#3a3f4c"; cx.fillRect(-0.36 * h, -0.34 * h, 0.32 * h, 0.06 * h); cx.fillRect(-0.4 * h, -0.7 * h, 0.07 * h, 0.38 * h);
+    cx.save(); cx.translate(-0.17 * h, -0.3 * h); person(h, "type", t * 14, CREW.coder); cx.restore();
+    rising(h, 0.55 * h, -1.15 * h, ["</>", "{ }", "PR ✓"], ARC);
+    bubble(w, h, -0.1 * h, -1.42 * h, 0);
+  } else if (type === "rack") {
+    cx.fillStyle = "#1c2230"; cx.fillRect(-0.25 * h, -1.2 * h, 0.5 * h, 1.2 * h);
+    cx.fillStyle = "#2a3242"; for (let r = 0; r < 7; r++) cx.fillRect(-0.21 * h, -1.14 * h + r * 0.16 * h, 0.42 * h, 0.12 * h);
+    for (let r = 0; r < 7; r++) for (let k = 0; k < 3; k++) { const on = Math.sin(t * (5 + k * 2) + r * 3.1 + k) > 0.2; blob(0.08 * h + k * 0.05 * h, -1.08 * h + r * 0.16 * h, 0.017 * h, on ? (k === 2 ? "#ffb23e" : `rgb(${ARC})`) : "#203040"); }
+  } else if (type === "dish") {
+    limb([0, 0, 0, -0.6 * h], Math.max(1, h * 0.08), "#cfd8e8");
+    cx.save(); cx.translate(0, -0.65 * h); cx.rotate(-0.5 + Math.sin(t * 0.7) * 0.15);
+    cx.fillStyle = "#e8eef8"; cx.beginPath(); cx.ellipse(0, 0, 0.46 * h, 0.18 * h, 0, 0, Math.PI); cx.fill();
+    cx.fillStyle = "#b9c3d6"; cx.beginPath(); cx.ellipse(0, 0, 0.46 * h, 0.05 * h, 0, 0, Math.PI * 2); cx.fill();
+    limb([0, 0, 0, -0.3 * h], 0.03 * h, "#9aa"); blob(0, -0.32 * h, 0.04 * h, "#ff4b5c");
+    for (let k = 0; k < 4; k++) { const u = (t * 0.8 + k / 4) % 1; cx.strokeStyle = `rgba(${ARC},${1 - u})`; cx.lineWidth = 1.4; cx.beginPath(); cx.arc(0, -0.32 * h, (0.15 + u * 1.1) * h, Math.PI * 1.3, Math.PI * 1.7); cx.stroke(); }
+    cx.restore();
+  } else if (type === "globe") {
+    limb([0, 0, 0, -0.45 * h], 0.05 * h, "#6b3f22"); limb([-0.15 * h, 0, 0.15 * h, 0], 0.05 * h, "#6b3f22");
+    cx.strokeStyle = "#c9a227"; cx.lineWidth = 0.03 * h; cx.beginPath(); cx.arc(0, -0.72 * h, 0.3 * h, Math.PI * 0.3, Math.PI * 1.7); cx.stroke();
+    blob(0, -0.72 * h, 0.25 * h, "#3b8fd8");
+    cx.save(); cx.beginPath(); cx.arc(0, -0.72 * h, 0.25 * h, 0, Math.PI * 2); cx.clip(); // continents spinning past
+    for (let k = 0; k < 4; k++) { const x = ((t * 0.12 + k * 0.3) % 1.2 - 0.6) * h; blob(x, -0.72 * h + Math.sin(k * 2) * 0.12 * h, 0.08 * h, "#5cc46a"); }
+    cx.restore();
+  } else if (type === "reader") {
+    for (let k = 0; k < 4; k++) { cx.fillStyle = SPINES[(k + 2) % 6]; cx.fillRect(-0.3 * h + (k % 2) * 0.04 * h, -(k + 1) * 0.08 * h, 0.55 * h, 0.08 * h); cx.fillStyle = "rgba(255,255,255,.6)"; cx.fillRect(-0.26 * h + (k % 2) * 0.04 * h, -(k + 1) * 0.08 * h + 0.025 * h, 0.47 * h, 0.012 * h); }
+    cx.save(); cx.translate(-0.1 * h, -0.32 * h);
+    const sh = person(h, "read", t, CREW.reader);
+    cx.save(); cx.translate(0.27 * h, sh + 0.08 * h); // an open book, a page turning over
+    cx.fillStyle = "#b03a2e"; cx.fillRect(-0.02 * h, -0.17 * h, 0.04 * h, 0.2 * h);
+    cx.fillStyle = "#fffaf0"; cx.fillRect(-0.16 * h, -0.16 * h, 0.15 * h, 0.18 * h); cx.fillRect(0.01 * h, -0.16 * h, 0.15 * h, 0.18 * h);
+    cx.fillStyle = "#f0e6d0"; const pg = Math.cos(t * 1.4); cx.fillRect(Math.min(0, pg * 0.15 * h), -0.16 * h, Math.abs(pg) * 0.15 * h, 0.18 * h);
+    cx.restore();
+    const glow = 0.5 + 0.5 * Math.sin(t * 2.4); // the idea lightbulb
+    const g = cx.createRadialGradient(0.05 * h, sh - 0.85 * h, 0, 0.05 * h, sh - 0.85 * h, 0.38 * h);
+    g.addColorStop(0, `rgba(255,214,90,${0.5 * glow})`); g.addColorStop(1, "rgba(255,214,90,0)");
+    cx.fillStyle = g; cx.beginPath(); cx.arc(0.05 * h, sh - 0.85 * h, 0.38 * h, 0, Math.PI * 2); cx.fill();
+    blob(0.05 * h, sh - 0.85 * h, 0.12 * h, `rgba(255,236,150,${0.7 + 0.3 * glow})`); cx.fillStyle = "#99a"; cx.fillRect(0.0, sh - 0.75 * h, 0.1 * h, 0.06 * h);
+    bubble(w, h, 0.05 * h, sh - 1.1 * h, 1);
+    cx.restore();
+  } else if (type === "shelf") {
+    cx.fillStyle = "#6b4a30"; cx.fillRect(-0.48 * h, -1.25 * h, 0.96 * h, 1.25 * h); cx.fillStyle = "#4a3220"; cx.fillRect(-0.42 * h, -1.19 * h, 0.84 * h, 1.13 * h);
+    for (let r = 0; r < 3; r++) {
+      cx.fillStyle = "#6b4a30"; cx.fillRect(-0.48 * h, -0.08 * h - r * 0.38 * h, 0.96 * h, 0.04 * h);
+      for (let k = 0; k < 6; k++) {
+        cx.fillStyle = SPINES[(r * 2 + k) % 6]; const bh = (0.24 + ((k * 7 + r * 3) % 4) * 0.025) * h, tilt = k === 5 && r === 1 ? 0.25 : 0;
+        cx.save(); cx.translate(-0.38 * h + k * 0.13 * h, -0.08 * h - r * 0.38 * h); cx.rotate(tilt); cx.fillRect(0, -bh, 0.1 * h, bh); cx.fillStyle = "rgba(255,255,255,.5)"; cx.fillRect(0.02 * h, -bh * 0.7, 0.06 * h, 0.02 * h); cx.restore();
+      }
+    }
+    limb([0.5 * h, 0, 0.62 * h, -1.2 * h], 0.03 * h, "#a0784a"); limb([0.66 * h, 0, 0.78 * h, -1.2 * h], 0.03 * h, "#a0784a"); // a ladder
+    for (let k = 1; k < 6; k++) limb([0.5 * h + k * 0.024 * h, -k * 0.2 * h, 0.66 * h + k * 0.024 * h, -k * 0.2 * h], 0.025 * h, "#a0784a");
+    // the library cat, asleep on top, tail flicking
+    cx.fillStyle = "#3a3440"; cx.beginPath(); cx.ellipse(-0.1 * h, -1.33 * h, 0.2 * h, 0.09 * h, 0, 0, Math.PI * 2); cx.fill();
+    blob(0.1 * h, -1.36 * h, 0.08 * h, "#3a3440");
+    cx.beginPath(); cx.moveTo(0.05 * h, -1.42 * h); cx.lineTo(0.07 * h, -1.5 * h); cx.lineTo(0.11 * h, -1.43 * h); cx.moveTo(0.12 * h, -1.42 * h); cx.lineTo(0.16 * h, -1.49 * h); cx.lineTo(0.17 * h, -1.4 * h); cx.fill();
+    cx.strokeStyle = "#3a3440"; cx.lineWidth = 0.035 * h; cx.beginPath(); cx.moveTo(-0.28 * h, -1.33 * h); cx.quadraticCurveTo(-0.42 * h, -1.4 * h + Math.sin(t * 3) * 0.1 * h, -0.36 * h, -1.52 * h); cx.stroke();
+    if ((t % 5) < 0.6) { cx.fillStyle = "rgba(255,255,255,.8)"; cx.font = `700 ${Math.max(7, h * 0.16) | 0}px 'IBM Plex Mono'`; cx.fillText("z", 0.25 * h, -1.55 * h - (t % 5) * 0.2 * h); }
+  } else if (type === "papers") {
+    cx.fillStyle = "#6b4a30"; cx.fillRect(-0.32 * h, -0.08 * h, 0.6 * h, 0.08 * h);
+    for (let s = 0; s < 2; s++) for (let k = 0; k < 6; k++) { cx.fillStyle = k % 2 ? "#f4f0e6" : "#fff"; cx.fillRect(-0.28 * h + s * 0.3 * h + (k % 2) * 0.02 * h, -0.08 * h - (k + 1) * 0.045 * h, 0.24 * h, 0.04 * h); }
+    cx.fillStyle = "#c33"; cx.font = `700 ${Math.max(6, h * 0.11) | 0}px 'IBM Plex Mono'`; cx.textAlign = "center"; cx.fillText("IN", -0.16 * h, -0.4 * h);
+    const u = (t * 0.35) % 1; cx.save(); cx.translate(Math.sin(u * 9) * 0.2 * h, -0.45 * h - (1 - u) * 1.4 * h); cx.rotate(Math.sin(u * 7) * 0.6); // a note floating down from the brain
+    cx.fillStyle = `rgba(255,255,255,${Math.min(1, u * 3)})`; cx.fillRect(-0.1 * h, -0.07 * h, 0.2 * h, 0.14 * h); cx.fillStyle = `rgba(120,120,160,${Math.min(1, u * 3)})`; cx.fillRect(-0.07 * h, -0.03 * h, 0.14 * h, 0.015 * h); cx.restore();
+  } else if (type === "cabinet") {
+    const g = cx.createLinearGradient(-0.28 * h, 0, 0.28 * h, 0); g.addColorStop(0, "#a4aec2"); g.addColorStop(1, "#6e788c");
+    cx.fillStyle = g; cx.fillRect(-0.28 * h, -1.0 * h, 0.56 * h, 1.0 * h);
+    const open = Math.max(0, Math.cos(t * 0.9 + i)) * 0.22 * h;
+    for (let k = 0; k < 3; k++) {
+      const dx = k === 0 ? -open : 0, y = -0.95 * h + k * 0.31 * h;
+      if (k === 0 && open > 0.02 * h) for (let f = 0; f < 4; f++) { cx.fillStyle = SPINES[f + 1]; cx.fillRect(-0.22 * h + dx + f * 0.1 * h, y - 0.06 * h, 0.08 * h, 0.1 * h); }
+      cx.fillStyle = "#c4ccdc"; cx.fillRect(-0.24 * h + dx, y, 0.48 * h, 0.26 * h);
+      cx.fillStyle = "#fff"; cx.fillRect(-0.08 * h + dx, y + 0.04 * h, 0.16 * h, 0.06 * h); cx.fillStyle = "#555"; cx.fillRect(-0.07 * h + dx, y + 0.15 * h, 0.14 * h, 0.035 * h);
+    }
+  } else if (type === "tower") {
+    cx.strokeStyle = "#d8dde8"; cx.lineWidth = Math.max(1, h * 0.05); cx.beginPath();
+    cx.moveTo(-0.32 * h, 0); cx.lineTo(0, -1.8 * h); cx.lineTo(0.32 * h, 0);
+    for (let k = 1; k < 6; k++) { const y = -k * 0.3 * h, x = 0.32 * h * (1 - k / 6); cx.moveTo(-x, y); cx.lineTo(x * 0.8, y + 0.3 * h * 0.6); }
+    cx.stroke();
+    blob(0, -1.82 * h, 0.08 * h, Math.sin(t * 5) > 0 ? "#ff4b5c" : "#5a1a22");
+    for (let k = 0; k < 3; k++) { const u = (t * 0.7 + k / 3) % 1; cx.strokeStyle = `rgba(${ARC},${(1 - u) * (0.6 + level)})`; cx.lineWidth = 1.6; cx.beginPath(); cx.arc(0, -1.82 * h, (0.2 + u * 1.1) * h, Math.PI * 1.1, Math.PI * 1.9); cx.stroke(); }
+  } else if (type === "speaker") {
+    cx.fillStyle = "#1c1c26"; cx.fillRect(-0.2 * h, -0.62 * h, 0.4 * h, 0.62 * h);
+    const p = 1 + Math.abs(Math.sin(t * 8 + i)) * (0.12 + level * 0.3);
+    blob(0, -0.2 * h, 0.13 * h * p, "#3a3a48"); blob(0, -0.2 * h, 0.05 * h, "#666"); blob(0, -0.48 * h, 0.07 * h * p, "#3a3a48");
+    cx.strokeStyle = `rgba(${hue(320)},.8)`; cx.lineWidth = 0.02 * h; cx.strokeRect(-0.2 * h, -0.62 * h, 0.4 * h, 0.62 * h);
+  } else if (type === "singer") {
+    limb([0.36 * h, 0, 0.36 * h, -0.62 * h], Math.max(1, h * 0.05), "#ccc"); limb([0.22 * h, 0, 0.5 * h, 0], 0.04 * h, "#999");
+    cx.fillStyle = "#333"; cx.beginPath(); cx.ellipse(0.36 * h, -0.7 * h, 0.06 * h, 0.09 * h, 0, 0, Math.PI * 2); cx.fill();
+    cx.strokeStyle = "rgba(200,200,220,.6)"; cx.lineWidth = 0.02 * h; cx.beginPath(); cx.arc(0.3 * h, -0.7 * h, 0.09 * h, 0, Math.PI * 2); cx.stroke(); // pop filter
+    const sh = person(h, "talk", t * 5, CREW.singer);
+    for (let k = 0; k < 3; k++) { const u = (t * 0.9 + k / 3) % 1; cx.strokeStyle = `rgba(${hue(w.sky)},${1 - u})`; cx.lineWidth = 1.4; cx.beginPath(); cx.arc(0.36 * h, -0.7 * h, (0.15 + u * 0.6) * h, -0.9, 0.5); cx.stroke(); }
+    rising(h, 0.15 * h, sh - 0.5 * h, ["♪", "♫", "♪"], hue(w.sky));
+    bubble(w, h, 0.05 * h, sh - 0.62 * h, 3);
+  }
+}
+// someone walking back and forth between two spots, carrying the work
+function mover(w, x, y, r, rot, h, type, a0, a1) {
+  const ph = t * 0.5 + a0 * 5, s = Math.sin(ph), a = a0 + (a1 - a0) * (0.5 + 0.5 * s), dir = Math.cos(ph) * (a1 - a0) > 0 ? 1 : -1;
+  place(x, y, r, a + rot, () => {
+    cx.scale(dir, 1); const crew = type === "courier" ? CREW.courier : CREW.filer, sh = person(h, "carry", t * 9, crew);
+    if (type === "courier") {
+      cx.fillStyle = "#d9a066"; cx.fillRect(-0.18 * h, sh - 0.5 * h, 0.36 * h, 0.22 * h); cx.fillStyle = "#a8743e"; cx.fillRect(-0.18 * h, sh - 0.41 * h, 0.36 * h, 0.035 * h);
+      cx.scale(dir, 1); cx.fillStyle = "#5a3a1a"; cx.font = `700 ${Math.max(6, h * 0.1) | 0}px 'IBM Plex Mono'`; cx.textAlign = "center"; cx.fillText("JOB", 0, sh - 0.3 * h);
+    } else {
+      for (let k = 0; k < 3; k++) { cx.fillStyle = SPINES[(k + 3) % 6]; cx.fillRect(-0.16 * h + k * 0.02 * h, sh - 0.42 * h - k * 0.04 * h, 0.3 * h, 0.16 * h); }
+      cx.scale(dir, 1); bubble(w, h, 0, sh - 0.55 * h, 2);
+    }
+  });
+}
+function place(x, y, r, a, fn) { cx.save(); cx.translate(x + Math.sin(a) * r, y - Math.cos(a) * r); cx.rotate(a); fn(); cx.restore(); }
+// things that fly round each world: data packets, books flapping like birds, paper planes, music notes
+function fliers(w, x, y, r, h) {
+  for (let k = 0; k < 5; k++) {
+    const a = t * (0.22 + k * 0.03) + k * 1.25, rr = r * (1.08 + 0.06 * Math.sin(t * 0.7 + k)) + h * (0.6 + (k % 3) * 0.5);
+    cx.save(); cx.translate(x + Math.sin(a) * rr, y - Math.cos(a) * rr); cx.rotate(a + Math.PI / 2);
+    if (w.fly === "packets") { blob(0, 0, 0.14 * h, `rgba(${ARC},.25)`); cx.fillStyle = `rgb(${ARC})`; cx.fillRect(-0.05 * h, -0.05 * h, 0.1 * h, 0.1 * h); }
+    else if (w.fly === "books") {
+      const f = Math.sin(t * 9 + k) * 0.7; cx.fillStyle = SPINES[k % 6];
+      cx.save(); cx.rotate(-f); cx.fillRect(-0.2 * h, -0.02 * h, 0.2 * h, 0.13 * h); cx.restore(); cx.save(); cx.rotate(f); cx.fillRect(0, -0.02 * h, 0.2 * h, 0.13 * h); cx.restore();
+      cx.fillStyle = "#fff"; cx.fillRect(-0.015 * h, -0.02 * h, 0.03 * h, 0.12 * h);
+    } else if (w.fly === "planes") {
+      cx.rotate(Math.sin(t * 2 + k) * 0.3); cx.fillStyle = "#fff"; cx.beginPath(); cx.moveTo(0.22 * h, 0); cx.lineTo(-0.16 * h, -0.1 * h); cx.lineTo(-0.08 * h, 0); cx.lineTo(-0.16 * h, 0.08 * h); cx.fill();
+      cx.fillStyle = "#c8c8e0"; cx.beginPath(); cx.moveTo(0.22 * h, 0); cx.lineTo(-0.08 * h, 0); cx.lineTo(-0.16 * h, 0.08 * h); cx.fill();
+    } else { cx.fillStyle = `rgba(${hue(w.sky + k * 20)},.95)`; cx.font = `700 ${Math.max(8, h * 0.3) | 0}px sans-serif`; cx.textAlign = "center"; cx.fillText(k % 2 ? "♪" : "♫", 0, 0); }
+    cx.restore();
+  }
+}
+function cloud(x, y, s, al) {
+  cx.fillStyle = `rgba(255,255,255,${al})`;
+  for (const [dx, dy, r] of [[-0.5, 0, 0.35], [0, -0.2, 0.48], [0.5, 0, 0.36], [0.15, 0.1, 0.35], [-0.2, 0.1, 0.3]]) blob(x + dx * s, y + dy * s, r * s, `rgba(255,255,255,${al})`);
+  cx.fillStyle = `rgba(190,200,230,${al * 0.5})`; cx.beginPath(); cx.ellipse(x, y + 0.2 * s, 0.75 * s, 0.14 * s, 0, 0, Math.PI * 2); cx.fill();
+}
+const DECOR = WORLDS.map((w, i) => { const r = rng(900 + i); return Array.from({ length: 46 }, (_, k) => ({ a: k / 46 * Math.PI * 2 + r() * 0.08, kind: r() < 0.32 ? "flower" : r() < 0.55 ? "rock" : "tuft", c: SPINES[(r() * 6) | 0], s: 0.6 + r() * 0.6 })); });
+function drawWorld(w, i, x, y, r, lx, ly) {
+  const sky = hue(w.sky), h = Math.min(r * 0.24, 96), near = r > 60, rot = Math.sin(t * 0.12 + i * 2) * 0.2;
+  const halo = cx.createRadialGradient(x, y, r * 0.92, x, y, r * 1.45);
+  halo.addColorStop(0, `rgba(${sky},.45)`); halo.addColorStop(0.4, `rgba(${sky},.15)`); halo.addColorStop(1, `rgba(${sky},0)`);
+  cx.fillStyle = halo; cx.beginPath(); cx.arc(x, y, r * 1.45, 0, Math.PI * 2); cx.fill();
+  // a little moon, and clouds that drift round behind and in front of the world
+  const ma = t * 0.15 + i * 2, mx = x + Math.cos(ma) * r * 2.1, my = y + Math.sin(ma) * r * 0.5 - r * 0.6, front = Math.sin(ma) > 0;
+  const moon = () => { blob(mx, my, r * 0.11, "#d8d4e8"); blob(mx - r * 0.03, my - r * 0.02, r * 0.025, "#b0aac4"); blob(mx + r * 0.04, my + r * 0.03, r * 0.018, "#b0aac4"); };
+  if (!front) moon();
+  if (near) for (let k = 0; k < 4; k += 2) { const a = t * 0.04 + k * 1.6 + i; cloud(x + Math.sin(a) * r * 1.22, y - Math.cos(a) * r * 1.22, h * 0.7, 0.55); }
+  const g = cx.createRadialGradient(x + lx * r * 0.45, y + ly * r * 0.45, r * 0.05, x, y, r);
+  g.addColorStop(0, `rgb(${w.light})`); g.addColorStop(0.65, `rgb(${w.grass.join(",")})`); g.addColorStop(1, `rgb(${w.dark})`);
+  cx.fillStyle = g; cx.beginPath(); cx.arc(x, y, r, 0, Math.PI * 2); cx.fill();
+  if (r < 26) { if (front) moon(); return; }
+  cx.save(); cx.beginPath(); cx.arc(x, y, r, 0, Math.PI * 2); cx.clip();
+  for (let k = 0; k < 7; k++) { const a = k * 2.4 + i, d = 0.25 + (k % 3) * 0.22; cx.fillStyle = `rgba(${w.dark},.1)`; cx.beginPath(); cx.ellipse(x + Math.sin(a) * d * r, y - Math.cos(a) * d * r, r * 0.16, r * 0.1, a, 0, Math.PI * 2); cx.fill(); }
+  cx.strokeStyle = "rgba(236,214,160,.75)"; cx.lineWidth = r * 0.07; cx.beginPath(); cx.ellipse(x, y + r * 0.12, r * 1.02, r * 0.26, 0, 0, Math.PI); cx.stroke();
+  cx.strokeStyle = "rgba(120,100,70,.35)"; cx.lineWidth = r * 0.006; cx.setLineDash([r * 0.03, r * 0.03]); cx.beginPath(); cx.ellipse(x, y + r * 0.12, r * 1.02, r * 0.26, 0, 0, Math.PI); cx.stroke(); cx.setLineDash([]);
+  const sh = cx.createLinearGradient(x + lx * r, y + ly * r, x - lx * r, y - ly * r); // night side
+  sh.addColorStop(0.45, "rgba(4,2,20,0)"); sh.addColorStop(1, "rgba(4,2,20,.5)");
+  cx.fillStyle = sh; cx.fillRect(x - r, y - r, r * 2, r * 2);
+  cx.restore();
+  const la = Math.atan2(ly, lx); cx.strokeStyle = "rgba(255,255,255,.35)"; cx.lineWidth = Math.max(1, r * 0.012); // rim light from the core
+  cx.beginPath(); cx.arc(x, y, r * 0.995, la - 1.1, la + 1.1); cx.stroke();
+  if (!near) { if (front) moon(); return; }
+  // the ground: grass tufts, flowers and pebbles all the way round
+  for (let k = 0; k < DECOR[i].length; k += lowPower ? 2 : 1) { const d = DECOR[i][k]; if (Math.abs(Math.sin((d.a + rot) / 2)) > 0.6) continue; place(x, y, r, d.a + rot, () => { // only the top of the world is on screen
+    if (d.kind === "flower") flower(h * 0.7 * d.s, d.c, d.a * 9);
+    else if (d.kind === "rock") { cx.fillStyle = "#8a8f9c"; cx.beginPath(); cx.ellipse(0, 0.01 * h, 0.12 * h * d.s, 0.08 * h * d.s, 0, Math.PI, Math.PI * 2); cx.fill(); cx.fillStyle = "rgba(255,255,255,.3)"; cx.beginPath(); cx.ellipse(-0.03 * h * d.s, -0.03 * h * d.s, 0.04 * h * d.s, 0.02 * h * d.s, 0, 0, Math.PI * 2); cx.fill(); }
+    else { cx.fillStyle = `rgb(${w.light})`; const s = 0.18 * h * d.s, sw = Math.sin(t * 1.5 + d.a * 7) * 0.03 * h; cx.beginPath(); cx.moveTo(-0.08 * h, 0.01 * h); cx.lineTo(-0.05 * h + sw, -s); cx.lineTo(-0.02 * h, 0); cx.lineTo(sw, -s * 1.3); cx.lineTo(0.03 * h, 0); cx.lineTo(0.06 * h + sw, -s * 0.9); cx.lineTo(0.08 * h, 0.01 * h); cx.fill(); }
+  }); }
+  for (const [type, a0, a1] of w.items) {
+    if (a1 !== undefined) mover(w, x, y, r, rot, h, type, a0, a1);
+    else place(x, y, r, a0 + rot, () => worldItem(type, h, w, i));
+  }
+  // someone running laps round the whole world, for no reason at all
+  place(x, y, r, t * 0.32 + i * 1.7, () => person(h * 0.9, "jog", t * 11, CREW.jogger));
+  place(x, y, r, 0.3 + rot, () => drone(h));
+  fliers(w, x, y, r, h);
+  for (let k = 1; k < 4; k += 2) { const a = t * 0.04 + k * 1.6 + i; cloud(x + Math.sin(a) * r * 1.3, y - Math.cos(a) * r * 1.3, h * 0.8, 0.8); }
+  for (let k = 0; k < 14; k++) { // fireflies
+    const a = Math.sin(t * 0.2 + k * 3.1) * 0.9 + rot, rr = r + h * (0.4 + ((k * 0.37) % 1) * 2 + Math.sin(t + k) * 0.2), on = 0.4 + 0.6 * Math.abs(Math.sin(t * 2.5 + k * 1.9));
+    blob(x + Math.sin(a) * rr, y - Math.cos(a) * rr, 1.8, `rgba(255,240,150,${on})`);
+  }
+  if (front) moon();
+}
+
+// SHOW ME OFF: Jarvis flies guests through the brain and narrates each world out loud, once round
+let demo = false, demoSaid = new Set();
+const DEMO_LINES = [
+  () => `Welcome inside my brain. Every star out there is one of TJ's notes, ${nodes.length} of them. Let's fly in.`,
+  () => "This is the workshop. When TJ hands me a big job, my crew in the cloud writes the code and ships it.",
+  () => "The library. Everything TJ teaches me gets shelved here, so I never forget a thing.",
+  () => `The archive. ${nodes.length} notes, all filed and cross-linked, so I can find anything in a second.`,
+  () => "And the studio. That's my voice, made right here on the phone. No cloud, no bill.",
+  () => "And this is my core, where it all comes together. Thanks for visiting. Tap anywhere when you're done.",
+];
+const flight = { on: false, t0: 0, k: -1, flash: 0, inside: null, lastP: null };
+let warpBoost = 0;
+function drawFlight() {
+  const pose = flightPose(t - flight.t0), fl = Math.min(W, H) * 0.95, P = lookAt(pose.p, pose.l, fl);
+  if (flight.lastP) warpBoost = Math.min(0.035, Math.hypot(...V.sub(pose.p, flight.lastP)) * 0.3);
+  flight.lastP = pose.p;
+  const inside = Math.hypot(...pose.p) < FK; // punching through the shell of notes flashes the screen
+  if (flight.inside !== null && inside !== flight.inside) flight.flash = 1;
+  flight.inside = inside; flight.flash *= 0.93;
+  if (!pose.moving && pose.k !== flight.k) {
+    flight.k = pose.k; tour.cap = FSTOPS[pose.k].cap(); tour.at = t; tour.shock = t;
+    if (demo && !demoSaid.has(pose.k)) { demoSaid.add(pose.k); speak(DEMO_LINES[pose.k](), true); }
+  }
   cx.clearRect(0, 0, W, H);
-
-  // grid
-  cx.strokeStyle = "rgba(94,208,255,.04)"; cx.lineWidth = 1;
-  for (let x = (ox % 40); x < W; x += 40) { cx.beginPath(); cx.moveTo(x, 0); cx.lineTo(x, H); cx.stroke(); }
-  for (let y = (oy % 40); y < H; y += 40) { cx.beginPath(); cx.moveTo(0, y); cx.lineTo(W, y); cx.stroke(); }
-
-  // brain map, slowly turning
-  const cs = Math.cos(spin * 0.25), sn = Math.sin(spin * 0.25);
-  const P = (n) => [ox + n.x * cs - n.y * sn, oy + n.x * sn + n.y * cs];
-  for (const [a, b] of edges) {
-    const [x1, y1] = P(a), [x2, y2] = P(b);
-    const hot = Math.max(a.hot, b.hot);
-    cx.strokeStyle = `rgba(94,208,255,${0.10 + hot * 0.5})`;
-    cx.beginPath(); cx.moveTo(x1, y1); cx.lineTo(x2, y2); cx.stroke();
+  warp(W / 2, H / 2);
+  for (const n of nodes) n.fp = P([n.x * FK, n.y * FK, n.z * FK]);
+  cx.lineWidth = 1;
+  for (const e of edges) {
+    const a = e[0].fp, b = e[1].fp; if (!a || !b) continue;
+    const near = Math.min(1, 9 / ((a[2] + b[2]) / 2)), ec = hue(e.h + t * 12);
+    cx.strokeStyle = `rgba(${ec},${0.08 + near * 0.3})`; cx.beginPath(); cx.moveTo(a[0], a[1]); cx.lineTo(b[0], b[1]); cx.stroke();
+    const u = (t * 0.22 + e.seed) % 1; cx.fillStyle = `rgba(${ec},${0.9 * Math.sin(u * Math.PI) * near})`;
+    cx.fillRect(a[0] + (b[0] - a[0]) * u - 1.5, a[1] + (b[1] - a[1]) * u - 1.5, 3, 3);
   }
-  cx.font = "10px ui-monospace, Menlo, monospace"; cx.textAlign = "center";
-  for (const n of nodes) {
-    const [x, y] = P(n), r = 2.5 + Math.sqrt(n.deg) * 1.3 + n.hot * 4;
-    const c = TYPE_COLOR[n.type] || "#8fdcff";
-    cx.shadowColor = c; cx.shadowBlur = 8 + n.hot * 20;
-    cx.fillStyle = c; cx.beginPath(); cx.arc(x, y, r, 0, Math.PI * 2); cx.fill();
-    cx.shadowBlur = 0;
-    cx.fillStyle = `rgba(207,238,255,${0.45 + n.hot * 0.55})`;
-    cx.fillText(n.name, x, y - r - 5);
-    n.sx = x; n.sy = y; n.sr = r + 6;
+  const C = (al) => `rgba(${ARC},${al})`, core = P([0, 0, 0]);
+  cx.font = "600 12px 'Chakra Petch', sans-serif"; cx.textAlign = "center";
+  for (const n of [...nodes].filter((n) => n.fp).sort((a, b) => b.fp[2] - a.fp[2])) {
+    const [x, y, , s] = n.fp, r = Math.min(46, Math.max(1.5, 0.11 * s)), c = nodeColor(n);
+    if (x < -r * 3 || x > W + r * 3 || y < -r * 3 || y > H + r * 3) continue;
+    cx.globalAlpha = 0.22; cx.fillStyle = c; cx.beginPath(); cx.arc(x, y, r * 2.2, 0, Math.PI * 2); cx.fill();
+    cx.globalAlpha = 1; cx.beginPath(); cx.arc(x, y, r, 0, Math.PI * 2); cx.fill();
+    cx.fillStyle = "rgba(255,255,255,.85)"; cx.beginPath(); cx.arc(x - r * 0.3, y - r * 0.3, r * 0.35, 0, Math.PI * 2); cx.fill();
+    if (r > 4.5 && r < 40 && y > 130 && (pose.moving || !FSTOPS[pose.k].w)) { cx.fillStyle = "rgba(235,246,255,.9)"; cx.fillText(n.name, x, y - r - 6); }
   }
-
-  // the core
-  const want = mode === "speaking" ? 0.35 + 0.45 * Math.abs(Math.sin(t * 9) * Math.sin(t * 3.7))
-    : mode === "listening" ? 0.25 + 0.2 * Math.abs(Math.sin(t * 4))
-    : mode === "thinking" ? 0.3 : 0.08 + 0.04 * Math.sin(t * 1.5);
-  level += (want - level) * 0.15;
-  const base = Math.min(W, H) * 0.11;
-  const g = cx.createRadialGradient(ox, oy, 0, ox, oy, base * (1.6 + level));
-  g.addColorStop(0, `rgba(220,248,255,${0.85})`);
-  g.addColorStop(0.18, `rgba(94,208,255,${0.55 + level * 0.4})`);
-  g.addColorStop(1, "rgba(94,208,255,0)");
-  cx.fillStyle = g; cx.beginPath(); cx.arc(ox, oy, base * (1.6 + level), 0, Math.PI * 2); cx.fill();
-
-  cx.strokeStyle = "rgba(94,208,255,.9)"; cx.shadowColor = "#5ed0ff"; cx.shadowBlur = 14;
-  const rings = [[1.05, 1, 0.7, 2], [1.3, -0.6, 0.45, 1.5], [1.55, 0.35, 0.25, 1], [0.8, -1.4, 0.9, 1]];
-  for (const [k, dir, len, w] of rings) {
-    cx.lineWidth = w;
-    for (let i = 0; i < 3; i++) {
-      const a0 = spin * dir * 3 + i * (Math.PI * 2 / 3);
-      cx.beginPath(); cx.arc(ox, oy, base * k * (1 + level * 0.15), a0, a0 + len * 2); cx.stroke();
+  // the core: the sun every world orbits, wired to each one
+  if (core) {
+    const Rc = 0.42 * core[3];
+    for (const w of WORLDS) {
+      const q = P(w.pos); if (!q) continue;
+      cx.strokeStyle = `rgba(${hue(w.sky)},.22)`; cx.lineWidth = 1; cx.beginPath(); cx.moveTo(core[0], core[1]); cx.lineTo(q[0], q[1]); cx.stroke();
+      for (let k = 0; k < 3; k++) { const u = (t * 0.35 + k / 3) % 1; cx.fillStyle = `rgba(${hue(w.sky)},.9)`; cx.fillRect(q[0] + (core[0] - q[0]) * u - 1.5, q[1] + (core[1] - q[1]) * u - 1.5, 3, 3); }
+    }
+    if (Rc < W * 2) {
+      const g = cx.createRadialGradient(core[0], core[1], 0, core[0], core[1], Rc * 3);
+      g.addColorStop(0, "rgba(255,255,255,.95)"); g.addColorStop(0.15, C(0.6)); g.addColorStop(1, C(0));
+      cx.fillStyle = g; cx.beginPath(); cx.arc(core[0], core[1], Rc * 3, 0, Math.PI * 2); cx.fill();
+      cx.save(); cx.translate(core[0], core[1]); coreShow(Rc, C, t * 0.18); cx.restore();
     }
   }
-  // tick marks
-  cx.lineWidth = 1; cx.shadowBlur = 0; cx.strokeStyle = "rgba(94,208,255,.35)";
-  for (let i = 0; i < 72; i++) {
-    const a = i / 72 * Math.PI * 2 - spin, r1 = base * 1.8, r2 = r1 + (i % 6 ? 4 : 10);
-    cx.beginPath(); cx.moveTo(ox + Math.cos(a) * r1, oy + Math.sin(a) * r1);
-    cx.lineTo(ox + Math.cos(a) * r2, oy + Math.sin(a) * r2); cx.stroke();
+  // the worlds, far ones first
+  const lit = WORLDS.map((w, i) => ({ w, i, q: P(w.pos) })).filter((o) => o.q).sort((a, b) => b.q[2] - a.q[2]);
+  for (const { w, i, q } of lit) {
+    const r = w.r * q[3]; if (q[0] + r * 1.5 < 0 || q[0] - r * 1.5 > W || q[1] + r * 1.5 < 0 || q[1] - r * 1.5 > H) continue;
+    let lx = core ? core[0] - q[0] : 0, ly = core ? core[1] - q[1] : -1; let l = Math.hypot(lx, ly) || 1;
+    lx = lx / l * 0.45; ly = ly / l * 0.45 - 0.9; l = Math.hypot(lx, ly); // mostly from above, so the work on top is in daylight
+    drawWorld(w, i, q[0], q[1], r, lx / l, ly / l);
   }
+  if (!lowPower) bloom();
+  const fade = Math.max(0, 1 - (t - flight.t0) / 1.2); // fade in from black when the flight starts
+  if (fade > 0 || flight.flash > 0.02) { cx.fillStyle = fade > 0 ? `rgba(2,1,8,${fade})` : `rgba(${hue(200 + t * 20)},${flight.flash * 0.55})`; cx.fillRect(0, 0, W, H); }
+  const top = Math.min(110, H * 0.13);
+  cx.fillStyle = cached(`vt${BG}${top}`, () => { const g = cx.createLinearGradient(0, 0, 0, top); g.addColorStop(0, BG); g.addColorStop(1, BG + "00"); return g; });
+  cx.fillRect(0, 0, W, top);
+  caption(W / 2, H / 2, 0);
+}
+
+/* ---------- Frame ---------- */
+function nodeColor(n) { return n.type === "hub" || !TYPE_COLOR[n.type] ? `rgb(${ARC})` : TYPE_COLOR[n.type]; }
+function drawNode(n) {
+  const [x, y, z, f] = n.p, depth = Math.max(0.25, Math.min(1, 0.85 - z * 0.45)) * Math.min(1, boot * 1.6);
+  const r = (2.2 + Math.sqrt(n.deg) * 1.25 + n.hot * 4) * f * cam.zoom ** 0.5, c = nodeColor(n);
+  cx.globalAlpha = depth;
+  cx.shadowColor = c; cx.shadowBlur = 8 + n.hot * 20; cx.fillStyle = c;
+  cx.beginPath(); cx.arc(x, y, r, 0, Math.PI * 2); cx.fill(); cx.shadowBlur = 0;
+  cx.fillStyle = "rgba(255,255,255,.85)"; cx.beginPath(); cx.arc(x - r * 0.3, y - r * 0.3, r * 0.35, 0, Math.PI * 2); cx.fill();
+  if (n === focus) { cx.strokeStyle = c; cx.lineWidth = 1; cx.beginPath(); cx.arc(x, y, r + 7 + Math.sin(t * 3) * 1.5, 0, Math.PI * 2); cx.stroke(); }
+  if (n.isNew) { // new section: pulsing green ring
+    cx.strokeStyle = `rgba(92,242,165,${0.45 + 0.4 * Math.sin(t * 4)})`; cx.lineWidth = 1.5;
+    cx.beginPath(); cx.arc(x, y, r + 6 + 2 * Math.sin(t * 4), 0, Math.PI * 2); cx.stroke();
+  }
+  cx.globalAlpha = 1;
+  n.sx = x; n.sy = y; n.sr = Math.max(r + 10, 18); n.sz = z;
+}
+// Labels never sit on top of buttons or text: collect the on-screen UI boxes now and then.
+let uiBoxes = [], uiAt = -1;
+function uiRects() {
+  if (t - uiAt < 0.5) return uiBoxes;
+  uiAt = t; uiBoxes = [];
+  for (const el of document.querySelectorAll(".top > *, .tabs, .status, .log .msg, .chips, #ask, .mid > .panel, #card.show")) {
+    const r = el.getBoundingClientRect();
+    if (r.width && r.height && getComputedStyle(el).display !== "none") uiBoxes.push([r.left, r.top, r.right, r.bottom]);
+  }
+  return uiBoxes;
+}
+function drawLabels(R, ox, oy) {
+  const phone = W < 700, max = phone ? 6 : 12, fs = phone ? 12 : 12.5;
+  cx.font = `600 ${fs}px 'Chakra Petch', sans-serif`; cx.textAlign = "center"; cx.textBaseline = "middle";
+  const order = [...nodes].sort((a, b) => score(b) - score(a));
+  function score(n) { return (n === focus ? 1e4 : 0) + n.hot * 400 + (n.isNew ? 300 : 0) + (touches?.counts?.[n.name] || 0) * 5 + n.deg * 6 - n.sz * 120; }
+  const fixed = [[ox - R * 1.25, oy - R * 1.25, ox + R * 1.25, oy + R * 1.25], [ox - 150, oy - R * 2.32 - 10, ox + 150, oy - R * 2.32 + 4], ...uiRects(), ...(capBox ? [capBox] : [])];
+  const taken = [];
+  for (const n of order) {
+    const w = (n.lw ??= cx.measureText(n.name).width) + 14, h = fs + 9, x0 = n.sx - w / 2, y0 = n.sy - n.sr - h + 2;
+    let ok = taken.length < max && n.sz < 0.55 && x0 > 2 && x0 + w < W - 2 && y0 > 2;
+    if (ok && n !== focus) for (const [a, b, c, d] of [...fixed, ...taken]) if (x0 < c + 4 && x0 + w > a - 4 && y0 < d + 3 && y0 + h > b - 3) { ok = false; break; }
+    if (n === focus) ok = true;
+    if (ok) taken.push([x0, y0, x0 + w, y0 + h]);
+    n.la += ((ok ? 1 : 0) - n.la) * (ok ? 0.12 : 0.3); // fade in gently, get out of the way fast
+    if (n.la < 0.03) continue;
+    cx.globalAlpha = n.la;
+    cx.fillStyle = "rgba(3,7,12,.78)"; cx.strokeStyle = `rgba(${ARC},.4)`; cx.lineWidth = 1;
+    cx.beginPath(); cx.roundRect ? cx.roundRect(x0, y0, w, h, 3) : cx.rect(x0, y0, w, h); cx.fill(); cx.stroke();
+    cx.strokeStyle = `rgba(${ARC},.35)`; cx.beginPath(); cx.moveTo(n.sx, y0 + h); cx.lineTo(n.sx, n.sy - n.sr * 0.5); cx.stroke();
+    cx.fillStyle = n === focus || n.hot > 0.5 ? "#fff" : "rgba(230,246,255,.95)"; cx.fillText(n.name, n.sx, y0 + h / 2 + 0.5);
+  }
+  cx.globalAlpha = 1; cx.textBaseline = "alphabetic";
+}
+
+let focus = null;
+const BOOT0 = performance.now(); // the brain assembles out of the core when the page opens
+let boot = reduce ? 1 : 0;
+const gradCache = new Map(); // gradients only change when the layout or theme does
+function cached(key, make) {
+  if (!gradCache.has(key)) { if (gradCache.size > 40) gradCache.clear(); gradCache.set(key, make()); }
+  return gradCache.get(key);
+}
+let frame = 0, lastNow = 0, frameMs = 16, lowPower = false;
+function draw() {
+  if (!$("night").hidden) { requestAnimationFrame(draw); return; } // night mode: no brain, no battery drain
+  frame++;
+  // if the phone can't keep up in Show off, drop the glow pass and half the stars instead of stuttering
+  const now = performance.now(); if (lastNow) frameMs += (Math.min(100, now - lastNow) - frameMs) * 0.05; lastNow = now;
+  if (SHOW() && !lowPower && frame > 45 && frameMs > 26) lowPower = true;
+  t += reduce ? 0.004 : 1 / 60;
+  const { ox, oy, base } = coreBox();
+  if (SHOW()) { ARC = hue(250 + Math.sin(t * 0.15) * 70); MODE_COLOR.idle = ARC.split(",").map(Number); MODE_COLOR.speaking = MODE_COLOR.idle.map((v) => Math.min(255, v + 40)); if (!cinema) runTour(); }
+  runCinema();
+  if (SHOW() && cinema) { // cinema in Show off is the flight through the brain
+    if (!flight.on) Object.assign(flight, { on: true, t0: t, k: -1, flash: 0, inside: null, lastP: null });
+    physics(); drawFlight(); requestAnimationFrame(draw); return;
+  }
+  if (flight.on) { flight.on = false; warpBoost = 0; tour.cap = null; if (demo) { demo = false; stopVoice(); setMode("idle"); } }
+  physics();
+  if (cam.go && !grab) { // glide so the tapped note faces you
+    let dy = cam.go[0] - cam.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+    cam.yaw += dy * 0.08; cam.pitch += (cam.go[1] - cam.pitch) * 0.08; cam.vYaw = 0; cam.vPitch = 0;
+    if (Math.abs(dy) < 0.003 && Math.abs(cam.go[1] - cam.pitch) < 0.003) cam.go = null;
+  } else if (!grab) {
+    cam.yaw += cam.vYaw; cam.pitch = Math.max(-1.35, Math.min(1.35, cam.pitch + cam.vPitch));
+    cam.vYaw += ((reduce ? 0 : 0.0016) - cam.vYaw) * 0.02; cam.vPitch *= 0.95;
+    // when left alone, the view drifts back to a slow breathing tilt
+    if (Math.abs(cam.vPitch) < 0.001 && !reduce) cam.pitch += (-0.28 + Math.sin(t * 0.21) * 0.14 - cam.pitch) * 0.004;
+  }
+  const target = MODE_COLOR[mode];
+  col = col.map((c, i) => c + (target[i] - c) * 0.08);
+  const C = (a) => `rgba(${col[0] | 0},${col[1] | 0},${col[2] | 0},${a})`;
+  const spin = t * (mode === "thinking" ? 1.4 : 0.18);
+  if (boot < 1) boot = Math.min(1, (performance.now() - BOOT0) / 2600);
+  const bootE = 1 - Math.pow(1 - boot, 3);
+  const S = Math.max(Math.min(W, H) * (W < 700 ? 0.44 : 0.4), base * 3.1) * cam.zoom * (0.08 + 0.92 * bootE);
+  view = camera(ox, oy, S);
+  cx.clearRect(0, 0, W, H);
+
+  // grid with a touch of parallax as you orbit
+  cx.strokeStyle = `rgba(${ARC},.035)`; cx.lineWidth = 1;
+  const gx = (ox + cam.yaw * 60) % 44, gy = (oy + cam.pitch * 60) % 44;
+  for (let x = gx; x < W; x += 44) { cx.beginPath(); cx.moveTo(x, 0); cx.lineTo(x, H); cx.stroke(); }
+  for (let y = gy; y < H; y += 44) { cx.beginPath(); cx.moveTo(0, y); cx.lineTo(W, y); cx.stroke(); }
+  if (SHOW() && !reduce) warp(ox, oy);
+
+  // project everything
+  for (const n of nodes) n.p = view(n.x, n.y, n.z);
+  const dust = DUST.map((d) => {
+    const th = d.th + t * d.sp;
+    return view(d.r * Math.sin(d.phi) * Math.cos(th), d.r * Math.cos(d.phi), d.r * Math.sin(d.phi) * Math.sin(th));
+  });
+  const dustDot = ([x, y, z], i) => {
+    const a = (0.15 + 0.35 * Math.abs(Math.sin(t * 1.3 + DUST[i].tw * 9))) * Math.max(0.2, 0.8 - z * 0.4);
+    cx.fillStyle = `rgba(${ARC},${a})`; cx.fillRect(x, y, 1.3, 1.3);
+  };
+  // far half: dust, links, notes behind the core
+  dust.forEach((p, i) => { if (p[2] > 0) dustDot(p, i); });
+  for (const e of edges) {
+    const [a, b] = e, za = (a.p[2] + b.p[2]) / 2, hot = Math.max(a.hot, b.hot);
+    const ec = SHOW() ? hue(e.h + t * 12) : ARC;
+    cx.strokeStyle = `rgba(${ec},${((SHOW() ? 0.16 : 0.06) + hot * 0.5) * Math.max(0.35, 1 - za * 0.5)})`; cx.lineWidth = 1;
+    cx.beginPath(); cx.moveTo(a.p[0], a.p[1]); cx.lineTo(b.p[0], b.p[1]); cx.stroke();
+    // a pulse travels every link, so the brain looks like it's thinking
+    const u = (t * 0.22 + e.seed) % 1, px = a.p[0] + (b.p[0] - a.p[0]) * u, py = a.p[1] + (b.p[1] - a.p[1]) * u;
+    cx.fillStyle = `rgba(${ec},${(SHOW() ? 0.95 : 0.5) * Math.sin(u * Math.PI) * Math.max(0.3, 1 - za * 0.5)})`; cx.fillRect(px - 1, py - 1, 2, 2);
+  }
+  const sorted = [...nodes].sort((a, b) => b.p[2] - a.p[2]);
+  for (const n of sorted) if (n.p[2] > 0) drawNode(n);
+
+  // a dark lens behind the core hides the far side's links, so the core reads cleanly
+  const fx = cached(`lens${ox}|${oy}|${base}`, () => {
+    const g = cx.createRadialGradient(ox, oy, 0, ox, oy, base * 2.3);
+    g.addColorStop(0, "rgba(0,0,0,.72)"); g.addColorStop(0.7, "rgba(0,0,0,.45)"); g.addColorStop(1, "rgba(0,0,0,0)");
+    return g;
+  });
+  cx.fillStyle = fx; cx.beginPath(); cx.arc(ox, oy, base * 2.3, 0, Math.PI * 2); cx.fill();
+
+  // the 4D layer
+  const tv = tesseract(t).map(([x, y, z, w]) => [...view(x, y, z), w]);
+  cx.lineWidth = 1;
+  for (const [i, j, axis] of TE) {
+    const a = tv[i], b = tv[j], wv = (a[4] + b[4]) / 2;
+    cx.strokeStyle = axis === 3 ? `rgba(${ARC},.12)` : `rgba(${ARC},${0.16 + (wv + 1) * 0.1})`;
+    cx.beginPath(); cx.moveTo(a[0], a[1]); cx.lineTo(b[0], b[1]); cx.stroke();
+  }
+  for (const v of tv) { cx.fillStyle = `rgba(${ARC},${0.35 + (v[4] + 1) * 0.25})`; cx.fillRect(v[0] - 1.2, v[1] - 1.2, 2.4, 2.4); }
+  if (SHOW()) { drawPenteract(); scanPlane(); }
+
+  // energy level
+  const live = voiceLevel();
+  const want = mode === "speaking" ? (live !== null ? 0.3 + live * 0.7 : 0.45 + 0.4 * Math.abs(Math.sin(t * 11) * Math.sin(t * 4.3)))
+    : mode === "listening" ? 0.3 + 0.15 * Math.abs(Math.sin(t * 5)) : mode === "thinking" ? 0.32 : 0.1 + 0.05 * Math.sin(t * 1.6);
+  level += (want - level) * 0.18;
+  const R = base * (1 + level * 0.08);
+
+  // glow
+  const g = cx.createRadialGradient(ox, oy, 0, ox, oy, R * 2.4);
+  const dimCore = THEME === "spy" || THEME === "agency"; // these cores have detail in the middle, so less bloom
+  g.addColorStop(0, dimCore ? "rgba(255,250,235,.35)" : "rgba(235,252,255,.9)"); g.addColorStop(0.12, C(dimCore ? 0.22 : 0.7));
+  g.addColorStop(0.35, C(0.14 + level * 0.2)); g.addColorStop(1, C(0));
+  cx.fillStyle = g; cx.beginPath(); cx.arc(ox, oy, R * 2.4, 0, Math.PI * 2); cx.fill();
+
+  cx.save(); cx.translate(ox, oy); cx.shadowColor = C(1); cx.shadowBlur = 16; cx.textAlign = "center";
+  if (boot < 1) { // power-up: rings sweep in, then the core lights
+    cx.globalAlpha = Math.min(1, boot * 2.2);
+    cx.save(); cx.shadowBlur = 0; cx.strokeStyle = C(0.9 * (1 - boot)); cx.lineWidth = 2;
+    cx.beginPath(); cx.arc(0, 0, R * (0.3 + boot * 2.4), 0, Math.PI * 2); cx.stroke();
+    cx.fillStyle = C(0.9); cx.font = "600 10px 'IBM Plex Mono', monospace";
+    cx.fillText(boot < 0.5 ? `MAPPING ${nodes.length} NOTES · ${Math.round(boot * 200)}%` : boot < 0.85 ? "FOLDING IN THE 4TH DIMENSION" : "ALL SYSTEMS ONLINE", 0, R * 1.25);
+    cx.restore();
+  }
+  (CORES[THEME] || coreArc)(R, C, spin);
+  cx.shadowBlur = 0;
+
+  // shared rings
+  cx.lineWidth = 2.5; cx.strokeStyle = C(0.7);
+  for (let i = 0; i < 3; i++) { const a = -spin * 1.2 + i * Math.PI * 2 / 3; cx.beginPath(); cx.arc(0, 0, R * 1.58, a, a + 1.1); cx.stroke(); }
+  cx.lineWidth = 1;
+  for (let i = 0; i < 2; i++) { const a = spin * 0.7 + i * Math.PI; cx.beginPath(); cx.arc(0, 0, R * 1.78, a, a + 2.2); cx.stroke(); }
+  // voice bars
+  const bars = 72;
+  for (let i = 0; i < bars; i++) {
+    const a = i / bars * Math.PI * 2, wob = Math.abs(Math.sin(i * 1.7 + t * 9) * Math.cos(i * 0.6 - t * 5));
+    const len = R * (0.04 + (mode === "speaking" || mode === "listening" ? level * 0.5 * wob : 0.02));
+    cx.strokeStyle = C(0.5); cx.lineWidth = 2;
+    cx.beginPath(); cx.moveTo(Math.cos(a) * R * 1.64, Math.sin(a) * R * 1.64);
+    cx.lineTo(Math.cos(a) * (R * 1.64 + len), Math.sin(a) * (R * 1.64 + len)); cx.stroke();
+  }
+  if (mode === "thinking") { // radar sweep while thinking
+    const a = spin * 2, sg = cx.createRadialGradient(0, 0, R, 0, 0, R * 2);
+    sg.addColorStop(0, C(0.25)); sg.addColorStop(1, C(0));
+    cx.fillStyle = sg; cx.beginPath(); cx.moveTo(0, 0); cx.arc(0, 0, R * 2, a, a + 0.5); cx.closePath(); cx.fill();
+  }
+  // rotating text ring and ticks
+  cx.fillStyle = C(0.75); cx.font = `600 ${Math.max(8, R * 0.12) | 0}px 'Chakra Petch', sans-serif`;
+  const txt = RING_TEXT.repeat(2), tr = R * 1.97;
+  for (let i = 0; i < txt.length; i++) {
+    const a = i / txt.length * Math.PI * 2 - spin * 0.3;
+    cx.save(); cx.rotate(a); cx.translate(0, -tr); cx.fillText(txt[i], 0, 0); cx.restore();
+  }
+  cx.strokeStyle = C(0.3); cx.lineWidth = 1;
+  for (let i = 0; i < 120; i++) {
+    const a = i / 120 * Math.PI * 2 + spin * 0.1, r1 = R * 2.15, r2 = r1 + (i % 10 ? 3 : 9);
+    cx.beginPath(); cx.moveTo(Math.cos(a) * r1, Math.sin(a) * r1); cx.lineTo(Math.cos(a) * r2, Math.sin(a) * r2); cx.stroke();
+  }
+  cx.restore(); cx.globalAlpha = 1;
+
+  // near half: dust and notes in front of the core
+  for (const n of sorted) if (n.p[2] <= 0) drawNode(n);
+  dust.forEach((p, i) => { if (p[2] <= 0) dustDot(p, i); });
+  if (SHOW()) { satellites(ox, oy); shockwave(ox, oy, R); if (!lowPower) bloom(); }
+
+  // lessons waiting to be filed orbit the note they're about (gold sparks)
+  lessons.filter((l) => !l.filed).forEach((l, i) => {
+    const host = nodeBy.get(l.note) || nodeBy.get("Jarvis") || nodes[0]; if (!host) return;
+    const a = t * 0.8 + i * 2.4, rr = host.sr + (i % 3) * 5, x = host.sx + Math.cos(a) * rr, y = host.sy + Math.sin(a) * rr;
+    cx.fillStyle = "#ffb23e"; cx.shadowColor = "#ffb23e"; cx.shadowBlur = 8;
+    cx.beginPath(); cx.arc(x, y, 1.8, 0, Math.PI * 2); cx.fill(); cx.shadowBlur = 0;
+  });
+
+  // the brain dissolves under the header and the input bar instead of colliding with them
+  const top = Math.min(110, H * 0.13);
+  cx.fillStyle = cached(`vt${BG}${top}`, () => { const g = cx.createLinearGradient(0, 0, 0, top); g.addColorStop(0, BG); g.addColorStop(1, BG + "00"); return g; });
+  cx.fillRect(0, 0, W, top);
+  cx.fillStyle = cached(`vb${BG}${H}`, () => { const g = cx.createLinearGradient(0, H - 120, 0, H); g.addColorStop(0, BG + "00"); g.addColorStop(1, BG); return g; });
+  cx.fillRect(0, H - 120, W, 120);
+
+  drawLabels(R, ox, oy);
+  if (SHOW()) caption(ox, oy, R);
+
+  // dimension readout over the core, on its own dark strip
+  const deg = (v) => String(Math.round(((v % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2) * 180 / Math.PI)).padStart(3, "0");
+  cx.font = "500 9px 'IBM Plex Mono', monospace"; cx.textAlign = "center";
+  const ry = oy - R * 2.32, rw = Math.min(W - 24, 300);
+  cx.fillStyle = cached(`strip${ox}|${rw}`, () => {
+    const g = cx.createLinearGradient(ox - rw / 2, 0, ox + rw / 2, 0);
+    g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(0.2, "rgba(0,0,0,.7)"); g.addColorStop(0.8, "rgba(0,0,0,.7)"); g.addColorStop(1, "rgba(0,0,0,0)");
+    return g;
+  }); cx.fillRect(ox - rw / 2, ry - 10, rw, 14);
+  cx.fillStyle = `rgba(${ARC},.6)`;
+  cx.fillText(SHOW() ? `5D · XV ${deg(t * 0.23)}° · YW ${deg(t * 0.17)}° · WV ${deg(t * 0.29)}° · ${nodes.length} NOTES · ZOOM ${cam.zoom.toFixed(1)}×`
+    : `4D · XW ${deg(t * 0.31)}° · YW ${deg(t * 0.19)}° · ZW ${deg(t * 0.13)}° · ZOOM ${cam.zoom.toFixed(1)}×`, ox, oy - R * 2.32);
   requestAnimationFrame(draw);
 }
 requestAnimationFrame(draw);
 
-// tap a node to read the note
-cv.addEventListener("click", (e) => {
-  const n = nodes.find((n) => Math.hypot(n.sx - e.clientX, n.sy - e.clientY) < n.sr);
-  const card = $("card");
-  if (!n) { card.classList.remove("show"); return; }
-  light([n.name]);
-  card.innerHTML = "";
-  const h = document.createElement("h3"); h.className = "mono"; h.textContent = n.name.toUpperCase();
-  card.append(h, document.createTextNode(n.text.trim()));
-  card.classList.add("show");
+// drag to orbit (two fingers pinch to zoom); tap the core to talk, tap a dot to open that note
+let grab = null, cardNote = null;
+const pts = new Map();
+cv.addEventListener("pointerdown", (e) => {
+  pts.set(e.pointerId, [e.clientX, e.clientY]);
+  cv.setPointerCapture(e.pointerId);
+  cam.go = null;
+  if (pts.size === 1) grab = { x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, moved: 0, pinch: false };
+  else if (grab) { const [a, b] = [...pts.values()]; grab.pinch = Math.hypot(a[0] - b[0], a[1] - b[1]); grab.zoom0 = cam.zoom; grab.moved = 99; }
 });
+cv.addEventListener("pointermove", (e) => {
+  if (!grab || !pts.has(e.pointerId)) return;
+  pts.set(e.pointerId, [e.clientX, e.clientY]);
+  if (grab.pinch && pts.size > 1) {
+    const [a, b] = [...pts.values()];
+    cam.zoom = Math.max(0.6, Math.min(2.4, grab.zoom0 * Math.hypot(a[0] - b[0], a[1] - b[1]) / grab.pinch));
+    return;
+  }
+  grab.moved = Math.max(grab.moved, Math.hypot(e.clientX - grab.x, e.clientY - grab.y));
+  if (grab.moved < 8) return;
+  cv.classList.add("drag");
+  const dx = e.clientX - grab.lx, dy = e.clientY - grab.ly; grab.lx = e.clientX; grab.ly = e.clientY;
+  cam.yaw -= dx * 0.0065; cam.pitch = Math.max(-1.35, Math.min(1.35, cam.pitch + dy * 0.0065));
+  cam.vYaw = -dx * 0.0065; cam.vPitch = dy * 0.0065;
+});
+function release(e) {
+  pts.delete(e.pointerId);
+  if (pts.size) return;
+  const g = grab; grab = null; cv.classList.remove("drag");
+  if (!g) return;
+  if (g.moved >= 8) { cam.vYaw = Math.max(-0.12, Math.min(0.12, cam.vYaw)); cam.vPitch = Math.max(-0.08, Math.min(0.08, cam.vPitch)); return; }
+  if (e.type === "pointerup") tap(e.clientX, e.clientY);
+}
+cv.addEventListener("pointerup", release);
+cv.addEventListener("pointercancel", release);
+cv.addEventListener("wheel", (e) => { e.preventDefault(); cam.zoom = Math.max(0.6, Math.min(2.4, cam.zoom * Math.exp(-e.deltaY * 0.0012))); }, { passive: false });
+function tap(px, py) {
+  if (wokeFromCinema) { wokeFromCinema = false; return; } // the first tap in Show off cinema just brings the controls back
+  const { ox, oy, base } = coreBox();
+  // nearest dot under the finger wins, front ones first
+  const n = nodes.filter((n) => Math.hypot(n.sx - px, n.sy - py) < n.sr).sort((a, b) => a.sz - b.sz)[0];
+  if (n) { openNote(n); return; }
+  if (Math.hypot(px - ox, py - oy) < base * 1.4) { listen(); return; }
+  focus = null; $("card").classList.remove("show");
+}
 
+// Notes are markdown: show headings, bullets, bold and [[links]] (tap a link to jump to that note).
+function noteHtml(md) {
+  const esc = (x) => x.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  const inline = (x) => esc(x).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/`(.+?)`/g, "<code>$1</code>")
+    .replace(/\[\[(.+?)\]\]/g, (m, name) => nodeBy.has(name) ? `<button type="button" class="jump" data-note="${name}">${name}</button>` : name);
+  let out = "", list = false;
+  for (const line of md.replace(/^---[\s\S]*?---\s*/, "").trim().split("\n")) {
+    const li = line.match(/^\s*[-*] (\[[ x]\] )?(.*)$/), h = line.match(/^(#{1,3}) (.*)$/);
+    if (li && !list) { out += "<ul>"; list = true; }
+    if (!li && list) { out += "</ul>"; list = false; }
+    if (h) out += h[1].length === 1 ? "" : `<h4>${inline(h[2])}</h4>`;
+    else if (li) out += `<li${li[1] ? ` class="${li[1].includes("x") ? "done" : "todo"}"` : ""}>${inline(li[2])}</li>`;
+    else if (line.trim()) out += `<p>${inline(line)}</p>`;
+  }
+  return out + (list ? "</ul>" : "");
+}
+$("cardBody").addEventListener("click", (e) => {
+  const b = e.target.closest(".jump"); if (!b) return;
+  e.stopPropagation(); openNote(nodeBy.get(b.dataset.note));
+});
+function openNote(n) {
+  light([n.name]); cardNote = n.name; touch(n.name); focus = n;
+  try { navigator.vibrate?.(8); } catch {}
+  cam.go = [Math.atan2(n.x, -n.z), Math.max(-1.2, Math.min(1.2, Math.atan2(-n.y, Math.hypot(n.x, n.z))))];
+  $("cardTitle").textContent = n.name.toUpperCase() + (n.isNew ? "  · NEW" : "");
+  $("cardBody").innerHTML = noteHtml(n.text);
+  $("card").classList.add("show");
+}
+$("card").addEventListener("click", (e) => {
+  const act = e.target.closest("[data-act]")?.dataset.act; if (!act) return;
+  const name = cardNote; $("card").classList.remove("show");
+  if (act === "close" || !name) return;
+  if (act === "ask") { aboutNote = name; ask(`Brief me on my "${name}" note: what it says, what's open, and what you'd do next.`); }
+  if (act === "teach") { aboutNote = name; $("q").value = `Remember about ${name}: `; $("q").focus(); }
+  if (act === "job") {
+    if ($("jobMode").getAttribute("aria-pressed") !== "true") $("jobMode").click();
+    aboutNote = name; $("q").value = `${name}: `; $("q").focus();
+  }
+});
 function light(names) {
   for (const name of names) {
-    const n = byName.get(name); if (!n) continue;
+    const n = nodeBy.get(name); if (!n) continue;
     n.hot = 1;
-    for (const l of n.links) if (byName.has(l)) byName.get(l).hot = Math.max(byName.get(l).hot, 0.45);
+    for (const l of n.links) if (nodeBy.has(l)) nodeBy.get(l).hot = Math.max(nodeBy.get(l).hot, 0.45);
   }
 }
 
-/* ---------- Chat log ---------- */
+/* ---------- Comms log ---------- */
 function say(who, text) {
   const el = document.createElement("div");
   el.className = "msg " + who; el.textContent = text;
@@ -274,30 +1773,174 @@ function say(who, text) {
   return el;
 }
 
+// A Jarvis reply is one spoken line, then the detail on screen (like the films: he says little, the HUD shows the rest).
+function splitReply(text) {
+  text = text.replace(/^JOB:.*$/gim, "").trim();
+  const m = text.match(/^\s*SAY:\s*(.+)$/im);
+  let line = m ? m[1].trim() : (text.match(/^[^.!?\n]+[.!?]?/) || [text])[0].trim();
+  let detail = m ? text.replace(m[0], "").trim() : text.slice(line.length).trim();
+  return { line, detail };
+}
+function renderReply(el, text) {
+  const { line, detail } = splitReply(text);
+  el.innerHTML = "";
+  const l = document.createElement("div"); l.className = "line"; l.textContent = line; el.append(l);
+  if (detail) {
+    const d = document.createElement("details"), sm = document.createElement("summary"), body = document.createElement("div");
+    sm.textContent = "DETAILS"; body.className = "detail"; body.textContent = detail;
+    d.open = detail.length < 280; d.append(sm, body); el.append(d);
+  }
+  el.scrollIntoView({ block: "end" });
+  return line;
+}
+
+/* ---------- UI sounds: soft synth blips, made on the fly ---------- */
+var actx = null;
+function blip(kind) {
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const notes = { listen: [880, 1320], done: [1320, 990], job: [660, 990, 1320] }[kind] || [990];
+    notes.forEach((f, i) => {
+      const o = actx.createOscillator(), g = actx.createGain(), t0 = actx.currentTime + i * 0.07;
+      o.type = "sine"; o.frequency.value = f;
+      g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(0.06, t0 + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.12);
+      o.connect(g).connect(actx.destination); o.start(t0); o.stop(t0 + 0.14);
+    });
+  } catch {}
+}
+
 /* ---------- Voice out ---------- */
 const synth = window.speechSynthesis;
-function voices() { return synth ? synth.getVoices() : []; }
+// Jarvis's own voice: a British RP speech engine bundled with the page (works even where the phone
+// browser has no speech), run through a light studio chain for the calm AI-butler sound.
+const PERSONAS = {
+  // Each is a speech-engine setting plus its own studio chain. Styles inspired by film characters, not copies of anyone's voice.
+  butler: { label: "Butler: calm British AI (Jarvis)", voice: "en/en-rp", variant: "m3", pitch: 36, speed: 156,
+    fx: { hp: 95, shelf: 3, air: 2.5, lp: 7200, chorus: 0.3, room: 0.14 } },
+  agent: { label: "Agent: flat, clipped HQ radio (MIB-style)", voice: "en/en-us", variant: "m1", pitch: 30, speed: 172,
+    fx: { hp: 320, shelf: 0, air: 5, lp: 3600, chorus: 0, room: 0.04, grit: 4 } },
+  spy: { label: "Spy: low, smooth British (Bond-style)", voice: "en/en-rp", variant: "m6", pitch: 18, speed: 142,
+    fx: { hp: 70, shelf: 6, air: 1, lp: 6200, chorus: 0.15, room: 0.22 } },
+  hunter: { label: "Hunter: gravelly American (Bobby-style)", voice: "en/en-us", variant: "croak", pitch: 12, speed: 138,
+    fx: { hp: 80, shelf: 5, air: 0, lp: 5200, chorus: 0, room: 0.1, grit: 14 } },
+  robot: { label: "Robot: full machine", voice: "en/en-rp", variant: "klatt", pitch: 46, speed: 162,
+    fx: { hp: 120, shelf: 0, air: 4, lp: 8000, chorus: 0.5, room: 0.12, ring: 52 } },
+};
+const OLD_VOICE = { "builtin:m3": "builtin:butler", "builtin:klatt3": "builtin:butler" };
+const BUILTIN = Object.entries(PERSONAS).map(([k, p]) => ["builtin:" + k, p.label]);
+let engine = null, master = null, analyser = null, playing = null;
+const chains = {};
+function loadEngine() {
+  return engine || (engine = new Promise((ok, fail) => {
+    const sc = document.createElement("script");
+    sc.src = "vendor/jarvis-voice.js"; sc.onload = () => ok(window.meSpeak); sc.onerror = fail;
+    document.head.append(sc);
+  }));
+}
+function audio() {
+  actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+  if (actx.state === "suspended") actx.resume();
+  return actx;
+}
+addEventListener("pointerdown", () => { try { audio(); } catch {} }, { passive: true });
+setTimeout(() => loadEngine().catch(() => {}), 1200);
+function buildChain(a, fx) {
+  if (!master) {
+    master = a.createDynamicsCompressor(); master.threshold.value = -20; master.ratio.value = 3;
+    analyser = a.createAnalyser(); analyser.fftSize = 512;
+    master.connect(analyser).connect(a.destination);
+  }
+  const input = a.createGain();
+  let head = input;
+  if (fx.ring) { // ring modulation: the classic movie-robot buzz
+    const rm = a.createGain(); rm.gain.value = 0;
+    const osc = a.createOscillator(); osc.frequency.value = fx.ring; osc.connect(rm.gain); osc.start();
+    const mix = a.createGain(); const dryR = a.createGain(); dryR.gain.value = 0.45;
+    head.connect(rm).connect(mix); head.connect(dryR).connect(mix); head = mix;
+  }
+  if (fx.grit) { // soft clipping for rasp or a radio edge
+    const ws = a.createWaveShaper(), n = 1024, curve = new Float32Array(n), k = fx.grit;
+    for (let i = 0; i < n; i++) { const x = i * 2 / n - 1; curve[i] = (1 + k) * x / (1 + k * Math.abs(x)); }
+    ws.curve = curve; const pad = a.createGain(); pad.gain.value = 1 / (1 + k * 0.12);
+    head.connect(ws).connect(pad); head = pad;
+  }
+  const hp = a.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = fx.hp;
+  const warm = a.createBiquadFilter(); warm.type = "lowshelf"; warm.frequency.value = 220; warm.gain.value = fx.shelf;
+  const air = a.createBiquadFilter(); air.type = "peaking"; air.frequency.value = 3200; air.Q.value = 0.9; air.gain.value = fx.air;
+  const lp = a.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = fx.lp;
+  head.connect(hp).connect(warm).connect(air).connect(lp);
+  const dry = a.createGain(); dry.gain.value = 0.85; lp.connect(dry).connect(master);
+  if (fx.chorus) { // a slow chorus gives the faint "synthetic" shimmer
+    const dl = a.createDelay(); dl.delayTime.value = 0.012;
+    const lfo = a.createOscillator(), depth = a.createGain(); lfo.frequency.value = 0.3; depth.gain.value = 0.0025;
+    lfo.connect(depth).connect(dl.delayTime); lfo.start();
+    const wet = a.createGain(); wet.gain.value = fx.chorus; lp.connect(dl).connect(wet).connect(master);
+  }
+  if (fx.room) { // a short room so the voice sits somewhere
+    const len = Math.floor(a.sampleRate * 0.5), ir = a.createBuffer(2, len, a.sampleRate);
+    for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2); }
+    const verb = a.createConvolver(); verb.buffer = ir;
+    const vg = a.createGain(); vg.gain.value = fx.room; lp.connect(verb).connect(vg).connect(master);
+  }
+  return input;
+}
+async function jarvisSpeak(text, persona) {
+  const p = PERSONAS[persona] || PERSONAS.butler, a = audio();
+  const me = await loadEngine();
+  const wav = me.speak(text, { voice: p.voice, variant: p.variant, pitch: p.pitch, speed: p.speed, wordgap: 1, rawdata: "arraybuffer" });
+  if (!wav) throw new Error("no audio");
+  const buf = await a.decodeAudioData(wav);
+  const chain = chains[persona] || (chains[persona] = buildChain(a, p.fx));
+  stopVoice();
+  const src = a.createBufferSource(); src.buffer = buf; src.connect(chain);
+  src.onended = () => { if (playing === src) { playing = null; setMode("idle"); } };
+  playing = src; setMode("speaking"); src.start();
+}
+function stopVoice() {
+  if (synth) synth.cancel();
+  if (playing) { try { playing.stop(); } catch {} playing = null; }
+}
+function voiceLevel() {
+  if (!analyser || !playing) return null;
+  const d = new Uint8Array(analyser.fftSize); analyser.getByteTimeDomainData(d);
+  let sum = 0; for (const v of d) sum += ((v - 128) / 128) ** 2;
+  return Math.min(1, Math.sqrt(sum / d.length) * 4);
+}
+const voices = () => (synth ? synth.getVoices() : []);
 function fillVoices() {
-  const sel = $("voice"), list = voices().filter((v) => /^en/i.test(v.lang));
-  const saved = store.get("voice", "");
-  // a calm British voice suits him; pick one if TJ hasn't chosen
-  const pick = saved || (list.find((v) => /daniel|arthur|george|male/i.test(v.name) && /GB/i.test(v.lang)) || list.find((v) => /GB/i.test(v.lang)) || list[0] || {}).name || "";
+  const sel = $("voice"), list = voices().filter((v) => /^en/i.test(v.lang)), saved = store.get("voice", "");
+  // A calm British butler voice. Ranked best first across Android (Google TTS), iPhone and desktop.
+  const rank = [/en-gb-x-rjs/i, /en-gb-x-gbd/i, /en-gb-x-gbb/i, /UK English Male/i, /\b(Daniel|Arthur|George|Oliver|Ryan|Thomas)\b/i, /Male/i];
+  const gb = list.filter((v) => /GB/i.test(v.lang));
+  let best = null;
+  for (const re of rank) { best = gb.find((v) => re.test(v.name)); if (best) break; }
+  const pick = OLD_VOICE[saved] || saved || "builtin:butler";
   sel.innerHTML = "";
+  for (const [val, label] of BUILTIN) {
+    const o = document.createElement("option"); o.value = val; o.textContent = label; o.selected = val === pick; sel.append(o);
+  }
+  if (best) list.sort((a, b) => (b === best) - (a === best));
   for (const v of list) {
     const o = document.createElement("option");
-    o.value = v.name; o.textContent = `${v.name} (${v.lang})`; o.selected = v.name === pick;
-    sel.append(o);
+    o.value = v.name; o.textContent = `${v.name} (${v.lang})`; o.selected = v.name === pick; sel.append(o);
   }
 }
-if (synth) { fillVoices(); synth.onvoiceschanged = fillVoices; }
-
-function speak(text) {
-  if (!synth || store.get("talkback", "1") !== "1") { setMode("idle"); return; }
-  synth.cancel();
-  const u = new SpeechSynthesisUtterance(text.replace(/[*_#`>\[\]]/g, ""));
+fillVoices();
+if (synth) synth.onvoiceschanged = fillVoices;
+function speak(text, force) {
+  text = text.replace(/For the brain:.*$/is, "").replace(/^JOB:.*$/gim, "").replace(/^SAY:\s*/gim, "").replace(/[*_#`>\[\]]/g, "").trim();
+  if (!text || (store.get("talkback", "1") !== "1" && !force)) { setMode("idle"); return; }
+  const chosen = $("voice").value || "builtin:butler";
+  if (chosen.startsWith("builtin:") || !synth) {
+    jarvisSpeak(text, chosen.startsWith("builtin:") ? chosen.slice(8) : "butler").catch(() => setMode("idle"));
+    return;
+  }
+  stopVoice();
+  const u = new SpeechSynthesisUtterance(text);
   const v = voices().find((v) => v.name === $("voice").value);
   if (v) u.voice = v;
-  u.rate = 1.02; u.pitch = 0.92;
+  u.lang = v ? v.lang : "en-GB";
+  u.rate = 0.98; u.pitch = 0.88;
   u.onstart = () => setMode("speaking");
   u.onend = u.onerror = () => setMode("idle");
   synth.speak(u);
@@ -306,7 +1949,8 @@ function speak(text) {
 /* ---------- Voice in ---------- */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let rec = null;
-if (SR) {
+const framed = (() => { try { return window.top !== window; } catch { return true; } })();
+if (SR && !framed) { // a framed page (claude.ai) is never granted the mic, so skip straight to dictation
   rec = new SR();
   rec.lang = "en-US"; rec.interimResults = true; rec.continuous = false;
   rec.onresult = (e) => {
@@ -315,26 +1959,58 @@ if (SR) {
     if (r.isFinal) { rec.stop(); ask($("q").value); }
   };
   rec.onend = () => { if (mode === "listening") setMode("idle"); };
-  rec.onerror = (e) => { setMode("idle"); if (e.error !== "no-speech" && e.error !== "aborted") say("note", "Mic trouble: " + e.error); };
-} else {
-  $("mic").title = "This browser can't listen. Chrome or Edge can.";
+  rec.onerror = (e) => {
+    setMode("idle");
+    if (e.error === "not-allowed" || e.error === "service-not-allowed") { rec = null; armDictation(); }
+    else if (e.error !== "no-speech" && e.error !== "aborted") say("note", "Mic trouble: " + e.error);
+  };
 }
+// Inside claude.ai the page runs in a locked frame that is never given the microphone, and Android's in-app
+// browser has no speech recognition at all. The phone keyboard's own mic still works in any text box, so the
+// mic button arms "dictation": it opens the keyboard, and once the dictated words stop arriving Jarvis sends them.
+let dictArmed = false, dictTimer = 0, dictTipShown = false;
+function armDictation() {
+  if (dictArmed) { disarmDictation(); return; }
+  dictArmed = true;
+  stopVoice();
+  $("q").value = ""; setMode("listening"); blip("listen");
+  $("q").placeholder = "Tap the mic on your keyboard and talk";
+  $("q").focus();
+  if (!dictTipShown) { dictTipShown = true; say("note", "Tap the mic key on your keyboard and talk. I send it when you stop."); }
+}
+function disarmDictation() {
+  dictArmed = false; clearTimeout(dictTimer);
+  $("q").placeholder = "Talk to Jarvis";
+  if (mode === "listening") setMode("idle");
+}
+$("q").addEventListener("input", () => {
+  if (!dictArmed) return;
+  clearTimeout(dictTimer);
+  if ($("q").value.trim()) dictTimer = setTimeout(() => {
+    const text = $("q").value;
+    disarmDictation();
+    $("q").blur();
+    ask(text);
+  }, 1800);
+});
+$("q").addEventListener("blur", () => { if (dictArmed && !$("q").value.trim()) disarmDictation(); });
+
 function listen() {
-  if (!rec) { say("note", "This browser can't do voice input. Open Jarvis in Chrome or Edge."); return; }
+  if (!rec) { armDictation(); return; }
   if (mode === "listening") { rec.stop(); return; }
-  synth && synth.cancel();
-  $("q").value = ""; setMode("listening");
+  stopVoice();
+  $("q").value = ""; setMode("listening"); blip("listen");
   try { rec.start(); } catch {}
 }
 $("mic").addEventListener("click", listen);
 addEventListener("keydown", (e) => {
   if (e.code === "Space" && document.activeElement === document.body) { e.preventDefault(); listen(); }
-  if (e.key === "Escape") { synth && synth.cancel(); $("card").classList.remove("show"); }
+  if (e.key === "Escape") { stopVoice(); $("card").classList.remove("show"); }
 });
 
-/* ---------- Brain search (works with no key) ---------- */
+/* ---------- Notes search (works with nothing else) ---------- */
 const STOP = new Set("the a an and or of to in on for is are what whats how do does i my me we our it this that with about can you tell jarvis hey".split(" "));
-function words(s) { return (s.toLowerCase().match(/[a-z0-9$]+/g) || []).filter((w) => w.length > 1 && !STOP.has(w)); }
+const words = (s) => (s.toLowerCase().match(/[a-z0-9$]+/g) || []).filter((w) => w.length > 1 && !STOP.has(w));
 function search(q, k = 4) {
   const qs = words(q);
   return nodes.map((n) => {
@@ -342,40 +2018,409 @@ function search(q, k = 4) {
     let score = 0;
     for (const w of qs) { if (name.includes(w)) score += 5; score += Math.min(body.split(w).length - 1, 5); }
     return { n, score };
-  }).filter((r) => r.score > 0).sort((a, b) => b.score - a.score).slice(0, k).map((r) => r.n);
+  }).filter((r) => r.score > 0 && r.n.name !== "CLAUDE").sort((a, b) => b.score - a.score).slice(0, k).map((r) => r.n);
 }
 function offlineAnswer(q) {
-  const hits = search(q, 3).filter((n) => n.name !== "CLAUDE");
-  if (!hits.length) return "Nothing in the brain on that yet, boss. Add a key in SETUP and I can actually think about it.";
-  const qs = words(q);
-  const lines = hits[0].text.split("\n").filter((l) => l.trim() && !l.startsWith("#"));
+  const hits = search(q, 3);
+  if (!hits.length) return "Nothing in the brain on that yet, boss.";
+  const qs = words(q), lines = hits[0].text.split("\n").filter((l) => l.trim() && !l.startsWith("#"));
   const best = lines.filter((l) => qs.some((w) => l.toLowerCase().includes(w))).slice(0, 4);
   return `From ${hits[0].name}:\n` + (best.length ? best : lines.slice(0, 4)).join("\n") +
     (hits.length > 1 ? `\n\nAlso see: ${hits.slice(1).map((h) => h.name).join(", ")}.` : "");
 }
 
-/* ---------- Claude ---------- */
+/* ---------- Memory: every chat and lesson is saved ---------- */
+let chatId = new Date().toISOString().replace(/[:.]/g, "-");
+const RESUME_MS = 6 * 3600e3; // reopening the page within 6 hours picks the same chat back up
+let lessons = [], lastChat = [], touches = { counts: {} }, aboutNote = null, touchTimer = 0;
+let turns = [];
+dbPromise.then(async (db) => {
+  if (!db) return;
+  try {
+    lessons = await loadLessons(db);
+    renderBrain(lessons.length);
+    const tc = await db.doc("memory/touches").get();
+    if (tc.exists) { const t = structuredClone(tc.data()); touches = { ...t, counts: { ...(t.counts || {}) } }; } // store data comes back frozen
+    await checkNew(db);
+    const prev = await db.collection("chats").orderBy("started", "desc").limit(1).get();
+    if (!prev.empty) {
+      const doc = prev.docs[0], last = doc.data(), past = last.turns || [];
+      if (!turns.length && past.length && Date.now() - Date.parse(last.updated || last.started) < RESUME_MS) resumeChat(doc.id, past);
+      else lastChat = past.slice(-10);
+    }
+  } catch {}
+  watchJobs(db);
+});
+// Show the recent chat again instead of a blank screen, and keep saving into it.
+function resumeChat(id, past) {
+  chatId = id;
+  turns.push(...past);
+  document.querySelector(".chips")?.remove();
+  say("note", "Picked up your chat from " + new Date(past[0].at).toLocaleTimeString("en-US", { timeZone: "America/Chicago", hour: "numeric", minute: "2-digit" }) + ". Everything is saved.");
+  for (const t of past) {
+    if (t.who === "tj") { say("you", t.text); history.push({ role: "user", content: t.text }); }
+    else { renderReply(say("jarvis", ""), t.text); history.push({ role: "assistant", content: t.text }); }
+  }
+}
+// Each lesson is its own record in "lessons", so the page and Jarvis backend never overwrite each other's
+// lists. Older lessons from the single "memory/lessons" list are still read.
+async function loadLessons(db) {
+  const out = [];
+  try { const l = await db.doc("memory/lessons").get(); if (l.exists) out.push(...(l.data().items || [])); } catch {}
+  try { const q = await db.collection("lessons").orderBy("at", "asc").limit(500).get(); for (const d of q.docs) out.push({ id: d.id, ...d.data() }); } catch {}
+  return out;
+}
+function touch(name) {
+  touches.counts[name] = (touches.counts[name] || 0) + 1; touches.last = name;
+  clearTimeout(touchTimer);
+  touchTimer = setTimeout(async () => { const db = await dbPromise; if (db) try { await db.doc("memory/touches").set(touches); } catch {} }, 1500);
+}
+function topTouched(k = 5) {
+  return Object.entries(touches.counts).sort((a, b) => b[1] - a[1]).slice(0, k).map(([n, c]) => `${n} (${c})`);
+}
+/* New sections: notes the brain grew since TJ last looked */
+let seenNames = null;
+async function checkNew(db) {
+  const all = nodes.map((n) => n.name);
+  const sd = await db.doc("memory/seen").get();
+  if (!sd.exists) { seenNames = all; await db.doc("memory/seen").set({ names: all, at: new Date().toISOString() }); }
+  else seenNames = sd.data().names || [];
+  const fresh = nodes.filter((n) => !seenNames.includes(n.name));
+  for (const n of fresh) { n.isNew = true; n.hot = 1; }
+  $("newList").innerHTML = "";
+  for (const n of fresh) {
+    const li = document.createElement("li"); li.textContent = n.name; li.style.cursor = "pointer";
+    li.addEventListener("click", () => openNote(n)); $("newList").append(li);
+  }
+  $("newBox").hidden = $("debrief").hidden = !fresh.length;
+  if (fresh.length) {
+    say("note", `The brain grew ${fresh.length} new section${fresh.length > 1 ? "s" : ""}: ${fresh.map((n) => n.name).join(", ")}. Tap DEBRIEF ME in BRAIN.`);
+    $("badge").textContent = "●";
+  }
+}
+$("debrief").addEventListener("click", async () => {
+  const fresh = nodes.filter((n) => n.isNew).map((n) => n.name);
+  if (!fresh.length) return;
+  ask(`Debrief me on the new sections of my brain: ${fresh.join(", ")}. For each one: what it means, what it does for me, and what to do with it next.`);
+  for (const n of nodes) n.isNew = false;
+  $("newBox").hidden = $("debrief").hidden = true;
+  const db = await dbPromise;
+  if (db) try { await db.doc("memory/seen").set({ names: nodes.map((n) => n.name), at: new Date().toISOString() }); } catch {}
+});
+$("learn").addEventListener("click", async () => {
+  const waiting = lessons.filter((l) => !l.filed).length;
+  const mcp = await mcpPromise;
+  if (!mcp) { say("note", "Learning runs from the claude.ai copy of Jarvis."); return; }
+  try {
+    await mcp.callTool("Claude Code Remote", "fire_trigger", { trigger_id: RUNNER });
+    say("note", waiting ? `Sent ${waiting} lesson${waiting > 1 ? "s" : ""} to Claude Code to file into the brain. New sections show up here when they land.` : "Nothing new to learn yet, but I've woken Claude Code to work the queue.");
+    speak("Filing what I've learned, boss.");
+  } catch (e) { say("note", "Couldn't reach Claude Code: " + (e?.message || e)); }
+});
+function memoryText() {
+  let t = "";
+  const top = topTouched();
+  if (top.length) t += "\nNotes TJ opens most on the brain map (lean on these): " + top.join(", ") + "\n";
+  if (lessons.length) t += "\nThings TJ told you in earlier chats (newer wins if they clash):\n" + lessons.map((l) => `- ${l.at.slice(0, 10)}: ${l.text}`).join("\n") + "\n";
+  if (lastChat.length) t += "\nEnd of your last chat with TJ:\n" + lastChat.map((m) => (m.who === "tj" ? "TJ: " : "Jarvis: ") + m.text).join("\n") + "\n";
+  return t;
+}
+async function remember(q, text) {
+  const db = await dbPromise;
+  if (!db) return;
+  const at = new Date().toISOString();
+  turns.push({ who: "tj", text: q, at }, { who: "jarvis", text, at });
+  try {
+    await db.doc("chats/" + chatId).set({ started: turns[0].at, updated: at, turns, filed: false });
+  } catch (e) { say("note", "Couldn't save this chat (" + (e?.code || e?.message || e) + "). It's still on screen; I'll retry with your next message."); }
+  // every "For the brain:" line in the reply becomes its own lesson record
+  for (const m of text.matchAll(/For the brain:\s*(.+)/gi)) {
+    const lesson = { text: m[1].replace(/\*+/g, "").trim(), at, filed: false, chat: chatId, ...(aboutNote ? { note: aboutNote } : {}) };
+    if (!lesson.text) continue;
+    try {
+      const ref = await db.collection("lessons").add(lesson);
+      lessons.push({ id: ref?.id, ...lesson });
+      renderBrain(lessons.length);
+      say("note", "Saved to memory: " + lesson.text);
+    } catch (e) { say("note", "Couldn't save that lesson (" + (e?.code || e?.message || e) + "). Jarvis backend will still find it in this chat."); }
+  }
+  aboutNote = null;
+}
+
+/* ---------- Jobs: big asks go to Claude Code and come back here ---------- */
+let jobsSeen = null; // status per job at first load, so only new results get announced
+function ago(iso) {
+  const m = Math.round((Date.now() - new Date(iso)) / 60000);
+  return m < 1 ? "now" : m < 60 ? m + "m" : m < 1440 ? Math.round(m / 60) + "h" : Math.round(m / 1440) + "d";
+}
+function watchJobs(db) {
+  db.collection("jobs").orderBy("created", "desc").limit(20).onSnapshot((snap) => {
+    const list = $("jobs"); list.innerHTML = "";
+    const first = jobsSeen === null; if (first) jobsSeen = {};
+    let open = 0;
+    for (const d of snap.docs) {
+      const j = d.data(), was = jobsSeen[d.id];
+      if (j.status === "queued" || j.status === "working") open++;
+      const fresh = !first && was && was !== j.status && (j.status === "done" || j.status === "needs-tj");
+      jobsSeen[d.id] = j.status;
+      const el = document.createElement("article"); el.className = "job" + (fresh ? " fresh" : "");
+      el.innerHTML = `<div class="row"><span class="chip"></span><time></time></div><div class="ask"></div>`;
+      el.querySelector(".chip").className = "chip " + j.status;
+      el.querySelector(".chip").textContent = j.status === "needs-tj" ? "needs you" : j.status;
+      el.querySelector("time").textContent = ago(j.updated || j.created);
+      el.querySelector(".ask").textContent = j.ask;
+      if (j.answer) { const a = document.createElement("div"); a.className = "answer"; a.textContent = j.answer; el.append(a); }
+      for (const l of j.links || []) {
+        if (!/^https:\/\//.test(l.url || "")) continue;
+        const a = document.createElement("a"); a.href = l.url; a.target = "_blank"; a.rel = "noopener"; a.textContent = "↗ " + (l.title || l.url); el.append(a);
+      }
+      list.append(el);
+      if (fresh) {
+        renderReply(say("jarvis", ""), `SAY: ${j.status === "done" ? "The job's done, boss." : "That job needs you, boss."}\n${j.answer || ""}`);
+        blip("job"); speak(j.status === "done" ? "The job's done, boss. Details are on screen." : "That job needs your call, boss.");
+        if (!$("jobsPanel").classList.contains("active")) $("badge").textContent = "●";
+      }
+    }
+    $("jobsCount").textContent = open ? `${open} RUNNING` : `${snap.size} TOTAL`;
+    if (snap.empty) list.innerHTML = `<p class="empty">Nothing queued. Tap <b>JOB</b>, or just ask for something big (code, research, a PR) and I'll send it to Claude Code. Answers land here.</p>`;
+  }, () => { $("jobs").innerHTML = `<p class="empty">Jobs need the claude.ai copy of Jarvis.</p>`; });
+}
+async function queueJob(askText) {
+  const db = await dbPromise;
+  if (!db) { say("note", "Jobs only work in the claude.ai copy of Jarvis."); return false; }
+  const at = new Date().toISOString();
+  await db.collection("jobs").add({ ask: askText, status: "queued", created: at, updated: at, ...(aboutNote ? { note: aboutNote } : {}) });
+  const mcp = await mcpPromise;
+  if (!mcp) { say("note", "Job queued. Jarvis backend picks it up on its next run (every 3 hours, 6:15am to 9:15pm)."); return true; }
+  wakeRunner(db, mcp);
+  return true;
+}
+// One run handles a whole batch: wait for a quiet moment after the last job, and don't start a second run
+// while one is already working (the run keeps checking the queue until it's empty).
+let wakeTimer = 0;
+const WAKE_QUIET = 25000;
+function wakeRunner(db, mcp) {
+  if (!wakeTimer) say("note", "Job queued. I'll send the batch to Jarvis backend in a moment, in case you've got more.");
+  clearTimeout(wakeTimer);
+  wakeTimer = setTimeout(async () => {
+    wakeTimer = 0;
+    let last = 0, lock = 0;
+    try { const k = await db.doc("memory/runner").get(); if (k.exists) { last = Date.parse(k.data().kickedAt) || 0; lock = Date.parse(k.data().lockAt) || 0; } } catch {}
+    const busy = Object.values(jobsSeen || {}).includes("working");
+    // a run that holds the lock keeps checking the queue until it's empty, so it will take these too
+    if ((busy && Date.now() - last < 20 * 60000) || Date.now() - lock < 25 * 60000) { say("note", "Jarvis backend is already on it; it'll take these too."); return; }
+    try {
+      await mcp.callTool("Claude Code Remote", "fire_trigger", { trigger_id: RUNNER });
+      try { await db.doc("memory/runner").set({ kickedAt: new Date().toISOString() }); } catch {}
+      say("note", "Sent to Jarvis backend. I'll tell you when it's back.");
+    } catch { say("note", "Couldn't wake Jarvis backend; it picks the jobs up on its next run (every 3 hours, 6:15am to 9:15pm)."); }
+  }, WAKE_QUIET);
+}
+/* ---------- Morning brief: Jarvis backend writes briefs/<date> at 6:15; the page shows it once a day ---------- */
+const CENTRAL = "America/Chicago";
+const today = () => new Date().toLocaleDateString("en-CA", { timeZone: CENTRAL }); // YYYY-MM-DD
+let todayCal = null; // today's calendar, fetched when TJ asks for a brief, for the system prompt
+function showBriefDoc(b) {
+  const el = say("jarvis", "");
+  el.classList.add("brief");
+  renderReply(el, `SAY: ${b.say || "Morning, boss. Here's your day."}\n${(b.lines || []).join("\n")}`);
+  return el;
+}
+async function loadBrief(db) {
+  try {
+    const d = await db.doc("briefs/" + today()).get();
+    return d.exists ? d.data() : null;
+  } catch { return null; }
+}
+async function calendarToday() {
+  const mcp = await mcpPromise;
+  if (!mcp) return null;
+  const day = today();
+  const res = await mcp.callTool("Google Calendar", "list_events",
+    { startTime: day + "T00:00:00", endTime: day + "T23:59:59", timeZone: CENTRAL, orderBy: "startTime", pageSize: 25 });
+  const list = res?.payload?.events || res?.payload?.items || [];
+  return list.map((e) => {
+    const at = e.start?.dateTime ? new Date(e.start.dateTime).toLocaleTimeString("en-US", { timeZone: CENTRAL, hour: "numeric", minute: "2-digit" }) : "all day";
+    return `${at}: ${e.summary || "(no title)"}`;
+  });
+}
+async function briefMe() {
+  const db = await dbPromise, b = db && (await loadBrief(db));
+  if (b) { say("you", "Brief me"); showBriefDoc(b); speak(b.say || "Morning, boss. Here's your day."); store.set("briefShown", today()); return; }
+  try { todayCal = await calendarToday(); } catch { todayCal = null; }
+  ask("Brief me on today: my calendar, J Street, my top to-dos and anything waiting on me.");
+}
+dbPromise.then(async (db) => {
+  if (!db || store.get("briefShown") === today()) return;
+  const b = await loadBrief(db);
+  if (!b) return;
+  store.set("briefShown", today());
+  document.querySelector(".chips")?.remove();
+  showBriefDoc(b);
+});
+
+/* ---------- Reminders: "REMIND:" lines become Google Calendar events that pop up on the phone at that minute ---------- */
+const REMIND_RE = /^REMIND:\s*(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})\s*\|\s*(.+)$/gim;
+function pad(n) { return String(n).padStart(2, "0"); }
+function plus15(local) { // "2026-10-21T15:00" -> "2026-10-21T15:15:00", wall-clock math with no time zone
+  const [d, t] = local.split("T"), [y, mo, da] = d.split("-").map(Number), [h, mi] = t.split(":").map(Number);
+  const x = new Date(Date.UTC(y, mo - 1, da, h, mi + 15));
+  return `${x.getUTCFullYear()}-${pad(x.getUTCMonth() + 1)}-${pad(x.getUTCDate())}T${pad(x.getUTCHours())}:${pad(x.getUTCMinutes())}:00`;
+}
+function whenText(local) {
+  const [d, t] = local.split("T"), [h, mi] = t.split(":").map(Number);
+  const time = `${h % 12 || 12}:${pad(mi)} ${h < 12 ? "AM" : "PM"}`;
+  return d === today() ? `today at ${time}` : `${d} at ${time}`;
+}
+async function setReminder(local, text) {
+  const mcp = await mcpPromise;
+  try {
+    if (!mcp) throw new Error("no connectors here");
+    await mcp.callTool("Google Calendar", "create_event", {
+      summary: "⏰ " + text, startTime: local + ":00", endTime: plus15(local), timeZone: CENTRAL,
+      overrideReminders: [{ method: "popup", minutes: 0 }], description: "Set by Jarvis from your phone page.",
+    });
+    say("note", `Reminder set for ${whenText(local)}: ${text}. Your calendar app will ping you.`);
+  } catch (e) {
+    const code = e?.code || e?.message || e;
+    if (await queueJob(`Create a Google Calendar event on TJ's primary calendar titled "⏰ ${text}" at ${local} America/Chicago, 15 minutes long, with a popup reminder at 0 minutes.`))
+      say("note", `Couldn't reach Google Calendar from here (${code}), so Jarvis backend will add the reminder.`);
+  }
+}
+
+/* ---------- Memory panel: what Jarvis knows, and a way to correct it ---------- */
+function memItem(text, meta, note) {
+  const row = document.createElement("div"); row.className = "memItem";
+  row.innerHTML = `<span></span><button type="button">WRONG</button>`;
+  row.querySelector("span").textContent = text;
+  if (meta) { const m = document.createElement("small"); m.textContent = meta; row.querySelector("span").append(m); }
+  row.querySelector("button").addEventListener("click", () => {
+    if (row.nextElementSibling?.classList.contains("memFix")) return;
+    const fix = document.createElement("form"); fix.className = "memFix";
+    fix.innerHTML = `<input placeholder="What's right? (blank = just remove it)"><button type="submit" class="gear" style="margin:0">SAVE</button>`;
+    fix.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const right = fix.querySelector("input").value.trim();
+      const db = await dbPromise;
+      if (!db) return;
+      const lesson = { text: `Correction: "${text}" is wrong.${right ? " TJ says: " + right : " TJ wants it removed."}`, at: new Date().toISOString(), filed: false, correction: true, ...(note ? { note } : {}) };
+      try {
+        const ref = await db.collection("lessons").add(lesson);
+        lessons.push({ id: ref?.id, ...lesson }); renderBrain(lessons.length);
+        fix.replaceWith(Object.assign(document.createElement("p"), { className: "empty", textContent: "Got it. Jarvis backend fixes it on the next run, or tap LEARN NOW." }));
+      } catch (err) { fix.querySelector("input").value = ""; fix.querySelector("input").placeholder = "Couldn't save (" + (err?.code || err?.message || err) + ")"; }
+    });
+    row.after(fix); fix.querySelector("input").focus();
+  });
+  return row;
+}
+$("memBtn").addEventListener("click", () => {
+  const list = $("memList"); list.innerHTML = "";
+  const head = (t) => list.append(Object.assign(document.createElement("h4"), { textContent: t }));
+  const personal = byName.get("Personal")?.text || "";
+  for (const part of personal.split(/^## /m).slice(1)) {
+    const [title, ...rest] = part.split("\n");
+    const items = rest.filter((l) => /^- /.test(l) && !/\(ask TJ\)/.test(l)).map((l) => l.slice(2).replace(/\[\[|\]\]/g, ""));
+    if (!items.length) continue;
+    head(title.trim().toUpperCase());
+    for (const t of items) list.append(memItem(t, "", "Personal"));
+  }
+  const recent = lessons.filter((l) => !l.correction).slice(-25).reverse();
+  if (recent.length) head("LEARNED IN CHATS");
+  for (const l of recent) list.append(memItem(l.text, `${(l.at || "").slice(0, 10)} · ${l.filed ? "filed in the notes" : "waiting to be filed"}`, l.note));
+  if (!list.children.length) list.innerHTML = `<p class="empty">Nothing yet. Tell me about yourself and I'll remember it.</p>`;
+  $("memory").showModal();
+});
+$("memDone").addEventListener("click", () => $("memory").close());
+
+/* ---------- Past chats: reopen any saved chat and carry on ---------- */
+function ago2(iso) { return new Date(iso).toLocaleString("en-US", { timeZone: "America/Chicago", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }); }
+$("chatsBtn").addEventListener("click", async () => {
+  $("chats").showModal();
+  const db = await dbPromise, list = $("chatList");
+  if (!db) { list.innerHTML = `<p class="empty">Saved chats live in the claude.ai copy of Jarvis.</p>`; return; }
+  try {
+    const q = await db.collection("chats").orderBy("started", "desc").limit(50).get();
+    list.innerHTML = q.empty ? `<p class="empty">No saved chats yet.</p>` : "";
+    for (const d of q.docs) {
+      const c = d.data(), first = (c.turns || []).find((m) => m.who === "tj")?.text || "(empty)";
+      const b = document.createElement("button"); b.type = "button"; if (d.id === chatId) b.className = "current";
+      b.innerHTML = `<time></time><span></span>`;
+      const n = (c.turns || []).filter((m) => m.who === "tj").length;
+      b.querySelector("time").textContent = `${ago2(c.started)} · ${n} message${n === 1 ? "" : "s"}${d.id === chatId ? " · open now" : ""}`;
+      b.querySelector("span").textContent = first.length > 90 ? first.slice(0, 90) + "…" : first;
+      b.addEventListener("click", () => { openChat(d.id, c); $("chats").close(); });
+      list.append(b);
+    }
+  } catch (e) { list.innerHTML = `<p class="empty">Couldn't load chats (${e?.code || e?.message || e}).</p>`; }
+});
+function openChat(id, c) {
+  chatId = id; turns = [...(c.turns || [])];
+  history.length = 0;
+  $("log").innerHTML = "";
+  say("note", `Chat from ${ago2(c.started)}. Keep talking to carry on.`);
+  for (const m of turns) {
+    if (m.who === "tj") { say("you", m.text); history.push({ role: "user", content: m.text }); }
+    else { renderReply(say("jarvis", ""), m.text); history.push({ role: "assistant", content: m.text }); }
+  }
+  showTab("comms");
+}
+$("newChat").addEventListener("click", () => {
+  chatId = new Date().toISOString().replace(/[:.]/g, "-"); turns = []; history.length = 0;
+  $("log").innerHTML = ""; say("note", "New chat. The old ones are under CHATS.");
+  $("chats").close();
+});
+$("chatsDone").addEventListener("click", () => $("chats").close());
+
+$("jobMode").addEventListener("click", () => {
+  const on = $("jobMode").getAttribute("aria-pressed") !== "true";
+  $("jobMode").setAttribute("aria-pressed", on);
+  $("q").placeholder = on ? "Describe the job for Claude Code" : "Talk to Jarvis";
+  $("q").focus();
+});
+
+/* ---------- Thinking ---------- */
 const history = [];
 let sdk = null;
 function systemPrompt() {
   const rules = byName.get("CLAUDE")?.text || "";
   const notes = BRAIN.notes.filter((n) => n.name !== "CLAUDE").map((n) => `<note name="${n.name}">\n${n.text}\n</note>`).join("\n");
-  return `You are Jarvis, TJ's personal assistant, speaking out loud through a voice interface.
-Today is ${new Date().toISOString().slice(0, 10)}.
-Keep spoken answers short: two to four sentences unless TJ asks for more. No markdown, no bullet symbols, no links; it will be read aloud.
-You can't edit the notes from here. If something changed, end with one line starting "For the brain:" saying what to update.
-
+  const now = new Date().toLocaleString("en-US", { timeZone: "America/Chicago", dateStyle: "full", timeStyle: "short" });
+  return `You are Jarvis, TJ's personal assistant, speaking out loud through a voice interface. Work exactly the way Jarvis does in TJ's Claude project:
+- Calm, dry wit, quietly confident, loyal, like Tony Stark's Jarvis. Call him "boss" now and then, not every line.
+- Answer first, reason after. No lectures or disclaimers he didn't ask for.
+- Give real numbers (prices, repair costs, odds, grams, sets and reps) and say how sure you are instead of refusing to guess.
+- If something could hurt him (brakes, money traps, legal trouble, gluten), say it plainly once, then still help.
+- When TJ brings an idea, run it through four voices: Believer (how it could work), Critic (why it might fail), Investor (does it make money), then Judge (decides, with a short "do next" list: first step today, then this week). Check it against Decisions, Ground rules and Pricing first. One or two sentences per voice.
+- Training and food plans are detailed and science-based, and always gluten-free (TJ is celiac).
+- Friendly, not personal: don't pry into his private life.
+- Never say passwords, keys, gym codes or member info.
+It is now ${now} where TJ is (US Central).
+How to reply (always): the first line is "SAY: " plus one short spoken line in the manner of Jarvis in the Iron Man films, at most 18 words: the answer itself, or what you're about to do ("Running the numbers now, boss. Short version: about $40 a month."). Only that line is read out loud. Put any detail on the following lines for the screen: plain text, no markdown, no links. For a simple question the SAY line can be the whole reply. Ideas get the four voices in the detail, with the Judge's call in the SAY line.
+You can't write code, push to GitHub, edit the notes, browse the web or touch his files from here, but Claude Code can. When TJ asks for something like that, say in one sentence that you're sending it to Claude Code, then end with one line: "JOB: " followed by a clear, self-contained instruction for Claude Code. The page queues it and the answer comes back here.
+When TJ asks to be reminded of something at a time, say when in one sentence, then end with one line: "REMIND: YYYY-MM-DDTHH:MM | what to remind him" in his Central time (24-hour clock; "in 2 hours" means from now; no date given means the next time that clock time comes round). The page puts it on his Google Calendar with a pop-up at that minute. One REMIND line per reminder.
+${todayCal ? "TJ's Google Calendar today: " + (todayCal.length ? todayCal.join("; ") : "nothing booked") + "\n" : ""}Whenever TJ tells you something new worth keeping (a fact, a preference, a decision, a to-do), end with one line starting "For the brain:" saying it in a few words. That line is saved and you will remember it next time.
+${memoryText()}
 Your rules:
 ${rules}
 
 TJ's brain notes:
 ${notes}`;
 }
-async function claude(q) {
-  if (!sdk) {
-    say("note", "Connecting to Claude…");
-    sdk = (await import("https://esm.sh/@anthropic-ai/sdk@0.134.0")).default;
-  }
+async function viaAccount(sample, q) {
+  const said = history.slice(-12).map((m) => (m.role === "user" ? "TJ: " : "Jarvis: ") + m.content).join("\n");
+  const el = say("jarvis", "");
+  const res = await sample(systemPrompt() + (said ? "\n\nConversation so far:\n" + said : "") + "\n\nTJ says: " + q, {
+    cache: false,
+    onText: ({ text }) => { renderReply(el, text); },
+  });
+  const text = (res.text || "").trim();
+  renderReply(el, text);
+  history.push({ role: "user", content: q }, { role: "assistant", content: text });
+  return text;
+}
+async function viaKey(q) {
+  if (!sdk) sdk = (await import("https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@0.134.0/+esm")).default;
   const client = new sdk({ apiKey: store.get("key"), dangerouslyAllowBrowser: true });
   history.push({ role: "user", content: q });
   const el = say("jarvis", "");
@@ -392,35 +2437,53 @@ async function claude(q) {
   const msg = await stream.finalMessage();
   if (msg.stop_reason === "refusal") el.textContent = "I can't help with that one, boss.";
   const text = el.textContent.trim();
+  renderReply(el, text);
   history.push({ role: "assistant", content: text || "(no answer)" });
   return text;
 }
 
 async function ask(q) {
+  if (dictArmed) disarmDictation();
   q = q.trim(); if (!q) return;
+  document.querySelector(".chips")?.remove();
   $("q").value = "";
   say("you", q);
+  showTab("comms");
+  if ($("jobMode").getAttribute("aria-pressed") === "true") {
+    $("jobMode").click();
+    if (await queueJob(q)) speak("On it, boss. Sent to Claude Code.");
+    aboutNote = null;
+    return;
+  }
   light(search(q, 3).map((n) => n.name));
   setMode("thinking");
   let text;
   try {
-    if (store.get("key")) text = await claude(q);
+    const sample = await samplePromise;
+    if (sample) text = await viaAccount(sample, q);
+    else if (store.get("key")) text = await viaKey(q);
     else { text = offlineAnswer(q); say("jarvis", text); }
   } catch (err) {
-    history.pop();
-    text = "Couldn't reach Claude: " + (err?.message || err) + ". Answering from the notes instead.";
-    say("note", text);
+    if (history.at(-1)?.role === "user") history.pop();
+    say("note", "Couldn't reach Claude (" + (err?.message || err?.code || err) + "). Answering from the notes.");
     text = offlineAnswer(q); say("jarvis", text);
   }
-  speak(text.split("\n\nAlso see")[0]);
+  remember(q, text);
+  const job = (text.match(/^JOB:\s*(.+)$/im) || [])[1];
+  if (job) queueJob(job.trim());
+  for (const m of text.matchAll(REMIND_RE)) setReminder(m[1], m[2].trim());
+  blip("done");
+  speak(splitReply(text.split("\n\nAlso see")[0]).line);
 }
 $("ask").addEventListener("submit", (e) => { e.preventDefault(); ask($("q").value); });
 
-/* ---------- Setup ---------- */
-$("gear").addEventListener("click", () => {
+/* ---------- Settings ---------- */
+$("gear").addEventListener("click", async () => {
   $("key").value = store.get("key", "");
   $("model").value = store.get("model", "claude-opus-5-5");
   $("talkback").checked = store.get("talkback", "1") === "1";
+  $("theme").value = store.get("theme", "arc");
+  $("keyBox").hidden = !!(await samplePromise);
   $("setup").showModal();
 });
 $("done").addEventListener("click", () => {
@@ -430,11 +2493,84 @@ $("done").addEventListener("click", () => {
   store.set("talkback", $("talkback").checked ? "1" : "0");
   $("setup").close();
 });
+const TEST_LINE = { butler: "At your service, boss. All systems online.", agent: "Agent online. Nothing to see here, boss.",
+  spy: "Good evening, boss. Shall we get to work?", hunter: "Alright, boss. Let's go save some people.", robot: "Systems online. Awaiting orders, boss." };
+$("testVoice").addEventListener("click", () => { store.set("voice", $("voice").value); speak(TEST_LINE[$("voice").value.replace("builtin:", "")] || TEST_LINE.butler); });
+$("voice").addEventListener("change", () => $("testVoice").click());
+$("theme").addEventListener("change", () => {
+  setTheme($("theme").value); focus = null; tour.cap = null; tour.i = -1;
+  if (SHOW()) { loadShowStats(); lastInput = t - 11; speak("Show mode. Sit back, boss. I'll fly you through the brain."); }
+});
+if (SHOW()) loadShowStats();
+$("demoBtn").addEventListener("click", () => {
+  $("setup").close();
+  if (!SHOW()) { $("theme").value = "showoff"; setTheme("showoff"); loadShowStats(); }
+  demo = true; demoSaid = new Set(); flight.on = false; lastInput = -99;
+});
+/* ---------- Night mode: a dark screen, a light to breathe with, and sound to sleep to ---------- */
+// The sounds are made on the phone from noise (Web Audio), so there's nothing to download and nothing to pay for.
+let nightCtx = null, nightNodes = null, nightSnd = "rain", nightMin = 60;
+function noiseBuffer(ctx, brown) {
+  const n = ctx.sampleRate * 6, b = ctx.createBuffer(1, n, ctx.sampleRate), d = b.getChannelData(0);
+  let last = 0;
+  for (let i = 0; i < n; i++) { const w = Math.random() * 2 - 1; if (brown) { last = (last + 0.02 * w) / 1.02; d[i] = last * 3.5; } else d[i] = w * 0.5; }
+  return b;
+}
+function nightStop(sec = 0.4) {
+  if (!nightNodes) return;
+  const { src, gain, lfo } = nightNodes, now = nightCtx.currentTime;
+  gain.gain.cancelScheduledValues(now); gain.gain.setValueAtTime(gain.gain.value, now); gain.gain.linearRampToValueAtTime(0, now + sec);
+  setTimeout(() => { try { src.stop(); lfo?.stop(); } catch {} }, sec * 1000 + 100);
+  nightNodes = null;
+}
+function nightPlay() {
+  nightStop();
+  document.querySelectorAll("#night [data-snd]").forEach((b) => b.classList.toggle("on", b.dataset.snd === nightSnd));
+  document.querySelectorAll("#night [data-min]").forEach((b) => b.classList.toggle("on", +b.dataset.min === nightMin));
+  if (nightSnd === "off") return;
+  nightCtx ??= new (window.AudioContext || window.webkitAudioContext)(); nightCtx.resume();
+  const ctx = nightCtx, now = ctx.currentTime, src = ctx.createBufferSource(), gain = ctx.createGain();
+  src.buffer = noiseBuffer(ctx, nightSnd !== "rain"); src.loop = true;
+  let out = src, lfo = null;
+  if (nightSnd === "rain") { const f = ctx.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 1800; f.Q.value = 0.35; src.connect(f); out = f; }
+  if (nightSnd === "waves") { // brown noise swelling and falling like surf, about every 11 seconds
+    const wg = ctx.createGain(), lg = ctx.createGain(); lfo = ctx.createOscillator();
+    lfo.frequency.value = 0.09; lg.gain.value = 0.42; wg.gain.value = 0.5; lfo.connect(lg).connect(wg.gain); src.connect(wg); out = wg; lfo.start();
+  }
+  const vol = nightSnd === "rain" ? 0.28 : 0.55;
+  out.connect(gain).connect(ctx.destination);
+  gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(vol, now + 5);
+  if (nightMin) { const end = now + nightMin * 60; gain.gain.setValueAtTime(vol, end - 180); gain.gain.linearRampToValueAtTime(0, end); } // fades out over the last 3 minutes
+  src.start(); nightNodes = { src, gain, lfo };
+}
+$("nightBtn").addEventListener("click", () => {
+  $("setup").close(); stopVoice(); setMode("idle");
+  $("night").hidden = false; $("night").classList.remove("calm"); nightPlay();
+  setTimeout(() => $("night").classList.add("calm"), 12000);
+});
+$("night").addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) { $("night").classList.toggle("calm"); return; }
+  if (b.dataset.snd) { nightSnd = b.dataset.snd; nightPlay(); }
+  else if (b.dataset.min) { nightMin = +b.dataset.min; nightPlay(); }
+  else if (b.id === "nightExit") { nightStop(1.5); $("night").hidden = true; }
+});
 $("forget").addEventListener("click", () => { store.set("key", null); $("key").value = ""; });
 
-say("note", store.get("key")
-  ? "Online. Ask me anything, or press space to talk."
-  : "Running on the notes only. Tap SETUP to add a Claude key and I get a lot smarter.");
+samplePromise.then((sample) => {
+  const online = !!(sample || store.get("key"));
+  $("linkDot").classList.toggle("on", online);
+  $("linkText").textContent = sample ? "online · your claude account" : online ? "online · api key" : "notes only";
+  say("note", online ? "Good to see you, boss. Talk, type, or tap JOB to hand me something big." : "Running on the notes only. Open the claude.ai copy for the full Jarvis.");
+  // quick starts, so an empty screen still has somewhere to go
+  if (turns.length) return; // a resumed chat already fills the screen
+  const chips = document.createElement("div"); chips.className = "chips";
+  for (const q of ["Brief me", "Remind me to stretch in 2 hours", "One idea to make money this week", "What did you learn about me?"]) {
+    const b = document.createElement("button"); b.type = "button"; b.textContent = q;
+    b.addEventListener("click", () => (q === "Brief me" ? briefMe() : ask(q))); chips.append(b);
+  }
+  $("log").append(chips);
+});
 </script>
 </body>
 </html>

@@ -3,13 +3,16 @@ type: list
 ---
 # To do
 
-Part of [[SecurityAI]]. Done items move to the week's note.
+Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's note.
 
 ## Now
-- [ ] Merge branch `claude/release-2026-10-20` into main on Gym-security (Render runs the Oct 16 code until then). See [[Release history]].
-- [ ] Change the exposed recorder password, admin token and the old API key (new ones go on Render, never in notes).
-- [ ] First nights at [[J Street Gym]]: run the checklist there.
+- As of 2026-10-21: nothing is running at [[J Street Gym]] yet. TJ has no laptop and no Raspberry Pi, so until TJ says otherwise only software update checks and backend proficiency tests are possible.
+- [ ] Backend proficiency tests and software update checks for [[SecurityAI]]: first run done 2026-10-21, all passed. Repeat each release with the [[Backend proficiency checklist]].
+- [ ] On hold until hardware is set up: first nights at [[J Street Gym]] (run the checklist there).
+- [ ] Storage line: admin page, sign in, "Render settings" box, first line. Good = green "Storage: /var/data — a separate disk...". If it says DATA_DIR is not set, every deploy wipes gym accounts and history; the Render disk needs the paid Starter plan (check price before paying). See [[Release history]].
 - [ ] Photo of an Ashbourne denied scan.
+- [ ] [[Sites by TJ]]: TJ sets up Cloudflare (free), Stripe and a business Gmail; walks into the first shop. Jarvis backend builds previews from the Monday prospect list.
+- [ ] Jarvis repo is public, so brain notes (including [[Personal]]) are visible to anyone: TJ to decide on making it private (check).
 
 ## Setup
 - [ ] Tailscale: turn off key expiry.
@@ -18,15 +21,19 @@ Part of [[SecurityAI]]. Done items move to the week's note.
 - [ ] Texting (Twilio) and alert email on the domain.
 
 ## Jarvis
-- [ ] Try the HUD: open `hud/index.html` in Chrome, press ◉ and talk. See [[Jarvis]].
+- [ ] Try the HUD on the phone: https://claude.ai/artifact/6BgK9h8LVgz3ondg1QqzSP. See [[Jarvis]].
 - [ ] Decide on an Anthropic API key for the HUD (pay as you go, about 1 cent a question on Opus).
 - [ ] Decide if Jarvis gets a movie-grade voice (ElevenLabs, about $5 to $22 a month).
-- [ ] Pick how Jarvis controls music: Spotify connector, desktop computer use, or phone shortcut. See [[Jarvis]].
-- [ ] Decide whether to set up a weekly scheduled tidy-up of the brain.
-- [ ] Set up Jarvis on the phone: voice mode, and a Project or connector so it knows the brain. See [[Jarvis]].
+- [ ] Connect Spotify on claude.ai (phone browser, Settings > Connectors). Then set up a phone shortcut for play and pause. See [[Jarvis]].
+- [ ] Set up Jarvis on the phone: follow the phone guide in [[Jarvis]] (Project + GitHub + voice mode), then test "What's on my to-do list?".
 - [ ] Tell Claude favourite music and chill routines for [[Personal]].
+- [ ] Finish the Gmail sign-in on claude.ai (Calendar and Drive are connected).
+- [ ] Set the Google Calendar time zone to Central (it shows UTC). Reminders already fire at the right Central time; this fixes how times look in the calendar app and the brief. Calendar app > Settings > General > Time zone.
+- [ ] Read the three new notes and say what to change: [[Hardware readiness list]], [[Backend proficiency checklist]], [[J Street pilot pitch]].
+- [x] Past-chats list on the phone page: CHATS button reopens any saved chat (2026-10-21). See [[Jarvis]].
+- [ ] When TJ has a computer: sign in to Claude in Chrome there, then test one website job.
 
 ## Later
 - [ ] Staff and cleaner schedules (after real nights).
-- [ ] Pitch J Street's owners with the pilot counts.
+- [ ] Pitch J Street's owners with the pilot counts. Draft: [[J Street pilot pitch]].
 - [ ] A per-night "scans confirmed" line in the morning report.

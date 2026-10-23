@@ -10,6 +10,7 @@ Watches a gym's entrance camera during the hours the gym picks. When more people
 - Website: gym-security.onrender.com (Render). Custom domain bought on Namecheap, DNS being set up.
 - Code: GitHub repo "Gym-security". Claude pushes after TJ's OK, once per session. See [[CLAUDE]].
 - First gym: [[J Street Gym]] (pilot).
+- Status 2026-10-21: nothing running at the gym yet. No laptop or Raspberry Pi, so until TJ says otherwise only software update checks and backend proficiency tests are possible.
 
 ## How it works
 [[How SecurityAI works]] · [[Front-desk reader]] · [[Check-in systems]]

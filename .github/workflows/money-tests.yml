@@ -17,3 +17,19 @@ jobs:
       - run: python3 money/test/test_coldlist.py
       - run: python3 money/test/test_agency_import.py
       - run: python3 money/sites/build.py
+  agency-api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:16
+        env: {POSTGRES_PASSWORD: test, POSTGRES_DB: agency_test}
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install -q -r money/agency/api/requirements.txt httpx==0.28.1
+      - run: python3 money/agency/api/tests/test_api.py
+        env: {TEST_DATABASE_URL: "postgresql://postgres:test@localhost:5432/agency_test"}

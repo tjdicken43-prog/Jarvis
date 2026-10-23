@@ -1,0 +1,38 @@
+# Render blueprint: API + Postgres + dashboard. Secrets marked sync: false are typed in on Render.
+databases:
+  - name: agency-db
+    plan: basic-256mb
+    postgresMajorVersion: "16"
+services:
+  - type: web
+    name: agency-api
+    runtime: python
+    rootDir: money/agency/api
+    buildCommand: pip install -r requirements.txt
+    preDeployCommand: python migrate.py
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase: {name: agency-db, property: connectionString}
+      - key: OPERATOR_TOKEN
+        generateValue: true
+      - {key: PUBLIC_URL, sync: false}
+      - {key: ANTHROPIC_API_KEY, sync: false}
+      - {key: MAILER, value: stub}
+      - {key: SMTP_USER, sync: false}
+      - {key: SMTP_PASSWORD, sync: false}
+      - {key: FROM_EMAIL, sync: false}
+      - {key: MAILING_ADDRESS, sync: false}
+      - {key: DAILY_SEND_CAP, value: "5"}
+  - type: web
+    name: agency-dashboard
+    runtime: node
+    rootDir: money/agency/web
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    envVars:
+      - {key: API_URL, sync: false}       # the agency-api URL, https://...onrender.com
+      - key: OPERATOR_TOKEN
+        fromService: {name: agency-api, type: web, envVarKey: OPERATOR_TOKEN}
+      - {key: DASHBOARD_PASSWORD, sync: false}

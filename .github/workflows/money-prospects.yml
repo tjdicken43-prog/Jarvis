@@ -15,9 +15,13 @@ concurrency:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - run: money/ci/data-branch.sh open
+      - run: pip install --quiet duckdb
+      - run: python3 money/prospects/overture.py data/prospects
+        continue-on-error: true
       - run: python3 money/prospects/scan.py --out data/prospects --limit "${{ github.event.inputs.limit || '0' }}"
+      - run: python3 money/prospects/coldlist.py data/prospects/nwa.json data/prospects
       - run: 'money/ci/data-branch.sh save "prospects: NWA scan $(date -u +%F)"'

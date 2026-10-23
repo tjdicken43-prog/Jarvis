@@ -26,6 +26,7 @@ The phone Jarvis (TJ's private link in [[Jarvis]]) saves every chat and every "F
 
 ## Phone Jarvis jobs
 The phone page queues big asks in its `jobs` store. The "Jarvis job runner" scheduled task (every 3 hours, 6:15am to 9:15pm Central, and woken by the page when a job is queued) does them and writes the answer back. Its full instructions live in the scheduled task.
+- Money asks from the phone (rug check a token, build a preview for a shop, "how's the paper bot"): follow `money/AGENT.md`. A daily "Money agent" task (5:47am Central) also runs it. See [[Sites by TJ]].
 
 ## When TJ brings an idea
 Run it through four voices, in this order, then give the verdict:

@@ -19,8 +19,18 @@ CHECK EVERY RUN (GitHub tools + money-data branch)
 | Sender (once live) | Bounces under 2%, spam complaints 0, unsubscribes honored | **Pause sending** and tell TJ |
 | Rules | Every sent email had TJ's approval, opt-out line and address | Pause sending and tell TJ |
 
+EVIDENCE, NOT CLAIMS ("ran" is not "landed")
+- Every lead marked `emailed` must have a send-log line with the same unique key (lead id + step). No line: mark it failed.
+- Every `built` preview must load and contain no placeholder text ("[mailing address]", "Lorem", "TODO"). Otherwise send it back to the Builder.
+- Every `checked` lead must have its source links. Otherwise send it back to the Checker.
+- Errors: recoverable (timeouts, busy servers) get up to 3 retries with waits. Unrecoverable (login refused, account locked, payment failed, bounce spike) get no retry: stop that worker and tell TJ.
+- Circuit breaker: 3 send errors in a row means pause the Sender and report.
+
+WEEKLY (Mondays)
+- Dead-worker audit: any worker or bot that produced nothing used in 30 days gets switched off (saves usage) and listed in the brief.
+
 HARD RULES
-- You may fix code, re-run bots and pause sending. You may never send, post, spend money or change prices.
+- You may fix code, re-run bots and pause sending. You may never send, post, spend money, refund or change prices. Refunds always need TJ's tap.
 - Never hide a failure. If you couldn't fix it, say so.
 
 HAND BACK (top line of the morning brief)

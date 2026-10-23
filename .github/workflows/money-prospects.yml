@@ -1,7 +1,7 @@
 name: money-prospects
 on:
   schedule:
-    - cron: "0 11 * * 1"   # Mondays 6am Central
+    - cron: "0 9 * * 1"   # Mondays 4am Central (3am in winter), before the 5:47 Money agent
   workflow_dispatch:
     inputs:
       limit:
@@ -10,7 +10,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: money-data
+  group: money-data-prospects
   cancel-in-progress: false
 jobs:
   scan:

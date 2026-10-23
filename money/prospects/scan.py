@@ -322,11 +322,17 @@ def main():
             old = {p["id"]: p for p in json.loads(prev.read_text()).get("prospects", [])}
         except Exception:
             old = {}
+    statuses = {}
+    if (out / "status.json").exists():  # agents write statuses here; the Scout never rewrites it
+        try:
+            statuses = json.loads((out / "status.json").read_text())
+        except Exception:
+            statuses = {}
     today = dt.date.today().isoformat()
     for p in uniq:
         o = old.get(p["id"], {})
         p["first_seen"] = o.get("first_seen", today)
-        p["status"] = o.get("status", "new")  # TJ/runner set: approved, built, contacted, won, lost, skip
+        p["status"] = statuses.get(p["id"], o.get("status", "new"))
 
     uniq.sort(key=lambda p: (-p["score"], p.get("km_home", 99), p["name"]))
     (out / "nwa.json").write_text(json.dumps(

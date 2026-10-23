@@ -13,4 +13,5 @@ jobs:
       - run: python3 money/test/test_paper.py
       - run: python3 money/test/test_scan.py
       - run: python3 money/test/test_overture.py
+      - run: python3 money/test/test_coldlist.py
       - run: python3 money/sites/build.py

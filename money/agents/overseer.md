@@ -10,9 +10,8 @@ CHECK EVERY RUN (GitHub tools + money-data branch)
 | What | Healthy means | If not |
 |---|---|---|
 | Scout bot (`money-prospects`) | Last Monday run succeeded; `prospects/cold-list.csv` updated this week | Read the log, fix on a branch, test, PR, merge, re-run |
-| Paper bot (`money-fomo`) | A run in the last hour; `fomo/summary.md` updated today | Same |
 | Tests (`money-tests`) | Green on main | Same |
-| Money agent (scheduled task) | Ran today; brief has today's date | Check the task is enabled; if it errored, re-run it once |
+| Money agent (scheduled task) | Ran today; brief has today's date | Check the task is enabled; if it errored and `runs/<today>.json` shows no run started in the last 2 hours, re-run it once |
 | Checker | `prospects/checked/` grew this week (on run days) | Note it; re-run the Money agent once |
 | Builder | Previews built this week match checked leads; each preview opens on a phone | Rebuild the broken ones |
 | Approval queue (phone page) | Cards waiting for TJ: fewer than 15; none older than 3 days | Remind TJ in the brief: "N previews waiting for you" |
@@ -22,6 +21,7 @@ CHECK EVERY RUN (GitHub tools + money-data branch)
 EVIDENCE, NOT CLAIMS ("ran" is not "landed")
 - Every lead marked `emailed` must have a send-log line with the same unique key (lead id + step). No line: mark it failed.
 - Every `built` preview must load and contain no placeholder text ("[mailing address]", "Lorem", "TODO"). Otherwise send it back to the Builder.
+- No address in `prospects/suppress.csv` (by email or domain) may have a built, approved or emailed card. If one does, pull it and tell TJ.
 - Every `checked` lead must have its source links. Otherwise send it back to the Checker.
 - Errors: recoverable (timeouts, busy servers) get up to 3 retries with waits. Unrecoverable (login refused, account locked, payment failed, bounce spike) get no retry: stop that worker and tell TJ.
 - Circuit breaker: 3 send errors in a row means pause the Sender and report.

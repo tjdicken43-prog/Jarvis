@@ -1,12 +1,10 @@
 name: money-fomo-paper
 on:
-  schedule:
-    - cron: "*/15 * * * *"
-  workflow_dispatch:
+  workflow_dispatch:  # schedule off 2026-10-23 (TJ: wasted usage); run by hand if ever needed
 permissions:
   contents: write
 concurrency:
-  group: money-data
+  group: money-data-fomo
   cancel-in-progress: false
 jobs:
   paper:

@@ -7,6 +7,7 @@ Set VAPI_ASSISTANT_ID too and it updates that assistant instead of making a new 
 import json
 import os
 import sys
+import urllib.error
 import urllib.request
 
 from build_phone_prompt import build
@@ -35,8 +36,11 @@ def main() -> None:
     url = "https://api.vapi.ai/assistant" + (f"/{aid}" if aid else "")
     req = urllib.request.Request(url, data=json.dumps(ASSISTANT).encode(), method="PATCH" if aid else "POST",
                                  headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
-    with urllib.request.urlopen(req) as res:
-        body = json.load(res)
+    try:
+        with urllib.request.urlopen(req, timeout=30) as res:
+            body = json.load(res)
+    except urllib.error.HTTPError as ex:
+        sys.exit(f"Vapi said {ex.code}: {ex.read().decode(errors='replace')[:300]} (401 means a wrong VAPI_API_KEY)")
     print(f"{'Updated' if aid else 'Created'} assistant {body['id']} ({body['name']})")
 
 

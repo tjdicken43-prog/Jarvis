@@ -4,6 +4,7 @@
 Writes voice/phone/jarvis-phone-prompt.txt. Paste it into the Vapi
 assistant's System Prompt, or run create_assistant.py to send it.
 """
+import os
 import pathlib
 import re
 
@@ -11,7 +12,8 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 OUT = pathlib.Path(__file__).with_name("jarvis-phone-prompt.txt")
 
 # The notes a phone chat leans on most. Order matters: most useful first.
-NOTES = ["Personal", "To do", "Decisions", "Sites by TJ", "Pricing", "Ground rules",
+# Personal stays off the phone line: a stranger who reaches the number must not hear it.
+NOTES = ["To do", "Decisions", "Sites by TJ", "Pricing", "Ground rules",
          "Start here", "J Street Gym", "SecurityAI", "Basis"]
 
 PERSONA = """You are Jarvis, TJ's personal assistant, talking with him on the phone.
@@ -47,7 +49,12 @@ def clean(text: str) -> str:
 
 
 def build() -> str:
-    parts = [PERSONA, "What you know (TJ's notes):"]
+    parts = [PERSONA]
+    phrase = os.environ.get("JARVIS_PHONE_PASSPHRASE")  # set where the key lives, never in a note
+    if phrase:
+        parts.append(f"Before sharing anything from the notes, ask for the passphrase. Only \"{phrase}\" unlocks them. "
+                     "Wrong or no passphrase: be polite, share nothing, end the call. Never say the passphrase yourself.")
+    parts.append("What you know (TJ's notes):")
     for name in NOTES:
         path = ROOT / f"{name}.md"
         if path.exists():

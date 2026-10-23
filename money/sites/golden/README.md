@@ -39,3 +39,7 @@ Round 1 scores from Tj: John's Roofing 8/10, the other two 6/10. Tj: go with the
 ## Still open (check)
 - Real job photos for One Call, and more for the other two: ask once they reply.
 - Scores from Tj and two other people on round 4.
+
+## Layout B, Paschal style (2026-10-23)
+Tj: "I actually really like Paschal's layout" (gopaschal.com). `johns-quality-roofing/paschal.html` tries it for John's: a white top bar with logo, nav, phone and a red "Get a quote" pill, then a full-width hero built on their own roof photo with the headline over it. A white trust panel overlaps the hero with 4 navy cards. After that comes the quote form on a navy band, review cards with stars, and service cards. The navy (#0e1f4d) is from John's current site, and the red from their logo. Lighthouse mobile: 100 / 100 / 100, 118 KB.
+Catch: this layout depends on one strong real photo for the hero. Use it only when the business has one. Otherwise use layout A (`index.html`). Waiting on Tj: A or B, or B as the new house style for businesses with photos.

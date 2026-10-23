@@ -1,2 +1,7 @@
 money/sites/out/
 __pycache__/
+
+# Prospects' own photos and logos: private preview only, never in this public repo.
+# Kept in project files: sites-by-tj/golden/<site>/
+money/sites/golden/*/*.webp
+money/sites/shops/*/*.webp

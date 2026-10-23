@@ -7,11 +7,11 @@
 <meta name="description" content="Roof replacement, roof repair, siding and gutters in Bella Vista, Bentonville, Rogers and across NWA. Open Mon to Sat, 7 am to 7 pm. Call 479-426-7931.">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#2b3136">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232b3136'/%3E%3Cpath d='M4 18 16 7l12 11' fill='none' stroke='%23a8cf9f' stroke-width='3.5' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232b3136'/%3E%3Cpath d='M4 18 16 7l12 11' fill='none' stroke='%23d80028' stroke-width='3.5' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preload" href="libre-franklin-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
 @font-face{font-family:"Libre Franklin";font-weight:100 900;font-display:swap;src:url(libre-franklin-latin-wght-normal.woff2) format("woff2")}
-:root{--slate:#2b3136;--slate2:#4a525a;--paper:#eef0ef;--card:#ffffff;--line:#d5dad8;--cedar:#2f5d3a;--cedar2:#234a2c;--tan:#a8cf9f}
+:root{--slate:#2b3136;--slate2:#4a525a;--paper:#eef0ef;--card:#ffffff;--line:#d5dad8;--cedar:#c8102e;--cedar2:#a00d25;--tan:#ff9aa8}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--paper);color:var(--slate);font:400 17px/1.6 "Libre Franklin",system-ui,sans-serif;padding-bottom:84px}
@@ -42,12 +42,12 @@ form{display:grid;gap:12px}
 label{display:grid;gap:5px;font-weight:600;font-size:16px}
 input,select,textarea{font:inherit;font-size:17px;color:var(--slate);background:#fff;border:1.5px solid #8b8f93;border-radius:8px;padding:11px 13px;min-height:50px;width:100%}
 textarea{min-height:84px;resize:vertical}
-input:focus,select:focus,textarea:focus{border-color:var(--cedar);outline:3px solid #2f5d3a33;outline-offset:0}
+input:focus,select:focus,textarea:focus{border-color:var(--cedar);outline:3px solid #c8102e33;outline-offset:0}
 .btn{display:flex;align-items:center;justify-content:center;gap:10px;min-height:54px;padding:0 20px;border:0;border-radius:10px;background:var(--cedar);color:#fff;font:700 18px/1 "Libre Franklin",sans-serif;text-decoration:none;cursor:pointer;transition:background .2s}
 .btn:hover{background:var(--cedar2)}
 .btn.ghost{background:transparent;color:var(--slate);border:1.5px solid var(--slate)}
 .btn svg{width:20px;height:20px;flex:none}
-.formnote{font-size:14.5px;background:#f1f5ee;border:1px solid #c5d4bf;border-radius:8px;padding:9px 12px;margin:0}
+.formnote{font-size:14.5px;background:#fdf0f1;border:1px solid #efc3ca;border-radius:8px;padding:9px 12px;margin:0}
 section{padding:56px 0}
 h2{font-size:clamp(32px,8vw,50px);margin-bottom:16px}
 .svc{margin:0;padding:0;list-style:none;border-top:1.5px solid var(--slate)}
@@ -122,6 +122,13 @@ input[type=file]{padding:10px;min-height:52px;font-size:15px}
 @media (min-width:820px){.two{grid-template-columns:1fr 1fr;gap:48px;align-items:start}}
 
 .nav{display:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.mark img{display:block;height:48px;width:auto}
+.job{display:grid;gap:22px;align-items:center}
+.job figure{margin:0}
+.job img{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;object-position:50% 35%;border-radius:12px}
+.job figcaption{font-size:14.5px;color:var(--slate2);margin-top:8px}
+@media (min-width:820px){.job{grid-template-columns:1fr 1.1fr;gap:56px}}
 .proof{margin:18px 0 0;padding:12px 14px;border-left:0;border-radius:10px;background:#ffffff12;color:#e7ecea;font-size:16px;max-width:40ch}
 .proof q{font-weight:600;color:#fff}
 .proof span{display:block;font-size:14px;color:var(--tan);margin-top:2px}
@@ -158,7 +165,7 @@ input[type=file]{padding:10px;min-height:52px;font-size:15px}
 <div class="roof">
  <div class="wrap">
   <header>
-   <a class="mark" href="#top"><span>John's Quality Roofing<small>Bella Vista, Arkansas</small></span></a>
+   <a class="mark" href="#top"><img src="logo.webp" width="111" height="48" alt="John's Quality Roofing"><span class="sr">Bella Vista, Arkansas</span></a>
    <nav class="nav" aria-label="Sections"><a href="#check">Roof check</a><a href="#services">The work</a><a href="#faq">Questions</a><a href="#area">Area</a></nav>
    <a class="hcall" href="tel:+14794267931">Call<span>479-426-7931</span></a>
   </header>
@@ -193,6 +200,12 @@ input[type=file]{padding:10px;min-height:52px;font-size:15px}
 
 <main>
 <div class="how" aria-label="What happens next"><div class="wrap"><ol><li><div><b>Send the job</b><span>A few details and photos from the ground, if you have them.</span></div></li><li><div><b>We set a time to look</b><span>We call you back to set up a visit.</span></div></li><li><div><b>You get a quote</b><span>Repair or replace, with what we saw on your roof.</span></div></li></ol></div></div>
+<section id="work" aria-labelledby="wkh">
+ <div class="wrap job">
+  <figure><img src="job-bella-vista-roof.webp" width="720" height="960" loading="lazy" decoding="async" alt="A finished dark shingle roof on a brick home with arched windows"><figcaption>A finished roof from our Google profile, July 2026.</figcaption></figure>
+  <div><h2 id="wkh">Our own work</h2><p class="lead">Every photo here is a roof we did. No stock pictures.</p><a class="btn ghost" href="https://share.google/cwPtPyLcNVSMOYNpp" rel="noopener">See more on Google</a></div>
+ </div>
+</section>
 <section class="reviews" aria-labelledby="rvh">
  <div class="wrap">
   <h2 id="rvh">What customers say on Google</h2>

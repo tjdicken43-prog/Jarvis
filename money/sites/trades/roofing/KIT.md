@@ -30,3 +30,6 @@ Name, phone, email, address, hours, emergency line (yes/no), towns, services (re
 
 ## Never claim unless sourced
 Insurance-claim help, specific warranty years, shingle brands, certifications (GAF, Owens Corning), "free" inspections or estimates, prices.
+
+## Photos
+Run `../../tools/photo-sheet.js` once and follow "Photos and logo colors" in `../README.md`. Preview only; the owner's OK comes before go-live.

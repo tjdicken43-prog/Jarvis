@@ -93,8 +93,47 @@ blockquote footer{font-size:15px;color:var(--slate2)}
 .map text{font:600 15px "Libre Franklin",sans-serif;fill:var(--slate)}
 .note{font-size:14.5px;color:var(--slate2)}
 @media (min-width:820px){.hero .btn.big{display:inline-flex}.mapgrid{grid-template-columns:1fr 1fr;align-items:start}.tl{columns:3}}
+
+.tool{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px 20px}
+.tool h3{font-size:22px;margin-bottom:4px}
+.tool>p{margin:0 0 12px;color:var(--slate2)}
+.checks{display:grid}
+.checks label{display:flex;gap:12px;align-items:flex-start;font-weight:500;min-height:48px;padding:12px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.checks input{width:24px;height:24px;min-height:0;padding:0;margin:1px 0 0;accent-color:var(--cedar);flex:none}
+.verdict{margin:16px 0 0;padding:14px 16px;border-radius:10px;background:var(--paper);font-weight:600;font-size:18px}
+.verdict small{display:block;font-weight:400;font-size:15px;color:var(--slate2);margin-top:4px}
+.fine{font-size:14.5px;color:var(--slate2);margin:12px 0 0}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0;border-top:1.5px solid var(--slate)}
+.steps li{counter-increment:s;display:grid;grid-template-columns:40px 1fr;gap:12px;padding:16px 0;border-bottom:1px solid var(--line)}
+.steps li::before{content:counter(s);width:34px;height:34px;border-radius:50%;background:var(--slate);color:#fff;display:grid;place-items:center;font-weight:800}
+.steps b{display:block;font-size:18px}
+.steps p{margin:2px 0 0;color:var(--slate2)}
+.faq details{border-bottom:1px solid var(--line)}
+.faq details:first-child{border-top:1.5px solid var(--slate)}
+.faq summary{min-height:58px;display:flex;align-items:center;justify-content:space-between;gap:16px;font-weight:700;font-size:18px;cursor:pointer;list-style:none;padding:8px 0}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";font-size:26px;font-weight:400;color:var(--cedar);flex:none}
+.faq details[open] summary::after{content:"\2212"}
+.faq details p{margin:0 0 18px;max-width:62ch;color:var(--slate2)}
+.pick{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 14px}
+.pick button{min-height:48px;padding:0 16px;border-radius:999px;border:1.5px solid var(--slate);background:transparent;color:var(--slate);font:600 16px "Libre Franklin",sans-serif;cursor:pointer}
+.pick button[aria-pressed="true"]{background:var(--slate);color:#fff}
+.ans ul{margin:0;padding-left:20px}
+.ans li{margin:6px 0}
+.ans .btn{margin-top:14px;display:inline-flex}
+.alert{background:#fff4e2;border:1px solid #e9c07a;color:#3d2a06;border-radius:10px;padding:14px 16px;margin:16px 0 0}
+.alert b{display:block}
+.two{display:grid;gap:32px}
+.lead{max-width:60ch;color:var(--slate2);margin:0 0 18px}
+.tight{padding-top:8px}
+input[type=file]{padding:10px;min-height:52px;font-size:15px}
+.season{display:inline-flex;align-items:center;gap:8px;font-size:15px;font-weight:600;color:var(--tan);margin:0 0 14px}
+.season i{width:9px;height:9px;border-radius:50%;background:var(--tan)}
+@media (min-width:820px){.two{grid-template-columns:1fr 1fr;gap:48px;align-items:start}}
+.steps.plain li{grid-template-columns:1fr}.steps.plain li::before{display:none}
 </style>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"HVACBusiness","name":"One Call Heating, Cooling & Refrigeration","telephone":"+1-479-273-2914","url":"https://onecallnwa.com/","slogan":"One Call Solves All","openingHours":"Mo-Su 00:00-23:59","paymentAccepted":"Credit Card","areaServed":["Avoca", "Bella Vista", "Bentonville", "Bethel Heights", "Cave Springs", "Centerton", "Decatur", "Elkins", "Elm Springs", "Farmington", "Fayetteville", "Garfield", "Gateway", "Gentry", "Goshen", "Gravette", "Greenland", "Highfill", "Johnson", "Little Flock", "Lincoln", "Lowell", "Pea Ridge", "Prairie Grove", "Rogers", "Siloam Springs", "Springdale", "Springtown", "Sulphur Springs", "Tontitown", "War Eagle", "West Fork", "Winslow"],"brand":["American Standard","York","ClimateMaster"]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Are you really open 24/7?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. We offer 24/7 emergency service for heating and air conditioning. Call (479) 273-2914."}}, {"@type": "Question", "name": "How often should my system be serviced?", "acceptedAnswer": {"@type": "Answer", "text": "We recommend a check-up two times a year: once before the heating season and once before the cooling season. Routine maintenance helps save you money."}}, {"@type": "Question", "name": "What brands do you install?", "acceptedAnswer": {"@type": "Answer", "text": "American Standard, York and ClimateMaster geothermal heat pump systems."}}, {"@type": "Question", "name": "Do you work on refrigeration?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. We install heating, air conditioning and refrigeration."}}, {"@type": "Question", "name": "Which towns do you cover?", "acceptedAnswer": {"@type": "Answer", "text": "33 towns across Benton and Washington counties, from Bella Vista and Gravette down to Winslow. The full list is on this page."}}, {"@type": "Question", "name": "Are you licensed and insured?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, we are licensed and insured."}}, {"@type": "Question", "name": "How can I pay?", "acceptedAnswer": {"@type": "Answer", "text": "All major credit cards are accepted."}}]}</script>
 </head>
 <body>
 <div class="pv"><b>Concept preview</b> made by Sites by TJ for One Call. Not the official site. Facts come from onecallnwa.com.</div>
@@ -106,6 +145,7 @@ blockquote footer{font-size:15px;color:var(--slate2)}
   </header>
   <div class="hero" id="top">
    <div>
+    <p class="season" id="season"><i></i>Heating and cooling calls, 24/7</p>
     <h1>Heating and AC repair in Bentonville, day or night.</h1>
     <p class="lede">Repairs, new systems and twice-a-year maintenance for homes across Benton and Washington counties. Over 30 years of experience.</p>
     <a class="btn big" href="tel:+14792732914"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2"/></svg>Call (479) 273-2914</a>
@@ -127,6 +167,36 @@ blockquote footer{font-size:15px;color:var(--slate2)}
  </div>
 </div>
 <main>
+
+<section id="checks">
+ <div class="wrap two">
+  <div class="tool">
+   <h2 style="font-size:clamp(28px,7vw,40px)">Before you call: quick checks</h2>
+   <p>Pick what your system is doing. Some fixes take two minutes.</p>
+   <div class="pick" role="group" aria-label="What is your system doing?">
+    <button type="button" data-k="heat">No heat</button><button type="button" data-k="cool">AC not cooling</button><button type="button" data-k="air">Weak airflow</button><button type="button" data-k="water">Water by the unit</button><button type="button" data-k="noise">Noise or smell</button>
+   </div>
+   <div class="ans">
+    <div data-a="heat"><ul><li>Thermostat on <b>Heat</b>, set a few degrees above the room.</li><li>Put fresh batteries in the thermostat.</li><li>Check the furnace breaker, and the switch near the furnace that looks like a light switch.</li><li>Check the filter. A clogged filter can shut a furnace down.</li></ul></div>
+    <div data-a="cool"><ul><li>Thermostat on <b>Cool</b> and fan on <b>Auto</b>.</li><li>Check both breakers: one for the indoor unit, one for the outdoor unit.</li><li>Change a dirty filter.</li><li>Ice on the copper lines? Turn cooling off, set the fan to <b>On</b> to thaw it, and call us.</li></ul></div>
+    <div data-a="air"><ul><li>Change the filter first. It is the most common cause.</li><li>Open closed vents and clear anything blocking the return grilles.</li><li>Ice on the lines or a fan that won't spin? Turn the system off and call.</li></ul></div>
+    <div data-a="water"><ul><li>Turn the system off at the thermostat.</li><li>Wipe up the water and keep it away from cords and outlets.</li><li>A blocked drain line is a common cause. Call and we'll clear it.</li></ul></div>
+    <div data-a="noise"><ul><li>Grinding, screeching or a burning smell: turn the system off at the thermostat and call.</li><li>Don't keep running it. Small problems get expensive fast.</li></ul>
+     <p class="alert" role="note"><b>Smell gas (like rotten eggs)?</b>Leave the house now. Don't flip switches. Call 911 or your gas company from outside.</p></div>
+    <a class="btn" href="tel:+14792732914"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2"/></svg>Still not right? Call 24/7</a>
+   </div>
+  </div>
+  <div>
+   <h2>Have this ready when you call</h2>
+   <ol class="steps plain">
+    <li><div><b>What it is doing</b><p>No heat, no cooling, a noise, water. And when it started.</p></div></li>
+    <li><div><b>The brand and age</b><p>It's on the sticker on the indoor or outdoor unit. A phone photo works.</p></div></li>
+    <li><div><b>Any blinking lights or codes</b><p>Many furnaces show a code through a small window on the panel.</p></div></li>
+    <li><div><b>Your filter size</b><p>Printed on the edge of the filter, like 16x25x1.</p></div></li>
+   </ol>
+  </div>
+ </div>
+</section>
 <section id="services">
  <div class="wrap split">
   <div>
@@ -139,6 +209,26 @@ blockquote footer{font-size:15px;color:var(--slate2)}
    <li><h3>New systems</h3><p>Furnaces, air conditioners, heat pumps and refrigeration, installed. Including ClimateMaster geothermal heat pump systems.</p></li>
    <li><h3>Maintenance</h3><p>Routine maintenance on your system helps save you money. We recommend a check-up twice a year.</p></li>
   </ul>
+ </div>
+</section>
+
+<section class="reviews" id="tuneup">
+ <div class="wrap two">
+  <div>
+   <h2>Tune-up reminders</h2>
+   <p class="lead">We recommend a check-up twice a year. Leave your number and we'll remind you in spring and fall, before the heat and the cold.</p>
+   <form class="tool" onsubmit="event.preventDefault();this.querySelector('.formnote').textContent='Preview only: reminders are not connected yet.'">
+    <p class="formnote">Preview only. Reminders are not connected yet.</p>
+    <label>Mobile number<input name="mobile" type="tel" autocomplete="tel" required></label>
+    <button class="btn" type="submit">Remind me twice a year</button>
+   </form>
+  </div>
+  <div>
+   <h2>Geothermal, explained</h2>
+   <p class="lead">A geothermal heat pump uses the steady temperature underground to heat your home in winter and cool it in summer. We install ClimateMaster geothermal heat pump systems. Ask us if your property is a fit.</p>
+   <h2 style="margin-top:28px">Questions</h2>
+   <div class="faq"><details><summary>Are you really open 24/7?</summary><p>Yes. We offer 24/7 emergency service for heating and air conditioning. Call (479) 273-2914.</p></details><details><summary>How often should my system be serviced?</summary><p>We recommend a check-up two times a year: once before the heating season and once before the cooling season. Routine maintenance helps save you money.</p></details><details><summary>What brands do you install?</summary><p>American Standard, York and ClimateMaster geothermal heat pump systems.</p></details><details><summary>Do you work on refrigeration?</summary><p>Yes. We install heating, air conditioning and refrigeration.</p></details><details><summary>Which towns do you cover?</summary><p>33 towns across Benton and Washington counties, from Bella Vista and Gravette down to Winslow. The full list is on this page.</p></details><details><summary>Are you licensed and insured?</summary><p>Yes, we are licensed and insured.</p></details><details><summary>How can I pay?</summary><p>All major credit cards are accepted.</p></details></div>
+  </div>
  </div>
 </section>
 <section class="area reviews" id="area">
@@ -170,5 +260,12 @@ blockquote footer{font-size:15px;color:var(--slate2)}
 </main>
 <div class="ft"><div class="wrap">One Call Heating, Cooling &amp; Refrigeration · One Call Solves All · <a href="tel:+14792732914">(479) 273-2914</a></div></div>
 <div class="bar"><a class="btn" href="tel:+14792732914"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2"/></svg>Call 24/7</a><a class="btn ghost" href="#book">Book a visit</a></div>
+<script>
+(function(){var p=document.querySelector(".pick");if(!p)return;var b=p.querySelectorAll("button"),a=document.querySelectorAll(".ans [data-a]");
+function show(k){b.forEach(function(x){x.setAttribute("aria-pressed",x.dataset.k===k?"true":"false")});a.forEach(function(x){x.hidden=x.dataset.a!==k})}
+b.forEach(function(x){x.addEventListener("click",function(){show(x.dataset.k)})});show(b[0].dataset.k)})();
+</script><script>
+(function(){var m=new Date().getMonth(),e=document.getElementById("season");if(!e)return;e.lastChild.textContent=(m>=9||m<=2)?"Heating season: furnace and heat pump calls, 24/7":"Cooling season: AC calls, 24/7"})();
+</script>
 </body>
 </html>

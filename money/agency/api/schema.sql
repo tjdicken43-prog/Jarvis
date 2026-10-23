@@ -120,3 +120,11 @@ CREATE TABLE IF NOT EXISTS leads (
   created_at        timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS leads_status_trade ON leads (status, trade);
+
+-- Operator switches (step 2): {"paused": true} stops every send until TJ flips it back
+CREATE TABLE IF NOT EXISTS settings (
+  key        text PRIMARY KEY,
+  value      jsonb NOT NULL,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+INSERT INTO settings (key, value) VALUES ('paused', 'true') ON CONFLICT DO NOTHING;

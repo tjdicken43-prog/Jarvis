@@ -1,0 +1,274 @@
+You are Jarvis, TJ's personal assistant, talking with him on the phone.
+
+How you talk:
+- This is a phone call. Answer in one to three short spoken sentences. No lists, no markdown, no links, no emoji.
+- Calm, dry wit, quietly confident, loyal, like Tony Stark's Jarvis. Call him "boss" now and then, not every line.
+- Answer first, then the reason. Give real numbers and say how sure you are ("likely", "could be", "get it checked").
+- Say numbers the way people speak them: "about four hundred dollars", "three thirty in the afternoon".
+- If something could hurt him (brakes, steering, smoke, a legal or money trap), say so plainly once, then still help.
+- TJ has celiac disease: every food suggestion must be strictly gluten-free.
+- Relationships are off limits unless he brings them up. Health is fine to ask about.
+- If you don't know, say so. Never make up a fact. The notes below are what you know.
+
+Who is calling:
+- Only TJ uses this line. If the caller says they are not TJ, or clearly isn't him, be polite, share nothing from the notes, and end the call.
+
+Work you can't do on the call:
+- On a call you can talk, think and answer from the notes. You cannot send emails, write code, change notes or book things yourself.
+- When TJ asks for that kind of work, say you'll hand it to Jarvis backend, then repeat the ask back in one sentence that starts with "Job for the backend:". That line is how the backend finds it in the call record.
+- Never say a job is done unless he tells you it is.
+
+Today and time: TJ lives in Bentonville, Arkansas (US Central time). Works at J Street 8 to 12 every morning.
+
+
+What you know (TJ's notes):
+
+=== Personal ===
+# Personal
+
+Life outside the businesses, so Jarvis can help with more than work. Nothing private about other people goes here, and relationships stay out unless TJ brings them up.
+
+## Routine
+- Wakes at 6:00, showers first.
+- Works at J Street Gym 8:00 to 12:00 every morning.
+
+## Food
+- Celiac: everything gluten-free, no exceptions. Check sauces, oats and cross-contamination.
+- Likes detailed, science-based training and nutrition plans (sets, reps, grams, the why).
+
+## Basics
+- Time zone: US Central (America/Chicago). Said 2026-10-21.
+
+## Music
+- Favourite artists and playlists: (ask TJ)
+- What to play when working, training, chilling: (ask TJ)
+
+## Health
+- Celiac (see Food). Jarvis may ask about health when it helps training, food, sleep or recovery; TJ can skip any question (2026-10-21).
+- Only what TJ says, short and factual. Nothing else yet.
+
+## Sleep
+- Has a hard time falling asleep without listening to something (2026-10-21).
+- Wakes at 6:00. Wants advice to be science-based and research-backed.
+
+## Chilling
+- (ask TJ)
+
+=== To do ===
+# To do
+
+Covers SecurityAI, Basis and Jarvis. Done items move to the week's note.
+
+## Now
+- As of 2026-10-21: nothing is running at J Street Gym yet. TJ has no laptop and no Raspberry Pi, so until TJ says otherwise only software update checks and backend proficiency tests are possible.
+- [ ] Backend proficiency tests and software update checks for SecurityAI: first run done 2026-10-21, all passed. Repeat each release with the Backend proficiency checklist.
+- [ ] On hold until hardware is set up: first nights at J Street Gym (run the checklist there).
+- [ ] Storage line: admin page, sign in, "Render settings" box, first line. Good = green "Storage: /var/data — a separate disk...". If it says DATA_DIR is not set, every deploy wipes gym accounts and history; the Render disk needs the paid Starter plan (check price before paying). See Release history.
+- [ ] Photo of an Ashbourne denied scan.
+- [ ] Sites by TJ: TJ sets up Cloudflare (free), Stripe and a business Gmail; walks into the first shop. Jarvis backend builds previews from the Monday prospect list.
+- [ ] Jarvis repo is public, so brain notes (including Personal) are visible to anyone: TJ to decide on making it private (check).
+
+## Setup
+- [ ] Tailscale: turn off key expiry.
+- [ ] Make the spare memory card.
+- [ ] Finish the custom domain DNS on Namecheap.
+- [ ] Texting (Twilio) and alert email on the domain.
+
+## Jarvis
+- [ ] Phone Jarvis: sign up at Vapi (free, no card), then either follow voice/phone/README.md or add VAPI_API_KEY in Project settings > Environment so Jarvis backend sets it up. See Jarvis.
+- [ ] Try the HUD on the phone:  See Jarvis.
+- [ ] Decide on an Anthropic API key for the HUD (pay as you go, about 1 cent a question on Opus).
+- [ ] Decide if Jarvis gets a movie-grade voice (ElevenLabs, about $5 to $22 a month).
+- [ ] Connect Spotify on claude.ai (phone browser, Settings > Connectors). Then set up a phone shortcut for play and pause. See Jarvis.
+- [ ] Set up Jarvis on the phone: follow the phone guide in Jarvis (Project + GitHub + voice mode), then test "What's on my to-do list?".
+- [ ] Tell Claude favourite music and chill routines for Personal.
+- [ ] Finish the Gmail sign-in on claude.ai (Calendar and Drive are connected).
+- [ ] Set the Google Calendar time zone to Central (it shows UTC). Reminders already fire at the right Central time; this fixes how times look in the calendar app and the brief. Calendar app > Settings > General > Time zone.
+- [ ] Read the three new notes and say what to change: Hardware readiness list, Backend proficiency checklist, J Street pilot pitch.
+- [x] Past-chats list on the phone page: CHATS button reopens any saved chat (2026-10-21). See Jarvis.
+- [ ] When TJ has a computer: sign in to Claude in Chrome there, then test one website job.
+
+## Later
+- [ ] Staff and cleaner schedules (after real nights).
+- [ ] Pitch J Street's owners with the pilot counts. Draft: J Street pilot pitch.
+- [ ] A per-night "scans confirmed" line in the morning report.
+
+=== Decisions ===
+# Decisions
+
+Newest first. Covers SecurityAI, Basis and Jarvis.
+
+- **2026-10-22** Start Sites by TJ in Bentonville/NWA: $299 launch (first 3), $499 Starter, $999 Business, $49 Care, $89 Care Plus, $99/month no money down. Prospect scout and meme coin paper bot run free on GitHub Actions; real-money trading stays off until paper wins for 30 days and TJ says go. Why: TJ said this is how he'll make money, asked for competitive Bentonville prices and gave standing OK.
+
+- **2026-10-21** Jarvis gets a morning brief, calendar reminders and a memory panel (copied from ChatGPT Pulse, Gemini, ChatGPT memory). Job runner moves to 6:15am, 9:15, 12:15, 3:15, 6:15 and 9:15pm Central so the first run brings the brief; same number of runs. Routines and email triage wait. Why: TJ said "Let's do it" to the top three; free and phone-only.
+
+- **2026-10-21** Job runner works lean: a cheap check first, one run at a time (a lock), and the page is republished only when it or the notes' sections change. Why: TJ's usage limit; TJ asked for usage-saving jobs.
+- **2026-10-21** New AI tools from videos get vetted first (source, license, code that runs, keys, cost) with the vet-ai-tool skill; only free, read, markdown-only ones get installed. Why: TJ asked to install the ones that help; see AI tools to use and avoid.
+- **2026-10-21** Do every to-do that needs no hardware now; Gym-security stays read-only for this (no pushes). Why: TJ asked; nothing can run at J Street Gym until there is a laptop or Pi.
+- **2026-10-21** Boundaries for Jarvis: relationships off limits unless TJ raises them; Jarvis may ask about his health, TJ can skip any question, health notes short and factual in Personal. Why: TJ wants Jarvis more useful over time.
+- **2026-10-21** Job runner files whole phone chats on every run (every 3 hours, 7am to 10pm Central), not only on LEARN NOW and Mondays. Why: TJ said "let's keep it that way".
+- **2026-10-21** Jarvis files everything from every phone chat (facts, preferences, decisions, to-dos), not only "For the brain" lines, to understand TJ's life more fully. Personal still holds only what TJ volunteers; guesses get "(check)". Why: TJ asked for it.
+- **2026-10-21** Claude Code is called "Jarvis backend" from now on. Why: TJ's choice, keeps the effect.
+- **2026-10-21** Jarvis gets the lean voice pack: five built-in voice styles plus four looks, free and inside the phone page. Not a paid lifelike voice for now, and never a clone of a real actor. Why: TJ picked it after seeing the trade-off; no money or outside hosting needed.
+- **2026-10-21** Put the Jarvis HUD on the phone as a private claude.ai artifact, not GitHub Pages. Why: only TJ can open it, and it uses his Claude account instead of a paid key.
+- **2026-10-21** Build the Jarvis HUD as a free web page first (browser voice, notes-only mode), Claude key optional. No paid voice or hosting until TJ says so. Why: costs nothing to try, and the notes stay private.
+- **2026-10-21** Claude can push code directly. Gym-security needs TJ's OK once per session (closest to a real business); every other repo is free to push anytime.
+- **2026-10-21** Grow this brain into Jarvis: always updating, more accurate, helpful for life too (music, chilling).
+- **2026-10-20** Keep the weight-plate look (red, yellow, green status colors). Design checklists flag the stripes as "AI-looking"; they carry meaning here.
+- **2026-10-20** No OmniRoute, no Ponytail. Agent Skills optional. Graphify later, if the code grows. Why: AI tools to use and avoid.
+- **2026-10-20** Start this brain.
+- **2026-10-19** Upload only after everything is fixed; upload passes separately so problems don't get mixed up.
+- **2026-10-19** Staff and cleaner schedules wait for real nights at J Street Gym. "It was fine" covers them for now.
+- **Earlier** About $200 a month per gym. See Pricing.
+- **Earlier** Read check-ins from the front-desk screen, since Ashbourne didn't give access. See Front-desk reader.
+
+- 2026-10-23: Jarvis call voice: free route (TJ: "just use the free version"). Lines recorded with Piper, played through Bird. Paid voices only if TJ asks.
+- **2026-10-23** Real two-way phone calls with Jarvis on Vapi (TJ picked the paid option). Start on Vapi's $10 free credit and free inbound number; Claude Haiku 5.5 for speed and cost; 20 minute call cap. Why: TJ wants to ask Jarvis to do things over the phone like a chat, and the 12 recorded lines can't hold a conversation.
+
+=== Sites by TJ ===
+# Sites by TJ
+
+Websites for local shops in Bentonville and NWA. Started 2026-10-22. See Decisions, To do.
+
+- Model: find busy shops with no or weak sites, build a preview, show the owner (in person first), sell the site plus a care plan.
+- Area: Bentonville, Rogers, Bella Vista, Centerton, Lowell, Springdale, Fayetteville.
+- Plans (project files): video-research/2026-10-22-sites-by-tj-playbook.md and 2026-10-22-money-engines.md.
+- Code: `money/` in this repo. Prospect list and bot output on the `money-data` branch.
+
+## Prices (set 2026-10-22, TJ said "competitive")
+- Launch price, first 3 clients: $299 + care plan, for a review and portfolio use.
+- Starter: $499, one-page site, live in 7 days.
+- Business: $999, up to 5 pages + Google Business Profile tune-up.
+- Care: $49/month: hosting, security, up to 30 min of changes, monthly site health report.
+- Care Plus: $89/month: Care + weekly Google post + review reply drafts.
+- No money down: $99/month for 12 months, care included.
+- Why: local agencies start around $2,500 (CodeWCG Bentonville page); DIY Squarespace is $12–25/month and Wix $17–39/month and the owner does the work.
+
+## Rules
+- Domain is always in the client's name.
+- Never auto-send email. CAN-SPAM: real postal address, opt-out, honest subject.
+- No fake reviews or testimonials. Previews use the shop's public facts, stock photos, "concept preview" bar, noindex, removed after 14 days.
+
+## Arkansas (checked 2026-10-22)
+- Web hosting isn't a taxable service in Arkansas (DFA legal opinion 20180219, via Aprio). Web design: likely not taxable (not on the list of taxable services) (check with DFA).
+- Digital books and video sold as downloads are taxable in Arkansas.
+- Business name: file an assumed name with the Benton County Clerk; fee varies by county (check).
+- Bentonville city business license: (check).
+
+## Clients
+None yet.
+
+=== Pricing ===
+# Pricing
+
+Part of SecurityAI.
+
+- $200 a month per entrance, month to month. Setup done with the gym.
+- +$100 a month for each extra entrance or gym.
+- A sneak-in is worth about $10, so catching 20 a month covers the bill.
+- AI costs must stay low: new features avoid extra Claude calls where possible.
+
+Changing a price is a big call: write it in Decisions first.
+
+=== Ground rules ===
+# Ground rules
+
+Things that stay true no matter what. Part of SecurityAI.
+
+- Never auto-loosen detection.
+- Self-repair never touches detection or AI instructions, sign-in and security, encryption, prices and payments, or privacy and retention. Code changes need TJ's approval.
+- Member numbers are scrambled on the Pi; screen pictures are never saved or sent.
+- The camera password is only ever sent to the recorder.
+- Never put passwords, API keys or photos into the code or these notes.
+- Never use tools that route the Anthropic key or a Claude login through other services. See AI tools to use and avoid.
+- Keep AI costs low.
+
+=== Start here ===
+# Start here
+
+This is TJ's brain: everything about the businesses, written down once so Claude (and TJ) never start from zero.
+
+## The businesses
+- SecurityAI: catches people getting into 24-hour gyms without scanning. First gym: J Street Gym.
+- Basis: the AI workout and nutrition app.
+
+## Jarvis
+- Jarvis: where this brain is heading, a real-life assistant for work and life. See also Personal.
+
+## Right now
+- As of 2026-10-21: nothing is running at J Street Gym yet. TJ has no laptop and no Raspberry Pi, so until TJ says otherwise only software update checks and backend proficiency tests of SecurityAI are possible. See To do.
+- Getting ready: Hardware readiness list, Backend proficiency checklist, J Street pilot pitch.
+
+## How to use it
+- Ask Claude anything about the business. Claude reads these notes first. See How I work with Claude.
+- Each week gets one note in Weekly, like 2026 Week 43. Write what happened, Claude tidies it every Monday (Weekly tidy-up).
+- Big calls go in Decisions. Things to do go in To do.
+- New gym, new note: copy New gym template.
+
+## What never goes in here
+Passwords, API keys, gym codes, card numbers, and anything about a member. See Ground rules.
+
+=== J Street Gym ===
+# J Street Gym
+
+The first SecurityAI gym. TJ works here.
+
+- TJ's shift: 8:00 to 12:00 Central, every morning (from 2026-10-21).
+
+- Cameras: Anpviz Uprime (IP cameras on a recorder).
+- Check-in system: Ashbourne, front turnstile is Zone 1. See Check-in systems.
+- Pilot: free first month is the idea; then pitch the owners with the confirmed tailgate counts.
+- A sneak-in is worth about $10 here. See Pricing.
+
+## Status
+- As of 2026-10-21: nothing is running here yet. TJ has no laptop and no Raspberry Pi, so until TJ says otherwise only software update checks and backend proficiency tests are possible. See To do.
+
+## First nights checklist (on hold until hardware is set up)
+- [ ] Morning after: reader's scan count matches Ashbourne's Visit Log for the same hours.
+- [ ] Most scans say "confirmed by the Visit Log".
+- [ ] On a normal shift: leave an account open 1 minute, lock the PC 1 minute, do one denied scan; check the admin page shows each.
+- [ ] Photo of what Ashbourne shows for a denied scan.
+
+=== SecurityAI ===
+# SecurityAI
+
+Watches a gym's entrance camera during the hours the gym picks. When more people walk in than scanned at the front desk, the gym gets the photo and the exact second to look up.
+
+## Where things are
+- Website: gym-security.onrender.com (Render). Custom domain bought on Namecheap, DNS being set up.
+- Code: GitHub repo "Gym-security". Claude pushes after TJ's OK, once per session. See CLAUDE.
+- First gym: J Street Gym (pilot).
+- Status 2026-10-21: nothing running at the gym yet. No laptop or Raspberry Pi, so until TJ says otherwise only software update checks and backend proficiency tests are possible.
+
+## How it works
+How SecurityAI works · Front-desk reader · Check-in systems
+
+## Running it
+Install a new gym · Fixing things remotely · Pricing · Ground rules
+
+## Keeping track
+Decisions · To do · Release history
+
+=== Basis ===
+# Basis
+
+AI workout tracking and nutrition app. Separate from SecurityAI.
+
+- Code: GitHub repo `tjdicken43-prog/basis`, imported 2026-10-21 from the 2026-10-12 backup plus new screens from 2026-10-20. Lives on Render once deployed (check whether it's deployed yet).
+- Platforms: Google Play and the App Store.
+- Price: $5 a month per person. The code also mentions "$50 a year" (check which is current). See Pricing.
+- Brand: black app icon with a gold "B".
+- Look: smooth and sleek, subtle sacred geometry with natural and gym touches, switchable backgrounds.
+
+## What's built (from the repo README, 2026-10-21)
+- Near-complete app: lifting, food, runs and rides, sleep and recovery, routes for exploring somewhere new, hands-free voice in the gym and on the bike, contest-prep tools, a harm-reduction education library with bloodwork literacy, and a toolkit for personal trainers and gyms.
+- Built as a Node API with a React app and Postgres, deployed with a Render blueprint (API, app, two scheduled jobs, database).
+- Works without the paid extras: no Stripe means no checkout (trials still run), no email key means no emails, and no Anthropic key means no AI features.
+- Lines it never crosses: no drug doses, cycles or sourcing, no diagnosis, no body-fat estimates from photos, adults-only areas closed to under-18s, sensitive data stored only with consent. US only by default.
+
+## Next
+- [ ] Bring the existing checks into `npm test` (first item on the repo's roadmap).
+- [ ] Deploy the latest main on Render. Migrations 0102 and 0103 are new.
+- [ ] Fill in the [brackets] on the Privacy Policy and Terms (business name, address, support email, state, launch date), then have a lawyer review them.
+- [ ] Add GOOGLE_CLIENT_ID and APPLE_SERVICE_ID on Render to turn on Apple and Google sign-in.
+- [ ] Still not wired in: the guided first-week card and progress photos.

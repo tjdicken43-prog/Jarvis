@@ -6,12 +6,20 @@ Scorecard for Tj and the two other scorers: https://claude.ai/artifact/2pAMYGiri
 
 | Site | Trade, town | Lighthouse mobile (perf / a11y / best / SEO*) | Weight |
 |---|---|---|---|
-| one-call-hvac | HVAC, Bentonville | 100 / 100 / 100 / 100 | 69 KB |
-| johns-quality-roofing | Roofing, Bella Vista | 100 / 100 / 100 / 100 | 77 KB |
-| its-plumbing | Plumbing, Rogers | 100 / 100 / 100 / 100 | 48 KB |
+| one-call-hvac | HVAC, Bentonville | 100 / 100 / 100 / 100 | 45 KB |
+| johns-quality-roofing | Roofing, Bella Vista | 100 / 100 / 100 / 100 | 42 KB |
+| its-plumbing | Plumbing, Rogers | 100 / 100 / 100 / 100 | 41 KB |
 
 \* SEO is 60 with the preview `noindex` on, 100 with it off. Checked at 375, 390 and 1280 px: no sideways scroll, no console errors, all taps 48 px or more.
 No business has been contacted.
+
+## House style (Tj, 2026-10-23)
+Round 1 scores from Tj: John's Roofing 8/10, the other two 6/10. Tj: go with the John's Quality Roofing layout ("the cleanest UI by far"), with nothing that gives away that AI built it.
+- One plain workhorse font (Libre Franklin), self-hosted. No serif-on-cream, no terracotta, no italic accent words, no invented logos.
+- Dark hero band with the trade's own texture at the bottom (shingles, vent slats, pipe), with a white form card beside the headline.
+- Plain headline that names the job and the town. Hours and one proof point under it.
+- Sections: reviews (when real ones exist), "The work" ruled list, area, then the contact details. A sticky two-button bar on phones.
+- Each site still gets its own colors, texture, copy and order (call first for emergency trades, the form first for project trades).
 
 ## Sources (every fact on the pages comes from these, read 2026-10-23)
 - **One Call Heating, Cooling & Refrigeration:** https://onecallnwa.com/ . Phone (479) 273-2914, "24/7 Emergency Service", "over 30 years of experience", "Licensed & Insured", "All Major Credit Cards Accepted", tagline "One Call Solves All", twice-a-year maintenance, brands American Standard, York, ClimateMaster geothermal, the 33 towns. No street address or hours on their site, so none on ours. Map dots are approximate town centers.

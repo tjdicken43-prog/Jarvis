@@ -13,6 +13,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <span className="brand">Operator</span>
           <nav>
             <Link href="/queue">Queue</Link>
+            <Link href="/clients">Clients</Link>
+            <Link href="/leads">Leads</Link>
             <Link href="/do-not-email">Do not email</Link>
           </nav>
         </header>

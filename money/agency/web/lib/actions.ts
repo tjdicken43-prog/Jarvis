@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { api, errMsg } from "./api";
-import type { ApproveResult, DraftResult, SendResult, Suppression } from "./types";
+import type { ApproveResult, CheckoutResult, Client, DraftResult, SendResult, Suppression } from "./types";
 
 type R<T> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -44,4 +44,19 @@ export async function unapprove(id: string | number): Promise<R<unknown>> {
 }
 export async function setPaused(paused: boolean): Promise<R<{ paused: boolean }>> {
   return run(() => api<{ paused: boolean }>("/settings/pause", { method: "POST", body: { paused } }));
+}
+export async function addClient(fields: {
+  prospect_id?: string;
+  business_name?: string;
+  email?: string;
+  trade?: string;
+  plan: string;
+  billing: string;
+}): Promise<R<Client>> {
+  const body = Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, (v ?? "").trim() || undefined]));
+  return run(() => api<Client>("/clients", { method: "POST", body }));
+}
+// Stripe Checkout link (test mode) for TJ to send to the shop
+export async function checkoutLink(id: number, plan: string, billing: string): Promise<R<CheckoutResult>> {
+  return run(() => api<CheckoutResult>(`/clients/${id}/checkout`, { method: "POST", body: { plan, billing } }));
 }

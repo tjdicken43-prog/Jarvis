@@ -78,3 +78,21 @@ table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); }
 th { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; font-weight: 500; }
 tr:last-child td { border-bottom: 0; }
+h2.section { margin: 20px 0 8px; display: flex; gap: 10px; align-items: baseline; }
+.meter-cell { display: flex; flex-direction: column; gap: 4px; min-width: 120px; }
+.meter { display: block; height: 4px; background: var(--panel-2); border: 1px solid var(--line); }
+.meter > span { display: block; height: 100%; background: var(--muted); }
+.meter.over > span { background: var(--accent); }
+td { vertical-align: top; }
+th, td { overflow-wrap: normal; }
+td.num, td .num { white-space: nowrap; }
+/* Phone: each table row becomes a short card with labels */
+@media (max-width: 640px) {
+  .stack thead { display: none; }
+  .stack tr { display: block; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  .stack tr:last-child { border-bottom: 0; }
+  .stack td { display: flex; gap: 12px; padding: 2px 0; border: 0; }
+  .stack td[data-label]::before { content: attr(data-label); flex: 0 0 96px; color: var(--muted); font-size: 12px; }
+  .stack td:first-child { display: block; margin-bottom: 4px; }
+  .stack .meter-cell { flex: 1; }
+}

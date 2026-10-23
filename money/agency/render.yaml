@@ -27,6 +27,8 @@ services:
       - {key: FROM_EMAIL, sync: false}
       - {key: MAILING_ADDRESS, sync: false}
       - {key: DAILY_SEND_CAP, value: "5"}
+      - {key: STRIPE_SECRET_KEY, sync: false}      # sk_test_ only until TJ says live
+      - {key: STRIPE_WEBHOOK_SECRET, sync: false}
       - {key: PLAYWRIGHT_BROWSERS_PATH, value: "0"}   # keep Chromium inside the build so it exists at run time (check)
   - type: web
     name: agency-dashboard

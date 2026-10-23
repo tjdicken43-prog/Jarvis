@@ -21,6 +21,7 @@ Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's n
 - [ ] Texting (Twilio) and alert email on the domain.
 
 ## Sites by TJ
+- [ ] Trades MVP step 2 (FastAPI on Render) needs from TJ: cold email domain, mailing address, Anthropic + SendGrid + Stripe keys (put them on Render). Check Arkansas rules before switching on the 15% matchmaker (check).
 - [ ] Before any outreach: 3 golden sites (HVAC, roofing, plumbing) for real NWA businesses must each score 8+ from TJ and two other people, per money/SITE_BAR.md. See [[Sites by TJ]].
 
 ## Jarvis

@@ -11,7 +11,15 @@ Websites for local shops in Bentonville and NWA. Started 2026-10-22. See [[Decis
 - Plans (project files): video-research/2026-10-22-sites-by-tj-playbook.md and 2026-10-22-money-engines.md.
 - Code: `money/` in this repo. Prospect list and bot output on the `money-data` branch.
 
-## Prices (set 2026-10-22, TJ said "competitive")
+## Trades offer (2026-10-23, current)
+- Trades only: plumbing, HVAC, roofing. Sell a rebuilt site + AI receptionist, not a website.
+- Front Desk: $299 setup + $149/mo (site, hosting, after-hours receptionist, 300 min, missed-call text-back).
+- Front Desk Plus: $299 setup + $249/mo (24/7, 800 min, calendar booking, review requests). Over the minutes: $0.25/min.
+- Our cost per client about $29 to $58/mo (Plus $41 to $129), fixed about $60/mo (check). See [[Decisions]].
+- Code: money/agency/ (step 1 schema + import done, PR #62).
+
+## History
+### Prices (set 2026-10-22, TJ said "competitive")
 - Launch price, first 3 clients: $299 + care plan, for a review and portfolio use.
 - Starter: $499, one-page site, live in 7 days.
 - Business: $999, up to 5 pages + Google Business Profile tune-up.

@@ -13,6 +13,8 @@ Things seen on TikTok, checked before touching them.
 - **Impeccable** also copied into this repo (`.claude/skills/impeccable`, markdown only) on 2026-10-21; its overdrive guide shaped the phone page's Show off look.
 - **Blender connector** (official, Blender Lab / Blender Foundation, free): set up on TJ's computer from 2026-10-23 for 3D art for the phone page and [[Sites by TJ]] station. Runs any Python Claude writes inside Blender with no guard, so keep Claude Desktop's per-action approval on and passwords off that computer. Needs Blender 5.1+ and Claude Desktop.
 - **vet-ai-tool** skill (our own, in this repo): the steps for checking any new tool TJ sends before installing.
+- **skill-scout** skill (our own, in this repo, 2026-10-23): looks at recent work, names the gaps, and picks the next skill to learn; every pick goes through vet-ai-tool. Our safe stand-in for find-skills.
+- **skill-creator** (Anthropic, built in): writes our own skills when the procedure is ours.
 
 ## Fine, not needed now
 - **Agent Skills** (Addy Osmani): planning, specs and tests as written instructions. Safe.

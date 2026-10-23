@@ -20,6 +20,9 @@ Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's n
 - [ ] Finish the custom domain DNS on Namecheap.
 - [ ] Texting (Twilio) and alert email on the domain.
 
+## Sites by TJ
+- [ ] Before any outreach: 3 golden sites (HVAC, roofing, plumbing) for real NWA businesses must each score 8+ from TJ and two other people, per money/SITE_BAR.md. See [[Sites by TJ]].
+
 ## Jarvis
 - [ ] Phone Jarvis: sign up at Vapi (free, no card), then either follow voice/phone/README.md or add VAPI_API_KEY in Project settings > Environment so Jarvis backend sets it up. See [[Jarvis]].
 - [ ] Open Jarvis, tap FACTORY, then tap IMPROVE once to let Jarvis run his first design pass. See [[Jarvis]].

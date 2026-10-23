@@ -120,6 +120,35 @@ input[type=file]{padding:10px;min-height:52px;font-size:15px}
 .season{display:inline-flex;align-items:center;gap:8px;font-size:15px;font-weight:600;color:var(--tan);margin:0 0 14px}
 .season i{width:9px;height:9px;border-radius:50%;background:var(--tan)}
 @media (min-width:820px){.two{grid-template-columns:1fr 1fr;gap:48px;align-items:start}}
+
+.nav{display:none}
+.proof{margin:18px 0 0;padding:12px 14px;border-left:0;border-radius:10px;background:#ffffff12;color:#e7ecea;font-size:16px;max-width:40ch}
+.proof q{font-weight:600;color:#fff}
+.proof span{display:block;font-size:14px;color:var(--tan);margin-top:2px}
+.how{background:var(--card);border-bottom:1px solid var(--line);padding:26px 0}
+.how ol{list-style:none;margin:0;padding:0;display:grid;gap:14px;counter-reset:h}
+.how li{counter-increment:h;display:grid;grid-template-columns:36px 1fr;gap:12px;align-items:start}
+.how li::before{content:counter(h);width:32px;height:32px;border-radius:50%;border:2px solid var(--cedar);color:var(--cedar);display:grid;place-items:center;font-weight:800}
+.how b{display:block;font-size:17px}
+.how span{color:var(--slate2);font-size:15.5px}
+.when{border:1px solid var(--line);border-radius:10px;padding:12px 14px 14px;margin:0;display:grid;gap:10px}
+.when legend{font-weight:600;font-size:16px;padding:0 4px}
+.slots{display:flex;flex-wrap:wrap;gap:8px}
+.slots label{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border:1.5px solid var(--line);border-radius:999px;font-weight:500;cursor:pointer}
+.slots input{width:18px;height:18px;min-height:0;padding:0;margin:0;accent-color:var(--cedar)}
+.slots label:has(input:checked){border-color:var(--cedar);background:#00000008}
+.when small{color:var(--slate2);font-size:14px}
+.amap{width:100%;height:auto;max-width:420px;display:block;margin-top:22px}
+.amap circle{fill:var(--slate2)}.amap .hq circle{fill:var(--cedar)}
+.amap text{font:600 15px "Libre Franklin",sans-serif;fill:var(--slate)}
+.amap .off{font-weight:500;fill:var(--slate2)}
+@media (min-width:820px){
+ .nav{display:flex;gap:4px;margin-left:auto;margin-right:12px}
+ .nav a{display:inline-flex;align-items:center;min-height:48px;padding:0 12px;color:#d6dcd9;text-decoration:none;font-weight:600;font-size:15.5px;border-radius:8px}
+ .nav a:hover{background:#ffffff14;color:#fff}
+ .how ol{grid-template-columns:repeat(3,1fr);gap:28px}
+ .areagrid{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+}
 </style>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"RoofingContractor","name":"John's Quality Roofing","telephone":"+1-479-426-7931","email":"jqroofingsystems@gmail.com","url":"https://johnsqualityroofing.com/","address":{"@type":"PostalAddress","streetAddress":"5 Cromer Drive","addressLocality":"Bella Vista","addressRegion":"AR","postalCode":"72715","addressCountry":"US"},"openingHours":"Mo-Sa 07:00-19:00","areaServed":["Bella Vista","Bentonville","Rogers","Springdale","Fayetteville","Garfield","Fort Smith","Southwest Missouri"]}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What hours are you open?", "acceptedAnswer": {"@type": "Answer", "text": "Monday to Saturday, 7 am to 7 pm. For storm damage we have 24/7 emergency response: call 479-426-7931."}}, {"@type": "Question", "name": "Do you work outside Bella Vista?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. We roof in Bentonville, Rogers, Springdale, Fayetteville and Garfield, down to Fort Smith and up into Southwest Missouri."}}, {"@type": "Question", "name": "Are you licensed and insured?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, we are licensed and insured."}}, {"@type": "Question", "name": "Is the work under warranty?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, our work is backed by warranty. Terms depend on the job, so ask for them with your quote."}}, {"@type": "Question", "name": "Do you do siding and gutters too?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Siding and gutter work comes from the same crew that does your roof."}}, {"@type": "Question", "name": "Do you work with builders?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. We do new construction roofing for builders in Bella Vista and nearby."}}, {"@type": "Question", "name": "What should I send with a quote request?", "acceptedAnswer": {"@type": "Answer", "text": "Your address, what you are seeing, and a few photos taken from the ground if you have them. That helps us come out with the right plan."}}]}</script>
@@ -130,6 +159,7 @@ input[type=file]{padding:10px;min-height:52px;font-size:15px}
  <div class="wrap">
   <header>
    <a class="mark" href="#top"><span>John's Quality Roofing<small>Bella Vista, Arkansas</small></span></a>
+   <nav class="nav" aria-label="Sections"><a href="#check">Roof check</a><a href="#services">The work</a><a href="#faq">Questions</a><a href="#area">Area</a></nav>
    <a class="hcall" href="tel:+14794267931">Call<span>479-426-7931</span></a>
   </header>
   <div class="hero" id="top">
@@ -137,6 +167,7 @@ input[type=file]{padding:10px;min-height:52px;font-size:15px}
     <h1>Roof repair and replacement in Bella Vista.</h1>
     <p class="lede">Roof replacement, repairs, siding and gutters for homes in Bella Vista, Bentonville, Rogers and across NWA. New construction roofing for builders too.</p>
     <p class="hours"><span><b>Mon to Sat</b> 7 am to 7 pm</span><span><b>Storm damage?</b> 24/7 emergency response</span></p>
+    <p class="proof"><q>Great roofer, highly recommend</q><span>Bodie Tarver, Google review</span></p>
    </div>
    <div class="quote" id="quote">
     <h2>Get a quote</h2>
@@ -146,7 +177,12 @@ input[type=file]{padding:10px;min-height:52px;font-size:15px}
      <label>Name<input name="name" autocomplete="name" required></label>
      <label>Phone<input name="phone" type="tel" autocomplete="tel" required></label>
      <label>What do you need?<select name="job"><option>Roof replacement</option><option>Roof repair or leak</option><option>Inspection</option><option>Siding</option><option>Gutters</option><option>New construction</option></select></label>
-     <label>Street address<input name="addr" autocomplete="street-address"></label>
+     <label>Street address (optional)<input name="addr" autocomplete="street-address"></label>
+     <fieldset class="when"><legend>Best time for a visit (optional)</legend>
+      <label>Day<select name="day" data-skip="0"><option>As soon as possible</option></select></label>
+      <div class="slots" role="radiogroup" aria-label="Time of day"><label><input type="radio" name="slot" checked>Any time</label><label><input type="radio" name="slot">Morning</label><label><input type="radio" name="slot">Afternoon</label></div>
+      <small>We confirm the time by phone.</small></fieldset>
+     
      <label>Photos of the roof or leak (optional)<input name="photos" type="file" accept="image/*" multiple></label>
      <button class="btn" type="submit">Send my quote request</button>
     </form>
@@ -156,6 +192,7 @@ input[type=file]{padding:10px;min-height:52px;font-size:15px}
 </div>
 
 <main>
+<div class="how" aria-label="What happens next"><div class="wrap"><ol><li><div><b>Send the job</b><span>A few details and photos from the ground, if you have them.</span></div></li><li><div><b>We set a time to look</b><span>We call you back to set up a visit.</span></div></li><li><div><b>You get a quote</b><span>Repair or replace, with what we saw on your roof.</span></div></li></ol></div></div>
 <section class="reviews" aria-labelledby="rvh">
  <div class="wrap">
   <h2 id="rvh">What customers say on Google</h2>
@@ -226,9 +263,10 @@ input[type=file]{padding:10px;min-height:52px;font-size:15px}
 </section>
 <section class="area reviews" id="area">
  <div class="wrap">
-  <h2>Where we work</h2>
+  <div class="areagrid"><div><h2>Where we work</h2>
   <p>Based in Bella Vista. We roof across Northwest Arkansas, down to Fort Smith and up into Southwest Missouri.</p>
   <ul class="towns"><li>Bella Vista</li><li>Bentonville</li><li>Rogers</li><li>Springdale</li><li>Fayetteville</li><li>Garfield</li><li>Fort Smith</li><li>Southwest Missouri</li></ul>
+ </div><svg class="amap" viewBox="0 0 468 687" role="img" aria-labelledby="amt"><title id="amt">Map of the NWA towns John's Quality Roofing serves, with Bella Vista as home base</title><g class="hq"><circle cx="132" cy="88" r="8"/><text x="144" y="93" text-anchor="start">Bella Vista</text></g><g><circle cx="190" cy="210" r="6"/><text x="202" y="215" text-anchor="start">Bentonville</text></g><g><circle cx="272" cy="254" r="6"/><text x="284" y="259" text-anchor="start">Rogers</text></g><g><circle cx="262" cy="416" r="6"/><text x="274" y="421" text-anchor="start">Springdale</text></g><g><circle cx="237" cy="556" r="6"/><text x="249" y="561" text-anchor="start">Fayetteville</text></g><g><circle cx="404" cy="125" r="6"/><text x="392" y="130" text-anchor="end">Garfield</text></g><text class="off" x="234" y="679" text-anchor="middle">Fort Smith is further south</text><text class="off" x="462" y="18" text-anchor="end">Southwest Missouri is north</text></svg></div>
  </div>
 </section>
 
@@ -257,6 +295,10 @@ var R=[["Nothing ticked yet.","Tick anything that matches your roof.","Get a quo
 function u(){var n=0;b.forEach(function(x){if(x.checked)n++});var r=n==0?R[0]:n==1?R[1]:n<4?R[2]:R[3];v.innerHTML=r[0]+"<small>"+r[1]+"</small>";k.textContent=r[2];k.dataset.i=n==0?"":r[3]}
 b.forEach(function(x){x.addEventListener("change",u)});
 k.addEventListener("click",function(){if(sel&&k.dataset.i!==undefined&&k.dataset.i!=="")sel.selectedIndex=+k.dataset.i})})();
+</script>
+<script>
+(function(){document.querySelectorAll("select[name=day]").forEach(function(s){var n=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],m=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],d=new Date(),k=0,c=0,skip=s.dataset.skip||"";
+while(c<6&&k<14){k++;var t=new Date(d.getFullYear(),d.getMonth(),d.getDate()+k);if(skip.indexOf(t.getDay())>-1)continue;var o=document.createElement("option");o.textContent=n[t.getDay()]+", "+m[t.getMonth()]+" "+t.getDate();s.appendChild(o);c++}})})();
 </script>
 </body>
 </html>

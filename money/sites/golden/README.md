@@ -7,9 +7,9 @@ Trade kits built from these sites: `../trades/` (round 3, 2026-10-23: each site 
 
 | Site | Trade, town | Lighthouse mobile (perf / a11y / best / SEO*) | Weight |
 |---|---|---|---|
-| one-call-hvac | HVAC, Bentonville | 100 / 100 / 100 / 100 | 55 KB |
-| johns-quality-roofing | Roofing, Bella Vista | 100 / 100 / 100 / 100 | 50 KB |
-| its-plumbing | Plumbing, Rogers | 100 / 100 / 100 / 100 | 50 KB |
+| one-call-hvac | HVAC, Bentonville | 100 / 100 / 100 / 100 | 59 KB |
+| johns-quality-roofing | Roofing, Bella Vista | 100 / 100 / 100 / 100 | 55 KB |
+| its-plumbing | Plumbing, Rogers | 100 / 100 / 100 / 100 | 54 KB |
 
 \* SEO is 60 with the preview `noindex` on, 100 with it off. Checked at 375, 390 and 1280 px: no sideways scroll, no console errors, all taps 48 px or more.
 No business has been contacted.

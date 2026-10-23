@@ -63,6 +63,9 @@ Banned on sight. The Auditor greps for these and looks at the screenshot.
   - Outreach starts only when every golden site scores 8 or higher and at least one person says "I'd pay for that".
 - The golden sites become the yardstick. Every later site is compared side by side with them on the Approve card.
 
+## 6. It must be premium (Tj, 2026-10-23)
+"These need to be premium websites every time we cold email someone." Every preview meets the checklist in [sites/PREMIUM.md](sites/PREMIUM.md), drawn from what pro trade-site agencies build and charge $4,000 to $8,000 for. For a trade we've done, start from its kit in `sites/trades/`.
+
 ## How the factory uses this
 - **Builder:** reads this file before every build.
 - **Auditor:**

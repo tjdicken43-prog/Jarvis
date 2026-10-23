@@ -122,6 +122,35 @@ input[type=file]{padding:10px;min-height:52px;font-size:15px}
 .season{display:inline-flex;align-items:center;gap:8px;font-size:15px;font-weight:600;color:var(--tan);margin:0 0 14px}
 .season i{width:9px;height:9px;border-radius:50%;background:var(--tan)}
 @media (min-width:820px){.two{grid-template-columns:1fr 1fr;gap:48px;align-items:start}}
+
+.nav{display:none}
+.proof{margin:18px 0 0;padding:12px 14px;border-left:0;border-radius:10px;background:#ffffff12;color:#e7ecea;font-size:16px;max-width:40ch}
+.proof q{font-weight:600;color:#fff}
+.proof span{display:block;font-size:14px;color:var(--tan);margin-top:2px}
+.how{background:var(--card);border-bottom:1px solid var(--line);padding:26px 0}
+.how ol{list-style:none;margin:0;padding:0;display:grid;gap:14px;counter-reset:h}
+.how li{counter-increment:h;display:grid;grid-template-columns:36px 1fr;gap:12px;align-items:start}
+.how li::before{content:counter(h);width:32px;height:32px;border-radius:50%;border:2px solid var(--cedar);color:var(--cedar);display:grid;place-items:center;font-weight:800}
+.how b{display:block;font-size:17px}
+.how span{color:var(--slate2);font-size:15.5px}
+.when{border:1px solid var(--line);border-radius:10px;padding:12px 14px 14px;margin:0;display:grid;gap:10px}
+.when legend{font-weight:600;font-size:16px;padding:0 4px}
+.slots{display:flex;flex-wrap:wrap;gap:8px}
+.slots label{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border:1.5px solid var(--line);border-radius:999px;font-weight:500;cursor:pointer}
+.slots input{width:18px;height:18px;min-height:0;padding:0;margin:0;accent-color:var(--cedar)}
+.slots label:has(input:checked){border-color:var(--cedar);background:#00000008}
+.when small{color:var(--slate2);font-size:14px}
+.amap{width:100%;height:auto;max-width:420px;display:block;margin-top:22px}
+.amap circle{fill:var(--slate2)}.amap .hq circle{fill:var(--cedar)}
+.amap text{font:600 15px "Libre Franklin",sans-serif;fill:var(--slate)}
+.amap .off{font-weight:500;fill:var(--slate2)}
+@media (min-width:820px){
+ .nav{display:flex;gap:4px;margin-left:auto;margin-right:12px}
+ .nav a{display:inline-flex;align-items:center;min-height:48px;padding:0 12px;color:#d6dcd9;text-decoration:none;font-weight:600;font-size:15.5px;border-radius:8px}
+ .nav a:hover{background:#ffffff14;color:#fff}
+ .how ol{grid-template-columns:repeat(3,1fr);gap:28px}
+ .areagrid{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+}
 </style>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Plumber","name":"It's Plumbing","telephone":"+1-479-866-6310","email":"itsplumbingnwa@gmail.com","url":"https://itsplumbingnwa.com/","address":{"@type":"PostalAddress","streetAddress":"14123 Pleasant Ridge Rd.","addressLocality":"Rogers","addressRegion":"AR","postalCode":"72756","addressCountry":"US"},"openingHours":"Mo-Fr 08:00-17:00","areaServed":"Northwest Arkansas"}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What are your hours?", "acceptedAnswer": {"@type": "Answer", "text": "Monday to Friday, 8 am to 5 pm. After hours, send a request with photos and we'll get back to you."}}, {"@type": "Question", "name": "Are you licensed?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. We are a licensed master plumber, license MP-6881."}}, {"@type": "Question", "name": "Do you work on gas lines?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, we offer gas line services. If you smell gas, leave first and call 911 or your gas company from outside."}}, {"@type": "Question", "name": "Do you do commercial work?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Repairs, installations and maintenance for businesses."}}, {"@type": "Question", "name": "Where do you work?", "acceptedAnswer": {"@type": "Answer", "text": "We're based in Rogers and serve homes and businesses across Northwest Arkansas."}}, {"@type": "Question", "name": "Do you install water heaters?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. We install new water heaters and replace old ones."}}]}</script>
@@ -132,6 +161,7 @@ input[type=file]{padding:10px;min-height:52px;font-size:15px}
  <div class="wrap">
   <header>
    <a class="mark" href="#top"><span>It's Plumbing<small>Rogers, Arkansas</small></span></a>
+   <nav class="nav" aria-label="Sections"><a href="#now">Water leak?</a><a href="#services">The work</a><a href="#water-heater">Water heaters</a><a href="#visit">Contact</a></nav>
    <a class="hcall" href="tel:+14798666310">Call<span>(479) 866-6310</span></a>
   </header>
   <div class="hero" id="top">
@@ -140,6 +170,7 @@ input[type=file]{padding:10px;min-height:52px;font-size:15px}
     <p class="lede">Drain cleaning, water heaters, gas lines and repairs for homes and businesses across Northwest Arkansas. Locally owned.</p>
     <a class="btn big" href="tel:+14798666310"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2"/></svg>Call (479) 866-6310</a>
     <p class="hours"><span><b>Mon to Fri</b> 8 am to 5 pm</span><span><b>Master Plumber</b> MP-6881</span></p>
+    <p class="proof"><q>On time, knowledgeable, friendly, and professional.</q><span>John P., customer review</span></p>
    </div>
    <div class="quote" id="book">
     <h2>Request a visit</h2>
@@ -149,7 +180,12 @@ input[type=file]{padding:10px;min-height:52px;font-size:15px}
      <label>Name<input name="name" autocomplete="name" required></label>
      <label>Phone<input name="phone" type="tel" autocomplete="tel" required></label>
      <label>What do you need?<select name="job"><option>Drain cleaning</option><option>Water heater</option><option>Gas line</option><option>Leak or repair</option><option>Fixtures or piping</option><option>Commercial work</option></select></label>
-     <label>Street address<input name="addr" autocomplete="street-address"></label>
+     <label>Street address (optional)<input name="addr" autocomplete="street-address"></label>
+     <fieldset class="when"><legend>Best time for a visit (optional)</legend>
+      <label>Day<select name="day" data-skip="06"><option>As soon as possible</option></select></label>
+      <div class="slots" role="radiogroup" aria-label="Time of day"><label><input type="radio" name="slot" checked>Any time</label><label><input type="radio" name="slot">Morning</label><label><input type="radio" name="slot">Afternoon</label></div>
+      <small>We confirm the time by phone.</small></fieldset>
+     
      <label>Photos of the problem (optional)<input name="photos" type="file" accept="image/*" multiple></label>
      <button class="btn" type="submit">Send request</button>
     </form>
@@ -158,6 +194,7 @@ input[type=file]{padding:10px;min-height:52px;font-size:15px}
  </div>
 </div>
 <main>
+<div class="how" aria-label="What happens next"><div class="wrap"><ol><li><div><b>Call or send photos</b><span>(479) 866-6310, Monday to Friday, 8 to 5.</span></div></li><li><div><b>We set a time</b><span>A visit that works for you.</span></div></li><li><div><b>We fix it</b><span>From a dripping faucet to a new water heater.</span></div></li></ol></div></div>
 
 <section id="now">
  <div class="wrap two">
@@ -258,6 +295,10 @@ input[type=file]{padding:10px;min-height:52px;font-size:15px}
 (function(){var p=document.querySelector(".pick");if(!p)return;var b=p.querySelectorAll("button"),a=document.querySelectorAll(".ans [data-a]");
 function show(k){b.forEach(function(x){x.setAttribute("aria-pressed",x.dataset.k===k?"true":"false")});a.forEach(function(x){x.hidden=x.dataset.a!==k})}
 b.forEach(function(x){x.addEventListener("click",function(){show(x.dataset.k)})});show(b[0].dataset.k)})();
+</script>
+<script>
+(function(){document.querySelectorAll("select[name=day]").forEach(function(s){var n=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],m=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],d=new Date(),k=0,c=0,skip=s.dataset.skip||"";
+while(c<6&&k<14){k++;var t=new Date(d.getFullYear(),d.getMonth(),d.getDate()+k);if(skip.indexOf(t.getDay())>-1)continue;var o=document.createElement("option");o.textContent=n[t.getDay()]+", "+m[t.getMonth()]+" "+t.getDate();s.appendChild(o);c++}})})();
 </script>
 </body>
 </html>

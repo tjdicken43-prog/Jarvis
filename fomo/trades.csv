@@ -7,3 +7,4 @@ time,strategy,side,chain,symbol,token,usd,pnl,reason,held_h
 2026-10-22T20:33:06,fresh_launch,SELL,solana,MI,4krFcF31xNiRQseavbJ579r9fYfaqmbycXEZi49gpump,0.0,-50.0,liquidity pulled (rug),3.4
 2026-10-22T23:35:59,fresh_launch,BUY,solana,BTC,HKh5uh37FyRhRbDPcmPCoTcfByRLdY65RFZj9AvZpump,50,,"liq $81,440, vol1h $508,851, 1h +144%, buys/sells 3.01",0
 2026-10-23T01:56:42,fresh_launch,SELL,solana,BTC,HKh5uh37FyRhRbDPcmPCoTcfByRLdY65RFZj9AvZpump,0.0,-50.0,liquidity pulled (rug),2.3
+2026-10-23T12:16:29,fresh_launch,BUY,solana,ARCTIS,2JSj9dzLQwAi3q1dHYjCPF5Gveg81hBTRy8EeM3Fpump,50,,"liq $26,276, vol1h $55,160, 1h +40%, buys/sells 2.35",0

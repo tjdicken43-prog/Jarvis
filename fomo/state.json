@@ -13,18 +13,29 @@
    "equity": 930.22
   },
   "fresh_launch": {
-   "cash": 850.0,
-   "open": [],
+   "cash": 800.0,
+   "open": [
+    {
+     "chain": "solana",
+     "pair": "5SpztG8hdXCG3YWx7hWjHGHF8CYGNRSWZ1smmfQQkAMX",
+     "token": "2JSj9dzLQwAi3q1dHYjCPF5Gveg81hBTRy8EeM3Fpump",
+     "symbol": "ARCTIS",
+     "entry": 0.00010659649849517956,
+     "qty": 460146.4465759924,
+     "cost": 50,
+     "entry_liq": 26275.56,
+     "opened_ms": 1792757789709,
+     "url": "https://dexscreener.com/solana/5spztg8hdxcg3ywx7hwjhghf8cygnrswz1smmfqqkamx"
+    }
+   ],
    "peak": 1000,
-   "max_dd": 0.15000000000000002,
+   "max_dd": 0.15113244737362963,
    "wins": 0,
    "losses": 3,
-   "fees": 5.7,
-   "cooldown": {
-    "HKh5uh37FyRhRbDPcmPCoTcfByRLdY65RFZj9AvZpump": 1792720602421
-   },
-   "equity": 850.0
+   "fees": 6.65,
+   "cooldown": {},
+   "equity": 848.87
   }
  },
- "updated": "2026-10-23T06:51:10Z"
+ "updated": "2026-10-23T12:16:29Z"
 }

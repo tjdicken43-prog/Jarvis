@@ -67,6 +67,8 @@ export type Client = {
   included_minutes: number;
   minutes_used: number;
   calls: number;
+  after_hours_calls: number;
+  missed_calls: number;
   over_minutes: number;
   overage_cents: number;
   price_cents: number;
@@ -74,7 +76,14 @@ export type Client = {
   checkout_url: string | null;
   started_at: string | null;
   has_stripe: boolean;
+  receptionist_number: string | null;
+  has_receptionist: boolean;
+  open_hour: number;
+  close_hour: number;
+  open_saturday: boolean;
+  textback_enabled: boolean;
 };
+export type ReceptionistResult = { mode: "stub" | "vapi"; assistant_id: string | null; client: Client };
 export type Clients = {
   month: string;
   stripe: "off" | "test" | "live" | "blocked";

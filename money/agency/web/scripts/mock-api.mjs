@@ -19,7 +19,9 @@ const client = (id, name, trade, plan, billing, status, used) => {
   const inc = PLANS[plan].minutes, over = Math.max(0, used - inc), price = PLANS[plan].monthly_cents * (billing === "annual" ? 10 : 1);
   return { id, prospect_id: null, business_name: name, contact_name: null, email: `office@${name.split(" ")[0].toLowerCase()}.example`, phone: null, trade, plan, billing, status,
     included_minutes: inc, minutes_used: used, calls: Math.round(used / 3), over_minutes: over, overage_cents: over * 25, price_cents: price,
-    monthly_value_cents: billing === "annual" ? Math.round(price / 12) : price, checkout_url: null, started_at: status === "pending" ? null : "2026-10-02T15:00:00Z", has_stripe: status !== "pending" };
+    monthly_value_cents: billing === "annual" ? Math.round(price / 12) : price, checkout_url: null, started_at: status === "pending" ? null : "2026-10-02T15:00:00Z", has_stripe: status !== "pending",
+    after_hours_calls: Math.round(used / 4), missed_calls: Math.round(used / 30), has_receptionist: id === 1, receptionist_number: id === 1 ? "(479) 555-0142" : null,
+    open_hour: 7, close_hour: 17, open_saturday: false, textback_enabled: false };
 };
 const clients = [
   client(1, "Ozark Pipe Co", "plumbing", "front_desk", "monthly", "active", 212),
@@ -49,6 +51,7 @@ http.createServer(async (req, res) => {
   }
   if (m === "POST" && p === "/clients") { const c = client(clients.length + 1, body.business_name || "New Shop", body.trade || "plumbing", body.plan || "front_desk", body.billing || "monthly", "pending", 0); clients.push(c); return send(res, 200, c); }
   if (m === "POST" && (r = p.match(/^\/clients\/(\d+)\/checkout$/))) { const c = clients.find((x) => x.id === +r[1]); c.checkout_url = `https://checkout.stripe.com/c/pay/cs_test_mock${c.id}`; return send(res, 200, { url: c.checkout_url, mode: "test", client: c }); }
+  if (m === "POST" && (r = p.match(/^\/clients\/(\d+)\/receptionist$/))) { const c = clients.find((x) => x.id === +r[1]); Object.assign(c, body); return send(res, 200, { mode: "stub", assistant_id: null, client: c }); }
   if (m === "GET" && p === "/leads") return send(res, 200, { display_only: true, note: "Display only until the Arkansas license question is checked.", items: leads, counts: {} });
   if (m === "GET" && p === "/stats") return send(res, 200, { prospects: {}, emails: {}, suppressions: suppressions.length });
   if (m === "GET" && p === "/queue") { const s = u.searchParams.get("status") || "draft"; return send(res, 200, { items: emails.filter((e) => e.status === s).map(item) }); }

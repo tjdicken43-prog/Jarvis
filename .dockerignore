@@ -1,0 +1,7 @@
+# Only money/agency/api's Dockerfile builds from the repo root; keep the context small.
+**
+!money/agency/api/**
+!money/sites/trade_build.py
+!money/sites/golden/one-call-hvac/libre-franklin-latin-wght-normal.woff2
+money/agency/api/tests
+**/__pycache__

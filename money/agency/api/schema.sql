@@ -164,3 +164,24 @@ CREATE TABLE IF NOT EXISTS overage_charges (   -- $0.25/min over the plan, bille
   created_at             timestamptz NOT NULL DEFAULT now(),
   UNIQUE (client_id, month)
 );
+
+-- Step 7: AI receptionist (Vapi). Front Desk answers after hours; Plus answers 24/7. Missed-call text-back is a stub.
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS open_hour smallint NOT NULL DEFAULT 7 CHECK (open_hour BETWEEN 0 AND 23);
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS close_hour smallint NOT NULL DEFAULT 17 CHECK (close_hour BETWEEN 1 AND 24);
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS open_saturday boolean NOT NULL DEFAULT false;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS textback_enabled boolean NOT NULL DEFAULT false;  -- the shop asked for it
+ALTER TABLE receptionist_calls ADD COLUMN IF NOT EXISTS ended_reason text;
+CREATE TABLE IF NOT EXISTS textbacks (          -- one text to a caller the receptionist missed; never cold texts
+  id         serial PRIMARY KEY,
+  client_id  int NOT NULL REFERENCES clients(id),
+  call_id    int UNIQUE REFERENCES receptionist_calls(id),
+  to_number  text NOT NULL,
+  body       text NOT NULL,
+  status     text NOT NULL CHECK (status IN ('stub','sent','failed')),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS textbacks_number ON textbacks (to_number, created_at);
+CREATE TABLE IF NOT EXISTS sms_optouts (        -- replied STOP: never text this number again
+  number     text PRIMARY KEY,
+  created_at timestamptz NOT NULL DEFAULT now()
+);

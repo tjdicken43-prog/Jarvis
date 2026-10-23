@@ -7,7 +7,9 @@ Nothing here is guessed: every flaw comes from what the page actually did.
 """
 import collections
 import datetime as dt
+import functools
 import json
+import os
 import re
 import secrets
 import time
@@ -167,6 +169,19 @@ def _down_reason(msg):
     if "refused" in m:
         return "connection refused"
     return "didn't load"
+
+
+@functools.lru_cache(maxsize=1)
+def browser_status():
+    """chromium when a browser is installed for the flaw finder, else http-fallback. For /health, checked once."""
+    if config.CHROMIUM_PATH:
+        return "chromium" if os.path.exists(config.CHROMIUM_PATH) else "http-fallback"
+    try:
+        from playwright.sync_api import sync_playwright
+        with sync_playwright() as p:
+            return "chromium" if os.path.exists(p.chromium.executable_path) else "http-fallback"
+    except Exception:
+        return "http-fallback"
 
 
 def inspect_site(url):

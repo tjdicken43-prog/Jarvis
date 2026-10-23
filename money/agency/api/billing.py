@@ -194,7 +194,8 @@ def month_bounds(month=None, now=None):
 
 
 USAGE = """
-SELECT c.id, coalesce(ceil(sum(r.seconds) / 60.0), 0)::int AS minutes, count(r.id)::int AS calls
+SELECT c.id, coalesce(ceil(sum(r.seconds) / 60.0), 0)::int AS minutes, count(r.id)::int AS calls,
+  count(r.id) FILTER (WHERE r.after_hours)::int AS after_hours, count(r.id) FILTER (WHERE r.outcome = 'hung_up')::int AS missed
 FROM clients c LEFT JOIN receptionist_calls r ON r.client_id = c.id AND r.started_at >= %s AND r.started_at < %s
 GROUP BY c.id
 """

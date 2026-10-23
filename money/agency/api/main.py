@@ -1,6 +1,6 @@
 """Trades agency API (FastAPI). Run: uvicorn main:app --app-dir money/agency/api
 
-Every route except /health, the public links (/u/, /m/, /shots/, /paid) and the signed Stripe webhook needs
+Every route except /health, the public links (/u/, /m/, /shots/, /paid) and the signed Stripe and Vapi webhooks needs
 `Authorization: Bearer $OPERATOR_TOKEN`. Nothing sends without TJ's tap in the Approval Queue.
 """
 import datetime as dt
@@ -18,6 +18,7 @@ import flaws
 import mailer
 import mockup
 import outreach
+import receptionist
 
 app = FastAPI(title="Trades agency", docs_url=None, redoc_url=None)
 
@@ -62,6 +63,8 @@ def health(conn=Conn):
         "paused": bool(db.setting(conn, "paused", True)), "sent_today": mailer.sent_today(conn, now),
         "daily_cap": config.DAILY_SEND_CAP, "in_window": mailer.in_window(now),
         "send_window": "Weekdays %d-%dam Central" % config.SEND_WINDOW, "stripe": config.stripe_mode(),
+        "receptionist": config.receptionist(), "vapi_webhook_secret_set": bool(config.VAPI_WEBHOOK_SECRET),
+        "textback": config.TEXTBACK, "browser": flaws.browser_status(),
     }
 
 
@@ -297,14 +300,16 @@ def unsubscribe_one_click(token: str, conn=Conn):  # RFC 8058: mail apps POST he
 
 CLIENT_COLS = """id, prospect_id, business_name, contact_name, email, phone, trade, plan, billing, setup_cents,
   monthly_cents, included_minutes, status, site_url, receptionist_number, checkout_url, started_at, cancelled_at,
-  created_at, stripe_customer_id IS NOT NULL AS has_stripe"""
+  created_at, stripe_customer_id IS NOT NULL AS has_stripe, open_hour, close_hour, open_saturday, textback_enabled,
+  vapi_assistant_id IS NOT NULL AS has_receptionist"""
 
 
 def client_view(c, used):
     u = used.get(c["id"], {})
     minutes = u.get("minutes", 0)
     over, cents = billing.overage(minutes, c["included_minutes"])
-    return dict(c, minutes_used=minutes, calls=u.get("calls", 0), over_minutes=over, overage_cents=cents,
+    return dict(c, minutes_used=minutes, calls=u.get("calls", 0), after_hours_calls=u.get("after_hours", 0),
+                missed_calls=u.get("missed", 0), over_minutes=over, overage_cents=cents,
                 price_cents=billing.price_cents(c["plan"], c["billing"]),
                 monthly_value_cents=billing.monthly_value_cents(c["plan"], c["billing"]))
 
@@ -460,3 +465,69 @@ def leads(conn=Conn):
     count = {r["status"]: r["n"] for r in conn.execute("SELECT status, count(*) AS n FROM leads GROUP BY status")}
     return {"display_only": True, "note": "Display only until the Arkansas license question is checked.",
             "items": rows, "counts": count}
+
+
+# Step 7: AI receptionist (Vapi). Usage lands in receptionist_calls, which /clients and overage billing read.
+
+class ReceptionistAsk(BaseModel):
+    open_hour: int = Field(default=7, ge=0, le=23)
+    close_hour: int = Field(default=17, ge=1, le=24)
+    open_saturday: bool = False
+    textback_enabled: bool = False
+    receptionist_number: str | None = Field(default=None, max_length=40)
+
+
+@app.post("/clients/{client_id}/receptionist", dependencies=op)
+def set_up_receptionist(client_id: int, ask: ReceptionistAsk, conn=Conn):
+    """Save the shop's hours and create or update its Vapi assistant (dry run without VAPI_API_KEY). Places no calls."""
+    if ask.close_hour <= ask.open_hour:
+        raise HTTPException(400, "closing hour must be after opening hour")
+    number = (ask.receptionist_number or "").strip() or None
+    if number and not receptionist.digits(number):
+        raise HTTPException(400, "receptionist number needs 10 digits")
+    get_client(conn, client_id)
+    conn.execute("""UPDATE clients SET open_hour = %s, close_hour = %s, open_saturday = %s, textback_enabled = %s,
+                    receptionist_number = coalesce(%s, receptionist_number) WHERE id = %s""",
+                 (ask.open_hour, ask.close_hour, ask.open_saturday, ask.textback_enabled, number, client_id))
+    c = conn.execute("SELECT * FROM clients WHERE id = %s", (client_id,)).fetchone()
+    try:
+        out = receptionist.set_up(conn, c)
+    except receptionist.VapiError as e:
+        conn.rollback()
+        raise HTTPException(502, f"Vapi: {e}")
+    conn.commit()
+    return dict(out, client=client_view(get_client(conn, client_id), {}))
+
+
+@app.get("/clients/{client_id}/calls", dependencies=op)
+def client_calls(client_id: int, conn=Conn):
+    get_client(conn, client_id)
+    return {"items": conn.execute("""SELECT r.id, r.started_at, r.seconds, r.after_hours, r.outcome, r.summary,
+        r.ended_reason, t.status AS textback FROM receptionist_calls r LEFT JOIN textbacks t ON t.call_id = r.id
+        WHERE r.client_id = %s ORDER BY r.started_at DESC LIMIT 100""", (client_id,)).fetchall()}
+
+
+@app.post("/vapi/webhook")
+async def vapi_webhook(request: Request, conn=Conn):  # public, but only requests carrying our Vapi secret get through
+    if not config.VAPI_WEBHOOK_SECRET:
+        raise HTTPException(503, "receptionist webhook is off: set VAPI_WEBHOOK_SECRET")
+    if not receptionist.secret_ok(request.headers.get("x-vapi-secret")):
+        raise HTTPException(401, "bad secret")
+    try:
+        payload = await request.json()
+    except ValueError:
+        raise HTTPException(400, "not JSON")
+    return receptionist.record_call(conn, payload if isinstance(payload, dict) else {})
+
+
+class OptOut(BaseModel):
+    number: str = Field(max_length=40)
+
+
+@app.post("/sms/optouts", dependencies=op)
+def sms_opt_out(o: OptOut, conn=Conn):
+    """A caller replied STOP: never text them again. Typed in by hand until an SMS provider posts these."""
+    num = receptionist.opt_out(conn, o.number)
+    if not num:
+        raise HTTPException(400, "number needs 10 digits")
+    return {"number": num, "opted_out": True}

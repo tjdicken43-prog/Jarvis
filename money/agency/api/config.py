@@ -38,6 +38,11 @@ STRIPE_ALLOW_LIVE = env("STRIPE_ALLOW_LIVE") == "yes"  # a live key does nothing
 CHECKOUT_SUCCESS_URL = env("CHECKOUT_SUCCESS_URL", PUBLIC_URL + "/paid")
 CHECKOUT_CANCEL_URL = env("CHECKOUT_CANCEL_URL", PUBLIC_URL + "/paid?cancelled=1")
 
+VAPI_API_KEY = env("VAPI_API_KEY")                # Vapi private key: empty = receptionist set-up is a dry run
+VAPI_WEBHOOK_SECRET = env("VAPI_WEBHOOK_SECRET")  # Vapi sends it as X-Vapi-Secret; empty = webhook refuses calls
+RECEPTIONIST_MODEL = env("RECEPTIONIST_MODEL", "claude-haiku-5-5")
+TEXTBACK = env("TEXTBACK", "stub")                # stub only: records the text, sends nothing (no SMS provider yet)
+
 
 def drafter():
     return "claude" if ANTHROPIC_API_KEY else "stub"
@@ -55,3 +60,7 @@ def stripe_mode():
     if k.startswith(("sk_test_", "rk_test_")):
         return "test"
     return "live" if STRIPE_ALLOW_LIVE and k.startswith(("sk_live_", "rk_live_")) else "blocked"
+
+
+def receptionist():
+    return "vapi" if VAPI_API_KEY else "stub"

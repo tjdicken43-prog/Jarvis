@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { api, errMsg } from "./api";
-import type { ApproveResult, CheckoutResult, Client, DraftResult, SendResult, Suppression } from "./types";
+import type { ApproveResult, CheckoutResult, Client, DraftResult, ReceptionistResult, SendResult, Suppression } from "./types";
 
 type R<T> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -59,4 +59,11 @@ export async function addClient(fields: {
 // Stripe Checkout link (test mode) for TJ to send to the shop
 export async function checkoutLink(id: number, plan: string, billing: string): Promise<R<CheckoutResult>> {
   return run(() => api<CheckoutResult>(`/clients/${id}/checkout`, { method: "POST", body: { plan, billing } }));
+}
+// Save the shop's hours and set up its Vapi receptionist (a dry run until VAPI_API_KEY is on Render)
+export async function setUpReceptionist(
+  id: number,
+  body: { open_hour: number; close_hour: number; open_saturday: boolean; textback_enabled: boolean; receptionist_number?: string },
+): Promise<R<ReceptionistResult>> {
+  return run(() => api<ReceptionistResult>(`/clients/${id}/receptionist`, { method: "POST", body }));
 }

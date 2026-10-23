@@ -21,7 +21,7 @@ Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's n
 - [ ] Texting (Twilio) and alert email on the domain.
 
 ## Sites by TJ
-- [ ] Trades MVP (steps 2-3 built, PR #64 + flaw finder/mockups) needs from TJ on Tue 2026-10-27: cold email domain + Workspace inbox (SPF/DKIM/DMARC), mailing address, Anthropic key, Workspace app password; put them on Render (names in money/agency/README.md). Stripe key at step 5. Check Arkansas rules before switching on the 15% matchmaker (check). After deploy: confirm Chromium installs on Render (else the flaw finder falls back to HTTP checks, no screenshots) (check). Mockups are served from the API for now; move to <slug>.<cold domain> once the domain exists.
+- [ ] Trades MVP (steps 1-8 built: receptionist + Render blueprint done 2026-10-23) needs from TJ on Tue 2026-10-27: follow the ordered "Tuesday checklist" in money/agency/README.md (cold domain + Workspace + DNS, warm-up, mailing address, Render blueprint, Anthropic, Stripe test, Vapi). Chromium on Render: solved with a Docker image (tested locally). Check Arkansas rules before switching on the 15% matchmaker (check). Missed-call text-back stays a stub until an SMS provider with 10DLC registration (TJ's call). Mockups are served from the API for now; move to <slug>.<cold domain> once the domain exists.
 - [ ] Before any outreach: 3 golden sites (HVAC, roofing, plumbing) for real NWA businesses must each score 8+ from TJ and two other people, per money/SITE_BAR.md. See [[Sites by TJ]].
 
 ## Jarvis

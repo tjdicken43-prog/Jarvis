@@ -1,4 +1,6 @@
-# Render blueprint: API + Postgres + dashboard. Secrets marked sync: false are typed in on Render.
+# Render blueprint: API + Postgres + dashboard + send cron. Secrets marked sync: false are typed in on Render.
+# Render reads blueprints from the repo root unless you point it here (Blueprint path: money/agency/render.yaml).
+# Monthly at these plans (2026-10, check): Postgres basic-256mb ~$6, two starter web services $7 each, cron ~$1.
 databases:
   - name: agency-db
     plan: basic-256mb
@@ -6,38 +8,58 @@ databases:
 services:
   - type: web
     name: agency-api
-    runtime: python
-    # Repo root, so the API can load the trade builder and font from money/sites/
-    buildCommand: pip install -r money/agency/api/requirements.txt && (playwright install chromium || echo "no chromium: flaw finder uses HTTP checks")
-    preDeployCommand: python money/agency/api/migrate.py
-    startCommand: uvicorn main:app --app-dir money/agency/api --host 0.0.0.0 --port $PORT
+    runtime: docker
+    plan: starter                       # always on: Vapi and Stripe webhooks can't wait for a sleeping service
+    # Microsoft's Playwright image: Chromium + its system libraries, so the flaw finder gets a real browser.
+    # Built and tested 2026-10-23: /health says "browser": "chromium" and a phone screenshot comes back.
+    dockerfilePath: ./money/agency/api/Dockerfile
+    dockerContext: .
+    preDeployCommand: python3 money/agency/api/migrate.py
     buildFilter:
-      paths: [money/agency/api/**, money/sites/trade_build.py, money/sites/golden/one-call-hvac/*.woff2]
+      paths: [money/agency/api/**, money/sites/trade_build.py, money/sites/golden/one-call-hvac/*.woff2, .dockerignore]
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
         fromDatabase: {name: agency-db, property: connectionString}
       - key: OPERATOR_TOKEN
         generateValue: true
-      - {key: PUBLIC_URL, sync: false}
+      - {key: PUBLIC_URL, sync: false}               # this service's https address, no trailing slash
       - {key: ANTHROPIC_API_KEY, sync: false}
-      - {key: MAILER, value: stub}
+      - {key: MAILER, value: stub}                   # smtp once the cold domain has warmed up
       - {key: SMTP_USER, sync: false}
       - {key: SMTP_PASSWORD, sync: false}
       - {key: FROM_EMAIL, sync: false}
       - {key: MAILING_ADDRESS, sync: false}
       - {key: DAILY_SEND_CAP, value: "5"}
-      - {key: STRIPE_SECRET_KEY, sync: false}      # sk_test_ only until TJ says live
+      - {key: STRIPE_SECRET_KEY, sync: false}        # sk_test_ only until TJ says live
       - {key: STRIPE_WEBHOOK_SECRET, sync: false}
-      - {key: PLAYWRIGHT_BROWSERS_PATH, value: "0"}   # keep Chromium inside the build so it exists at run time (check)
+      - {key: VAPI_API_KEY, sync: false}             # Vapi private key; empty = receptionist set-up is a dry run
+      - key: VAPI_WEBHOOK_SECRET                     # Vapi sends it back as X-Vapi-Secret on every call report
+        generateValue: true
+      - {key: TEXTBACK, value: stub}                 # missed-call texts are recorded, never sent
   - type: web
     name: agency-dashboard
     runtime: node
+    plan: starter
     rootDir: money/agency/web
     buildCommand: npm ci && npm run build
     startCommand: npm start
+    healthCheckPath: /healthz                        # the only page without the password
     envVars:
       - {key: API_URL, sync: false}       # the agency-api URL, https://...onrender.com
       - key: OPERATOR_TOKEN
         fromService: {name: agency-api, type: web, envVarKey: OPERATOR_TOKEN}
       - {key: DASHBOARD_PASSWORD, sync: false}
+  - type: cron
+    name: agency-send
+    runtime: python
+    plan: starter
+    schedule: "*/15 14-17 * * 1-5"      # UTC, covers 9-11am Central in summer and winter; the API enforces the window
+    buildCommand: "true"                # standard library only
+    startCommand: python3 money/agency/api/cron.py send
+    buildFilter:
+      paths: [money/agency/api/cron.py]
+    envVars:
+      - {key: API_URL, sync: false}       # same as the dashboard's
+      - key: OPERATOR_TOKEN
+        fromService: {name: agency-api, type: web, envVarKey: OPERATOR_TOKEN}

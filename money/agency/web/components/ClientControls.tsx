@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { addClient, checkoutLink } from "@/lib/actions";
+import { addClient, checkoutLink, setUpReceptionist } from "@/lib/actions";
+import type { Client } from "@/lib/types";
 
 function PlanPicker({ plan, billing, onPlan, onBilling }: {
   plan: string;
@@ -106,5 +107,52 @@ export function AddClientForm() {
       </div>
       {err && <p className="err">{err}</p>}
     </form>
+  );
+}
+
+const HOURS = Array.from({ length: 25 }, (_, h) => h);
+const hourName = (h: number) => (h === 0 || h === 24 ? "12am" : h === 12 ? "12pm" : h < 12 ? `${h}am` : `${h - 12}pm`);
+
+export function ReceptionistSetup({ c }: { c: Client }) {
+  const [open, setOpen] = useState(c.open_hour);
+  const [close, setClose] = useState(c.close_hour);
+  const [sat, setSat] = useState(c.open_saturday);
+  const [text, setText] = useState(c.textback_enabled);
+  const [num, setNum] = useState(c.receptionist_number ?? "");
+  const [msg, setMsg] = useState("");
+  const [err, setErr] = useState("");
+  const [pending, start] = useTransition();
+  return (
+    <div className="row wrapx">
+      <select aria-label="Opens" value={open} onChange={(e) => setOpen(+e.target.value)}>
+        {HOURS.slice(0, 24).map((h) => <option key={h} value={h}>Opens {hourName(h)}</option>)}
+      </select>
+      <select aria-label="Closes" value={close} onChange={(e) => setClose(+e.target.value)}>
+        {HOURS.slice(1).map((h) => <option key={h} value={h}>Closes {hourName(h)}</option>)}
+      </select>
+      <label className="small"><input type="checkbox" checked={sat} onChange={(e) => setSat(e.target.checked)} /> Open Saturday</label>
+      <label className="small"><input type="checkbox" checked={text} onChange={(e) => setText(e.target.checked)} /> Text back missed callers</label>
+      <input aria-label="Receptionist number" placeholder="Vapi number" value={num} onChange={(e) => setNum(e.target.value)} />
+      <button
+        className="btn"
+        disabled={pending}
+        onClick={() =>
+          start(async () => {
+            setErr("");
+            setMsg("");
+            const r = await setUpReceptionist(c.id, {
+              open_hour: open, close_hour: close, open_saturday: sat, textback_enabled: text,
+              ...(num.trim() ? { receptionist_number: num.trim() } : {}),
+            });
+            if (r.ok) setMsg(r.data.mode === "vapi" ? "Receptionist saved on Vapi." : "Saved. Dry run: add VAPI_API_KEY on Render to go live.");
+            else setErr(r.error);
+          })
+        }
+      >
+        {pending ? "Saving..." : c.has_receptionist ? "Update receptionist" : "Set up receptionist"}
+      </button>
+      {msg && <p className="muted small grow">{msg}</p>}
+      {err && <p className="err grow">{err}</p>}
+    </div>
   );
 }

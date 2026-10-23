@@ -1,7 +1,7 @@
 import { api, errMsg } from "@/lib/api";
 import { PLAN_NAME, usd } from "@/lib/format";
 import type { Client, Clients } from "@/lib/types";
-import { AddClientForm, CheckoutLink } from "@/components/ClientControls";
+import { AddClientForm, CheckoutLink, ReceptionistSetup } from "@/components/ClientControls";
 
 export const dynamic = "force-dynamic";
 
@@ -72,7 +72,7 @@ export default async function ClientsPage() {
             <section className="panel tablewrap">
               <table className="stack">
                 <thead>
-                  <tr><th>Business</th><th>Plan</th><th>Pays</th><th>Minutes used</th><th>Status</th></tr>
+                  <tr><th>Business</th><th>Plan</th><th>Pays</th><th>Minutes used</th><th>Calls</th><th>Status</th></tr>
                 </thead>
                 <tbody>
                   {paying.map((c) => (
@@ -86,12 +86,30 @@ export default async function ClientsPage() {
                         {usd(c.price_cents)}/{c.billing === "annual" ? "yr" : "mo"}
                       </td>
                       <td data-label="Minutes"><Minutes c={c} /></td>
+                      <td data-label="Calls" className="small">
+                        <span className="num">{c.calls}</span> ({c.after_hours_calls} after hours, {c.missed_calls} missed)
+                        <div className={c.has_receptionist ? "muted" : "warn"}>
+                          {c.has_receptionist ? c.receptionist_number || "No number yet" : "Receptionist not set up"}
+                        </div>
+                      </td>
                       <td data-label="Status" className={c.status === "past_due" ? "warn" : c.status === "cancelled" ? "muted" : ""}>{STATUS[c.status]}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </section>
+          )}
+
+          {paying.some((c) => c.status !== "cancelled") && (
+            <>
+              <h2 className="section">Receptionist <span className="muted small">hours in Central; Front Desk answers outside them, Plus 24/7</span></h2>
+              {paying.filter((c) => c.status !== "cancelled").map((c) => (
+                <article key={c.id} className="panel">
+                  <header className="card-head"><h2>{c.business_name}</h2></header>
+                  <ReceptionistSetup c={c} />
+                </article>
+              ))}
+            </>
           )}
 
           <h2 className="section">Waiting on payment</h2>

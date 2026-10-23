@@ -17,7 +17,7 @@ sys.path.insert(0, str(API))
 URL = os.environ.get("TEST_DATABASE_URL", "postgresql://postgres@localhost/agency_test")
 os.environ.update(DATABASE_URL=URL, OPERATOR_TOKEN="test-token", PUBLIC_URL="https://api.example.test")
 for k in ("ANTHROPIC_API_KEY", "MAILING_ADDRESS", "MAILER", "SMTP_USER", "SMTP_PASSWORD", "FROM_EMAIL",
-          "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "STRIPE_ALLOW_LIVE"):
+          "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "STRIPE_ALLOW_LIVE", "VAPI_API_KEY", "VAPI_WEBHOOK_SECRET"):
     os.environ.pop(k, None)
 
 import psycopg  # noqa: E402
@@ -382,5 +382,113 @@ assert ld["display_only"] and ld["items"][0]["matched_to"] == "Ozark Pipe Co" an
 assert {r.path for r in main.app.routes if "leads" in r.path} == {"/leads"}
 assert all(m == "GET" for r in main.app.routes if r.path == "/leads" for m in r.methods if m != "HEAD")
 config.STRIPE_SECRET_KEY = config.STRIPE_WEBHOOK_SECRET = ""
+
+# Receptionist (Vapi): set-up is a dry run without a key; the webhook needs the secret; calls feed /clients
+import receptionist  # noqa: E402
+
+r = api.post("/clients", json={"business_name": "Hog Valley HVAC", "email": "office@hogvalley.com", "trade": "hvac"}, headers=H); ok(r)
+rc = r.json()
+ok(api.post(f"/clients/{rc['id']}/receptionist", json={"open_hour": 17, "close_hour": 8}, headers=H), 400)
+ok(api.post(f"/clients/{rc['id']}/receptionist", json={"receptionist_number": "555"}, headers=H), 400)
+ok(api.post("/clients/9999/receptionist", json={}, headers=H), 404)
+ok(api.post(f"/clients/{rc['id']}/receptionist", json={}), 401)
+r = api.post(f"/clients/{rc['id']}/receptionist", headers=H, json={
+    "open_hour": 7, "close_hour": 18, "open_saturday": True, "textback_enabled": True, "receptionist_number": "(479) 555-0142"})
+ok(r)
+out = r.json()
+a = out["assistant"]
+assert out["mode"] == "stub" and out["assistant_id"] is None, out
+assert out["client"]["textback_enabled"] and out["client"]["open_saturday"] and not out["client"]["has_receptionist"], out
+sysmsg = a["model"]["messages"][0]["content"]
+assert "Hog Valley HVAC" in sysmsg and "heating and air" in sysmsg and "Monday to Saturday, 7am to 6pm Central" in sysmsg, sysmsg
+assert "Never quote prices" in sysmsg and "Never claim to be a person" in sysmsg and "911" in sysmsg, sysmsg
+assert a["server"]["url"] == "https://api.example.test/vapi/webhook" and a["serverMessages"] == ["end-of-call-report"], a
+assert "recorded" in a["firstMessage"] and a["maxDurationSeconds"] == 600, a
+
+# With a key it creates the assistant on Vapi (faked here; nothing leaves the machine), then updates the same one
+vapi_sent = []
+
+
+def fake_vapi(req, timeout=None):
+    vapi_sent.append((req.get_method(), req.full_url, req.headers.get("Authorization")))
+    return FakeResp({"id": "asst_hog"})
+
+
+receptionist.urllib.request.urlopen = fake_vapi
+config.VAPI_API_KEY = "vapi_test"
+ok(api.post(f"/clients/{rc['id']}/receptionist", json={}, headers=H), 502)  # no webhook secret: refuse to set up
+config.VAPI_WEBHOOK_SECRET = "vsecret"
+r = api.post(f"/clients/{rc['id']}/receptionist", json={"textback_enabled": True}, headers=H); ok(r)
+assert r.json()["mode"] == "vapi" and r.json()["client"]["has_receptionist"], r.json()
+ok(api.post(f"/clients/{rc['id']}/receptionist", json={"textback_enabled": True}, headers=H))
+assert vapi_sent == [("POST", "https://api.vapi.ai/assistant", "Bearer vapi_test"),
+                     ("PATCH", "https://api.vapi.ai/assistant/asst_hog", "Bearer vapi_test")], vapi_sent
+assert api.get("/health").json()["receptionist"] == "vapi"
+config.VAPI_API_KEY = ""
+
+# Webhook: secret required, junk and unknown assistants ignored, each call saved once
+iso = lambda t: t.astimezone(dt.timezone.utc).isoformat().replace("+00:00", "Z")
+now = dt.datetime.now(dt.timezone.utc)
+
+
+def report(call_id, start, secs, aid="asst_hog", caller="+14795550199", **extra):
+    return {"message": dict({"type": "end-of-call-report", "call": {"id": call_id, "assistantId": aid,
+            "customer": {"number": caller}}, "startedAt": iso(start), "endedAt": iso(start + dt.timedelta(seconds=secs)),
+            "endedReason": "customer-ended-call", "cost": 0.42}, **extra)}
+
+
+vh = {"X-Vapi-Secret": "vsecret"}
+ok(api.post("/vapi/webhook", json=report("v1", now, 30)), 401)
+ok(api.post("/vapi/webhook", json=report("v1", now, 30), headers={"X-Vapi-Secret": "nope"}), 401)
+assert api.post("/vapi/webhook", json={"message": {"type": "status-update"}}, headers=vh).json()["ignored"] == "status-update"
+assert "ignored" in api.post("/vapi/webhook", json=report("v0", now, 30, aid="asst_other", caller=None), headers=vh).json()
+
+# A missed call from a pending client: saved, but no text (not paying yet)
+r = api.post("/vapi/webhook", json=report("v1", now - dt.timedelta(minutes=1), 8), headers=vh).json()
+assert r["outcome"] == "hung_up" and r["textback"] == "skipped: not an active client", r
+with db.connect() as c:
+    c.execute("UPDATE clients SET status = 'active' WHERE id = %s", (rc["id"],))
+    c.commit()
+# Message taken (structured outcome wins), matched by the receptionist number when the assistant id is unknown
+msg = report("v2", now - dt.timedelta(minutes=3), 185, aid=None, analysis={"summary": "No heat, upstairs unit",
+             "structuredData": {"outcome": "message"}}, phoneNumber={"number": "+1 479-555-0142"})
+r = api.post("/vapi/webhook", json=msg, headers=vh).json()
+assert r["outcome"] == "message" and r["textback"] is None, r
+assert api.post("/vapi/webhook", json=msg, headers=vh).json() == {"ok": True, "duplicate": True}
+# Missed call from an active client with text-back on: one stub text, then no second text that week
+r = api.post("/vapi/webhook", json=report("v3", now - dt.timedelta(minutes=2), 6), headers=vh).json()
+assert r["textback"] == "stub", r
+r = api.post("/vapi/webhook", json=report("v4", now - dt.timedelta(minutes=1), 5), headers=vh).json()
+assert r["textback"] == "skipped: texted this week", r
+# Old call, opted-out number, no caller id: no text
+assert api.post("/vapi/webhook", json=report("v5", now - dt.timedelta(hours=1), 5, caller="+14795550111"),
+                headers=vh).json()["textback"] == "skipped: call too old"
+ok(api.post("/sms/optouts", json={"number": "12"}, headers=H), 400)
+assert api.post("/sms/optouts", json={"number": "(479) 555-0122"}, headers=H).json()["number"] == "4795550122"
+assert api.post("/vapi/webhook", json=report("v6", now, 5, caller="+1 479 555 0122"), headers=vh).json()["textback"] == "skipped: opted out"
+assert api.post("/vapi/webhook", json=report("v7", now, 5, caller=None), headers=vh).json()["textback"] == "skipped: no caller number"
+with db.connect() as c:
+    t = c.execute("SELECT * FROM textbacks").fetchall()
+    assert len(t) == 1 and t[0]["status"] == "stub" and t[0]["to_number"] == "4795550199", t
+    assert "Hog Valley HVAC" in t[0]["body"] and "Reply STOP" in t[0]["body"], t
+    v2 = c.execute("SELECT * FROM receptionist_calls WHERE vapi_call_id = 'v2'").fetchone()
+    assert v2["seconds"] == 185 and v2["cost_cents"] == 42 and v2["summary"] == "No heat, upstairs unit", v2
+
+# Clients view: minutes and counts for this month (calls at the very start of a month can fall in last month)
+mine = next(x for x in api.get("/clients", headers=H).json()["items"] if x["id"] == rc["id"])
+calls = api.get(f"/clients/{rc['id']}/calls", headers=H).json()["items"]
+assert len(calls) == 7 and [c["textback"] for c in calls].count("stub") == 1, calls
+if now.astimezone(mailer.CENTRAL).day > 1:
+    assert mine["calls"] == 7 and mine["missed_calls"] == 6 and mine["minutes_used"] == 4, mine
+
+# After hours, in Central: Saturday open, Sunday closed, 6pm closed
+sat = {"open_hour": 7, "close_hour": 18, "open_saturday": True}
+C = mailer.CENTRAL
+assert not receptionist.is_after_hours(sat, dt.datetime(2026, 10, 24, 9, tzinfo=C))       # Saturday 9am
+assert receptionist.is_after_hours(sat, dt.datetime(2026, 10, 25, 9, tzinfo=C))           # Sunday
+assert receptionist.is_after_hours(sat, dt.datetime(2026, 10, 23, 18, tzinfo=C))          # Friday 6pm
+assert receptionist.is_after_hours(dict(sat, open_saturday=False), dt.datetime(2026, 10, 24, 9, tzinfo=C))
+config.VAPI_WEBHOOK_SECRET = ""
+ok(api.post("/vapi/webhook", json=report("v9", now, 5), headers=vh), 503)
 
 print("agency api ok")

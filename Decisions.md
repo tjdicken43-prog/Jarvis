@@ -31,3 +31,4 @@ Newest first. Covers [[SecurityAI]], [[Basis]] and [[Jarvis]].
 
 - 2026-10-23: Jarvis call voice: free route (TJ: "just use the free version"). Lines recorded with Piper, played through Bird. Paid voices only if TJ asks.
 - **2026-10-23** Real two-way phone calls with Jarvis on Vapi (TJ picked the paid option). Start on Vapi's $10 free credit and free inbound number; Claude Haiku 5.5 for speed and cost; 20 minute call cap. Why: TJ wants to ask Jarvis to do things over the phone like a chat, and the 12 recorded lines can't hold a conversation.
+- **2026-10-23** Jarvis Show off: the King Kai planets are replaced by the Sites by TJ alien-tech factory (TJ asked). One shared engine (hud/factory.js) for Jarvis and the Station page, so a design pass improves both.

@@ -53,6 +53,8 @@ def write_artifact(dest, brain_js):
         html = html.replace(tag, "")
     html = re.sub(r'<meta (charset|name="viewport")[^>]*>\n', "", html)
     html = html.replace('<script src="brain.js"></script>', "<script>" + brain_js.replace("</", "<\\/") + "</script>")
+    factory = (ROOT / "hud" / "factory.js").read_text(encoding="utf-8")
+    html = html.replace('<script src="factory.js"></script>', "<script>" + factory.replace("</", "<\\/") + "</script>")
     dest.write_text(html.strip() + "\n", encoding="utf-8")
     print(f"Wrote artifact copy to {dest}")
 

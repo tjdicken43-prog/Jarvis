@@ -45,6 +45,28 @@ Things several pro sources agree on. ✅ = in the golden sites now. 🔒 = needs
 - Calls and forms sent to the owner by text right away (pros: leads go cold in minutes). This is Front Desk.
 - A gallery sorted by job type once they send photos.
 
+## No AI tells (Tj, 2026-10-23: "no pill shaped buttons, no AI indicators at all")
+A site must not look AI-made to a designer or an owner. Researched 2026-10-23; the sources are design-critique posts and community ban lists, so treat this as consensus, not measured data.
+
+**Never use (giveaways):**
+- Pill buttons or pill chips (radius 999px). Buttons and chips get 4px corners, cards and panels 6 to 8px. Everything heavily rounded (16 to 24px) reads as a template.
+- Purple, indigo or blue-to-purple gradients, gradient text, blurred glow blobs behind the hero, or glass panels. Colors come from the business's own logo, truck or old site.
+- Emoji used as icons, sparkle icons, or a matching icon on every card. Use a few simple inline SVGs, or none.
+- The default AI landing page: a centered hero, then three identical rounded cards with icon, title and blurb, all on the same spacing. Vary section shape and density (a ruled list, a numbered strip, a form band, a map).
+- Fade-in or slide-in animation on every section.
+- Stock people, AI-made photos, or invented logos. Use their real photo, or none.
+- Filler copy: "elevate", "unlock", "seamless", "solutions", "we're passionate about", made-up stats or reviews, em-dash-heavy sentences, three-word slogans.
+- A default font left untouched (Inter, Poppins, Montserrat everywhere). We use one workhorse sans (Libre Franklin) with a deliberate size scale.
+
+**Do (what pros do):**
+- Use real specifics a template can't guess: the town, the license number, the exact hours, review quotes with names, the owner's name, their own photo and logo.
+- Write in the owner's plain voice. Short sentences and the job named in the headline ("Roof repair and replacement in Bella Vista").
+- Keep a clear type hierarchy (2 to 3 sizes per section) and spacing on a grid, with a few intentional breaks: an overlapping trust panel, a full-width form band.
+- Keep it quiet: one accent color on navy and white, flat surfaces, light shadows only where something floats.
+- Build real states: form messages, a phone-first sticky bar, focus rings.
+
+Sources: [7 tells that a UI is AI-generated](https://pages.thefountaininstitute.com/posts/7-tells-that-a-ui-is-ai-generated), [Anti AI slop ban list](https://github.com/Laith0003/ux-skill/wiki/Anti-AI-slop-ban-list), [Why AI design looks generic](https://www.superdesign.dev/blog/why-ai-design-looks-generic), [Why your AI keeps building the same purple gradient website](https://prg.sh/ramblings/Why-Your-AI-Keeps-Building-the-Same-Purple-Gradient-Website), [Making an AI-generated app look professional](https://vp0.com/blogs/make-ai-generated-app-look-professional.md), [Typography and AI](https://www.uxstudioteam.com/ux-blog/typography-ai).
+
 ## Photos: the unlock
 Done 2026-10-23 with a Full-network environment. The finding: real photos are rare (stock on their sites, AI-made images on some Google profiles), so a preview uses the few real ones it finds plus the real logo and colors, and the paid build asks the owner for job photos. How-to and the one-run script: `trades/README.md` ("Photos and logo colors").
 

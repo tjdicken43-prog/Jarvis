@@ -218,7 +218,7 @@ a{{color:inherit}}img{{max-width:100%;display:block}}
 h1{{font:700 clamp(36px,7vw,64px)/1.03 var(--d);margin:0;max-width:15ch;letter-spacing:-.5px}}
 .sub{{font-size:19px;max-width:52ch;opacity:.9;margin:0}}
 .ctas{{display:flex;flex-wrap:wrap;gap:12px}}
-.btn{{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:12px 22px;border-radius:999px;
+.btn{{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:12px 22px;border-radius:4px;
 font-weight:700;text-decoration:none;border:2px solid transparent;transition:transform .15s ease,background-color .15s ease}}
 .btn:active{{transform:scale(.97)}}
 .btn.main{{background:var(--accent);color:var(--on-accent)}}

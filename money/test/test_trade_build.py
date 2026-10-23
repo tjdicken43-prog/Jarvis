@@ -1,0 +1,45 @@
+"""Offline test: auto mockups follow option C and the site bar, and only show facts we were given."""
+import importlib.util, pathlib, re
+
+spec = importlib.util.spec_from_file_location("trade_build", pathlib.Path(__file__).parents[1] / "sites" / "trade_build.py")
+tb = importlib.util.module_from_spec(spec); spec.loader.exec_module(tb)
+
+base = {"name": "Ozark Pipe Co", "city": "Rogers", "phone": "479-273-0100", "colors": ["#ffffff", "#d80028"]}
+for trade, h1, tool in [("plumbing", "Plumbing repair and installs in Rogers.", "Water where it shouldn't be?"),
+                        ("hvac", "Heating and AC repair in Rogers.", "Before you call: quick checks"),
+                        ("roofing", "Roof repair and replacement in Rogers.", "Repair or replace?")]:
+    c = dict(base, trade=trade)
+    page = tb.render(c)
+    assert tb.audit(page, c) == [], (trade, tb.audit(page, c))
+    assert h1 in page and tool in page and 'href="tel:+14792730100"' in page and "noindex" in page, trade
+    assert "Concept preview" in page and 'type="file"' in page and 'class="bar"' in page, trade
+    # nothing unsourced: no stars, 24/7, license or year without facts
+    for claim in ("on Google", "24/7", "Licensed", "Since "):
+        assert claim not in page, (trade, claim)
+    radii = [int(r) for r in re.findall(r"border-radius:(\d+)px", page)]
+    assert max(radii) <= 8 and "999px" not in page, radii
+
+full = dict(base, trade="hvac", rating=4.8, review_count=61, open_247=True, licensed=True, since=2004,
+            site_text="geothermal heat pump duct work", towns=["Bentonville", "Rogers"], logo_url="https://x.test/logo.png")
+page = tb.render(full)
+assert tb.audit(page, full) == []
+assert "4.8</b> on Google from 61 reviews" in page and "Since 2004" in page and "24/7 service. Tap to call" in page
+assert "Geothermal" in page and "Ductwork" in page and "Refrigeration" not in page
+assert page.index("<li>Rogers</li>") < page.index("<li>Bentonville</li>")  # their town first
+assert 'src="https://x.test/logo.png"' in page and tb.render(dict(full, logo_url="http://x.test/l.png")).count("<img") == 0
+
+# accent: their color, darkened until white text passes AA; greys and whites are skipped
+acc = tb.accent_from(["#ffffff", "#888888", "#ffc93c"])
+assert tb.contrast(acc, "#ffffff") >= 4.5 and acc != "#ffc93c", acc
+assert tb.accent_from(["#eeeeee"]) == "#106494"
+
+# the audit catches AI tells and placeholders
+bad = page.replace("Heating and AC repair in Rogers.", "Elevate your comfort!").replace("border-radius:4px", "border-radius:24px", 1)
+probs = tb.audit(bad, full)
+assert any("elevate" in p for p in probs) and any("24px" in p for p in probs) and any("exclamation" in p for p in probs), probs
+assert any("555-" in p for p in tb.audit(tb.render(dict(base, trade="roofing", phone="479-555-0100")), base))
+try:
+    tb.render(dict(base, trade="auto repair")); raise SystemExit("trades only")
+except ValueError:
+    pass
+print("trade build ok")

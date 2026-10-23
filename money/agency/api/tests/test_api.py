@@ -138,6 +138,91 @@ with db.connect() as c:
     # Re-import keeps the list: rows are never deleted, so the next draft run skips them
     assert db.suppressed(c, "anyone@ridgeroof.com") and db.suppressed(c, "OWNER@ozarkpipe.com")
 
+# Flaw finder: one true flaw, worst first, from what the page did
+import flaws  # noqa: E402
+import mockup  # noqa: E402
+good = {"mode": "browser", "status": 200, "final_url": "https://x.test/", "seconds": 1.2, "viewport_meta": True,
+        "scroll_width": 390, "viewport_width": 390, "tel_links": 2, "tel_on_first_screen": True,
+        "phone_on_first_screen": True, "text": "Plumbing in Rogers. (c) 2026 " + "words " * 200, "html_len": 40000}
+today = dt.date(2026, 10, 23)
+assert flaws.pick(good, today) == (None, "OK")
+assert flaws.pick({"down": "no DNS"}, today) == ("Site down: no DNS", "DOWN")
+assert flaws.pick({"status": 403, "blocked": True}, today) == (None, None)
+assert flaws.pick(dict(good, html_len=300), today)[1] == "DOWN"
+assert flaws.pick(dict(good, scroll_width=1040), today) == ("not mobile-friendly", "WEAK")
+assert flaws.pick(dict(good, viewport_meta=False, tel_links=0), today) == ("not mobile-friendly", "DATED")
+assert flaws.pick(dict(good, tel_links=0), today)[0] == "no tap-to-call"
+assert flaws.pick(dict(good, tel_on_first_screen=False, phone_on_first_screen=False), today)[0] == "phone number hidden on phones"
+assert flaws.pick(dict(good, seconds=6.4), today)[0] == "slow (6.4s)"
+assert flaws.pick(dict(good, final_url="http://x.test/"), today)[0] == "no https"
+assert flaws.pick(dict(good, text="© 2019 Ozark Pipe " + "w " * 300), today)[0] == "© 2019"
+assert flaws.pick(dict(good, text="Copyright 2016 - 2025 " + "w " * 300), today) == (None, "OK")
+f = flaws.site_facts("24/7 emergency service. Licensed and insured. Family owned since 1998. Rogers, Bentonville and Lowell.")
+assert f == {"open_247": True, "licensed": True, "since": 1998, "towns": ["Bentonville", "Rogers", "Lowell"]}, f
+assert flaws.site_facts("open 8-5")["open_247"] is False
+assert flaws.brand_colors(["rgb(216, 0, 40)", "rgb(255,255,255)", "rgba(216, 0, 40, 0.1)", "rgb(216, 0, 40)"], "#106494") == ["#106494", "#d80028"]
+assert "phone isn't on the first screen" in outreach.plain_flaw("phone number hidden on phones")[0].replace("number ", "")
+assert "placeholder" in outreach.plain_flaw("Site down: parked or empty page")[0]
+
+# Outreach Agent end to end with a fake browser: check -> mockup -> draft, nothing sent, nothing fetched
+with db.connect() as c:
+    c.execute("""INSERT INTO prospects (id, name, trade, city, phone, email, website, rating, review_count, status) VALUES
+      ('overture/g', 'Rock Creek Heating & Air', 'hvac', 'Rogers', '479-273-0101', 'office@rockcreekair.com', 'rockcreekair.com', 4.8, 61, 'new'),
+      ('overture/h', 'Fine Site Plumbing', 'plumbing', 'Lowell', '479-273-0102', 'hi@finesite.com', 'finesite.com', 4.5, 12, 'new'),
+      ('overture/i', 'Blocked Roofing', 'roofing', 'Rogers', NULL, 'hi@blockedroof.com', 'blockedroof.com', 4.1, 9, 'new')""")
+    c.commit()
+PNG = b"\x89PNG\r\n\x1a\nfake"
+SIG = {
+    "rockcreekair.com": (dict(good, scroll_width=1100, colors=["rgb(0, 110, 60)", "rgb(0, 110, 60)"],
+                              logo_url="https://rockcreekair.com/logo.png",
+                              text="24/7 heating and air. Licensed and insured. Since 2004. Rogers, Bentonville. "
+                                   "Furnace install, heat pump, duct cleaning. " + "w " * 200), PNG),
+    "finesite.com": (good, PNG),
+    "blockedroof.com": ({"mode": "browser", "status": 403, "blocked": True}, None),
+}
+fake = lambda url: SIG[mailer.host(url)]
+with db.connect() as c:
+    out = outreach.prepare(c, 10, ["overture/g", "overture/h", "overture/i"], inspect=fake)
+assert [x["prospect_id"] for x in out["created"]] == ["overture/g"], out
+held = {x["prospect_id"]: x["reason"] for x in out["skipped"]}
+assert held == {"overture/h": "no clear flaw on their site", "overture/i": "no clear flaw on their site"}, held
+with db.connect() as c:
+    g = c.execute("SELECT * FROM prospects WHERE id = 'overture/g'").fetchone()
+    assert c.execute("SELECT status FROM prospects WHERE id = 'overture/h'").fetchone()["status"] == "checked"
+assert g["flaw"] == "not mobile-friendly" and g["status"] == "built" and g["site_state"] == "WEAK", g
+assert g["flaw_evidence"].startswith("https://api.example.test/shots/") and g["mockup_url"].startswith("https://api.example.test/m/rock-creek-heating-air-"), g
+assert g["facts"]["open_247"] and g["facts"]["since"] == 2004 and g["facts"]["colors"][0] == "#006e3c", g["facts"]
+items = {i["prospect"]["id"]: i for i in api.get("/queue", headers=H).json()["items"]}
+gi = items["overture/g"]
+assert gi["prospect"]["mockup_url"] in gi["email"]["body"] and "fit a phone screen" in gi["email"]["body"], gi
+assert gi["prospect"]["flaw_evidence"] == g["flaw_evidence"]
+# The preview and screenshot are public links, never indexed
+r = api.get("/m/" + g["mockup_slug"]); ok(r)
+assert r.headers["x-robots-tag"].startswith("noindex") and "Rock Creek Heating &amp; Air" in r.text and "Concept preview" in r.text
+assert "Heating and AC repair in Rogers." in r.text and "tel:+14792730101" in r.text and "Since 2004" in r.text
+assert 'src="https://rockcreekair.com/logo.png"' in r.text and "4.8</b> on Google from 61 reviews" in r.text
+assert "Geothermal" not in r.text and "Ductwork" in r.text  # only services their site names
+ok(api.get("/m/nope"), 404)
+ok(api.get("/m/_/font.woff2"))
+r = api.get(g["flaw_evidence"].replace("https://api.example.test", "")); ok(r)
+assert r.content == PNG and r.headers["content-type"] == "image/png"
+ok(api.get("/shots/nope.png"), 404)
+# Already checked shops aren't re-scanned; operator routes need the token and handle ids with slashes
+with db.connect() as c:
+    assert outreach.prepare(c, 10, ["overture/h"], inspect=lambda u: sys.exit("should not re-check"))["created"] == []
+ok(api.post("/prospects/overture/h/mockup"), 401)
+r = api.post("/prospects/overture/h/mockup", headers=H); ok(r)
+assert r.json()["built"] and "/m/fine-site-plumbing-" in r.json()["mockup_url"]
+ok(api.post("/prospects/overture/zz/mockup", headers=H), 404)
+# A mockup that fails the site bar is not saved, so no email can link to it
+with db.connect() as c:
+    c.execute("INSERT INTO prospects (id, name, trade, city, phone, website, status) VALUES "
+              "('overture/j', 'Lorem Roofing', 'roofing', 'Rogers', '479-273-0103', 'lorem.com', 'checked')")
+    c.commit()
+    res = mockup.build_and_save(c, "overture/j")
+    assert not res["built"] and any("lorem" in x for x in res["problems"]), res
+    assert c.execute("SELECT mockup_url FROM prospects WHERE id = 'overture/j'").fetchone()["mockup_url"] is None
+
 # Claude drafter: request shape (model, structured output) and refusal handling, with a fake client
 calls = []
 

@@ -16,8 +16,9 @@ async function run<T>(fn: () => Promise<T>, reval = true): Promise<R<T>> {
   }
 }
 
+// Flaw finder + mockup + draft for up to 5 new shops (a few seconds per site)
 export async function draftNew(): Promise<R<DraftResult>> {
-  return run(() => api<DraftResult>("/outreach/draft", { method: "POST", body: { limit: 10 } }));
+  return run(() => api<DraftResult>("/outreach/prepare", { method: "POST", body: { limit: 5 } }));
 }
 export async function approve(id: string | number): Promise<R<ApproveResult>> {
   return run(() => api<ApproveResult>(`/emails/${id}/approve`, { method: "POST" }), false);

@@ -30,6 +30,7 @@ MAILING_ADDRESS = env("MAILING_ADDRESS")          # CAN-SPAM: real postal addres
 DAILY_SEND_CAP = int(env("DAILY_SEND_CAP", "5"))  # start at 5, raise about 5 a week, max 30
 SEND_WINDOW = (int(env("SEND_HOUR_START", "9")), int(env("SEND_HOUR_END", "11")))  # weekdays, Central
 MIN_RATING = float(env("MIN_RATING", "2.8"))      # Checker skips shops under 2.8 stars
+CHROMIUM_PATH = env("CHROMIUM_PATH")              # flaw finder: a Chromium build when Playwright's own isn't installed
 
 
 def drafter():

@@ -8,12 +8,14 @@ import html
 import secrets
 
 from fastapi import Depends, FastAPI, Header, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response
 from pydantic import BaseModel, Field
 
 import config
 import db
+import flaws
 import mailer
+import mockup
 import outreach
 
 app = FastAPI(title="Trades agency", docs_url=None, redoc_url=None)
@@ -159,6 +161,57 @@ class DraftAsk(BaseModel):
 @app.post("/outreach/draft", dependencies=op)
 def draft(ask: DraftAsk, conn=Conn):
     return outreach.draft_first_emails(conn, ask.limit, ask.prospect_ids)
+
+
+class PrepareAsk(BaseModel):
+    limit: int = Field(default=5, ge=1, le=20)
+    prospect_ids: list[str] | None = None
+
+
+@app.post("/outreach/prepare", dependencies=op)
+def prepare(ask: PrepareAsk, conn=Conn):
+    """Flaw finder + mockup + draft, for shops not drafted yet. Slow: a few seconds a site."""
+    return outreach.prepare(conn, ask.limit, ask.prospect_ids)
+
+
+@app.post("/prospects/{prospect_id:path}/check", dependencies=op)
+def check(prospect_id: str, conn=Conn):
+    out = flaws.find_and_save(conn, prospect_id)
+    if out.get("error"):
+        raise HTTPException(404, out["error"])
+    return out
+
+
+@app.post("/prospects/{prospect_id:path}/mockup", dependencies=op)
+def build_mockup(prospect_id: str, conn=Conn):
+    out = mockup.build_and_save(conn, prospect_id)
+    if out.get("error"):
+        raise HTTPException(404, out["error"])
+    return out
+
+
+NOINDEX = {"X-Robots-Tag": "noindex, nofollow", "Cache-Control": "public, max-age=300"}
+
+
+@app.get("/m/_/font.woff2")
+def mockup_font():
+    return FileResponse(mockup.FONT, media_type="font/woff2", headers={"Cache-Control": "public, max-age=31536000"})
+
+
+@app.get("/m/{slug}", response_class=HTMLResponse)
+def mockup_page(slug: str, conn=Conn):  # public: the link in the email
+    row = conn.execute("SELECT html FROM mockups WHERE slug = %s", (slug,)).fetchone()
+    if not row:
+        raise HTTPException(404, "no such preview")
+    return HTMLResponse(row["html"], headers=NOINDEX)
+
+
+@app.get("/shots/{token}.png")
+def shot(token: str, conn=Conn):  # unguessable link to a screenshot of their own public site
+    row = conn.execute("SELECT png FROM shots WHERE token = %s", (token,)).fetchone()
+    if not row:
+        raise HTTPException(404, "no such screenshot")
+    return Response(bytes(row["png"]), media_type="image/png", headers=NOINDEX)
 
 
 @app.post("/send", dependencies=op)

@@ -128,3 +128,17 @@ CREATE TABLE IF NOT EXISTS settings (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 INSERT INTO settings (key, value) VALUES ('paused', 'true') ON CONFLICT DO NOTHING;
+
+-- Step 3: flaw finder screenshots (first screen on a phone) and auto mockups. Served by the API, never in the repo.
+CREATE TABLE IF NOT EXISTS shots (
+  token       text PRIMARY KEY,           -- unguessable; /shots/{token}.png
+  prospect_id text NOT NULL REFERENCES prospects(id),
+  png         bytea NOT NULL,
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS mockups (
+  slug        text PRIMARY KEY,           -- /m/{slug}
+  prospect_id text NOT NULL REFERENCES prospects(id),
+  html        text NOT NULL,
+  built_at    timestamptz NOT NULL DEFAULT now()
+);

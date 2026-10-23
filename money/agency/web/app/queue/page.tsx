@@ -95,6 +95,11 @@ export default async function QueuePage({ searchParams }: { searchParams: Promis
                 {mock && <> <a href={mock} target="_blank" rel="noreferrer">Mockup</a></>}
               </p>
             )}
+            {evid && /\/shots\/[^/]+\.png$/.test(evid) && (
+              <a href={evid} target="_blank" rel="noreferrer" className="shot">
+                <img src={evid} alt={`${p.name} site on a phone, first screen`} width={130} height={281} loading="lazy" />
+              </a>
+            )}
             <div className="mail">
               <p className="subj">{email.subject}{email.edited && <span className="tag">edited</span>}</p>
               <p className="body">{email.body}</p>

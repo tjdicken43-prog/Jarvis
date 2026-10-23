@@ -27,6 +27,7 @@ http.createServer(async (req, res) => {
   if (m === "GET" && p === "/stats") return send(res, 200, { prospects: {}, emails: {}, suppressions: suppressions.length });
   if (m === "GET" && p === "/queue") { const s = u.searchParams.get("status") || "draft"; return send(res, 200, { items: emails.filter((e) => e.status === s).map(item) }); }
   if (m === "POST" && p === "/outreach/draft") return send(res, 200, { created: [], skipped: [{ prospect_id: 9, name: "Dry Creek HVAC", reason: "no email address" }] });
+  if (m === "POST" && p === "/outreach/prepare") return send(res, 200, { checked: [{ prospect_id: 9, name: "Dry Creek HVAC", flaw: null }], built: [], created: [], skipped: [{ prospect_id: 9, name: "Dry Creek HVAC", reason: "no clear flaw on their site" }] });
   if (m === "POST" && p === "/send") { const a = emails.filter((e) => e.status === "approved"); return send(res, 200, { sent: 0, dry_run: true, held: a.map((e) => ({ email_id: e.id, reason: "outside send window" })), detail: "Stub mailer: nothing sent" }); }
   if (m === "POST" && p === "/settings/pause") { paused = !!body.paused; return send(res, 200, { paused }); }
   if (p === "/suppressions") {

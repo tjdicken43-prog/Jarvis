@@ -46,6 +46,8 @@ export type Stats = {
 export type DraftResult = {
   created: { email_id: number | string; prospect_id: number | string; name: string }[];
   skipped: { prospect_id: number | string; name: string; reason: string }[];
+  checked?: { prospect_id: string; name: string; flaw: string | null }[];
+  built?: { prospect_id: string; name: string; mockup_url: string }[];
 };
 export type ApproveResult = { item: Item; queued: boolean; sent?: boolean; dry_run?: boolean; detail: string };
 export type SendResult = { sent: number; dry_run: boolean; held: { email_id: number | string; reason: string }[]; detail?: string };

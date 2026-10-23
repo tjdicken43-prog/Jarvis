@@ -22,6 +22,7 @@ Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's n
 
 ## Jarvis
 - [ ] Phone Jarvis: sign up at Vapi (free, no card), then either follow voice/phone/README.md or add VAPI_API_KEY in Project settings > Environment so Jarvis backend sets it up. See [[Jarvis]].
+- [ ] Open Jarvis, tap FACTORY, then tap IMPROVE once to let Jarvis run his first design pass. See [[Jarvis]].
 - [ ] Try the HUD on the phone: https://claude.ai/artifact/6BgK9h8LVgz3ondg1QqzSP. See [[Jarvis]].
 - [ ] Decide on an Anthropic API key for the HUD (pay as you go, about 1 cent a question on Opus).
 - [ ] Decide if Jarvis gets a movie-grade voice (ElevenLabs, about $5 to $22 a month).

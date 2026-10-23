@@ -15,6 +15,7 @@ Things seen on TikTok, checked before touching them.
 - **vet-ai-tool** skill (our own, in this repo): the steps for checking any new tool TJ sends before installing.
 - **skill-scout** skill (our own, in this repo, 2026-10-23): looks at recent work, names the gaps, and picks the next skill to learn; every pick goes through vet-ai-tool. Our safe stand-in for find-skills.
 - **skill-creator** (Anthropic, built in): writes our own skills when the procedure is ours.
+- **Six skills from Anthropic's marketing, design and engineering plugins** (email-sequence, seo-audit, brand-review, competitive-brief, accessibility-review, deploy-checklist): copied into this repo 2026-10-23, markdown only. The 3 whole plugins get removed, because they load 25 skills and about 30 connectors into every session.
 
 ## Fine, not needed now
 - **Agent Skills** (Addy Osmani): planning, specs and tests as written instructions. Safe.

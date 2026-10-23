@@ -1,6 +1,7 @@
 name: money-tests
 on:
-  push:
+  push:  # main only: a branch with a PR is already tested by pull_request (saves Actions minutes)
+    branches: [main]
     paths: ["money/**", ".github/workflows/money-*.yml"]
   pull_request:
     paths: ["money/**", ".github/workflows/money-*.yml"]

@@ -8,6 +8,8 @@ One kit per trade. When we pitch a new business in a trade we already have, star
 | HVAC | [hvac/KIT.md](hvac/KIT.md) | `../golden/one-call-hvac/` |
 | Plumbing | [plumbing/KIT.md](plumbing/KIT.md) | `../golden/its-plumbing/` |
 
+Every site must also meet [../PREMIUM.md](../PREMIUM.md): hero proof, a 3-step strip, pick-a-time booking, photo upload, desktop nav and an area map.
+
 ## How to use a kit
 1. Collect the facts on the kit's checklist, each with a source (their site, Google profile, Facebook). Anything you can't source stays out.
 2. Copy the golden site's `index.html` and font file into a new folder, then replace every fact. Search the copy for the old business's name, phone and towns, and none may remain.

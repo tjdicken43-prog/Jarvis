@@ -11,7 +11,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: money-data
+  group: money-data-rugcheck
   cancel-in-progress: false
 jobs:
   check:
@@ -24,4 +24,6 @@ jobs:
           TOKEN: ${{ github.event.inputs.token }}
           CHAIN: ${{ github.event.inputs.chain }}
         run: python3 money/fomo/rugcheck.py --chain "$CHAIN" --token "$TOKEN" --out data/rugcheck
-      - run: 'money/ci/data-branch.sh save "rugcheck: ${{ github.event.inputs.chain }}"'
+      - env:
+          CHAIN: ${{ github.event.inputs.chain }}
+        run: 'money/ci/data-branch.sh save "rugcheck: $CHAIN"'

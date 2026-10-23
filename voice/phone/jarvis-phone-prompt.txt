@@ -23,37 +23,6 @@ Today and time: TJ lives in Bentonville, Arkansas (US Central time). Works at J 
 
 What you know (TJ's notes):
 
-=== Personal ===
-# Personal
-
-Life outside the businesses, so Jarvis can help with more than work. Nothing private about other people goes here, and relationships stay out unless TJ brings them up.
-
-## Routine
-- Wakes at 6:00, showers first.
-- Works at J Street Gym 8:00 to 12:00 every morning.
-
-## Food
-- Celiac: everything gluten-free, no exceptions. Check sauces, oats and cross-contamination.
-- Likes detailed, science-based training and nutrition plans (sets, reps, grams, the why).
-
-## Basics
-- Time zone: US Central (America/Chicago). Said 2026-10-21.
-
-## Music
-- Favourite artists and playlists: (ask TJ)
-- What to play when working, training, chilling: (ask TJ)
-
-## Health
-- Celiac (see Food). Jarvis may ask about health when it helps training, food, sleep or recovery; TJ can skip any question (2026-10-21).
-- Only what TJ says, short and factual. Nothing else yet.
-
-## Sleep
-- Has a hard time falling asleep without listening to something (2026-10-21).
-- Wakes at 6:00. Wants advice to be science-based and research-backed.
-
-## Chilling
-- (ask TJ)
-
 === To do ===
 # To do
 
@@ -76,6 +45,7 @@ Covers SecurityAI, Basis and Jarvis. Done items move to the week's note.
 
 ## Jarvis
 - [ ] Phone Jarvis: sign up at Vapi (free, no card), then either follow voice/phone/README.md or add VAPI_API_KEY in Project settings > Environment so Jarvis backend sets it up. See Jarvis.
+- [ ] Open Jarvis, tap FACTORY, then tap IMPROVE once to let Jarvis run his first design pass. See Jarvis.
 - [ ] Try the HUD on the phone:  See Jarvis.
 - [ ] Decide on an Anthropic API key for the HUD (pay as you go, about 1 cent a question on Opus).
 - [ ] Decide if Jarvis gets a movie-grade voice (ElevenLabs, about $5 to $22 a month).
@@ -124,6 +94,7 @@ Newest first. Covers SecurityAI, Basis and Jarvis.
 
 - 2026-10-23: Jarvis call voice: free route (TJ: "just use the free version"). Lines recorded with Piper, played through Bird. Paid voices only if TJ asks.
 - **2026-10-23** Real two-way phone calls with Jarvis on Vapi (TJ picked the paid option). Start on Vapi's $10 free credit and free inbound number; Claude Haiku 5.5 for speed and cost; 20 minute call cap. Why: TJ wants to ask Jarvis to do things over the phone like a chat, and the 12 recorded lines can't hold a conversation.
+- **2026-10-23** Jarvis Show off: the King Kai planets are replaced by the Sites by TJ alien-tech factory (TJ asked). One shared engine (hud/factory.js) for Jarvis and the Station page, so a design pass improves both.
 
 === Sites by TJ ===
 # Sites by TJ

@@ -38,6 +38,16 @@ def email_of(p):
     return ""
 
 
+def suppressed(srcdir):
+    """Do-not-email list (prospects/suppress.csv: email,domain,date,reason). Add-only; never rewritten by a bot."""
+    f = pathlib.Path(srcdir) / "suppress.csv"
+    if not f.exists():
+        return set(), set()
+    rows = list(csv.DictReader(f.open()))
+    return ({(r.get("email") or "").strip().lower() for r in rows} - {""},
+            {host(r.get("domain")) for r in rows} - {""})
+
+
 def problem(site):
     if site["state"] == "BROKEN":
         return "Site down: " + (site.get("error") or f"HTTP {site.get('status')}")
@@ -46,15 +56,19 @@ def problem(site):
 
 def main(src, outdir):
     shops = json.loads(pathlib.Path(src).read_text())["prospects"]
+    no_emails, no_domains = suppressed(pathlib.Path(src).parent)
     rows = []
     for p in shops:
         site = p.get("site") or {}
-        if site.get("state") not in BAD or p.get("status") in ("skip", "lost"):
+        if site.get("state") not in BAD or p.get("status") in ("skip", "lost", "unsubscribed"):
             continue
+        e = email_of(p)
+        if e in no_emails or (e and e.split("@")[1] in no_domains) or (host(p.get("website")) or "-") in no_domains:
+            continue  # opted out: never back on the list, whatever the scan says
         rows.append(dict(
             group="Trades & home services" if p["trade"] in TRADES else "Shops & food",
             name=p["name"], trade=p["trade"], city=p.get("city") or "", km=p.get("km_home"),
-            site=LABEL[site["state"]], problem=problem(site), email=email_of(p), phone=p.get("phone") or "",
+            site=LABEL[site["state"]], problem=problem(site), email=e, phone=p.get("phone") or "",
             website=p.get("website") or site.get("url") or "", score=p.get("score", 0), status=p.get("status", "new"),
             id=p["id"]))
     rows.sort(key=lambda r: (r["group"] != "Trades & home services", -r["score"], BAD[{v: k for k, v in LABEL.items()}[r["site"]]],

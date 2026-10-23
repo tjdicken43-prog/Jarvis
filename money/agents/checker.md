@@ -22,7 +22,7 @@ STEPS
    d. **Email:** from their own site contact page, Facebook About, or Google profile. It must be on a working domain or a normal mail provider. Never guess an address. No email means `no-email`.
    e. **Facts for the Builder:** services, hours, service area, phone, rating and count, and logo or brand colors if visible.
 3. Write `prospects/checked/<id-slug>.json` on money-data with all of the above plus `verdict: pass | skip | no-email` and `reason`.
-4. Set each row's `status` in `nwa.json` to `checked`, `skip` or `no-email`. Push money-data.
+4. Set each lead's status in `prospects/status.json` to `checked`, `skip` or `no-email` (skip anything in `prospects/suppress.csv`). Push money-data.
 
 HARD RULES
 - Never contact anyone. Never send or post anything.

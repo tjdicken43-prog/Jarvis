@@ -19,6 +19,9 @@ TJ calls a number and talks with Jarvis like a chat (TJ chose this 2026-10-23). 
 
 Easier option: add the Vapi private key to the cloud environment as `VAPI_API_KEY` (Project settings > Environment). Then Jarvis backend runs `python3 voice/phone/create_assistant.py` for step 2 and keeps the prompt fresh when the notes change. Never put the key in a note.
 
+## Who can use it
+Personal.md is left out of the phone prompt. Set `JARVIS_PHONE_PASSPHRASE` next to `VAPI_API_KEY` (never in a note) and the prompt asks for it before sharing any notes. Later: reject calls not from TJ's cell in Vapi itself (caller ID can be faked, so keep the passphrase too).
+
 ## Keep it fresh
 After note changes: `python3 voice/phone/build_phone_prompt.py`, then paste the new prompt (or run `create_assistant.py` with `VAPI_ASSISTANT_ID` set to update it).
 

@@ -6,11 +6,17 @@ The scheduled task "Money agent" opens this repo and follows this file. Edit thi
 
 Read first: [[Sites by TJ]] (prices, rules), `money/README.md`. Ground rules always win. Never send email, never post, never trade real money, never put keys or passwords in the repo.
 
+## 0a. One run at a time
+Before anything else, read `runs/<today, Central>.json` on money-data. If it has `started` less than 2 hours old and no `finished`, another run is working: stop with "Another run has it." Otherwise write `{"started": <now ISO>}` and push money-data; at the end (even after a failure) add `"finished": <now ISO>` and push.
+
+## Statuses and the do-not-email list
+- Lead statuses live in `prospects/status.json` on money-data (`{"<id>": "<status>"}`). Agents write only there; the Monday Scout reads it and never rewrites it. Don't edit statuses in `nwa.json`.
+- `prospects/suppress.csv` (`email,domain,date,reason`) is the permanent do-not-email list. Add a row (email AND domain) the same day anyone opts out, says stop or asks not to be contacted, and set their status to `unsubscribed`. Never remove a row. Nobody on it gets built, written to or sent to, under any id.
+
 ## 0. Get the bot output
 The cloud session can't reach the data hosts, so the bots run on GitHub Actions and write to the `money-data` branch:
 `git fetch origin money-data && git worktree add /tmp/md origin/money-data` (or read files with the GitHub tools).
 - `prospects/nwa.json` and `nwa.md`: scored NWA shops.
-- `fomo/summary.md`, `fomo/trades.csv`: paper trading.
 - `rugcheck/<token>.md`: rug checks.
 If a bot's last run failed (GitHub tools: list workflow runs), read its log and fix the code on a branch, test, PR, merge.
 
@@ -25,10 +31,10 @@ If a bot's last run failed (GitHub tools: list workflow runs), read its log and 
 5. Write `money/sites/shops/<slug>/pitch.md`:
    - Why this shop (score and site problems in plain words).
    - The walk-in lines.
-   - An email draft (playbook template, under 125 words, CAN-SPAM footer with "[mailing address]").
+   - An email draft (playbook template, under 80 words, CAN-SPAM footer with "[mailing address]").
    - The two follow-ups.
    - Price to quote: launch $299 while fewer than 3 clients, else Starter $499.
-6. Set the shop's `status: "built"` in `money-data/prospects/nwa.json` (match by `id`; ids start with `node/`, `way/` or `overture/`) and push money-data. Statuses: new, skip, no-email, built, approved, emailed, replied, won, lost, unsubscribed.
+6. Set the shop's status to `built` in `prospects/status.json` on money-data (key is the `id`; ids start with `node/`, `way/` or `overture/`) and push money-data. Statuses: new, checked, skip, no-email, built, approved, emailed, replied, won, lost, unsubscribed.
 7. Commit the shops on a branch, open a PR, wait for `money-tests` to pass, merge. Jarvis is TJ's own repo: merging is fine.
 8. Previews TJ can show:
    - Until Cloudflare is set up, publish each preview as a private Artifact so TJ can show it on his phone. List the links in the brief.
@@ -41,14 +47,13 @@ If a bot's last run failed (GitHub tools: list workflow runs), read its log and 
 - Trades and home services also get the Front Desk line ("never lose a caller"); food and shops get the one-time price.
 - Every email: under 80 words, one question, real mailing address, opt-out line. Nothing is sent until TJ approves it.
 
-## 2. Fomo paper bot (every run, 1 minute)
-- Read `fomo/summary.md`. Put a one-line paper P&L and win/loss in the morning brief.
-- After 30 days, write the go/no-go in [[Sites by TJ]] or a new money note: positive after fees over 100+ closed trades AND worst drop under 30%.
+## 2. Rug checks
+- The paper-trading bot is off (TJ, 2026-10-23: wasted usage). Don't report a paper P&L.
 - **Rug check asks from TJ:** run the `money-rugcheck` workflow with the token address and chain, wait about 1 minute, then read `rugcheck/<token>.md` and answer with its verdict in plain words.
 
 ## 3. Report
-- Rewrite the brain note "Money board.md" (create it if missing; link [[Sites by TJ]]): the top 5 shops to visit this week (name, trade, city, why, phone), preview links, the paper P&L table from `fomo/summary.md`, and the latest rug checks. Keep it under 40 lines. Then refresh the phone page (CLAUDE.md, "Phone Jarvis memory" step) so TJ sees it in Jarvis.
-- Add a line to this week's note in Weekly with what was built, the paper P&L, and anything TJ must do.
+- Rewrite the brain note "Money board.md" (create it if missing; link [[Sites by TJ]]): the top 5 shops to visit this week (name, trade, city, why, phone), preview links, and the latest rug checks. Keep it under 40 lines. Then refresh the phone page (CLAUDE.md, "Phone Jarvis memory" step) so TJ sees it in Jarvis.
+- Add a line to this week's note in Weekly with what was built and anything TJ must do.
 - Update [[Sites by TJ]] Clients when TJ says a shop said yes.
 - Brief TJ only on what he needs:
   - New previews to show (links + one line each).

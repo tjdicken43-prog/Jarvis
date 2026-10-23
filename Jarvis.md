@@ -8,6 +8,7 @@ TJ's goal: this brain grows into a real-life Jarvis. It stays current, gets more
 
 ## Names
 - 2026-10-21: TJ calls Claude Code "Jarvis backend" (his choice). The phone page is the front end; Jarvis backend does the jobs, PRs and note filing.
+- **Phone call voice (2026-10-23)**: TJ chose the free route. 12 stock call lines recorded in a free open-source British voice (Piper "alan"), in voice/calls; TJ uploads them to the Bird media library and calls play them, with details sent by text. Bird's own "say" voice has no voice choice and a 160-byte limit. Upgrade later if wanted: Google Chirp 3 HD (free tier, needs a card) or ElevenLabs ($6/mo). Never clone a real actor.
 
 ## What Jarvis can do now
 - Answer business questions from these notes ([[SecurityAI]], [[Basis]]).

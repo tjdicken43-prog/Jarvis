@@ -28,3 +28,5 @@ Newest first. Covers [[SecurityAI]], [[Basis]] and [[Jarvis]].
 - **2026-10-19** Staff and cleaner schedules wait for real nights at [[J Street Gym]]. "It was fine" covers them for now.
 - **Earlier** About $200 a month per gym. See [[Pricing]].
 - **Earlier** Read check-ins from the front-desk screen, since Ashbourne didn't give access. See [[Front-desk reader]].
+
+- 2026-10-23: Jarvis call voice: free route (TJ: "just use the free version"). Lines recorded with Piper, played through Bird. Paid voices only if TJ asks.

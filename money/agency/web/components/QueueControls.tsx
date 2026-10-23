@@ -23,13 +23,14 @@ export function DraftButton() {
           })
         }
       >
-        {pending ? "Drafting..." : "Draft new emails"}
+        {pending ? "Checking sites and building previews..." : "Find flaws and draft"}
       </button>
       {err && <p className="err">{err}</p>}
       {res && (
         <div className="note">
           <p>
-            Created <b className="num">{res.created.length}</b>, skipped <b className="num">{res.skipped.length}</b>
+            Checked <b className="num">{res.checked?.length ?? 0}</b>, previews <b className="num">{res.built?.length ?? 0}</b>,
+            drafted <b className="num">{res.created.length}</b>, held <b className="num">{res.skipped.length}</b>
           </p>
           {res.skipped.length > 0 && (
             <ul>

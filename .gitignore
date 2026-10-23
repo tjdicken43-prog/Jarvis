@@ -5,3 +5,4 @@ __pycache__/
 # Kept in project files: sites-by-tj/golden/<site>/
 money/sites/golden/*/*.webp
 money/sites/shops/*/*.webp
+money/agency/web/tsconfig.tsbuildinfo

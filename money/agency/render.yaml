@@ -7,10 +7,12 @@ services:
   - type: web
     name: agency-api
     runtime: python
-    rootDir: money/agency/api
-    buildCommand: pip install -r requirements.txt
-    preDeployCommand: python migrate.py
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    # Repo root, so the API can load the trade builder and font from money/sites/
+    buildCommand: pip install -r money/agency/api/requirements.txt && (playwright install chromium || echo "no chromium: flaw finder uses HTTP checks")
+    preDeployCommand: python money/agency/api/migrate.py
+    startCommand: uvicorn main:app --app-dir money/agency/api --host 0.0.0.0 --port $PORT
+    buildFilter:
+      paths: [money/agency/api/**, money/sites/trade_build.py, money/sites/golden/one-call-hvac/*.woff2]
     healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
@@ -25,6 +27,7 @@ services:
       - {key: FROM_EMAIL, sync: false}
       - {key: MAILING_ADDRESS, sync: false}
       - {key: DAILY_SEND_CAP, value: "5"}
+      - {key: PLAYWRIGHT_BROWSERS_PATH, value: "0"}   # keep Chromium inside the build so it exists at run time (check)
   - type: web
     name: agency-dashboard
     runtime: node

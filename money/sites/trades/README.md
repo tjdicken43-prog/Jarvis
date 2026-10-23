@@ -37,3 +37,6 @@ Every trade site is built like the golden `index.html` files: layout B (Paschal 
 
 ## Adding a new trade
 Write its kit the same way. Start with who calls and why, what they're scared of, what they need to decide, and what the owner wants fewer of (wasted trips, tire-kickers, phone tag). Turn each answer into a section or a small tool on the page.
+
+## Auto mockups (2026-10-23)
+For cold outreach, `../trade_build.py` builds the option C page for a shop automatically from what the flaw finder read on their own site (money/agency/README.md, "Prepare"). It carries every kit tool and only the facts it was given. A hand-built site from the kit is still the paid build.

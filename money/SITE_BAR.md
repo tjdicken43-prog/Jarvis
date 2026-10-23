@@ -25,6 +25,7 @@ Banned on sight. The Auditor greps for these and looks at the screenshot.
 - Colors come from their logo, truck or old site, not from our template.
 - **Photos:**
   - Use their own (Google profile, old site, Facebook) in the preview only, with the concept bar showing.
+  - Their photos are their copyright. They go only on the private preview shown to that owner, never on a public demo, our portfolio, the scorecard or socials without their written OK. Get their OK before the site goes live with them.
   - With no real photos, use clean type, a map or a pattern instead. Never stock people.
 - Copy is written for their trade and town. "Same-day AC repair in Rogers and Bentonville", not "quality HVAC services".
 - At least one specific detail only they have: a real review quote (with a link), their founding year, the brands they service, or a guarantee they actually offer.

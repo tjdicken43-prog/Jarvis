@@ -83,8 +83,46 @@ blockquote footer{font-size:15px;color:var(--slate2)}
  .visit{grid-template-columns:1fr 1fr}
  .split{display:grid;grid-template-columns:1fr 1.3fr;gap:56px}
 }
+
+.tool{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px 20px}
+.tool h3{font-size:22px;margin-bottom:4px}
+.tool>p{margin:0 0 12px;color:var(--slate2)}
+.checks{display:grid}
+.checks label{display:flex;gap:12px;align-items:flex-start;font-weight:500;min-height:48px;padding:12px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.checks input{width:24px;height:24px;min-height:0;padding:0;margin:1px 0 0;accent-color:var(--cedar);flex:none}
+.verdict{margin:16px 0 0;padding:14px 16px;border-radius:10px;background:var(--paper);font-weight:600;font-size:18px}
+.verdict small{display:block;font-weight:400;font-size:15px;color:var(--slate2);margin-top:4px}
+.fine{font-size:14.5px;color:var(--slate2);margin:12px 0 0}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0;border-top:1.5px solid var(--slate)}
+.steps li{counter-increment:s;display:grid;grid-template-columns:40px 1fr;gap:12px;padding:16px 0;border-bottom:1px solid var(--line)}
+.steps li::before{content:counter(s);width:34px;height:34px;border-radius:50%;background:var(--slate);color:#fff;display:grid;place-items:center;font-weight:800}
+.steps b{display:block;font-size:18px}
+.steps p{margin:2px 0 0;color:var(--slate2)}
+.faq details{border-bottom:1px solid var(--line)}
+.faq details:first-child{border-top:1.5px solid var(--slate)}
+.faq summary{min-height:58px;display:flex;align-items:center;justify-content:space-between;gap:16px;font-weight:700;font-size:18px;cursor:pointer;list-style:none;padding:8px 0}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";font-size:26px;font-weight:400;color:var(--cedar);flex:none}
+.faq details[open] summary::after{content:"\2212"}
+.faq details p{margin:0 0 18px;max-width:62ch;color:var(--slate2)}
+.pick{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 14px}
+.pick button{min-height:48px;padding:0 16px;border-radius:999px;border:1.5px solid var(--slate);background:transparent;color:var(--slate);font:600 16px "Libre Franklin",sans-serif;cursor:pointer}
+.pick button[aria-pressed="true"]{background:var(--slate);color:#fff}
+.ans ul{margin:0;padding-left:20px}
+.ans li{margin:6px 0}
+.ans .btn{margin-top:14px;display:inline-flex}
+.alert{background:#fff4e2;border:1px solid #e9c07a;color:#3d2a06;border-radius:10px;padding:14px 16px;margin:16px 0 0}
+.alert b{display:block}
+.two{display:grid;gap:32px}
+.lead{max-width:60ch;color:var(--slate2);margin:0 0 18px}
+.tight{padding-top:8px}
+input[type=file]{padding:10px;min-height:52px;font-size:15px}
+.season{display:inline-flex;align-items:center;gap:8px;font-size:15px;font-weight:600;color:var(--tan);margin:0 0 14px}
+.season i{width:9px;height:9px;border-radius:50%;background:var(--tan)}
+@media (min-width:820px){.two{grid-template-columns:1fr 1fr;gap:48px;align-items:start}}
 </style>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"RoofingContractor","name":"John's Quality Roofing","telephone":"+1-479-426-7931","email":"jqroofingsystems@gmail.com","url":"https://johnsqualityroofing.com/","address":{"@type":"PostalAddress","streetAddress":"5 Cromer Drive","addressLocality":"Bella Vista","addressRegion":"AR","postalCode":"72715","addressCountry":"US"},"openingHours":"Mo-Sa 07:00-19:00","areaServed":["Bella Vista","Bentonville","Rogers","Springdale","Fayetteville","Garfield","Fort Smith","Southwest Missouri"]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What hours are you open?", "acceptedAnswer": {"@type": "Answer", "text": "Monday to Saturday, 7 am to 7 pm. For storm damage we have 24/7 emergency response: call 479-426-7931."}}, {"@type": "Question", "name": "Do you work outside Bella Vista?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. We roof in Bentonville, Rogers, Springdale, Fayetteville and Garfield, down to Fort Smith and up into Southwest Missouri."}}, {"@type": "Question", "name": "Are you licensed and insured?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, we are licensed and insured."}}, {"@type": "Question", "name": "Is the work under warranty?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, our work is backed by warranty. Terms depend on the job, so ask for them with your quote."}}, {"@type": "Question", "name": "Do you do siding and gutters too?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Siding and gutter work comes from the same crew that does your roof."}}, {"@type": "Question", "name": "Do you work with builders?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. We do new construction roofing for builders in Bella Vista and nearby."}}, {"@type": "Question", "name": "What should I send with a quote request?", "acceptedAnswer": {"@type": "Answer", "text": "Your address, what you are seeing, and a few photos taken from the ground if you have them. That helps us come out with the right plan."}}]}</script>
 </head>
 <body>
 <div class="pv"><b>Concept preview</b> made by Sites by TJ for John's Quality Roofing. Not the official site. Facts and reviews come from johnsqualityroofing.com.</div>
@@ -109,6 +147,7 @@ blockquote footer{font-size:15px;color:var(--slate2)}
      <label>Phone<input name="phone" type="tel" autocomplete="tel" required></label>
      <label>What do you need?<select name="job"><option>Roof replacement</option><option>Roof repair or leak</option><option>Inspection</option><option>Siding</option><option>Gutters</option><option>New construction</option></select></label>
      <label>Street address<input name="addr" autocomplete="street-address"></label>
+     <label>Photos of the roof or leak (optional)<input name="photos" type="file" accept="image/*" multiple></label>
      <button class="btn" type="submit">Send my quote request</button>
     </form>
    </div>
@@ -132,6 +171,35 @@ blockquote footer{font-size:15px;color:var(--slate2)}
  </div>
 </section>
 
+
+<section id="check">
+ <div class="wrap two">
+  <div class="tool">
+   <h2 style="font-size:clamp(28px,7vw,40px)">Repair or replace?</h2>
+   <p>A one-minute check. Tick what you see on your roof.</p>
+   <div class="checks" id="signs">
+    <label><input type="checkbox">The roof is about 20 years old or more</label>
+    <label><input type="checkbox">Shingles are curling, cracked or missing in more than one spot</label>
+    <label><input type="checkbox">There is shingle grit (granules) in the gutters or at the downspouts</label>
+    <label><input type="checkbox">It has leaked in more than one place</label>
+    <label><input type="checkbox">The roofline dips or sags</label>
+    <label><input type="checkbox">Moss or dark streaks cover big areas</label>
+   </div>
+   <p class="verdict" id="verdict" aria-live="polite">Nothing ticked yet.<small>Tick anything that matches your roof.</small></p>
+   <a class="btn" id="vbtn" href="#quote" style="margin-top:14px">Get a quote</a>
+   <p class="fine">A general guide, not a diagnosis. We'll tell you what we see when we're on your roof.</p>
+  </div>
+  <div>
+   <h2>After a hail or wind storm</h2>
+   <ol class="steps">
+    <li><div><b>Stay off the roof</b><p>Look from the ground. Take photos of missing shingles, dents in gutters and vents, and any water inside.</p></div></li>
+    <li><div><b>Stop the water inside</b><p>Move what you can, put a bucket down. If water is coming through a light fixture, turn off that breaker.</p></div></li>
+    <li><div><b>Call us for a look</b><p>We have 24/7 emergency response for storm damage: <a href="tel:+14794267931">479-426-7931</a>.</p></div></li>
+    <li><div><b>Call your insurance company soon</b><p>Many policies set a time limit for storm claims. Your photos and our notes on the damage help.</p></div></li>
+   </ol>
+  </div>
+ </div>
+</section>
 <section id="services">
  <div class="wrap split">
   <div>
@@ -149,6 +217,13 @@ blockquote footer{font-size:15px;color:var(--slate2)}
  </div>
 </section>
 
+
+<section id="faq">
+ <div class="wrap split">
+  <div><h2>Questions</h2><p>Ask us anything else when you call.</p></div>
+  <div class="faq"><details><summary>What hours are you open?</summary><p>Monday to Saturday, 7 am to 7 pm. For storm damage we have 24/7 emergency response: call 479-426-7931.</p></details><details><summary>Do you work outside Bella Vista?</summary><p>Yes. We roof in Bentonville, Rogers, Springdale, Fayetteville and Garfield, down to Fort Smith and up into Southwest Missouri.</p></details><details><summary>Are you licensed and insured?</summary><p>Yes, we are licensed and insured.</p></details><details><summary>Is the work under warranty?</summary><p>Yes, our work is backed by warranty. Terms depend on the job, so ask for them with your quote.</p></details><details><summary>Do you do siding and gutters too?</summary><p>Yes. Siding and gutter work comes from the same crew that does your roof.</p></details><details><summary>Do you work with builders?</summary><p>Yes. We do new construction roofing for builders in Bella Vista and nearby.</p></details><details><summary>What should I send with a quote request?</summary><p>Your address, what you are seeing, and a few photos taken from the ground if you have them. That helps us come out with the right plan.</p></details></div>
+ </div>
+</section>
 <section class="area reviews" id="area">
  <div class="wrap">
   <h2>Where we work</h2>
@@ -176,5 +251,12 @@ blockquote footer{font-size:15px;color:var(--slate2)}
 </main>
 <div class="ft"><div class="wrap">John's Quality Roofing · 5 Cromer Drive, Bella Vista, AR 72715 · <a href="tel:+14794267931">479-426-7931</a></div></div>
 <div class="bar"><a class="btn" href="tel:+14794267931"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2"/></svg>Call</a><a class="btn ghost" href="#quote">Get a quote</a></div>
+<script>
+(function(){var b=document.querySelectorAll("#signs input"),v=document.getElementById("verdict"),k=document.getElementById("vbtn"),sel=document.querySelector("#quote select");
+var R=[["Nothing ticked yet.","Tick anything that matches your roof.","Get a quote",0],["One sign usually means a repair.","Ask for a repair quote and we'll take a look.","Get a repair quote",1],["A few signs. Get an inspection.","You'll know whether to repair now or plan a new roof.","Book an inspection",2],["Several signs point to a new roof.","Ask for a replacement quote.","Get a replacement quote",0]];
+function u(){var n=0;b.forEach(function(x){if(x.checked)n++});var r=n==0?R[0]:n==1?R[1]:n<4?R[2]:R[3];v.innerHTML=r[0]+"<small>"+r[1]+"</small>";k.textContent=r[2];k.dataset.i=n==0?"":r[3]}
+b.forEach(function(x){x.addEventListener("change",u)});
+k.addEventListener("click",function(){if(sel&&k.dataset.i!==undefined&&k.dataset.i!=="")sel.selectedIndex=+k.dataset.i})})();
+</script>
 </body>
 </html>

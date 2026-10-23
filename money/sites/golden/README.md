@@ -3,12 +3,13 @@
 The 3 golden sites that `money/SITE_BAR.md` requires before any outreach. Built 2026-10-23, hand-made (not `build.py`'s template).
 Each folder is a static page: `index.html` plus its self-hosted fonts. Concept bar and `noindex` stay on until a site is sold.
 Scorecard for Tj and the two other scorers: https://claude.ai/artifact/2pAMYGiriYdHEBAkZnjfxX
+Trade kits built from these sites: `../trades/` (round 3, 2026-10-23: each site got customer tools for its trade).
 
 | Site | Trade, town | Lighthouse mobile (perf / a11y / best / SEO*) | Weight |
 |---|---|---|---|
-| one-call-hvac | HVAC, Bentonville | 100 / 100 / 100 / 100 | 45 KB |
-| johns-quality-roofing | Roofing, Bella Vista | 100 / 100 / 100 / 100 | 42 KB |
-| its-plumbing | Plumbing, Rogers | 100 / 100 / 100 / 100 | 41 KB |
+| one-call-hvac | HVAC, Bentonville | 100 / 100 / 100 / 100 | 55 KB |
+| johns-quality-roofing | Roofing, Bella Vista | 100 / 100 / 100 / 100 | 50 KB |
+| its-plumbing | Plumbing, Rogers | 100 / 100 / 100 / 100 | 50 KB |
 
 \* SEO is 60 with the preview `noindex` on, 100 with it off. Checked at 375, 390 and 1280 px: no sideways scroll, no console errors, all taps 48 px or more.
 No business has been contacted.

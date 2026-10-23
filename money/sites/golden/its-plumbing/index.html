@@ -85,8 +85,46 @@ blockquote footer{font-size:15px;color:var(--slate2)}
 
 .btn.big{min-height:60px;font-size:21px;margin-top:22px}
 @media (min-width:820px){.hero .btn.big{display:inline-flex}}
+
+.tool{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px 20px}
+.tool h3{font-size:22px;margin-bottom:4px}
+.tool>p{margin:0 0 12px;color:var(--slate2)}
+.checks{display:grid}
+.checks label{display:flex;gap:12px;align-items:flex-start;font-weight:500;min-height:48px;padding:12px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.checks input{width:24px;height:24px;min-height:0;padding:0;margin:1px 0 0;accent-color:var(--cedar);flex:none}
+.verdict{margin:16px 0 0;padding:14px 16px;border-radius:10px;background:var(--paper);font-weight:600;font-size:18px}
+.verdict small{display:block;font-weight:400;font-size:15px;color:var(--slate2);margin-top:4px}
+.fine{font-size:14.5px;color:var(--slate2);margin:12px 0 0}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0;border-top:1.5px solid var(--slate)}
+.steps li{counter-increment:s;display:grid;grid-template-columns:40px 1fr;gap:12px;padding:16px 0;border-bottom:1px solid var(--line)}
+.steps li::before{content:counter(s);width:34px;height:34px;border-radius:50%;background:var(--slate);color:#fff;display:grid;place-items:center;font-weight:800}
+.steps b{display:block;font-size:18px}
+.steps p{margin:2px 0 0;color:var(--slate2)}
+.faq details{border-bottom:1px solid var(--line)}
+.faq details:first-child{border-top:1.5px solid var(--slate)}
+.faq summary{min-height:58px;display:flex;align-items:center;justify-content:space-between;gap:16px;font-weight:700;font-size:18px;cursor:pointer;list-style:none;padding:8px 0}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";font-size:26px;font-weight:400;color:var(--cedar);flex:none}
+.faq details[open] summary::after{content:"\2212"}
+.faq details p{margin:0 0 18px;max-width:62ch;color:var(--slate2)}
+.pick{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 14px}
+.pick button{min-height:48px;padding:0 16px;border-radius:999px;border:1.5px solid var(--slate);background:transparent;color:var(--slate);font:600 16px "Libre Franklin",sans-serif;cursor:pointer}
+.pick button[aria-pressed="true"]{background:var(--slate);color:#fff}
+.ans ul{margin:0;padding-left:20px}
+.ans li{margin:6px 0}
+.ans .btn{margin-top:14px;display:inline-flex}
+.alert{background:#fff4e2;border:1px solid #e9c07a;color:#3d2a06;border-radius:10px;padding:14px 16px;margin:16px 0 0}
+.alert b{display:block}
+.two{display:grid;gap:32px}
+.lead{max-width:60ch;color:var(--slate2);margin:0 0 18px}
+.tight{padding-top:8px}
+input[type=file]{padding:10px;min-height:52px;font-size:15px}
+.season{display:inline-flex;align-items:center;gap:8px;font-size:15px;font-weight:600;color:var(--tan);margin:0 0 14px}
+.season i{width:9px;height:9px;border-radius:50%;background:var(--tan)}
+@media (min-width:820px){.two{grid-template-columns:1fr 1fr;gap:48px;align-items:start}}
 </style>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Plumber","name":"It's Plumbing","telephone":"+1-479-866-6310","email":"itsplumbingnwa@gmail.com","url":"https://itsplumbingnwa.com/","address":{"@type":"PostalAddress","streetAddress":"14123 Pleasant Ridge Rd.","addressLocality":"Rogers","addressRegion":"AR","postalCode":"72756","addressCountry":"US"},"openingHours":"Mo-Fr 08:00-17:00","areaServed":"Northwest Arkansas"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What are your hours?", "acceptedAnswer": {"@type": "Answer", "text": "Monday to Friday, 8 am to 5 pm. After hours, send a request with photos and we'll get back to you."}}, {"@type": "Question", "name": "Are you licensed?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. We are a licensed master plumber, license MP-6881."}}, {"@type": "Question", "name": "Do you work on gas lines?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, we offer gas line services. If you smell gas, leave first and call 911 or your gas company from outside."}}, {"@type": "Question", "name": "Do you do commercial work?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Repairs, installations and maintenance for businesses."}}, {"@type": "Question", "name": "Where do you work?", "acceptedAnswer": {"@type": "Answer", "text": "We're based in Rogers and serve homes and businesses across Northwest Arkansas."}}, {"@type": "Question", "name": "Do you install water heaters?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. We install new water heaters and replace old ones."}}]}</script>
 </head>
 <body>
 <div class="pv"><b>Concept preview</b> made by Sites by TJ for It's Plumbing. Not the official site. Facts and reviews come from itsplumbingnwa.com.</div>
@@ -112,6 +150,7 @@ blockquote footer{font-size:15px;color:var(--slate2)}
      <label>Phone<input name="phone" type="tel" autocomplete="tel" required></label>
      <label>What do you need?<select name="job"><option>Drain cleaning</option><option>Water heater</option><option>Gas line</option><option>Leak or repair</option><option>Fixtures or piping</option><option>Commercial work</option></select></label>
      <label>Street address<input name="addr" autocomplete="street-address"></label>
+     <label>Photos of the problem (optional)<input name="photos" type="file" accept="image/*" multiple></label>
      <button class="btn" type="submit">Send request</button>
     </form>
    </div>
@@ -119,6 +158,36 @@ blockquote footer{font-size:15px;color:var(--slate2)}
  </div>
 </div>
 <main>
+
+<section id="now">
+ <div class="wrap two">
+  <div>
+   <h2>Water where it shouldn't be? Do this first</h2>
+   <ol class="steps">
+    <li><div><b>Shut off the water</b><p>The main shut-off is usually where the water line comes into the house: a garage, crawlspace, utility room or next to the water heater. Turn the handle clockwise, or turn the lever across the pipe.</p></div></li>
+    <li><div><b>If it's the water heater</b><p>Close the cold-water valve on top of the tank. Turn off its breaker, or set a gas heater to Pilot.</p></div></li>
+    <li><div><b>Keep water away from power</b><p>Move cords and keep clear of outlets near the water.</p></div></li>
+    <li><div><b>Call us</b><p><a href="tel:+14798666310">(479) 866-6310</a>, Monday to Friday, 8 to 5. After hours, <a href="#book">send a request</a> with photos.</p></div></li>
+   </ol>
+   <p class="alert" role="note"><b>Smell gas?</b>Leave the house now. Don't flip switches. Call 911 or your gas company from outside.</p>
+  </div>
+  <div class="tool">
+   <h2 style="font-size:clamp(28px,7vw,40px)">What's going on?</h2>
+   <p>Pick the problem for what to try and when to call.</p>
+   <div class="pick" role="group" aria-label="What is the problem?">
+    <button type="button" data-k="clog">Clogged drain</button><button type="button" data-k="hot">No hot water</button><button type="button" data-k="leak">Leak</button><button type="button" data-k="toilet">Running toilet</button><button type="button" data-k="press">Low pressure</button>
+   </div>
+   <div class="ans">
+    <div data-a="clog"><ul><li>Try a plunger first.</li><li>Skip chemical drain cleaners. They are hard on pipes and on whoever opens the line next.</li><li>More than one drain slow at once points to the main line. Call us.</li></ul></div>
+    <div data-a="hot"><ul><li>Electric heater: check its breaker.</li><li>Gas heater: check the pilot, following the steps on the tank's label.</li><li>Water around the base, or a tank older than 10 years? Time to talk about a new one.</li></ul></div>
+    <div data-a="leak"><ul><li>Close the valve under the sink or behind the toilet.</li><li>If you can't find one, shut off the main.</li><li>Put a bucket down and take a photo for us.</li></ul></div>
+    <div data-a="toilet"><ul><li>Jiggle the handle. A worn flapper is the usual cause.</li><li>Still running? Close the valve behind the toilet until it's fixed. A running toilet can waste a lot of water.</li></ul></div>
+    <div data-a="press"><ul><li>One faucet only: unscrew and rinse the aerator at the tip.</li><li>The whole house: call us. It can be a valve, the pressure regulator or a hidden leak.</li></ul></div>
+    <a class="btn" href="tel:+14798666310"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2"/></svg>Call (479) 866-6310</a>
+   </div>
+  </div>
+ </div>
+</section>
 <section class="reviews" aria-labelledby="rvh">
  <div class="wrap">
   <h2 id="rvh">What customers say</h2>
@@ -145,7 +214,27 @@ blockquote footer{font-size:15px;color:var(--slate2)}
   </ul>
  </div>
 </section>
-<section class="reviews" id="visit">
+
+<section class="reviews" id="water-heater">
+ <div class="wrap two">
+  <div>
+   <h2>Is your water heater on its way out?</h2>
+   <p class="lead">Signs it's time to replace it, before it fails on a cold morning:</p>
+   <ul class="svc tight">
+    <li><h3>It's over 10 years old</h3><p>The date is usually on the label on the side of the tank.</p></li>
+    <li><h3>Rusty or brown hot water</h3><p>Rust in the hot water can mean the tank is rusting inside.</p></li>
+    <li><h3>Rumbling or popping</h3><p>Sediment has built up in the bottom of the tank.</p></li>
+    <li><h3>Water around the base</h3><p>A leaking tank can't be patched. Plan a replacement.</p></li>
+   </ul>
+   <a class="btn" href="#book" style="display:inline-flex;margin-top:18px">Ask about a new water heater</a>
+  </div>
+  <div>
+   <h2>Questions</h2>
+   <div class="faq"><details><summary>What are your hours?</summary><p>Monday to Friday, 8 am to 5 pm. After hours, send a request with photos and we'll get back to you.</p></details><details><summary>Are you licensed?</summary><p>Yes. We are a licensed master plumber, license MP-6881.</p></details><details><summary>Do you work on gas lines?</summary><p>Yes, we offer gas line services. If you smell gas, leave first and call 911 or your gas company from outside.</p></details><details><summary>Do you do commercial work?</summary><p>Yes. Repairs, installations and maintenance for businesses.</p></details><details><summary>Where do you work?</summary><p>We're based in Rogers and serve homes and businesses across Northwest Arkansas.</p></details><details><summary>Do you install water heaters?</summary><p>Yes. We install new water heaters and replace old ones.</p></details></div>
+  </div>
+ </div>
+</section>
+<section id="visit">
  <div class="wrap visit">
   <div>
    <h2>Call or write</h2>
@@ -165,5 +254,10 @@ blockquote footer{font-size:15px;color:var(--slate2)}
 </main>
 <div class="ft"><div class="wrap">It's Plumbing · 14123 Pleasant Ridge Rd., Rogers, AR 72756 · <a href="tel:+14798666310">(479) 866-6310</a></div></div>
 <div class="bar"><a class="btn" href="tel:+14798666310"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2"/></svg>Call</a><a class="btn ghost" href="#book">Request a visit</a></div>
+<script>
+(function(){var p=document.querySelector(".pick");if(!p)return;var b=p.querySelectorAll("button"),a=document.querySelectorAll(".ans [data-a]");
+function show(k){b.forEach(function(x){x.setAttribute("aria-pressed",x.dataset.k===k?"true":"false")});a.forEach(function(x){x.hidden=x.dataset.a!==k})}
+b.forEach(function(x){x.addEventListener("click",function(){show(x.dataset.k)})});show(b[0].dataset.k)})();
+</script>
 </body>
 </html>

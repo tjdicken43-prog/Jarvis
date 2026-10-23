@@ -26,14 +26,14 @@ What we learned on the 3 golden sites: most small-trade sites use stock photos, 
 5. If nothing usable turns up, keep the trade texture and ask for 5 job photos once they reply.
 Their photo and logo files never go in this public repo (`.gitignore` blocks `*.webp` under golden/ and shops/). Keep them in project files. Rule: their photos are only for the private preview sent to that owner. Get the owner's OK before going live, and never use them in public demos or our portfolio.
 
-## House style (all trades): layout B, Paschal style (Tj, 2026-10-23)
-Tj scored the Paschal-style layout 10/10 and chose it for every site. Start each new site from its trade's golden `index.html`. The old dark-band layout is kept as `layout-a.html` for reference only.
-- A white sticky top bar: their real logo, the section nav, the phone and a pill "Get a quote" / "Book a visit" button.
-- Hero: their own photo full-width behind the headline when they have a strong one (`johns-quality-roofing`). Otherwise use a navy band with the trade texture (`one-call-hvac`, `its-plumbing`). The headline names the job and the town.
-- A white "Why <town> calls <name>" panel overlaps the hero, with 4 navy cards of sourced facts (hours, 24/7, license, local).
-- The 3-step strip, then the full form on a navy band, then card-style reviews (stars only if their source shows the rating), trade tools, service cards, FAQ, area and contact. Sticky Call / Quote bar on phones.
-- One plain font (Libre Franklin), their logo colors, and their navy if they use one. No stock people, no invented logos.
-- Pro upgrades to consider (option C, `johns-quality-roofing/layout-c.html`): a top emergency bar, the phone number written out in the header, the Google star rating under the headline, a 2-field quick quote card in the desktop hero, 2-by-2 trust cards on phones and a final CTA band.
+## House style (all trades): option C (Tj, 2026-10-23: "Boom we found it!")
+Every trade site is built like the golden `index.html` files: layout B (Paschal style) plus the pro conversion pass. `layout-b.html` and `layout-a.html` are kept for reference only. Trades only: we don't build for other kinds of business (Tj, 2026-10-23).
+- **Top emergency bar** in the accent color. 24/7 trades get "tap to call". Others link to their first-aid steps (It's Plumbing: "Water where it shouldn't be?").
+- **White sticky header:** their real logo, nav, the phone number written out (on phones too) and a square "Get a quote" / "Book a visit" button.
+- **Hero:** their own strong photo full-width behind the headline, or a navy band with the trade texture if they have none. Headline = job + town. Google star rating under it (only their real rating, read from Google). Call and quote buttons. On desktop, a 2-field quick form card (name, phone) that hands off to the full form.
+- **Trust panel** overlapping the hero: 4 navy cards of sourced facts, 2 by 2 on phones.
+- Then: the 3-step strip, the full form on a navy band (with photo upload), reviews, trade tools, service cards, FAQ, a **final CTA band**, area and contact. Sticky Call / Quote bar on phones.
+- One font (Libre Franklin), their logo colors, square corners (4px buttons, 6 to 8px cards). Follow "No AI tells" in `../PREMIUM.md`.
 
 ## Adding a new trade
 Write its kit the same way. Start with who calls and why, what they're scared of, what they need to decide, and what the owner wants fewer of (wasted trips, tire-kickers, phone tag). Turn each answer into a section or a small tool on the page.

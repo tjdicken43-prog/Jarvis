@@ -16,6 +16,15 @@ Tap JOB (or just ask for something big) and the page queues it. The "Jarvis job 
 - **Notes only (free):** no key needed. Jarvis finds the matching note and reads out the lines that fit.
 - **Claude (paid, cheap):** SETUP → paste an Anthropic API key. The key stays in that browser only, never in the repo. Opus 5.5 is roughly 1 cent a question; Haiku 5.5 is a fraction of a cent.
 
+## Where the code lives
+`hud/index.html` is only the page's markup. Open just the file a change touches:
+- `src/style.css` the look; `src/core.js` start-up, clock, brain panel, tabs
+- `src/scene.js` the 3D brain, camera, 4D layer, cores; `src/showoff.js` Show off and its flight; `src/frame.js` drawing each frame, note reader
+- `src/voice.js` comms log, sounds, voice out and in; `src/memory.js` notes search, saved chats and lessons, NEW notes
+- `src/jobs.js` jobs, morning brief, reminders, memory panel, factory, past chats; `src/think.js` thinking, settings, night mode, start-up line
+
+The pieces share one global scope, in that order. `build_brain.py --artifact` joins them back into one style and one script.
+
 ## After the notes change
 Run `python3 hud/build_brain.py` to repack them into `brain.js`.
 - Brain map: drag to spin it, tap a note for ASK, TEACH or JOB. Store docs used: `memory/touches` (which notes TJ opens), `memory/seen` (notes he has been debriefed on; anything else shows as NEW). LEARN NOW wakes the job runner, which also files lessons into the notes.

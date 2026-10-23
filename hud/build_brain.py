@@ -46,12 +46,27 @@ def main():
         write_artifact(Path(sys.argv[sys.argv.index("--artifact") + 1]), out.read_text(encoding="utf-8"))
 
 
+PART = re.compile(r'<script src="(src/[\w-]+\.js)"></script>\n?')
+
+
+def inline_parts(html):
+    """index.html loads its code from hud/src/ in pieces; the artifact gets them back as one style and one script."""
+    css = (ROOT / "hud" / "src" / "style.css").read_text(encoding="utf-8")
+    html = html.replace('<link rel="stylesheet" href="src/style.css">', "<style>\n" + css + "</style>")
+    parts = PART.findall(html)
+    code = "".join((ROOT / "hud" / f).read_text(encoding="utf-8") for f in parts)
+    assert "</script" not in code, "a hud/src file has </script in it; split the string"
+    html = PART.sub("", html, count=len(parts) - 1) if len(parts) > 1 else html
+    return PART.sub(lambda m: "<script>\n" + code + "</script>\n", html, count=1)
+
+
 def write_artifact(dest, brain_js):
     """The artifact host adds its own doctype, head and body, so strip ours."""
     html = (ROOT / "hud" / "index.html").read_text(encoding="utf-8")
     for tag in ("<!doctype html>", '<html lang="en">', "</html>", "<head>", "</head>", "<body>", "</body>"):
         html = html.replace(tag, "")
     html = re.sub(r'<meta (charset|name="viewport")[^>]*>\n', "", html)
+    html = inline_parts(html)
     html = html.replace('<script src="brain.js"></script>', "<script>" + brain_js.replace("</", "<\\/") + "</script>")
     factory = (ROOT / "hud" / "factory.js").read_text(encoding="utf-8")
     html = html.replace('<script src="factory.js"></script>', "<script>" + factory.replace("</", "<\\/") + "</script>")

@@ -20,7 +20,7 @@ Judge like a senior game artist and a phone UX designer. Check, in order:
 
 ## 3. Fix the top 3
 - Pick the 3 changes with the biggest visible win for the least code. Usually one for Jarvis, one for the factory, one either.
-- Edit `hud/factory.js` (the factory, shared with the Station page) and/or `hud/index.html` (Jarvis).
+- Edit `hud/factory.js` (the factory, shared with the Station page) and/or the Jarvis page in `hud/src/` (see hud/README.md for which file holds what).
 - Keep the style: our own pixel art drawn in code, no outside images, no Starnet name, logo or sprites.
 - Never touch sign-in, keys, payments, sending, or the job/lesson stores.
 

@@ -218,12 +218,43 @@ body{padding-bottom:84px}
  .rv{grid-template-columns:repeat(3,1fr)}
  .svc{grid-template-columns:1fr 1fr}
 }
+
+/* Option C: pro conversion pass on layout B */
+.hphoto{min-height:0}
+.hphoto::after{background:linear-gradient(180deg,#0e1f4da6 0%,#0e1f4dd9 45%,#0e1f4df2)}
+.hcopy{padding-top:56px;padding-bottom:88px}
+.alertbar{display:block;background:var(--cedar);color:#fff;text-align:center;font-size:15px;padding:9px 16px;text-decoration:none;line-height:1.35}
+.alertbar b{font-weight:800}
+.top .hcall span{display:inline;font-size:16px}
+.stars{margin:16px 0 0;font-size:16px;color:#e3e8f2}
+.stars span{color:#ffc93c;letter-spacing:2px;font-size:18px}
+.stars b{color:#fff;font-size:18px}
+.mini{display:none}
+.trust ul{grid-template-columns:1fr 1fr;gap:10px}
+.trust li{padding:14px}
+.trust b{font-size:17px}
+.trust span{font-size:14.5px}
+.final{background:var(--cedar);color:#fff;text-align:center}
+.final h2{color:#fff}
+.final p{margin:0 auto;max-width:46ch;color:#ffe9ec}
+.final .hbtns{justify-content:center}
+.final .pill{background:#fff;color:var(--cedar)}
+.final .pill.line{background:transparent;color:#fff}
+@media (min-width:820px){
+ .hphoto{min-height:600px}
+ .hphoto .wrap.hcopy{padding-top:64px;padding-bottom:120px;display:grid;grid-template-columns:1.2fr 380px;gap:48px;align-items:center}
+ .mini{display:grid;gap:10px;position:relative;z-index:1;background:#fff;color:var(--slate);border-radius:22px;padding:22px;box-shadow:0 24px 50px -20px #000a}
+ .mini>b{font-size:24px;font-weight:800}
+ .mini>span{color:var(--slate2);font-size:15px;margin-top:-6px}
+ .trust ul{grid-template-columns:repeat(4,1fr)}
+}
 </style>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"RoofingContractor","name":"John's Quality Roofing","telephone":"+1-479-426-7931","email":"jqroofingsystems@gmail.com","url":"https://johnsqualityroofing.com/","address":{"@type":"PostalAddress","streetAddress":"5 Cromer Drive","addressLocality":"Bella Vista","addressRegion":"AR","postalCode":"72715","addressCountry":"US"},"openingHours":"Mo-Sa 07:00-19:00","areaServed":["Bella Vista","Bentonville","Rogers","Springdale","Fayetteville","Garfield","Fort Smith","Southwest Missouri"]}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "What hours are you open?", "acceptedAnswer": {"@type": "Answer", "text": "Monday to Saturday, 7 am to 7 pm. For storm damage we have 24/7 emergency response: call 479-426-7931."}}, {"@type": "Question", "name": "Do you work outside Bella Vista?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. We roof in Bentonville, Rogers, Springdale, Fayetteville and Garfield, down to Fort Smith and up into Southwest Missouri."}}, {"@type": "Question", "name": "Are you licensed and insured?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, we are licensed and insured."}}, {"@type": "Question", "name": "Is the work under warranty?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, our work is backed by warranty. Terms depend on the job, so ask for them with your quote."}}, {"@type": "Question", "name": "Do you do siding and gutters too?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Siding and gutter work comes from the same crew that does your roof."}}, {"@type": "Question", "name": "Do you work with builders?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. We do new construction roofing for builders in Bella Vista and nearby."}}, {"@type": "Question", "name": "What should I send with a quote request?", "acceptedAnswer": {"@type": "Answer", "text": "Your address, what you are seeing, and a few photos taken from the ground if you have them. That helps us come out with the right plan."}}]}</script>
 </head>
 <body>
-<div class="pv"><b>Concept preview, layout B</b> made by Sites by TJ for John's Quality Roofing. Not the official site. Facts and reviews come from johnsqualityroofing.com.</div>
+<div class="pv"><b>Concept preview, option C</b> made by Sites by TJ for John's Quality Roofing. Not the official site. Facts and reviews come from johnsqualityroofing.com and their Google profile.</div>
+<a class="alertbar" href="tel:+14794267931"><b>Storm damage?</b> 24/7 emergency response. Tap to call 479-426-7931</a>
 <header class="top"><div class="wrap topin">
  <a class="mark" href="#top"><img src="logo-dark.webp" width="111" height="48" alt="John's Quality Roofing"><span class="sr">Bella Vista, Arkansas</span></a>
  <nav class="nav" aria-label="Sections"><a href="#check">Roof check</a><a href="#services">The work</a><a href="#faq">Questions</a><a href="#area">Area</a></nav>
@@ -232,10 +263,18 @@ body{padding-bottom:84px}
 </div></header>
 <div class="hphoto" id="top">
  <picture><source media="(min-width:820px)" srcset="hero-roof.webp"><img src="hero-roof-phone.webp" width="640" height="756" alt="A finished dark shingle roof on a brick home, done by John's Quality Roofing" fetchpriority="high"></picture>
- <div class="wrap hcopy">
+ <div class="wrap hcopy"><div class="hleft">
   <h1>Roof repair and replacement in Bella Vista.</h1>
   <p class="lede">Roofs, siding and gutters for homes across Northwest Arkansas. A local crew, open six days a week.</p>
+  <p class="stars"><span aria-hidden="true">&#9733;&#9733;&#9733;&#9733;&#9733;</span> <b>4.8</b> on Google</p>
   <div class="hbtns"><a class="pill big" href="#quote">Get a quote</a><a class="pill big line" href="tel:+14794267931">Call 479-426-7931</a></div>
+ </div>
+ <form class="mini" action="#quote" onsubmit="event.preventDefault();document.querySelector('#quote input[name=name]').value=this.n.value;document.querySelector('#quote input[name=phone]').value=this.p.value;document.querySelector('#quote').scrollIntoView({behavior:'smooth'})">
+  <b>Get a quote</b><span>We call you back to set a time.</span>
+  <label>Name<input name="n" autocomplete="name" required></label>
+  <label>Phone<input name="p" type="tel" autocomplete="tel" required></label>
+  <button class="btn" type="submit">Next: the job details</button>
+ </form>
  </div>
 </div>
 <div class="wrap"><div class="trust" aria-labelledby="trh">
@@ -346,6 +385,7 @@ body{padding-bottom:84px}
  </div>
 </section>
 
+<section class="final"><div class="wrap"><h2>Ready to get your roof looked at?</h2><p>Call or send a few details. Open Monday to Saturday, 7 am to 7 pm.</p><div class="hbtns"><a class="pill big" href="#quote">Get a quote</a><a class="pill big line" href="tel:+14794267931">Call 479-426-7931</a></div></div></section>
 <section id="visit">
  <div class="wrap visit">
   <div>

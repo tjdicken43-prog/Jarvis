@@ -1,6 +1,6 @@
 ---
 type: reference
-checked: 2026-10-21
+checked: 2026-10-23
 ---
 # AI tools to use and avoid
 
@@ -12,6 +12,8 @@ Things seen on TikTok, checked before touching them.
 - **Impeccable** and **Emil Kowalski's** `emil-design-eng` and `review-animations` skills: installed in the [[Basis]] repo on 2026-10-21 (markdown only; Impeccable's launcher, which downloads a binary, removed).
 - **Impeccable** also copied into this repo (`.claude/skills/impeccable`, markdown only) on 2026-10-21; its overdrive guide shaped the phone page's Show off look.
 - **vet-ai-tool** skill (our own, in this repo): the steps for checking any new tool TJ sends before installing.
+- **skill-scout** skill (our own, in this repo, 2026-10-23): looks at recent work, names the gaps, and picks the next skill to learn; every pick goes through vet-ai-tool. Our safe stand-in for find-skills.
+- **skill-creator** (Anthropic, built in): writes our own skills when the procedure is ours.
 
 ## Fine, not needed now
 - **Agent Skills** (Addy Osmani): planning, specs and tests as written instructions. Safe.

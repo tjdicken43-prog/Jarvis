@@ -46,7 +46,7 @@ Things several pro sources agree on. ✅ = in the golden sites now. 🔒 = needs
 - A gallery sorted by job type once they send photos.
 
 ## Photos: the unlock
-The build box blocks outside websites, so it can't pull a prospect's photos from their site or Google profile. Fix: in [Project settings → environment](#project-settings/environment), add a cloud environment with **Full** network access (steps: https://code.claude.com/docs/en/cloud-environments#network-access). After that, every preview can use their own job photos (preview only, with the concept bar on, as the site bar already allows), plus real "before" screenshots.
+Done 2026-10-23 with a Full-network environment. The finding: real photos are rare (stock on their sites, AI-made images on some Google profiles), so a preview uses the few real ones it finds plus the real logo and colors, and the paid build asks the owner for job photos. How-to and the one-run script: `trades/README.md` ("Photos and logo colors").
 
 ## Sources (read 2026-10-23)
 - Hook Agency, contractor website trends 2026: https://hookagency.com/blog/contractor-website-design-trends-2026/

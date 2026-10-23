@@ -30,3 +30,6 @@ Phone, hours (are they truly 24/7?), towns, services (repair, install, maintenan
 
 ## Never claim unless sourced
 Prices, "free" service calls, financing, specific certifications (NATE, dealer tiers), response times.
+
+## Photos
+Run `../../tools/photo-sheet.js` once and follow "Photos and logo colors" in `../README.md`. Preview only; the owner's OK comes before go-live.

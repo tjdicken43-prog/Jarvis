@@ -32,3 +32,6 @@ License number (Arkansas master plumber numbers look like MP-####), phone, addre
 
 ## Never claim unless sourced
 24/7 or emergency service, prices, "free" estimates, tankless brands, camera inspections, hydro-jetting.
+
+## Photos
+Run `../../tools/photo-sheet.js` once and follow "Photos and logo colors" in `../README.md`. Preview only; the owner's OK comes before go-live.

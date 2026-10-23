@@ -6,7 +6,7 @@
 <title>One Call Heating, Cooling &amp; Refrigeration | 24/7 Heating and AC Repair, Bentonville AR</title>
 <meta name="description" content="24/7 heating and AC repair in Bentonville, Rogers, Springdale, Fayetteville and 29 more NWA towns. Over 30 years of experience. Call (479) 273-2914.">
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#18263a">
+<meta name="theme-color" content="#ffffff">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2318263a'/%3E%3Cpath d='M7 11h18M7 16h18M7 21h18' stroke='%239fd3ef' stroke-width='3'/%3E%3C/svg%3E">
 <link rel="preload" href="libre-franklin-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
@@ -160,28 +160,98 @@ input[type=file]{padding:10px;min-height:52px;font-size:15px}
  .how ol{grid-template-columns:repeat(3,1fr);gap:28px}
  .areagrid{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
 }
+/* Layout B (Paschal-style, Tj 2026-10-23): white top bar, navy hero with trade texture (no photo), overlapping trust panel, card grids */
+body{padding-bottom:84px}
+.top{display:block;padding:0;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:6}
+.topin{display:flex;align-items:center;justify-content:flex-start;gap:10px;min-height:68px;padding-top:0;padding-bottom:0}
+.top .mark img{height:44px}
+.top .hcall{color:var(--slate);margin-left:auto;gap:6px}
+.top .hcall svg{width:20px;height:20px;color:var(--cedar)}
+.top .pill{display:none}
+.pill{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 24px;border-radius:999px;background:var(--cedar);color:#fff;font-weight:700;text-decoration:none;white-space:nowrap;transition:background .2s}
+.pill:hover{background:var(--cedar2)}
+.pill.big{min-height:54px;font-size:18px}
+.pill.line{background:transparent;border:2px solid #fff}
+.pill.line:hover{background:#ffffff1a}
+.hcopy{width:100%;position:relative;z-index:1;padding-top:120px;padding-bottom:96px}
+.hcopy h1{font-size:clamp(38px,10vw,64px);color:#fff;max-width:13ch}
+.hcopy .lede{color:#e3e8f2}
+.hbtns{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.trust{position:relative;z-index:2;margin-top:-56px;background:#fff;border-radius:22px;padding:24px 20px;box-shadow:0 20px 40px -24px #00000055}
+.trust h2{font-size:clamp(26px,6.5vw,36px)}
+.trust ul{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.trust li{background:var(--slate);color:#dfe5f1;border-radius:16px;padding:18px;border-top:5px solid var(--cedar)}
+.trust b{display:block;color:#fff;font-size:19px;margin-bottom:2px}
+.trust span{font-size:15.5px}
+.how{background:transparent;border:0}
+.qband{background:var(--slate);color:#e3e8f2;border-radius:0}
+.qband h2{color:#fff}
+.qband a{color:#fff}
+.lede2{max-width:40ch;color:#d3daea}
+.qgrid{display:grid;gap:24px}
+.quote{border-radius:22px}
+.qband .quote>h2{display:none}
+.reviews{background:var(--paper);border:0}
+.rv blockquote{background:#fff;border-radius:16px;padding:18px;border:1px solid var(--line)}
+.rv blockquote p{font-size:18px}
+.svc{border:0;display:grid;gap:12px}
+.svc li{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;border-left:5px solid var(--cedar)}
+.tool{border-radius:22px}
+.ft{background:var(--slate)}
+.bar{background:var(--slate)}
+@media (min-width:820px){
+ body{padding-bottom:0}
+ .top .pill{display:inline-flex}
+ .top .hcall{margin-left:0;border:0;padding:0 8px}
+ .nav{margin-left:auto}
+ .nav a{color:var(--slate)}
+ .nav a:hover{background:var(--paper);color:var(--slate)}
+ .hcopy{padding-top:80px;padding-bottom:120px}
+ .trust{padding:30px}
+ .trust ul{grid-template-columns:repeat(4,1fr)}
+ .qgrid{grid-template-columns:1fr 1.1fr;align-items:center;gap:56px}
+ .rv{grid-template-columns:repeat(3,1fr)}
+ .svc{grid-template-columns:1fr 1fr}
+}
+
+.hb .hcopy{padding-top:40px;padding-bottom:120px}
+.hb .btn.big{border-radius:999px;display:inline-flex}
+.hb .proof{background:#ffffff14}
+.tmark{display:block;color:var(--slate);font:800 21px/1.05 "Libre Franklin",sans-serif;letter-spacing:-.02em}
+.tmark small{display:block;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--slate2);margin-top:3px}
+@media (min-width:820px){.hb .hcopy{padding-top:72px;padding-bottom:150px}.hb .hcopy h1{max-width:16ch}}
 </style>
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"HVACBusiness","name":"One Call Heating, Cooling & Refrigeration","telephone":"+1-479-273-2914","url":"https://onecallnwa.com/","slogan":"One Call Solves All","openingHours":"Mo-Su 00:00-23:59","paymentAccepted":"Credit Card","areaServed":["Avoca", "Bella Vista", "Bentonville", "Bethel Heights", "Cave Springs", "Centerton", "Decatur", "Elkins", "Elm Springs", "Farmington", "Fayetteville", "Garfield", "Gateway", "Gentry", "Goshen", "Gravette", "Greenland", "Highfill", "Johnson", "Little Flock", "Lincoln", "Lowell", "Pea Ridge", "Prairie Grove", "Rogers", "Siloam Springs", "Springdale", "Springtown", "Sulphur Springs", "Tontitown", "War Eagle", "West Fork", "Winslow"],"brand":["American Standard","York","ClimateMaster"]}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Are you really open 24/7?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. We offer 24/7 emergency service for heating and air conditioning. Call (479) 273-2914."}}, {"@type": "Question", "name": "How often should my system be serviced?", "acceptedAnswer": {"@type": "Answer", "text": "We recommend a check-up two times a year: once before the heating season and once before the cooling season. Routine maintenance helps save you money."}}, {"@type": "Question", "name": "What brands do you install?", "acceptedAnswer": {"@type": "Answer", "text": "American Standard, York and ClimateMaster geothermal heat pump systems."}}, {"@type": "Question", "name": "Do you work on refrigeration?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. We install heating, air conditioning and refrigeration."}}, {"@type": "Question", "name": "Which towns do you cover?", "acceptedAnswer": {"@type": "Answer", "text": "33 towns across Benton and Washington counties, from Bella Vista and Gravette down to Winslow. The full list is on this page."}}, {"@type": "Question", "name": "Are you licensed and insured?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, we are licensed and insured."}}, {"@type": "Question", "name": "How can I pay?", "acceptedAnswer": {"@type": "Answer", "text": "All major credit cards are accepted."}}]}</script>
 </head>
 <body>
 <div class="pv"><b>Concept preview</b> made by Sites by TJ for One Call. Not the official site. Facts come from onecallnwa.com.</div>
-<div class="roof">
- <div class="wrap">
-  <header>
-   <a class="mark" href="#top"><span>One Call<small>Heating, Cooling &amp; Refrigeration</small></span></a>
-   <nav class="nav" aria-label="Sections"><a href="#checks">Quick checks</a><a href="#services">The work</a><a href="#tuneup">Tune-ups</a><a href="#area">Area</a></nav>
-   <a class="hcall" href="tel:+14792732914">Call<span>(479) 273-2914</span></a>
-  </header>
-  <div class="hero" id="top">
-   <div>
+<header class="top"><div class="wrap topin">
+ <a class="mark" href="#top"><span class="tmark">One Call<small>Heating, Cooling &amp; Refrigeration</small></span></a>
+ <nav class="nav" aria-label="Sections"><a href="#checks">Quick checks</a><a href="#services">The work</a><a href="#tuneup">Tune-ups</a><a href="#area">Area</a></nav>
+ <a class="hcall" href="tel:+14792732914" aria-label="Call (479) 273-2914"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z"/></svg><span>(479) 273-2914</span></a>
+ <a class="pill" href="#book">Book a visit</a>
+</div></header>
+<div class="roof hb" id="top"><div class="wrap hcopy">
     <p class="season" id="season"><i></i>Heating and cooling calls, 24/7</p>
     <h1>Heating and AC repair in Bentonville, day or night.</h1>
     <p class="lede">Repairs, new systems and twice-a-year maintenance for homes across Benton and Washington counties. Over 30 years of experience.</p>
     <a class="btn big" href="tel:+14792732914"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h4l2 5-2.5 1.5a11 11 0 0 0 6 6L16 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 5a2 2 0 0 1 2-2"/></svg>Call (479) 273-2914</a>
     <p class="hours"><span><b>24/7</b> emergency service</span><span><b>Licensed</b> and insured</span></p>
     <p class="proof"><q>One Call Solves All</q><span>Over 30 years of experience. American Standard, York and ClimateMaster equipment.</span></p>
-   </div>
+</div></div>
+<div class="wrap"><div class="trust" aria-labelledby="trh">
+ <h2 id="trh">Why NWA calls One Call</h2>
+ <ul>
+  <li><b>24/7 emergency service</b><span>Heating and cooling calls, day or night.</span></li>
+  <li><b>Over 30 years</b><span>Of experience in heating and air.</span></li>
+  <li><b>Licensed and insured</b><span>"One Call Solves All."</span></li>
+  <li><b>Big-name equipment</b><span>American Standard, York and ClimateMaster geothermal.</span></li>
+ </ul>
+</div></div>
+<main>
+<div class="how" aria-label="What happens next"><div class="wrap"><ol><li><div><b>Call, any hour</b><span>(479) 273-2914. Emergencies 24/7.</span></div></li><li><div><b>We come out</b><span>A tech finds what's wrong with your system.</span></div></li><li><div><b>We fix it</b><span>Or quote a new system if it's time.</span></div></li></ol></div></div>
+<section class="qband"><div class="wrap qgrid"><div><h2>Book a visit</h2><p class="lede2">For tune-ups and new systems. Broken right now? Call instead.</p><p class="lede2"><b>Need us now?</b> Call <a href="tel:+14792732914">(479) 273-2914</a>.</p></div>
    <div class="quote" id="book">
     <h2>Book a visit</h2>
     <p>For tune-ups and new systems. Broken right now? Call instead.</p>
@@ -199,11 +269,7 @@ input[type=file]{padding:10px;min-height:52px;font-size:15px}
      <button class="btn" type="submit">Request a call back</button>
     </form>
    </div>
-  </div>
- </div>
-</div>
-<main>
-<div class="how" aria-label="What happens next"><div class="wrap"><ol><li><div><b>Call, any hour</b><span>(479) 273-2914. Emergencies 24/7.</span></div></li><li><div><b>We come out</b><span>A tech finds what's wrong with your system.</span></div></li><li><div><b>We fix it</b><span>Or quote a new system if it's time.</span></div></li></ol></div></div>
+</div></section>
 
 <section id="checks">
  <div class="wrap two">

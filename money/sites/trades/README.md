@@ -26,8 +26,14 @@ What we learned on the 3 golden sites: most small-trade sites use stock photos, 
 5. If nothing usable turns up, keep the trade texture and ask for 5 job photos once they reply.
 Their photo and logo files never go in this public repo (`.gitignore` blocks `*.webp` under golden/ and shops/). Keep them in project files. Rule: their photos are only for the private preview sent to that owner. Get the owner's OK before going live, and never use them in public demos or our portfolio.
 
-## House style (all trades)
-One plain font (Libre Franklin, self-hosted). A dark hero band with the trade's texture at the bottom, and a white form card beside the headline. The headline names the job and the town. Then the trade tools, reviews, "The work", FAQ, area and contact, with a sticky two-button bar on phones. No serif-on-cream, no terracotta, no italic accent words, no invented logos, no stock people.
+## House style (all trades): layout B, Paschal style (Tj, 2026-10-23)
+Tj scored the Paschal-style layout 10/10 and chose it for every site. Start each new site from its trade's golden `index.html`. The old dark-band layout is kept as `layout-a.html` for reference only.
+- A white sticky top bar: their real logo, the section nav, the phone and a pill "Get a quote" / "Book a visit" button.
+- Hero: their own photo full-width behind the headline when they have a strong one (`johns-quality-roofing`). Otherwise use a navy band with the trade texture (`one-call-hvac`, `its-plumbing`). The headline names the job and the town.
+- A white "Why <town> calls <name>" panel overlaps the hero, with 4 navy cards of sourced facts (hours, 24/7, license, local).
+- The 3-step strip, then the full form on a navy band, then card-style reviews (stars only if their source shows the rating), trade tools, service cards, FAQ, area and contact. Sticky Call / Quote bar on phones.
+- One plain font (Libre Franklin), their logo colors, and their navy if they use one. No stock people, no invented logos.
+- Pro upgrades to consider (option C, `johns-quality-roofing/layout-c.html`): a top emergency bar, the phone number written out in the header, the Google star rating under the headline, a 2-field quick quote card in the desktop hero, 2-by-2 trust cards on phones and a final CTA band.
 
 ## Adding a new trade
 Write its kit the same way. Start with who calls and why, what they're scared of, what they need to decide, and what the owner wants fewer of (wasted trips, tire-kickers, phone tag). Turn each answer into a section or a small tool on the page.

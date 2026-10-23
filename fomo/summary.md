@@ -1,6 +1,6 @@
 # Meme coin paper trading (no real money)
 
-Started 2026-10-22T12:08:00Z. Updated 2026-10-23T01:56:42Z. Fees modeled on Fomo: 0.5% per side, $0.95 minimum, plus price impact. Data: DexScreener.
+Started 2026-10-22T12:08:00Z. Updated 2026-10-23T06:51:10Z. Fees modeled on Fomo: 0.5% per side, $0.95 minimum, plus price impact. Data: DexScreener.
 
 | Strategy | Start | Now | P&L | Win/loss | Fees paid | Worst drop | Open |
 |---|---|---|---|---|---|---|---|

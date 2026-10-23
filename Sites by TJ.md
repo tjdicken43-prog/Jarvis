@@ -21,6 +21,7 @@ Websites for local shops in Bentonville and NWA. Started 2026-10-22. See [[Decis
 - Why: local agencies start around $2,500 (CodeWCG Bentonville page); DIY Squarespace is $12–25/month and Wix $17–39/month and the owner does the work.
 
 ## Rules
+- Quality bar (TJ, 2026-10-23): every site must pass money/SITE_BAR.md before anyone sees it: nothing that looks AI-made, custom to the business, fast and clean on a phone, better than the best local competitor. No outreach until 3 golden sites score 8+.
 - Domain is always in the client's name.
 - Never auto-send email. CAN-SPAM: real postal address, opt-out, honest subject.
 - No fake reviews or testimonials. Previews use the shop's public facts, stock photos, "concept preview" bar, noindex, removed after 14 days.

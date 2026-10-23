@@ -32,6 +32,12 @@ SEND_WINDOW = (int(env("SEND_HOUR_START", "9")), int(env("SEND_HOUR_END", "11"))
 MIN_RATING = float(env("MIN_RATING", "2.8"))      # Checker skips shops under 2.8 stars
 CHROMIUM_PATH = env("CHROMIUM_PATH")              # flaw finder: a Chromium build when Playwright's own isn't installed
 
+STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY")      # sk_test_... until TJ goes live
+STRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET")  # whsec_... from the Stripe webhook endpoint
+STRIPE_ALLOW_LIVE = env("STRIPE_ALLOW_LIVE") == "yes"  # a live key does nothing without this, set only on TJ's word
+CHECKOUT_SUCCESS_URL = env("CHECKOUT_SUCCESS_URL", PUBLIC_URL + "/paid")
+CHECKOUT_CANCEL_URL = env("CHECKOUT_CANCEL_URL", PUBLIC_URL + "/paid?cancelled=1")
+
 
 def drafter():
     return "claude" if ANTHROPIC_API_KEY else "stub"
@@ -39,3 +45,13 @@ def drafter():
 
 def mailer():
     return "smtp" if MAILER == "smtp" and SMTP_USER and SMTP_PASSWORD and FROM_EMAIL else "stub"
+
+
+def stripe_mode():
+    """off (no key), test, live (only with STRIPE_ALLOW_LIVE=yes) or blocked (live key without it)."""
+    k = STRIPE_SECRET_KEY
+    if not k:
+        return "off"
+    if k.startswith(("sk_test_", "rk_test_")):
+        return "test"
+    return "live" if STRIPE_ALLOW_LIVE and k.startswith(("sk_live_", "rk_live_")) else "blocked"

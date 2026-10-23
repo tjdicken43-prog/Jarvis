@@ -4,21 +4,26 @@
 The database's public schema is wiped first, so never point this at a real one.
 """
 import datetime as dt
+import json
 import os
 import pathlib
 import sys
+import time
 import types
+import urllib.parse
 
 API = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(API))
 URL = os.environ.get("TEST_DATABASE_URL", "postgresql://postgres@localhost/agency_test")
 os.environ.update(DATABASE_URL=URL, OPERATOR_TOKEN="test-token", PUBLIC_URL="https://api.example.test")
-for k in ("ANTHROPIC_API_KEY", "MAILING_ADDRESS", "MAILER", "SMTP_USER", "SMTP_PASSWORD", "FROM_EMAIL"):
+for k in ("ANTHROPIC_API_KEY", "MAILING_ADDRESS", "MAILER", "SMTP_USER", "SMTP_PASSWORD", "FROM_EMAIL",
+          "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "STRIPE_ALLOW_LIVE"):
     os.environ.pop(k, None)
 
 import psycopg  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
+import billing  # noqa: E402
 import config  # noqa: E402
 import db  # noqa: E402
 import mailer  # noqa: E402
@@ -251,5 +256,131 @@ try:
 except RuntimeError:
     pass
 assert api.get("/health").json()["drafter"] == "claude"
+
+# Step 4: clients. Trades only; starts pending; checkout refused while Stripe is off or the key is live
+ok(api.get("/clients"), 401)
+ok(api.post("/clients", json={"business_name": "Nail Salon", "email": "a@b.com", "trade": "salon"}, headers=H), 400)
+r = api.post("/clients", json={"prospect_id": "overture/a"}, headers=H); ok(r)
+cl = r.json()
+assert cl["status"] == "pending" and cl["business_name"] == "Ozark Pipe Co" and cl["included_minutes"] == 300, cl
+assert cl["email"] == "owner@ozarkpipe.com" and "stripe_customer_id" not in cl, cl
+ok(api.post("/clients", json={"prospect_id": "overture/a"}, headers=H), 409)
+assert api.get("/health").json()["stripe"] == "off"
+r = api.post(f"/clients/{cl['id']}/checkout", json={}, headers=H); ok(r, 503)
+assert "Stripe is off" in r.json()["detail"], r.text
+config.STRIPE_SECRET_KEY = "sk_live_x"
+r = api.post(f"/clients/{cl['id']}/checkout", json={}, headers=H); ok(r, 503)
+assert "test keys only" in r.json()["detail"] and config.stripe_mode() == "blocked", r.text
+ok(api.post(f"/clients/{cl['id']}/checkout", json={"plan": "gold"}, headers=H), 400)
+
+# Step 5: checkout session shape (fake Stripe), annual = 10 months, $299 setup line, metadata for the webhook
+config.STRIPE_SECRET_KEY = "sk_test_x"
+sent = []
+
+
+class FakeResp:
+    def __init__(self, data):
+        self.data = data
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+    def read(self):
+        return json.dumps(self.data).encode()
+
+
+def fake_urlopen(req, timeout=None):
+    form = dict(urllib.parse.parse_qsl(req.data.decode()))
+    sent.append((req.full_url, form, req.headers))
+    if req.full_url.endswith("checkout/sessions"):
+        return FakeResp({"id": "cs_test_1", "url": "https://checkout.stripe.com/c/pay/cs_test_1"})
+    return FakeResp({"id": "ii_test_%d" % len(sent)})
+
+
+billing.urllib.request.urlopen = fake_urlopen
+r = api.post(f"/clients/{cl['id']}/checkout", json={"plan": "front_desk_plus", "billing": "annual"}, headers=H); ok(r)
+assert r.json()["url"].startswith("https://checkout.stripe.com/") and r.json()["mode"] == "test", r.json()
+url, f, hdr = sent[-1]
+assert url == "https://api.stripe.com/v1/checkout/sessions" and hdr["Authorization"] == "Bearer sk_test_x", (url, hdr)
+assert f["mode"] == "subscription" and f["client_reference_id"] == str(cl["id"]), f
+assert f["line_items[0][price_data][unit_amount]"] == "249000" and f["line_items[0][price_data][recurring][interval]"] == "year", f
+assert f["line_items[1][price_data][unit_amount]"] == "29900" and "line_items[1][price_data][recurring][interval]" not in f, f
+assert f["subscription_data[metadata][client_id]"] == str(cl["id"]) and f["customer_email"] == "owner@ozarkpipe.com", f
+assert f["success_url"] == "https://api.example.test/paid", f
+assert billing.price_cents("front_desk", "monthly") == 14900 and billing.price_cents("front_desk", "annual") == 149000
+assert billing.overage(312, 300) == (12, 300)
+
+# Webhook: unsigned, wrong secret, stale and live-mode events are refused; a signed one marks the client active once
+config.STRIPE_WEBHOOK_SECRET = "whsec_test"
+ev = {"id": "evt_1", "type": "checkout.session.completed", "livemode": False, "data": {"object": {
+    "object": "checkout.session", "client_reference_id": str(cl["id"]), "payment_status": "paid", "customer": "cus_1",
+    "subscription": "sub_1", "metadata": {"client_id": str(cl["id"]), "plan": "front_desk_plus", "billing": "annual"}}}}
+raw = json.dumps(ev).encode()
+hook = lambda body, sig: api.post("/stripe/webhook", content=body, headers={"Stripe-Signature": sig})
+ok(hook(raw, ""), 400)
+ok(hook(raw, billing.sign(raw, "whsec_other")), 400)
+ok(hook(raw, billing.sign(raw, "whsec_test", time.time() - 900)), 400)
+live = json.dumps(dict(ev, id="evt_live", livemode=True)).encode()
+assert "ignored" in hook(live, billing.sign(live, "whsec_test")).json()
+r = hook(raw, billing.sign(raw, "whsec_test")); ok(r)
+assert r.json()["status"] == "active", r.json()
+assert hook(raw, billing.sign(raw, "whsec_test")).json() == {"duplicate": True}
+with db.connect() as c:
+    row = c.execute("SELECT * FROM clients WHERE id = %s", (cl["id"],)).fetchone()
+    assert row["status"] == "active" and row["stripe_subscription_id"] == "sub_1" and row["included_minutes"] == 800, row
+    assert row["billing"] == "annual" and row["started_at"] is not None, row
+    assert c.execute("SELECT status FROM prospects WHERE id='overture/a'").fetchone()["status"] == "won"
+ok(api.post(f"/clients/{cl['id']}/checkout", json={}, headers=H), 409)  # already paying
+
+# Failed payment -> past_due; paid -> active (newer invoice shape: parent.subscription_details)
+for i, (kind, want) in enumerate([("invoice.payment_failed", "past_due"), ("invoice.paid", "active")]):
+    e = json.dumps({"id": f"evt_inv{i}", "type": kind, "livemode": False, "data": {"object": {
+        "object": "invoice", "customer": "cus_1", "parent": {"subscription_details": {"subscription": "sub_1"}}}}}).encode()
+    assert hook(e, billing.sign(e, "whsec_test")).json()["status"] == want
+
+# Usage this month and overage: Plus includes 800 min; 812 min used = 12 over = $3.00
+now = dt.datetime.now(dt.timezone.utc)
+_, mstart, _ = billing.month_bounds()
+with db.connect() as c:
+    for i, secs in enumerate([800 * 60, 11 * 60 + 30]):
+        c.execute("INSERT INTO receptionist_calls (client_id, vapi_call_id, started_at, seconds) VALUES (%s,%s,%s,%s)",
+                  (cl["id"], f"call_{i}", max(mstart, now - dt.timedelta(minutes=5)), secs))
+    c.execute("INSERT INTO receptionist_calls (client_id, vapi_call_id, started_at, seconds) VALUES (%s,'old',%s,600)",
+              (cl["id"], mstart - dt.timedelta(days=3)))
+    c.commit()
+out = api.get("/clients", headers=H).json()
+mine = out["items"][0]
+assert mine["minutes_used"] == 812 and mine["over_minutes"] == 12 and mine["overage_cents"] == 300 and mine["calls"] == 2, mine
+assert out["summary"]["active"] == 1 and out["summary"]["mrr_cents"] == round(249000 / 12), out["summary"]
+this_month = billing.month_bounds()[0]
+n = len(sent)
+r = api.post("/billing/overage", json={"month": this_month}, headers=H).json()
+assert [x["amount_cents"] for x in r["charged"]] == [300], r
+assert sent[n][0].endswith("/invoiceitems") and sent[n][1]["amount"] == "300" and sent[n][1]["customer"] == "cus_1", sent[n]
+assert sent[n + 1][0].endswith("/invoices"), sent[n + 1]  # annual: bill now, not next year
+r = api.post("/billing/overage", json={"month": this_month}, headers=H).json()
+assert r["charged"] == [] and r["skipped"][0]["reason"] == "already charged", r
+ok(api.post("/billing/overage", json={"month": "2026-13"}, headers=H), 422)
+assert api.post("/billing/overage", json={}, headers=H).json()["charged"] == []  # last month: under the plan
+
+# Cancelled subscription
+e = json.dumps({"id": "evt_del", "type": "customer.subscription.deleted", "livemode": False,
+                "data": {"object": {"object": "subscription", "id": "sub_1", "customer": "cus_1"}}}).encode()
+assert hook(e, billing.sign(e, "whsec_test")).json()["status"] == "cancelled"
+assert "Payment received" in api.get("/paid").text and "No charge" in api.get("/paid?cancelled=1").text
+
+# Matchmaking leads: display only, no write routes
+with db.connect() as c:
+    c.execute("""INSERT INTO leads (customer_name, phone, zip, trade, job_description, urgency, consent_at, matched_client_id)
+                 VALUES ('Pat', '479-555-0100', '72712', 'plumbing', 'Water heater leaking', 'this_week', now(), %s)""", (cl["id"],))
+    c.commit()
+ld = api.get("/leads", headers=H).json()
+assert ld["display_only"] and ld["items"][0]["matched_to"] == "Ozark Pipe Co" and "phone" not in ld["items"][0], ld
+assert {r.path for r in main.app.routes if "leads" in r.path} == {"/leads"}
+assert all(m == "GET" for r in main.app.routes if r.path == "/leads" for m in r.methods if m != "HEAD")
+config.STRIPE_SECRET_KEY = config.STRIPE_WEBHOOK_SECRET = ""
 
 print("agency api ok")

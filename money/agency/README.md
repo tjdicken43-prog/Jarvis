@@ -11,7 +11,8 @@ Prices (2026-10-23): $299 setup + $149/mo Front Desk (300 min) or $249/mo Front 
 | 2. FastAPI server (`api/main.py`), Render blueprint (`render.yaml`) | done, not deployed |
 | 3. Outreach Agent: flaw finder (`api/flaws.py`), mockups (`api/mockup.py` + `../sites/trade_build.py`), drafts (`api/outreach.py`) | done |
 | 4. Next.js Approval Queue (`web/`), nothing sends without TJ's tap | done |
-| 5. Stripe checkout | |
+| 5. Clients + Leads views (`web/app/clients`, `web/app/leads`) | done |
+| 6. Stripe checkout, webhook, overage (`api/billing.py`), TEST mode only | done, not deployed |
 
 Load the database:
 
@@ -60,6 +61,22 @@ Mockup builder test: `python3 money/test/test_trade_build.py`. Flaw finder needs
 4. **Unsubscribe** (`/u/{token}`, GET or one-click POST): adds the address to `suppressions` forever, marks the shop
    unsubscribed, cancels anything pending.
 
+## Getting paid (Stripe, test mode)
+
+1. **Add the client** on Clients (from a prospect id or by hand; trades only). It starts "waiting on payment".
+2. **Make checkout link**: pick Front Desk or Plus, monthly or annual (pay 10 months for 12). The link charges the
+   plan plus the $299 setup on the first invoice. TJ sends it himself.
+3. **Webhook** (`POST /stripe/webhook`, signed with `STRIPE_WEBHOOK_SECRET`): `checkout.session.completed` marks the
+   client active and the shop won; `invoice.payment_failed` = past due, `invoice.paid` = active again,
+   `customer.subscription.deleted` = cancelled. Each event applies once; live-mode events are ignored in test mode.
+   In Stripe, point the endpoint at `<PUBLIC_URL>/stripe/webhook` with those four events.
+4. **Overage** (`POST /billing/overage`, early each month, default last month): minutes over the plan at $0.25,
+   once per client per month. Monthly clients get it on their next invoice; annual clients get their own invoice.
+   Without a Stripe key it's a dry run. Minutes come from `receptionist_calls` (the Vapi webhook fills it, not built).
+
+Only `sk_test_` keys work. A live key is refused unless `STRIPE_ALLOW_LIVE=yes`, which is set only on TJ's word.
+Leads (matchmaker) are display only until the Arkansas license question is checked: no matching, no charging.
+
 ## What Tuesday's keys switch on (set on Render, never here)
 
 | Set | Turns on |
@@ -69,4 +86,5 @@ Mockup builder test: `python3 money/test/test_trade_build.py`. Flaw finder needs
 | `MAILING_ADDRESS` | CAN-SPAM footer; nothing sends without it |
 | `PUBLIC_URL` | Working unsubscribe links |
 | Cold domain DNS: SPF, DKIM, DMARC | Mail lands in inboxes; warm up 2-3 weeks before volume |
+| `STRIPE_SECRET_KEY` (sk_test_), `STRIPE_WEBHOOK_SECRET` | Test checkout links and the webhook; live waits on TJ |
 | Unpause in the dashboard | The last switch, TJ's tap |

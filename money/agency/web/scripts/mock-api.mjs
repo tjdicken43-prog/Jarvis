@@ -14,6 +14,23 @@ const emails = [1, 2].map((i) => ({
 }));
 let suppressions = [{ id: 1, email: "no@example.com", domain: null, reason: "asked to stop", created_at: now() }];
 let paused = false;
+const PLANS = { front_desk: { name: "Front Desk", monthly_cents: 14900, minutes: 300 }, front_desk_plus: { name: "Front Desk Plus", monthly_cents: 24900, minutes: 800 } };
+const client = (id, name, trade, plan, billing, status, used) => {
+  const inc = PLANS[plan].minutes, over = Math.max(0, used - inc), price = PLANS[plan].monthly_cents * (billing === "annual" ? 10 : 1);
+  return { id, prospect_id: null, business_name: name, contact_name: null, email: `office@${name.split(" ")[0].toLowerCase()}.example`, phone: null, trade, plan, billing, status,
+    included_minutes: inc, minutes_used: used, calls: Math.round(used / 3), over_minutes: over, overage_cents: over * 25, price_cents: price,
+    monthly_value_cents: billing === "annual" ? Math.round(price / 12) : price, checkout_url: null, started_at: status === "pending" ? null : "2026-10-02T15:00:00Z", has_stripe: status !== "pending" };
+};
+const clients = [
+  client(1, "Ozark Pipe Co", "plumbing", "front_desk", "monthly", "active", 212),
+  client(2, "Ridge Roofing", "roofing", "front_desk_plus", "annual", "active", 846),
+  client(3, "Benton Air", "hvac", "front_desk", "monthly", "past_due", 40),
+  client(4, "Rogers Drain Pros", "plumbing", "front_desk", "monthly", "pending", 0),
+];
+const leads = [
+  { id: 1, customer_name: "Pat L.", zip: "72712", trade: "plumbing", job_description: "Water heater leaking in garage", urgency: "emergency", source: "site form", status: "new", job_value_cents: null, commission_pct: 15, commission_cents: null, created_at: now(), matched_to: null },
+  { id: 2, customer_name: "Sam R.", zip: "72756", trade: "roofing", job_description: "Hail damage, insurance claim open", urgency: "this_week", source: "site form", status: "matched", job_value_cents: 1240000, commission_pct: 15, commission_cents: 186000, created_at: now(), matched_to: "Ridge Roofing" },
+];
 const item = (e) => ({ email: { ...e, prospect_id: undefined }, prospect: prospects.find((p) => p.id === e.prospect_id), footer: FOOTER });
 
 const send = (res, code, obj) => { res.writeHead(code, { "content-type": "application/json" }); res.end(JSON.stringify(obj)); };
@@ -24,6 +41,15 @@ http.createServer(async (req, res) => {
   const p = u.pathname; const m = req.method;
   let r;
   if (m === "GET" && p === "/health") return send(res, 200, { ok: true, db: true, drafter: "stub", mailer: "stub", mailing_address_set: false, sent_today: emails.filter((e) => e.status === "sent").length, daily_cap: 20, paused, send_window: "Weekdays 9-11am Central", in_window: false });
+  if (m === "GET" && p === "/clients") {
+    const paying = clients.filter((c) => c.status === "active" || c.status === "past_due");
+    return send(res, 200, { month: now().slice(0, 7), stripe: "test", items: clients, plans: PLANS, setup_cents: 29900, overage_cents_per_min: 25,
+      summary: { active: clients.filter((c) => c.status === "active").length, past_due: clients.filter((c) => c.status === "past_due").length, pending: clients.filter((c) => c.status === "pending").length,
+        mrr_cents: paying.reduce((a, c) => a + c.monthly_value_cents, 0), overage_cents: paying.reduce((a, c) => a + c.overage_cents, 0) } });
+  }
+  if (m === "POST" && p === "/clients") { const c = client(clients.length + 1, body.business_name || "New Shop", body.trade || "plumbing", body.plan || "front_desk", body.billing || "monthly", "pending", 0); clients.push(c); return send(res, 200, c); }
+  if (m === "POST" && (r = p.match(/^\/clients\/(\d+)\/checkout$/))) { const c = clients.find((x) => x.id === +r[1]); c.checkout_url = `https://checkout.stripe.com/c/pay/cs_test_mock${c.id}`; return send(res, 200, { url: c.checkout_url, mode: "test", client: c }); }
+  if (m === "GET" && p === "/leads") return send(res, 200, { display_only: true, note: "Display only until the Arkansas license question is checked.", items: leads, counts: {} });
   if (m === "GET" && p === "/stats") return send(res, 200, { prospects: {}, emails: {}, suppressions: suppressions.length });
   if (m === "GET" && p === "/queue") { const s = u.searchParams.get("status") || "draft"; return send(res, 200, { items: emails.filter((e) => e.status === s).map(item) }); }
   if (m === "POST" && p === "/outreach/draft") return send(res, 200, { created: [], skipped: [{ prospect_id: 9, name: "Dry Creek HVAC", reason: "no email address" }] });

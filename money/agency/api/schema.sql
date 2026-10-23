@@ -142,3 +142,25 @@ CREATE TABLE IF NOT EXISTS mockups (
   html        text NOT NULL,
   built_at    timestamptz NOT NULL DEFAULT now()
 );
+
+-- Step 5: Stripe (test mode until TJ goes live). Annual = 2 months free.
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS billing text NOT NULL DEFAULT 'monthly' CHECK (billing IN ('monthly','annual'));
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS checkout_url text;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS checkout_session_id text;
+CREATE TABLE IF NOT EXISTS stripe_events (     -- each webhook event applied once
+  id          text PRIMARY KEY,
+  type        text NOT NULL,
+  received_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS overage_charges (   -- $0.25/min over the plan, billed once per client per month
+  id                     serial PRIMARY KEY,
+  client_id              int NOT NULL REFERENCES clients(id),
+  month                  text NOT NULL,        -- YYYY-MM, Central
+  minutes                int NOT NULL,
+  over_minutes           int NOT NULL,
+  amount_cents           int NOT NULL,
+  stripe_invoice_item_id text,
+  stripe_invoice_id      text,
+  created_at             timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (client_id, month)
+);

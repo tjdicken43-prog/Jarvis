@@ -4,7 +4,10 @@ The card limit is the real hard stop; this script is the agents' rulebook check 
 is bought, and the source of the HUD's Budget sheet. No network, no card data.
 
   python3 money/budget/budget.py status [--date YYYY-MM-DD] [--json]
-  python3 money/budget/budget.py check SERVICE AMOUNT [--date YYYY-MM-DD]   exit 1 = do not buy
+  python3 money/budget/budget.py check SERVICE AMOUNT [--date YYYY-MM-DD]
+      exit 0 = runs through (an approved recurring line, inside its cap, reserve safe)
+      exit 2 = ask TJ: put it in the tracker for his Approve button (new, or over its cap)
+      exit 1 = no: before payday or it would dip into the $25 reserve; even TJ's button can't
   python3 money/budget/budget.py lint                                       exit 1 = ledger is broken
 """
 import calendar
@@ -161,27 +164,37 @@ def status(cfg, rows, today):
 
 
 def check(cfg, rows, service, amount, today):
-    """(ok, reasons). ok=False means do not buy; tell TJ the reasons."""
+    """("auto" | "ask" | "no", reasons).
+
+    auto: a recurring line that keeps the business running, inside its cap, reserve safe. Pay and log approved_by=recurring.
+    ask:  new service, one-off, or over its cap. Goes to TJ's Approve button in the tracker.
+    no:   before payday, or it would take the card under the floor. Nobody overrides that from the page.
+    """
     st = status(cfg, rows, today)
-    why = []
+    hard, soft = [], []
     if st["balance"] <= 0 and today < date.fromisoformat(cfg["refill"]["first"]):
-        why.append(f"No money on the card until {cfg['refill']['first']}.")
+        hard.append(f"No money on the card until {cfg['refill']['first']}.")
     if amount <= 0:
-        why.append("amount must be positive")
-    if service not in cfg["caps_30d"]:
-        why.append(f"{service} has no cap yet. TJ must approve the service and a cap first.")
-    else:
-        s = next(x for x in st["services"] if x["service"] == service)
-        if s["spent_30d"] + amount > s["cap"]:
-            why.append(f"{service} would hit {m(round(s['spent_30d'] + amount, 2))} in 30 days, over its {m(s['cap'])} cap.")
+        hard.append("amount must be positive")
     # buying something already forecast replaces that line instead of adding to it
     match = next((c for c in st["coming"] if c["service"] == service), None)
     committed = st["committed"] - (min(match["amount"], amount) if match else 0)
     left = round(st["balance"] - committed - amount, 2)
     if left < st["floor"]:
-        why.append(f"That leaves {m(left)} after charges due before "
-                   f"{st['next_refill']}, under the {m(st['floor'])} floor.")
-    return (not why), why
+        hard.append(f"That leaves {m(left)} after charges due before "
+                    f"{st['next_refill']}, under the {m(st['floor'])} reserve.")
+    recurring = {r["service"] for r in cfg.get("recurring", [])}
+    if service not in cfg["caps_30d"]:
+        soft.append(f"{service} is new (no cap yet). Needs TJ's OK.")
+    else:
+        s = next(x for x in st["services"] if x["service"] == service)
+        if s["spent_30d"] + amount > s["cap"]:
+            soft.append(f"{service} would hit {m(s['spent_30d'] + amount)} in 30 days, over its {m(s['cap'])} cap. Needs TJ's OK.")
+        elif service not in recurring:
+            soft.append(f"{service} isn't a recurring line, so it's a one-off. Needs TJ's OK.")
+    if hard:
+        return "no", hard + soft
+    return ("ask", soft) if soft else ("auto", [])
 
 
 def main(argv):
@@ -199,9 +212,12 @@ def main(argv):
         print("Ledger is broken, fix it before anything else:\n" + "\n".join(problems))
         return 1
     if cmd == "check":
-        ok, why = check(cfg, rows, args[1], float(args[2]), today)
-        print("OK to buy" if ok else "Do not buy:\n- " + "\n- ".join(why))
-        return 0 if ok else 1
+        verdict, why = check(cfg, rows, args[1], float(args[2]), today)
+        head = {"auto": "Runs through (recurring, inside cap, reserve safe)",
+                "ask": "Ask TJ: add it to the tracker for his Approve button",
+                "no": "Do not buy"}[verdict]
+        print(head + "".join("\n- " + w for w in why))
+        return {"auto": 0, "no": 1, "ask": 2}[verdict]
     st = status(cfg, rows, today)
     if "--json" in args:
         print(json.dumps(st, indent=1))

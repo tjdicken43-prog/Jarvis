@@ -2,30 +2,33 @@
      to the bottom. On a computer, brain notes on the left and jobs on the right; on a phone they fold into Chat / Jobs / Brain.
      Rules (hud/DESIGN.md): neutral greys, one accent, sentence case, 4px spacing steps, 6px controls, 8px panels, 44px taps. */
   :root {
-    /* Station: the factory's palette. Warm black, teal for Jarvis himself (the arc reactor, his voice, his state),
-       amber for the things you press. Modeled on Starnet's station (amber light, teal screens). */
-    --bg: #0b0a08;
-    --surface: #14120f;
-    --surface-2: #1d1a16;
-    --ink: #efe9dd;
-    --dim: #a69d8e;    /* secondary text, 6.9:1 on --bg */
-    --mute: #7a7266;   /* meta and timestamps */
-    --faint: rgba(255, 236, 200, .07);
-    --line: rgba(255, 236, 200, .13);
-    --arc: #5fc9c0;    /* Jarvis: teal */
-    --arc-rgb: 95, 201, 192;
-    --on-arc: #062120;
-    --amber: #f5a623;  /* actions */
-    --on-amber: #1a1206;
-    --gold: #e3a94f;
-    --ok: #7fbf8f;
-    --red: #e07a6b;
+    /* Mark: a restrained JARVIS HUD, after the Iron Man suit and lab interfaces (Cantina Creative, Perception).
+       Deep blue-black, one holographic cyan for Jarvis, the suit's gold for actions, its red only for alerts. */
+    --bg: #04080c;
+    --surface: rgba(9, 20, 29, .86);
+    --surface-2: #0e1c27;
+    --ink: #e6f4fb;
+    --dim: #8fb0c2;    /* secondary text, 8:1 on --bg */
+    --mute: #5d7b8b;   /* meta and timestamps */
+    --faint: rgba(111, 211, 255, .09);
+    --line: rgba(111, 211, 255, .2);
+    --arc: #6fd3ff;    /* Jarvis: holo cyan */
+    --arc-rgb: 111, 211, 255;
+    --on-arc: #03121b;
+    --amber: #e6b450;  /* actions: the suit's gold */
+    --on-amber: #1a1204;
+    --gold: #e6b450;
+    --ok: #5fd6a4;
+    --red: #ff5a4a;
     --glass: var(--surface);
     --body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    --hud: Rajdhani, system-ui, sans-serif;
     --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
-    --r-ctl: 6px; --r-panel: 8px; --r-sheet: 12px;
+    --r-ctl: 4px; --r-panel: 6px; --r-sheet: 12px;
     color-scheme: dark;
   }
+  :root[data-theme="station"] { --bg: #0b0a08; --surface: #14120f; --surface-2: #1d1a16; --ink: #efe9dd; --dim: #a69d8e; --mute: #7a7266;
+    --faint: rgba(255, 236, 200, .07); --line: rgba(255, 236, 200, .13); --arc: #5fc9c0; --arc-rgb: 95, 201, 192; --on-arc: #062120; --amber: #f5a623; --gold: #e3a94f; --ok: #7fbf8f; --red: #e07a6b; }
   :root[data-theme="steel"] { --bg: #0e0f11; --surface: #16181b; --surface-2: #1e2125; --ink: #eceef0; --dim: #959aa2; --mute: #6f747c;
     --faint: rgba(255, 255, 255, .07); --line: rgba(255, 255, 255, .12); --arc: #8fb8d8; --arc-rgb: 143, 184, 216; --on-arc: #0b1219; --amber: #8fb8d8; --on-amber: #0b1219; --gold: #d9a85b; --ok: #6cc59a; }
   /* Looks, picked in Settings. Each only swaps the accent and the warmth of the greys. */
@@ -52,11 +55,23 @@
     padding: max(8px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
     gap: 8px; pointer-events: none; }
   .app > * { pointer-events: auto; }
+  /* HUD frame: four thin corner brackets round the screen */
+  body::before, body::after, .app::before, .app::after { content: ""; position: fixed; width: 18px; height: 18px; border: 0 solid rgba(var(--arc-rgb), .45); pointer-events: none; z-index: 1; }
+  body::before { top: max(6px, env(safe-area-inset-top)); left: 6px; border-width: 1.5px 0 0 1.5px; }
+  body::after { top: max(6px, env(safe-area-inset-top)); right: 6px; border-width: 1.5px 1.5px 0 0; }
+  .app::before { bottom: max(6px, env(safe-area-inset-bottom)); left: 6px; border-width: 0 0 1.5px 1.5px; }
+  .app::after { bottom: max(6px, env(safe-area-inset-bottom)); right: 6px; border-width: 0 1.5px 1.5px 0; }
+  :root[data-theme]:not([data-theme="arc"]) body::before, :root[data-theme]:not([data-theme="arc"]) body::after,
+  :root[data-theme]:not([data-theme="arc"]) .app::before, :root[data-theme]:not([data-theme="arc"]) .app::after { display: none; }
+  /* telemetry: small readouts at the edges of the dial, like the suit HUD's periphery */
+  .tele { position: absolute; top: 4px; display: grid; gap: 3px; font: 500 10.5px/1.2 var(--mono); color: rgba(var(--arc-rgb), .62); letter-spacing: .04em; pointer-events: none; font-variant-numeric: tabular-nums; }
+  .tele.l { left: 0; } .tele.r { right: 0; text-align: right; }
+  .tele b { font-weight: 500; color: rgba(var(--arc-rgb), .95); }
 
   /* top bar */
   .top > div:first-child { min-width: 0; }
   .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 48px; }
-  .brand { display: flex; align-items: center; gap: 8px; font: 600 16px/1.2 var(--mono); letter-spacing: .14em; color: var(--ink); }
+  .brand { display: flex; align-items: center; gap: 8px; font: 600 19px/1.1 var(--hud); letter-spacing: .24em; color: var(--ink); }
   .brand .dot { width: 7px; height: 7px; }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .sub { margin-top: 2px; font: 400 12.5px/1.3 var(--body); color: var(--dim); display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; }
@@ -81,10 +96,10 @@
   .center { min-height: 0; display: grid; grid-template-rows: minmax(200px, 1fr) auto auto auto auto auto; gap: 8px; }
   /* the way into the factory: a live window onto the station */
   .factory { display: grid; grid-template-columns: 112px 1fr 20px; align-items: center; gap: 12px; width: 100%; max-width: 520px; justify-self: center; min-height: 64px;
-    padding: 6px 12px 6px 6px; background: var(--surface); border: 1px solid rgba(245, 166, 35, .22); border-radius: var(--r-panel); color: var(--ink); text-align: left; transition: border-color .15s ease-out; }
-  .factory:hover, .factory:active { border-color: rgba(245, 166, 35, .5); }
+    padding: 6px 12px 6px 6px; background: var(--surface); border: 1px solid rgba(230, 180, 80, .28); border-radius: var(--r-panel); color: var(--ink); text-align: left; transition: border-color .15s ease-out; }
+  .factory:hover, .factory:active { border-color: rgba(230, 180, 80, .6); }
   .factory canvas { width: 112px; height: 52px; border-radius: var(--r-ctl); background: #06070a; display: block; }
-  .factory b { display: block; font: 600 15px/1.25 var(--body); }
+  .factory b { display: block; font: 600 17px/1.2 var(--hud); letter-spacing: .06em; }
   .factory small { display: block; margin-top: 2px; font: 400 12px/1.3 var(--mono); color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .factory small i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--ok); margin-right: 6px; vertical-align: 1px; }
   .factory svg { width: 18px; height: 18px; color: var(--amber); }
@@ -92,11 +107,11 @@
   .readout { margin: 0; display: grid; grid-template-columns: repeat(4, 1fr); max-width: 520px; width: 100%; justify-self: center; border-top: 1px solid var(--faint); border-bottom: 1px solid var(--faint); }
   .readout > div { padding: 8px 4px 9px; text-align: center; }
   .readout > div + div { border-left: 1px solid var(--faint); }
-  .readout dt { font: 400 12px/1.2 var(--body); color: var(--dim); display: inline-flex; align-items: center; gap: 6px; }
+  .readout dt { font: 500 12px/1.2 var(--hud); letter-spacing: .08em; color: var(--dim); display: inline-flex; align-items: center; gap: 6px; }
   .readout dt i { width: 6px; height: 6px; border-radius: 50%; }
-  .readout dd { margin: 3px 0 0; font: 600 17px/1.1 var(--body); font-variant-numeric: tabular-nums; }
+  .readout dd { margin: 3px 0 0; font: 600 21px/1 var(--hud); letter-spacing: .02em; font-variant-numeric: tabular-nums; }
   .readout dd small { font-size: 12px; font-weight: 400; color: var(--mute); }
-  .slot { min-height: 0; } /* the core is painted on the canvas behind this box */
+  .slot { min-height: 0; position: relative; } /* the core is painted on the canvas behind this box */
   .mid, .center, .slot { pointer-events: none; } /* let taps and drags through to the brain map */
   .mid > .panel, .center > :not(.slot) { pointer-events: auto; }
   .status { justify-self: center; display: flex; align-items: center; gap: 8px; font: 400 13px/1 var(--body); color: var(--dim); }
@@ -107,6 +122,8 @@
   @keyframes beat { 50% { opacity: .3; } }
 
   .panel { position: relative; min-height: 0; display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--faint); border-radius: var(--r-panel); }
+  .panel::before { content: ""; position: absolute; top: -1px; left: -1px; width: 12px; height: 12px; border: solid rgba(var(--arc-rgb), .6); border-width: 1.5px 0 0 1.5px; border-radius: var(--r-panel) 0 0 0; pointer-events: none; }
+  .panel h2 { font-family: var(--hud) !important; letter-spacing: .06em; }
   .panel h2 { margin: 0; padding: 14px 16px 10px; font: 600 15px/1.2 var(--body); display: flex; justify-content: space-between; align-items: baseline; }
   .panel h2 small { font: 400 12.5px/1 var(--body); color: var(--mute); }
   .scroll { overflow-y: auto; padding: 0 16px 16px; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
@@ -141,7 +158,7 @@
   .msg.jarvis summary::-webkit-details-marker { display: none; }
   .msg.jarvis summary::after { content: ""; width: 6px; height: 6px; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg) translate(-2px, -1px); transition: transform .15s; }
   .msg.jarvis details[open] summary::after { transform: rotate(-135deg) translate(-1px, -2px); }
-  .msg.jarvis .detail { font-size: 15px; line-height: 1.55; color: #cfc7b8; white-space: pre-wrap; }
+  .msg.jarvis .detail { font-size: 15px; line-height: 1.55; color: #c3d6e0; white-space: pre-wrap; }
   .msg.note { align-self: center; max-width: 92%; font: 400 13px/1.45 var(--body); color: var(--mute); text-align: center; }
   .chips { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .chips button { text-align: left; min-height: 56px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--faint); border-radius: var(--r-panel);
@@ -180,9 +197,9 @@
   .mode[aria-pressed="true"] { color: var(--gold); background: rgba(217, 168, 91, .12); border-color: rgba(217, 168, 91, .35); }
   #q { flex: 1; min-width: 0; height: 44px; background: none; color: var(--ink); border: 0; padding: 0 8px; font: 16px var(--body); outline: none; }
   #q::placeholder { color: var(--mute); }
-  #mic { flex: none; width: 44px; height: 44px; border-radius: 50%; background: var(--arc); border: 0; color: var(--on-arc); display: grid; place-items: center; transition: background .2s; }
+  #mic { flex: none; width: 44px; height: 44px; border-radius: 50%; background: radial-gradient(circle, rgba(var(--arc-rgb), .28) 0 45%, rgba(var(--arc-rgb), .08) 46% 100%); border: 1.5px solid var(--arc); color: var(--arc); display: grid; place-items: center; transition: background .2s; }
   #mic svg { width: 21px; height: 21px; }
-  #mic.on { background: var(--ok); }
+  #mic.on { background: var(--arc); color: var(--on-arc); }
 
   .tabs { display: none; }
 
@@ -260,7 +277,8 @@
     .factory { grid-row: 4; }
     .tabs { grid-row: 5; display: grid; grid-template-columns: repeat(3, 1fr); padding: 3px; background: var(--surface); border: 1px solid var(--faint); border-radius: var(--r-panel); align-self: start; }
     .tabs button { height: 36px; background: none; border: 0; border-radius: var(--r-ctl); color: var(--dim); font: 500 14px/1 var(--body); display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
-    .tabs button[aria-selected="true"] { background: var(--surface-2); color: var(--ink); box-shadow: 0 1px 0 rgba(255, 255, 255, .04) inset, 0 1px 2px rgba(0, 0, 0, .4); }
+    .tabs button[aria-selected="true"] { background: rgba(var(--arc-rgb), .1); color: var(--arc); box-shadow: inset 0 0 0 1px rgba(var(--arc-rgb), .35); }
+    .tabs button { font-family: var(--hud) !important; font-size: 15px !important; font-weight: 600 !important; letter-spacing: .06em; }
     .tabs .badge { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); font-size: 0; }
     .tabs .badge:empty { display: none; }
     #brainPanel, #jobsPanel, .log { grid-row: 6; }

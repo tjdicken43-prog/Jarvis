@@ -19,6 +19,7 @@ function tick() {
   $("time").textContent = d.toLocaleTimeString("en-US", { ...tz, hour: "numeric", minute: "2-digit" });
   $("date").textContent = d.toLocaleDateString("en-US", { ...tz, weekday: "short", month: "short", day: "numeric" });
   const h = +d.toLocaleString("en-US", { ...tz, hour: "numeric", hour12: false }) % 24;
+  $("tTime").textContent = d.toLocaleTimeString("en-GB", { ...tz, hour: "2-digit", minute: "2-digit" });
   $("greet").textContent = `Good ${h < 5 ? "evening" : h < 12 ? "morning" : h < 17 ? "afternoon" : "evening"}, TJ`;
 }
 tick(); setInterval(tick, 10000);

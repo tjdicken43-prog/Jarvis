@@ -39,6 +39,10 @@
   const project = (x, y) => { let best = 0, bd = 1e9; for (const s of SEG) { const vx = s.b[0] - s.a[0], vy = s.b[1] - s.a[1]; let u = ((x - s.a[0]) * vx + (y - s.a[1]) * vy) / (s.L * s.L); u = Math.max(0, Math.min(1, u)); const px = s.a[0] + vx * u, py = s.a[1] + vy * u, dd = Math.hypot(px - x, py - y); if (dd < bd) { bd = dd; best = s.s + s.L * u; } } return best; };
   const STOPS = ["scout", "checker", "builder", "scribe", "auditor", "tj", "sender", "watcher", "responder", "closer", "launcher", "ledger", "keeper"].map((id) => ({ id, d: project(BY[id].desk[0], BY[id].desk[1]) }));
   const STOP_I = {}; STOPS.forEach((s, i) => (STOP_I[s.id] = i));
+  // feeder belts: an agent's job slides off the rail to the desk, gets worked, slides back (Factorio-style inserter + belt)
+  const FEED = {};
+  WORKERS.forEach((w) => { if (w.bot || w.throne || w.walker || w.locked || STOP_I[w.id] == null) return; const [x, y] = w.desk;
+    FEED[w.id] = y < 190 ? { r: [x, 100], d: [x, y + 9], dir: -1 } : { r: [x + 17, 280], d: [x + 17, y - 2], dir: 1 }; });
   const TINT = { scout: "#8a7a66", checker: "#6fb6d0", builder: "#7fbf8f", scribe: "#e0a050", auditor: "#a8b4c4", tj: "#d8d2c4", sender: "#f5a623", watcher: "#6fb6d0", responder: "#d08f7a", closer: "#f5a623", launcher: "#7fbf8f", ledger: "#7fbf8f", keeper: "#7fbf8f" };
 
   /* ---------- walkway: a ring outside the rail; crew walk round it ---------- */
@@ -60,7 +64,7 @@
   const SPOTS = { tank1: [104, 132], tank2: [376, 132], tank3: [104, 248], tank4: [376, 248], holo: [240, 248], view: [180, 30], view2: [300, 30] };
 
   /* ---------- simulation (one for every view) ---------- */
-  const S = { t: 0, crates: [], ships: [], beams: [], sparks: [], nextSpawn: 0, lastApprove: 0, stats: () => ({}) };
+  const S = { t: 0, crates: [], ships: [], beams: [], sparks: [], pops: [], shipped: 0, nextSpawn: 0, lastApprove: 0, stats: () => ({}) };
   const actors = WORKERS.filter((w) => !w.throne).map((w) => {
     const seat = w.bot ? [w.desk[0], w.desk[1] - 10] : [w.desk[0], w.desk[1] - 7];
     return { w, x: seat[0], y: seat[1], seat, state: w.walker ? "look" : "seat", face: "down", busy: 0, workFor: 1, timer: 200 + Math.random() * 600, bubble: "", bt: 0, path: null, fly: null, s: 0 };
@@ -84,7 +88,7 @@
     if (P.phase === 2) { a.path = null; return true; }
     return false;
   }
-  function spawn() { if (S.crates.some((c) => c.d < 18)) return; S.crates.push({ d: 0, col: TINT.scout, next: 0, wait: 0, bob: Math.random() * 6 }); S.sparks.push({ x: RAIL[0][0], y: RAIL[0][1], t: 30, c: "#6fb6d0" }); }
+  function spawn() { if (S.crates.some((c) => c.d < 18)) return; S.crates.push({ d: 0, col: TINT.scout, next: 0, wait: 0, bob: Math.random() * 6, hot: Math.random() < 0.1 }); S.sparks.push({ x: RAIL[0][0], y: RAIL[0][1], t: 30, c: "#6fb6d0" }); } // about 1 in 10 is a hot lead: a rare, unpredictable reward
   function spawnReply() {
     const i = STOP_I.watcher, d = STOPS[i].d - 16; if (S.crates.some((c) => Math.abs(c.d - d) < 16)) return;
     S.beams.push({ x0: 470, y0: 318, x1: along(d)[0], y1: along(d)[1], t: 40 });
@@ -101,16 +105,18 @@
         c.wait--; const a = A[stop.id]; if (a) a.busy = Math.max(a.busy, 2);
         if (c.wait === 0) {
           c.col = TINT[stop.id] || c.col; c.next++;
-          if (stop.id === "sender") { c.gone = true; const [x, y] = along(c.d); S.ships.push({ x, y, vx: 0.2, t: 0 }); }
+          const [px0, py0] = FEED[stop.id] ? FEED[stop.id].d : along(c.d);
+          if (stop.id === "sender") { c.gone = true; const [x, y] = along(c.d); S.ships.push({ x, y, vx: 0.2, t: 0, hot: c.hot }); S.shipped++; S.pops.push({ x: 468, y: 214, z: 16, t: 90, s: c.hot ? "Hot lead sent" : "+1 sent", c: c.hot ? "#e6b450" : "#e6f4fb", big: c.hot }); }
+          else S.pops.push({ x: px0, y: py0, z: 14, t: 45, s: "✓", c: BY[stop.id].c });
         }
         continue;
       }
       let v = 0.42; if (ahead && ahead.d - c.d < 14) v = 0;
       if (stop && c.d + v >= stop.d && c.d <= stop.d + 0.01) {
         c.d = stop.d;
-        if (stop.id === "tj") { if (S.t - S.lastApprove > 540) { S.lastApprove = S.t; c.next++; c.col = TINT.tj; c.stamp = 50; } continue; }
+        if (stop.id === "tj") { if (S.t - S.lastApprove > 540) { S.lastApprove = S.t; c.next++; c.col = TINT.tj; c.stamp = 50; S.pops.push({ x: 446, y: 150, z: 22, t: 70, s: "Approved", c: "#e6b450" }); } continue; }
         const a = A[stop.id];
-        if (a && (a.state === "seat")) { c.wait = a.w.bot ? 100 : 150 + Math.random() * 120; a.busy = c.wait; a.workFor = c.wait; a.bubble = a.w.act; a.bt = c.wait; }
+        if (a && (a.state === "seat")) { c.wait = a.w.bot ? 100 : 150 + Math.random() * 120; c.w0 = c.wait; a.busy = c.wait; a.workFor = c.wait; a.bubble = a.w.act; a.bt = c.wait; }
         continue;
       }
       c.d += v; if (c.stamp) c.stamp--;
@@ -121,6 +127,7 @@
     S.ships = S.ships.filter((s) => s.x < WW + 60);
     S.beams.forEach((b) => b.t--); S.beams = S.beams.filter((b) => b.t > 0);
     S.sparks.forEach((p) => p.t--); S.sparks = S.sparks.filter((p) => p.t > 0);
+    S.pops.forEach((p) => p.t--); S.pops = S.pops.filter((p) => p.t > 0);
     for (const a of actors) {
       if (a.busy > 0) a.busy--;
       if (a.bt > 0) a.bt--; else a.bubble = "";
@@ -282,6 +289,11 @@
       if (h) { line(g, P(x0, y0 + 1, 0), P(x1, y0 + 1, 0), "#3a3329", 0.6); line(g, P(x0, y1 - 1, 0), P(x1, y1 - 1, 0), "#3a3329", 0.6); }
       else { line(g, P(x0 + 1, y0, 0), P(x0 + 1, y1, 0), "#3a3329", 0.6); line(g, P(x1 - 1, y0, 0), P(x1 - 1, y1, 0), "#3a3329", 0.6); }
     }
+    // feeder belts from the rail to each agent's desk, with an inserter pedestal at the rail end
+    for (const id in FEED) { const { r, d } = FEED[id], y0 = Math.min(r[1], d[1]), y1 = Math.max(r[1], d[1]);
+      poly(g, flat(r[0] - 3.5, y0, r[0] + 3.5, y1, 0.05), "#0c0b09"); line(g, P(r[0] - 3.5, y0, 0.1), P(r[0] - 3.5, y1, 0.1), "#5a4f3d", 0.6); line(g, P(r[0] + 3.5, y0, 0.1), P(r[0] + 3.5, y1, 0.1), "#5a4f3d", 0.6);
+      for (let yy = y0 + 2; yy < y1; yy += 3) line(g, P(r[0] - 3, yy, 0.1), P(r[0] + 3, yy, 0.1), "#1c1915", 0.5);
+      disc(g, r[0] + 7, (r[1] + d[1]) / 2, 2.6, 0, 1.6, "#3a342b", "#25211b"); }
     // pads under the bot docks and the core pit
     WORKERS.forEach((w) => { if (w.bot) { disc(g, w.desk[0], w.desk[1], 9, 0, 0, "#1f1c17", rgba(w.c, 0.5)); ring(g, w.desk[0], w.desk[1], 6, 0, rgba(w.c, 0.25), 0.5); } });
     disc(g, cx, cy, 46, 0, 0, "#141210", rgba(C.amber, 0.18));
@@ -437,10 +449,35 @@
     g.fillStyle = "#f4fbfa"; g.beginPath(); g.arc(ox, oy, 1.6, 0, Math.PI * 2); g.fill();
     front.forEach((p) => dot(p, "#eaf6f4", 1.1));
   }
+  // while an agent works a job: slide in (first 20%), sit at the desk with a progress ring, slide back out (last 20%)
+  function cratePos(c) {
+    const stop = STOPS[c.next], f = c.wait > 0 && stop && FEED[stop.id];
+    if (!f) return { p: along(c.d), u: -1 };
+    const u = 1 - c.wait / (c.w0 || 1), lerp = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k], ease = (k) => k * k * (3 - 2 * k);
+    return { p: u < 0.2 ? lerp(f.r, f.d, ease(u / 0.2)) : u > 0.8 ? lerp(f.d, f.r, ease((u - 0.8) / 0.2)) : f.d, u, f };
+  }
+  function arm(g, f, target, t, on) { // a short two-joint inserter on its pedestal, turning toward the job it moves
+    const bx = f.r[0] + 7, by = (f.r[1] + f.d[1]) / 2, [sx, sy] = P(bx, by, 3.2), [tx0, ty0] = P(target[0], target[1], 6);
+    let dx = tx0 - sx, dy = ty0 - sy; const L = Math.hypot(dx, dy) || 1, reach = on ? 8 : 5; dx = dx / L * reach; dy = dy / L * reach;
+    const ex = sx + dx * 0.5 - dy * 0.25, ey = sy + dy * 0.5 - 4.5 + Math.sin(t / 10) * (on ? 0.5 : 0.15), hx = sx + dx, hy = sy + dy - 1.5;
+    g.lineCap = "round"; g.lineJoin = "round";
+    g.strokeStyle = "#4a4236"; g.lineWidth = 2; g.beginPath(); g.moveTo(sx, sy); g.lineTo(ex, ey); g.lineTo(hx, hy); g.stroke();
+    g.strokeStyle = "#a39a8a"; g.lineWidth = 0.8; g.beginPath(); g.moveTo(sx, sy - 0.4); g.lineTo(ex, ey - 0.4); g.lineTo(hx, hy - 0.4); g.stroke();
+    g.fillStyle = on ? C.amber : "#6b6252"; g.beginPath(); g.arc(ex, ey, 0.9, 0, 7); g.fill();
+    g.strokeStyle = "#cfc8bb"; g.lineWidth = 0.6; g.beginPath(); g.moveTo(hx - 1.2, hy + 0.6); g.lineTo(hx, hy); g.lineTo(hx + 1.2, hy + 0.6); g.stroke(); g.lineCap = "butt";
+  }
+  function maintBot(g, k, t) { // two little floor robots doing laps of the walkway
+    const [x, y] = wPoint(t * (0.32 + k * 0.11) + k * WPER / 2), [sx, sy] = P(x, y, 0);
+    g.fillStyle = "rgba(0,0,0,.35)"; g.beginPath(); g.ellipse(sx, sy, 3.6, 1.7, 0, 0, 7); g.fill();
+    disc(g, x, y, 2.4, 0.4, 1.6, "#d8d2c4", "#9f978a"); disc(g, x, y, 1.3, 2, 0.8, "#2b3a44", "#1d272e");
+    if ((t >> 4) % 2) { const [lx, ly] = P(x, y, 3.4); g.fillStyle = k ? C.teal : C.amber; g.fillRect(lx - 0.5, ly - 0.5, 1, 1); }
+  }
   function crate(g, c, t) {
-    const [x, y] = along(c.d), z = 2 + Math.sin((t + c.bob * 10) / 10) * 0.6;
+    const cp = cratePos(c), [x, y] = cp.p, z = 2 + Math.sin((t + c.bob * 10) / 10) * 0.6;
     const [fx, fy] = P(x, y, 0); g.fillStyle = "rgba(0,0,0,.35)"; g.beginPath(); g.ellipse(fx, fy, 4.5, 2, 0, 0, Math.PI * 2); g.fill();
-    box(g, x - 3, y - 3, x + 3, y + 3, z, 5, c.col);
+    box(g, x - 3, y - 3, x + 3, y + 3, z, 5, c.hot ? "#e6b450" : c.col);
+    if (c.hot) { const [gx, gy] = P(x, y, z + 8 + Math.sin(t / 7) * 1.5), k = (t + c.bob * 20) % 50; if (k < 12) { g.fillStyle = `rgba(255,240,200,${1 - k / 12})`; g.fillRect(gx - 0.4, gy - 2, 0.8, 4); g.fillRect(gx - 2, gy - 0.4, 4, 0.8); } }
+    if (cp.u >= 0.2 && cp.u <= 0.8) { const k = (cp.u - 0.2) / 0.6; ring(g, x, y, 6.5, 0.2, "rgba(255,255,255,.1)", 1.2); ring(g, x, y, 6.5, 0.2, BY[STOPS[c.next].id].c, 1.4, -Math.PI / 2, -Math.PI / 2 + k * Math.PI * 2); }
     if (c.reply) poly(g, flat(x - 1.6, y - 1.6, x + 1.6, y + 1.6, z + 5.05), "#f1ede5");
     if (c.stamp) poly(g, flat(x - 2, y - 2, x + 2, y + 2, z + 5.1), C.ok);
   }
@@ -448,7 +485,9 @@
     const lift = Math.max(0, s.x - 468) * 0.45, x = s.x, y = s.y, z = 4 + lift, [fx, fy] = P(x, y, 0);
     g.fillStyle = `rgba(0,0,0,${Math.max(0, 0.35 - lift / 120)})`; g.beginPath(); g.ellipse(fx, fy, 6, 2.6, 0, 0, Math.PI * 2); g.fill();
     box(g, x - 7, y - 3, x + 5, y + 3, z, 3, "#d8d2c4"); box(g, x - 4, y - 7, x + 1, y + 7, z + 1, 1, "#9f978a"); box(g, x + 5, y - 2, x + 9, y + 2, z, 2, C.amber);
-    const [ex, ey] = P(x - 7, y, z + 1.5); g.globalCompositeOperation = "lighter"; glowAt(g, ex, ey, 7, C.win, 0.6); g.globalCompositeOperation = "source-over";
+    const [ex, ey] = P(x - 7, y, z + 1.5); g.globalCompositeOperation = "lighter"; glowAt(g, ex, ey, s.hot ? 12 : 7, s.hot ? "#e6b450" : C.win, 0.6);
+    for (let k = 1; k < 8; k++) { const [qx, qy] = P(x - 7 - k * 4, y, z + 1.5 - k * 0.6); g.fillStyle = rgba(s.hot ? "#e6b450" : C.win, 0.35 - k * 0.04); g.fillRect(qx - 0.8, qy - 0.8, 1.6, 1.6); }
+    g.globalCompositeOperation = "source-over";
   }
   function parkedShip(g) { const x = 530, y = 228; box(g, x - 9, y - 4, x + 7, y + 4, 0.5, 4, "#cfc8bb"); box(g, x - 5, y - 10, x + 1, y + 10, 1.5, 1.2, "#8f877a"); box(g, x + 7, y - 2.5, x + 12, y + 2.5, 0.5, 3, C.amber); box(g, x - 4, y - 2, x + 2, y + 2, 4.5, 2, "#2b3a44"); }
 
@@ -465,7 +504,11 @@
     const items = PROPS.slice();
     items.push({ d: cx + cy, f: () => drawCore(g, t, st) });
     if (!S.ships.length) items.push({ d: 530 + 228, f: () => parkedShip(g) });
-    for (const c of S.crates) { const [x, y] = along(c.d); items.push({ d: x + y + 0.5, f: () => crate(g, c, t) }); }
+    for (const c of S.crates) { const cp = cratePos(c), [x, y] = cp.p; items.push({ d: x + y + 0.5, f: () => crate(g, c, t) }); }
+    for (const id in FEED) { const f = FEED[id], c = S.crates.find((q) => q.wait > 0 && STOPS[q.next] && STOPS[q.next].id === id), on = !!c && (1 - c.wait / (c.w0 || 1) < 0.22 || 1 - c.wait / (c.w0 || 1) > 0.78);
+      items.push({ d: f.r[0] + 7 + (f.r[1] + f.d[1]) / 2 + 1, f: () => arm(g, f, c ? cratePos(c).p : f.r, t, on) });
+      if (on) for (let k = 0; k < 3; k++) { const yy = f.r[1] + (f.d[1] - f.r[1]) * (((t * 0.03 + k / 3) % 1)), [sx, sy] = P(f.r[0], yy, 0.2); g.fillStyle = rgba(C.amber, 0.5); g.fillRect(sx - 1, sy - 0.3, 2, 0.6); } }
+    for (let k = 0; k < 2; k++) { const [x, y] = wPoint(t * (0.32 + k * 0.11) + k * WPER / 2); items.push({ d: x + y, f: () => maintBot(g, k, t) }); }
     for (const s of S.ships) items.push({ d: 2000, f: () => ship(g, s) });
     for (const a of actors) {
       const sitting = a.state === "seat" && !a.w.bot, working = a.busy > 0;
@@ -574,6 +617,9 @@
       g.fillStyle = C.ink; g.fillText(a.bubble, sx, sy - th / 2 + 0.5 * d);
       if (a.busy > 0 && a.workFor > 1) { const bw = tw - 12 * d; g.fillStyle = "rgba(255,255,255,.1)"; g.fillRect(sx - bw / 2, sy + 3 * d, bw, 2 * d); g.fillStyle = C.amber; g.fillRect(sx - bw / 2, sy + 3 * d, bw * (1 - a.busy / a.workFor), 2 * d); }
     }
+    for (const p of S.pops) { // small rewards: a tick when a station finishes, "+1 sent" when a ship leaves
+      const k = p.t / (p.big ? 90 : 60), [sx, sy] = Sx(p.x, p.y, p.z + (1 - Math.min(1, k)) * 14); g.globalAlpha = Math.min(1, k * 2);
+      g.font = `700 ${Math.round((p.big ? 15 : 12) * d)}px Rajdhani, system-ui, sans-serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillStyle = p.c; g.fillText(p.s, sx, sy); g.globalAlpha = 1; }
     if (v.tour && v.tour.i >= 0) { // caption card
       const T = TOUR[v.tour.i], text = T.line(st), pad = 14 * d, f2 = 14 * d, bw = Math.min(W - 24 * d, 460 * d), bx = (W - bw) / 2, bh = 74 * d, by = H - bh - 14 * d;
       plate(g, bx, by, bw, bh, 8 * d, "rgba(14,13,11,.92)", "rgba(245,166,35,.22)");
@@ -583,16 +629,16 @@
   }
   function wrapText(g, s, x, y, w, lh) { const words = s.split(" "); let ln = ""; for (const wd of words) { const tst = ln ? ln + " " + wd : wd; if (g.measureText(tst).width > w && ln) { g.fillText(ln, x, y); y += lh; ln = wd; } else ln = tst; } g.fillText(ln, x, y); }
 
-  let looping = false, lastTs = 0, warmed = false;
-  function warm() { if (!warmed) { warmed = true; drawBase(); for (let i = 0; i < 2400; i++) step(); } }
+  let looping = false, lastTs = 0, warmed = false, odd = false;
+  function warm() { if (!warmed) { warmed = true; drawBase(); for (let i = 0; i < 2400; i++) step(); S.shipped = 0; S.pops.length = 0; } }
   function ensureLoop() { warm(); if (looping) return; looping = true; requestAnimationFrame(loop); }
   function loop(ts) {
-    const live = views.filter((v) => v.active && v.canvas.isConnected && v.canvas.offsetParent !== null);
+    const live = document.hidden ? [] : views.filter((v) => v.active && v.canvas.isConnected && v.canvas.offsetParent !== null);
     if (!live.length) { lastTs = ts; if (views.length) requestAnimationFrame(loop); else looping = false; return; } // idle until a view shows again
     for (const v of live) if (Math.abs(v.canvas.clientWidth * v.dpr - v.canvas.width) > 2 || Math.abs(v.canvas.clientHeight * v.dpr - v.canvas.height) > 2) v.resize();
     const n = reduce ? 0 : Math.min(4, Math.round((ts - lastTs) / 16.7) || 1); lastTs = ts;
     for (let i = 0; i < n; i++) step();
-    live.forEach(render);
+    odd = !odd; if (odd) live.forEach(render); // draw at 30 fps: smooth enough for small figures, half the battery
     requestAnimationFrame(loop);
   }
   // a flat copy of the live station for hosts that draw it themselves (the Show off gate)
@@ -619,6 +665,8 @@
 .jf-ttl{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .jf-ttl b{font:600 15px/1.2 ${MONO};color:#f5a623}
 .jf-line{font:12px/1.3 ${MONO};color:#9a9284;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jf-pop{animation:jfpop .6s ease-out}@keyframes jfpop{0%{color:#e6b450}100%{color:#9a9284}}
+@media (prefers-reduced-motion:reduce){.jf-pop{animation:none}}
 .jf-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:44px;height:44px;padding:0 12px;background:transparent;border:1px solid rgba(245,166,35,.22);border-radius:6px;color:#e6e1d7;font:500 14px/1 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;cursor:pointer;text-decoration:none;white-space:nowrap;transition:background .15s ease-out}
 .jf-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
 .jf-btn:hover{background:rgba(245,166,35,.08)}.jf-btn:focus-visible{outline:2px solid #f5a623;outline-offset:2px}
@@ -675,7 +723,8 @@
     el.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
     if (opts.onImprove) el.querySelector("#jf-imp").onclick = async () => { try { const m = await opts.onImprove(); say(m || "Queued: Jarvis will redesign himself and the factory."); } catch { say("Couldn't queue that. Try again in a moment."); } };
     const lineEl = el.querySelector("#jf-line");
-    const upd = () => { if (el.hidden) return; const st = S.stats() || {}, busy = actors.filter((a) => a.busy > 0 && !a.w.locked).length; lineEl.textContent = `${busy} at work · ${S.crates.length} on the rail · core ${st.notes || 27} notes${st.jobsLive ? ` · ${st.jobsLive} jobs live` : ""}`; };
+    const upd = () => { if (el.hidden) return; const st = S.stats() || {}, busy = actors.filter((a) => a.busy > 0 && !a.w.locked).length; lineEl.textContent = `${S.shipped} sent this visit · ${busy} at work · ${S.crates.length} on the rail${st.jobsLive ? ` · ${st.jobsLive} jobs live` : ""}`;
+      if (S.shipped !== upd.last) { upd.last = S.shipped; lineEl.classList.remove("jf-pop"); void lineEl.offsetWidth; lineEl.classList.add("jf-pop"); } };
     upd(); setInterval(upd, 1000);
     ov = { el, v, close };
     if (opts.cinema) v.startTour();

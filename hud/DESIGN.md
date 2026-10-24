@@ -46,6 +46,22 @@ TJ loved the station and asked for the screen that leads into it to use better c
 - **The factory as a destination:** the small header icon is now a card under the dial with a live window onto the station and its real counts. This follows the home-screen "live tile" pattern (Android widgets, Apple Live Activities; from memory).
 - Fix: the brain's draw loop could start before voice.js loaded, which stopped the dial from drawing at all. It now starts once every script has loaded.
 
+## Round 5 (2026-10-24): Iron Man HUD, a factory worth watching, real briefs
+TJ: "make it look like something Iron Man would use", the factory "more intricate", "scientifically dopamine producing" to watch, without using much, and the briefs must show our real demos with brand names out.
+
+**Home, the "Mark" look (default).** Built on how Cantina Creative made the Iron Man and Avengers HUDs: a dark, near-black field, one cool cyan for data, a warm amber for things that need you, red only for alarms, thin lines, corner brackets and small telemetry, with the eye drawn to one centre object ([Pro Video Coalition](https://www.provideocoalition.com/cantina-creative-on-designing-huds-for-movies-and-real-life/amp/), [CGW, Iron Man 3](https://www.cgw.com/Press-Center/Web-Exclusives/2013/Cantina-Creative-Gives-Iron-Man-3-a-Heads-Up-.aspx), [HUDs+GUIs, The Avengers](https://www.hudsandguis.com/2013/05/15/the-avengers/)). So: a segmented bezel and 72 ticks around the brain core, Rajdhani for HUD numbers and labels, a live telemetry block (location, Central time, link, memory, system), corner brackets on the frame, a cyan ring mic. The earlier looks stay under Settings as "Station" and "Steel".
+
+**Factory, made to be watched.** Each piece maps to a finding:
+- Feeder belts, inserter arms, crates sliding in and out, two maintenance bots on laps: constant visible motion and variety, the Factorio/shapez "watch the line run" loop (game reviews, weak source).
+- A progress ring on every crate at a desk: the goal-gradient effect, people speed up and stay engaged as a goal gets close (Kivetz, Urminsky & Zheng 2006, *J. Marketing Research* 43:39-58, [PDF](https://business.columbia.edu/sites/default/files-efs/pubfiles/1200/goalgradient.pdf)).
+- A "✓" pop on each finished stage and "+1 sent" at the sender, plus a running "sent this visit" count: frequent small wins (Amabile & Kramer 2011, "The Power of Small Wins", *HBR* 89(5):70-80).
+- About 1 in 10 leads is a gold "hot lead" with its own glint, trail and pop: dopamine tracks reward prediction error, so rare, unpredictable rewards hold attention more than steady ones (Schultz, Dayan & Montague 1997, *Science* 275:1593).
+- Short pops and squash on events: "Juice it or lose it" (Jonasson & Purho 2012, talk; from memory).
+
+**Cheap to watch.** All client-side: no Claude calls, no network, no polling. Factory renders at 30 fps and stops when the tab is hidden; the home card runs at 12 fps; the brain stops drawing while the factory is open.
+
+**Briefs (Station page).** The three job cards now show the golden trade demos (money/sites/golden/) as de-branded screenshots: logos swapped for text wordmarks, real photos hidden, names "Example Heating & Air / Roofing / Plumbing", phone (479) 555-0142. Emails are the three-sentence flaw email ending with the $299 setup + $149/month offer, and each brief explains Front Desk.
+
 ## Kept, and why
 - The 3D brain and its core: it is the one thing no other assistant has, so it stays as the signature, calmer (no grid, softer bloom, no angle readout, faint ring text).
 - Show off, the flight, factory, night mode, voices and looks all work as before. Show off keeps its full effects; it's opt-in.

@@ -54,6 +54,9 @@ with psycopg.connect(URL, autocommit=True) as c:
                  mockup_url = coalesce(mockup_url, 'https://' || replace(id, '/', '-') || '.preview.example.test')""")
     c.execute("INSERT INTO settings (key, value) VALUES ('warmup_started', '\"2026-09-01\"')")  # long warmed up
 
+import quality  # noqa: E402
+quality._dns_works = lambda: False  # no real MX lookups for made-up test shops
+
 api = TestClient(main.app)
 H = {"Authorization": "Bearer test-token"}
 ok = lambda r, code=200: (r.status_code == code) or sys.exit(f"{r.request.method} {r.request.url}: {r.status_code} {r.text}")

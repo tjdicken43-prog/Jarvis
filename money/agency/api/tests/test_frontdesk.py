@@ -37,6 +37,9 @@ with psycopg.connect(URL, autocommit=True) as c:
                  VALUES ('overture/r', 'Ridge Roofing', 'roofing', 'Bella Vista', '479-273-0100', 'info@ridgeroof.com',
                  'https://ridgeroof.com', 4.7, 38, '{"colors": ["#8a2b1a"], "towns": ["Bella Vista", "Bentonville"]}', 'built')""")
 
+import quality  # noqa: E402
+quality._dns_works = lambda: False  # no real MX lookups for made-up test shops
+
 api = TestClient(main.app)
 H = {"Authorization": "Bearer test-token"}
 ok = lambda r, code=200: (r.status_code == code) or sys.exit(f"{r.request.method} {r.request.url}: {r.status_code} {r.text}")

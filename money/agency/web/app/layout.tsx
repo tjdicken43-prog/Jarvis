@@ -15,6 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/queue">Queue</Link>
             <Link href="/clients">Clients</Link>
             <Link href="/leads">Leads</Link>
+            <Link href="/log">Log</Link>
             <Link href="/do-not-email">Do not email</Link>
           </nav>
         </header>

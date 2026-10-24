@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { goLive, goLiveStep, redraft, resumeStep, reviewCall, setWarmup, skip } from "@/lib/actions";
+import { SKIP_REASONS } from "@/lib/reasons";
 import type { Client, ReviewCall } from "@/lib/types";
 
 type Result = { ok: true } | { ok: false; error: string };
@@ -52,15 +53,6 @@ export function ConfirmButton({
   );
 }
 
-export const SKIP_REASONS: [string, string][] = [
-  ["wrong_flaw", "Wrong flaw"],
-  ["weak_mockup", "Weak preview"],
-  ["tone", "Doesn't sound right"],
-  ["bad_fact", "Says something untrue"],
-  ["wrong_shop", "Wrong shop"],
-  ["not_a_fit", "Not a fit now"],
-  ["other", "Other"],
-];
 
 export function SkipPicker({ id, onClose }: { id: string | number; onClose: () => void }) {
   const [reason, setReason] = useState("");

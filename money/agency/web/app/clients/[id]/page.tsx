@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { api, ApiError, errMsg } from "@/lib/api";
 import { PLAN_NAME } from "@/lib/format";
-import type { Booking, Call, Client, Notice, ReviewRequest, SiteRequest } from "@/lib/types";
+import type { Booking, Call, Client, Notice, ReviewCall, ReviewRequest, SiteRequest } from "@/lib/types";
 import { BookingActions, BookingSetup, OwnerSettings, ReviewAskForm, SitePublish } from "@/components/FrontDeskControls";
 import { ReceptionistSetup } from "@/components/ClientControls";
+import { CallReviewList, GoLiveChecklist } from "@/components/QualityControls";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,7 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
   let c: Client | undefined;
   let calls: Call[] = [], bookings: Booking[] = [], notices: Notice[] = [], reviews: ReviewRequest[] = [], forms: SiteRequest[] = [];
   let mode = "stub";
+  let toReview: ReviewCall[] = [];
   try {
     const [all, cl, bk, nt, rv, fr] = await Promise.all([
       api<{ items: Client[] }>("/clients"),
@@ -29,6 +31,8 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
       api<{ items: ReviewRequest[] }>(`/clients/${cid}/review-requests`),
       api<{ items: SiteRequest[] }>(`/clients/${cid}/requests`),
     ]);
+    toReview = (await api<{ items: ReviewCall[] }>("/calls/to-review").catch(() => ({ items: [] as ReviewCall[] }))).items
+      .filter((r) => String(r.client_id) === id);
     c = all.items.find((x) => String(x.id) === id);
     [calls, bookings, notices, reviews, forms, mode] = [cl.items, bk.items, nt.items, rv.items, fr.items, nt.mode];
   } catch (e) {
@@ -48,11 +52,21 @@ export default async function ClientPage({ params }: { params: Promise<{ id: str
     <>
       <h1>{c.business_name} <span className="muted">{PLAN_NAME[c.plan]} / {c.trade}</span></h1>
       <p className="muted small">
-        <Link href="/clients">All clients</Link> · Owner emails are {mode === "smtp" ? "on" : "saved, not sent (NOTIFY=stub on Render)"}. Texts are never sent until an SMS provider is registered.
+        <Link href="/clients">All clients</Link>. Owner emails {mode === "smtp" ? "are on" : "are saved here and not sent yet"}. Texts stay off until a texting provider is registered.
       </p>
 
       <h2 className="section">Receptionist</h2>
       <section className="panel"><ReceptionistSetup c={c} /></section>
+
+      <h2 className="section">Go live <span className="muted small">every box ticked before the shop counts on it</span></h2>
+      <section className="panel"><GoLiveChecklist c={c} /></section>
+
+      {c.live_at && (
+        <>
+          <h2 className="section">Listen to these <span className="muted small">up to 3 calls a week, first month live</span></h2>
+          <section className="panel"><CallReviewList calls={toReview} /></section>
+        </>
+      )}
 
       <h2 className="section">Owner emails <span className="muted small">urgent calls at once, website requests at once, a summary every morning</span></h2>
       <section className="panel"><OwnerSettings c={c} /></section>

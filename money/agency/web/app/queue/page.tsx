@@ -2,6 +2,7 @@ import Link from "next/link";
 import { api, errMsg } from "@/lib/api";
 import type { Health, Item } from "@/lib/types";
 import { CardActions, DraftButton, PauseToggle, SendButton, SentActions, UndoButton } from "@/components/QueueControls";
+import { StoppedSteps, WarmupForm } from "@/components/QualityControls";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,9 @@ const TABS = [
   ["sent", "Sent"],
   ["replied", "Replied"],
   ["cancelled", "Skipped"],
+  ["bounced", "Bounced"],
+  ["failed", "Refused"],
+  ["sending", "Stuck"],
 ] as const;
 
 function when(s: string | null) {
@@ -45,7 +49,8 @@ export default async function QueuePage({ searchParams }: { searchParams: Promis
           <dl className="health">
             <div><dt>Drafter</dt><dd>{health.drafter}</dd></div>
             <div><dt>Mailer</dt><dd>{health.mailer}</dd></div>
-            <div><dt>Sent today</dt><dd className="num">{health.sent_today}/{health.daily_cap}</dd></div>
+            <div><dt>Sent today</dt><dd className="num">{health.sent_today}/{health.cap_today ?? health.daily_cap}</dd></div>
+            {health.cap_reason && <div><dt>Warm-up</dt><dd>{health.cap_reason}</dd></div>}
             <div><dt>Window</dt><dd>{health.send_window}{health.in_window ? " (open)" : " (closed)"}</dd></div>
             {health.inbox && <div><dt>Replies</dt><dd>{health.inbox === "imap" ? "read from inbox" : "mark by hand"}</dd></div>}
             {!health.db && <div><dt>Database</dt><dd className="warn">down</dd></div>}
@@ -54,6 +59,12 @@ export default async function QueuePage({ searchParams }: { searchParams: Promis
           <p className="warn">API health unavailable</p>
         )}
         {health && !health.mailing_address_set && <p className="warn">Mailing address missing. Set it before sending.</p>}
+        {health && health.public_url_ok === false && <p className="warn">The public address isn&apos;t https yet, so preview and unsubscribe links won&apos;t work. Nothing real sends until it is.</p>}
+        {health && (health.stuck_sending ?? 0) > 0 && (
+          <p className="warn">{health.stuck_sending} email{health.stuck_sending === 1 ? "" : "s"} stopped mid-send. <Link href="/queue?status=sending">Check them</Link> before sending more.</p>
+        )}
+        {health?.stopped_steps && <StoppedSteps steps={health.stopped_steps} />}
+        {health && !health.warmup_started && <WarmupForm started={health.warmup_started} />}
         <div className="row">
           {health && <PauseToggle paused={health.paused} />}
           <DraftButton />

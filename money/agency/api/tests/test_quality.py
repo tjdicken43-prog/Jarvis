@@ -41,6 +41,8 @@ with psycopg.connect(URL, autocommit=True) as c:
     c.execute((API / "schema.sql").read_text())
     c.execute((API / "schema.sql").read_text())  # re-running is safe
 
+quality._dns_works = lambda: False  # no real MX lookups for made-up test shops
+
 api = TestClient(main.app)
 H = {"Authorization": "Bearer test-token"}
 ok = lambda r, code=200: (r.status_code == code) or sys.exit(f"{r.request.method} {r.request.url}: {r.status_code} {r.text}")

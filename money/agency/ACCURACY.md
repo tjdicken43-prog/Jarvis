@@ -18,11 +18,12 @@ All three suites pass (`tests/test_api.py`, `tests/test_quality.py`, `tests/test
 - Evals: `evals/cases.json` (hand-made), `evals/real_shops.json` (21 real NWA shops, checked by eye from screenshots,
   TJ to confirm), `evals/capture.py`, `evals/freeze.py` (TJ's corrections -> `tj.json`).
 
-## Left (next session)
-1. Dashboard: `components/QualityControls.tsx` is written; wired so far: skip reasons + Redraft on Queue cards.
-   Still to wire: StoppedSteps + WarmupForm + cap on the Queue health strip, Bounced/Failed/Stuck tabs, ConfirmButton
-   on Send approved / Resume sending / Bounced / Do-not-email Add, a `/log` page (events + corrections + approve-as-drafted %),
-   GoLiveChecklist + CallReviewList on `clients/[id]`. Premium look, no AI tells (TJ, 2026-10-24). Run `npx tsc --noEmit`.
-2. CI: add `python3 money/agency/api/tests/test_quality.py` and `python3 money/agency/api/evals/run.py` to money-tests.yml.
-3. README: document the ramp, skip reasons, log, go-live. Then PR, test, merge.
-Not touched: Stripe async payments (bank debits) stay pending; mention to TJ.
+## Dashboard (done, same PR)
+Queue: warm-up date + today's cap, stopped-step alert with Resume, Bounced / Refused / Stuck tabs, skip-reason picker,
+Redraft, two-step confirm on Send approved, Resume sending, Bounced and Block domain (free-mail domains refused).
+Log page: 24h counts per step, approve-as-drafted %, failures, TJ's corrections before/after.
+Client page: go-live checklist and "Listen to these" call checks. Phone nav scrolls instead of breaking words.
+
+## Still open
+- Stripe async payments (bank debits): a client stays pending until a card payment; not handled.
+- TJ to confirm the 21 real-shop flaws in `evals/real_shops.json` (checked by eye, not by him yet).

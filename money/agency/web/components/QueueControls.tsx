@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { approve, draftNew, markBounced, markReplied, saveEmail, sendApproved, setPaused, unapprove } from "@/lib/actions";
-import { RedraftButton, SkipPicker } from "./QualityControls";
+import { ConfirmButton, RedraftButton, SkipPicker } from "./QualityControls";
 import type { DraftResult, SendResult } from "@/lib/types";
 import Link from "next/link";
 
@@ -49,25 +49,21 @@ export function DraftButton() {
 }
 
 export function SendButton() {
-  const [pending, start] = useTransition();
   const [res, setRes] = useState<SendResult | null>(null);
   const [err, setErr] = useState("");
   return (
     <div>
-      <button
-        className="btn primary"
-        disabled={pending}
-        onClick={() =>
-          start(async () => {
-            setErr("");
-            const r = await sendApproved();
-            if (r.ok) setRes(r.data);
-            else setErr(r.error);
-          })
-        }
-      >
-        {pending ? "Sending..." : "Send approved"}
-      </button>
+      <ConfirmButton
+        primary
+        label="Send approved"
+        confirm="Send everything approved and due, right now?"
+        onConfirm={async () => {
+          setErr("");
+          const r = await sendApproved();
+          if (r.ok) setRes(r.data);
+          return r.ok ? { ok: true } : r;
+        }}
+      />
       {err && <p className="err">{err}</p>}
       {res && (
         <div className="note">
@@ -166,21 +162,35 @@ export function EditForm({ id, subject, body, editable }: { id: string | number;
 export function PauseToggle({ paused }: { paused: boolean }) {
   const [pending, start] = useTransition();
   const [err, setErr] = useState("");
+  if (paused)  // resuming is the last tap before real mail goes out, so it asks once
+    return (
+      <div>
+        <ConfirmButton
+          primary
+          label="Sending paused. Resume"
+          confirm="Resume sending? Approved emails go out in the next window."
+          onConfirm={async () => {
+            const r = await setPaused(false);
+            return r.ok ? { ok: true } : r;
+          }}
+        />
+      </div>
+    );
   return (
     <div>
       <button
-        className={paused ? "btn primary" : "btn"}
+        className="btn"
         disabled={pending}
-        aria-pressed={paused}
+        aria-pressed={false}
         onClick={() =>
           start(async () => {
             setErr("");
-            const r = await setPaused(!paused);
+            const r = await setPaused(true);
             if (!r.ok) setErr(r.error);
           })
         }
       >
-        {paused ? "Sending paused. Resume" : "Pause all sending"}
+        Pause all sending
       </button>
       {err && <span className="err"> {err}</span>}
     </div>
@@ -222,7 +232,14 @@ export function SentActions({ prospectId }: { prospectId: string | number }) {
   return (
     <div className="row">
       <button className="btn" disabled={pending} onClick={() => act(markReplied)}>They replied</button>
-      <button className="btn" disabled={pending} onClick={() => act(markBounced)}>Bounced</button>
+      <ConfirmButton
+        label="Bounced"
+        confirm="Never email this address again?"
+        onConfirm={async () => {
+          const r = await markBounced(prospectId);
+          return r.ok ? { ok: true } : r;
+        }}
+      />
       {err && <span className="err">{err}</span>}
     </div>
   );

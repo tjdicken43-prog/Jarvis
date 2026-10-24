@@ -49,6 +49,12 @@
     <div class="center">
       <div class="slot" id="slot"></div>
       <div class="status" id="status" data-mode="idle">Standing by</div>
+      <dl class="readout" id="readout" aria-label="Brain at a glance">
+        <div><dt><i style="background:var(--arc)"></i>Notes</dt><dd id="rNotes">0</dd></div>
+        <div><dt><i style="background:#b7bcc4"></i>Links</dt><dd id="rLinks">0</dd></div>
+        <div><dt><i style="background:var(--ok)"></i>Jobs</dt><dd id="rJobs">0</dd></div>
+        <div><dt><i style="background:var(--gold)"></i>Lessons</dt><dd id="rLessons">0</dd></div>
+      </dl>
       <nav class="tabs" role="tablist">
         <button type="button" role="tab" data-go="comms" aria-selected="true">Chat</button>
         <button type="button" role="tab" data-go="jobs" aria-selected="false">Jobs <span class="badge" id="badge"></span></button>

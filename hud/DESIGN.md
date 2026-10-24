@@ -21,6 +21,15 @@ Redesign 2026-10-24. TJ: the old page "looks vibe coded and just off"; he wants 
 | Centered dialogs with boxed caps buttons | bottom sheets on a phone, one primary button | sheets with a grabber, Done is the one accent button |
 | Brain spills behind every panel | content leads | brain lives in a band at the top and fades out above the content |
 
+## The centrepiece: a data dial (round 2, 2026-10-24)
+TJ: "better but not best... I want the center to be a premium looking mind, something interesting based on professional data." The arc reactor became an instrument dial drawn only from live data, read outside in, like a watch face or an observability gauge:
+- Outer ring: the notes by kind (hub, rules, log, list, week, personal), each arc in proportion.
+- Radial bars: one per note, as long as its links; a note lights white while a question touches it. They move with the voice.
+- Bezel: 60 ticks; a sweep runs round it while Jarvis thinks.
+- Inner rings: jobs (done green, running amber, needs you red) and lessons (filed, waiting amber).
+- Centre: the note count, or a live waveform while Jarvis talks or listens.
+- Under it, a four-number readout (notes, links, jobs, lessons) is the legend. The old cores stay in Show off.
+
 ## Kept, and why
 - The 3D brain and its core: it is the one thing no other assistant has, so it stays as the signature, calmer (no grid, softer bloom, no angle readout, faint ring text).
 - Show off, the flight, factory, night mode, voices and looks all work as before. Show off keeps its full effects; it's opt-in.

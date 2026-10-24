@@ -70,7 +70,15 @@
 
   /* middle */
   .mid { min-height: 0; display: grid; grid-template-columns: minmax(240px, 300px) 1fr minmax(260px, 340px); gap: 16px; }
-  .center { min-height: 0; display: grid; grid-template-rows: minmax(200px, 1fr) auto auto; gap: 8px; }
+  .center { min-height: 0; display: grid; grid-template-rows: minmax(200px, 1fr) auto auto auto; gap: 8px; }
+  /* the dial's legend: the same live numbers the rings draw */
+  .readout { margin: 0; display: grid; grid-template-columns: repeat(4, 1fr); max-width: 520px; width: 100%; justify-self: center; border-top: 1px solid var(--faint); border-bottom: 1px solid var(--faint); }
+  .readout > div { padding: 8px 4px 9px; text-align: center; }
+  .readout > div + div { border-left: 1px solid var(--faint); }
+  .readout dt { font: 400 12px/1.2 var(--body); color: var(--dim); display: inline-flex; align-items: center; gap: 6px; }
+  .readout dt i { width: 6px; height: 6px; border-radius: 50%; }
+  .readout dd { margin: 3px 0 0; font: 600 17px/1.1 var(--body); font-variant-numeric: tabular-nums; }
+  .readout dd small { font-size: 12px; font-weight: 400; color: var(--mute); }
   .slot { min-height: 0; } /* the core is painted on the canvas behind this box */
   .mid, .center, .slot { pointer-events: none; } /* let taps and drags through to the brain map */
   .mid > .panel, .center > :not(.slot) { pointer-events: auto; }
@@ -225,18 +233,19 @@
 
   /* phone: fold the panels into a segmented control, sheets come up from the bottom */
   @media (max-width: 860px) {
-    .mid { grid-template-columns: minmax(0, 1fr); grid-template-rows: 24vh auto auto 1fr; gap: 10px; }
+    .mid { grid-template-columns: minmax(0, 1fr); grid-template-rows: 34vh auto auto auto 1fr; gap: 10px; }
     .center { display: contents; }
-    canvas { -webkit-mask-image: linear-gradient(#000 calc(24vh + 40px), transparent calc(24vh + 96px)); mask-image: linear-gradient(#000 calc(24vh + 40px), transparent calc(24vh + 96px)); }
+    canvas { -webkit-mask-image: linear-gradient(#000 calc(34vh + 40px), transparent calc(34vh + 80px)); mask-image: linear-gradient(#000 calc(34vh + 40px), transparent calc(34vh + 80px)); }
     body.cinema canvas { -webkit-mask-image: none; mask-image: none; }
     .slot { grid-row: 1; }
     .status { grid-row: 2; }
-    .tabs { grid-row: 3; display: grid; grid-template-columns: repeat(3, 1fr); padding: 3px; background: var(--surface); border: 1px solid var(--faint); border-radius: var(--r-panel); align-self: start; }
+    .readout { grid-row: 3; }
+    .tabs { grid-row: 4; display: grid; grid-template-columns: repeat(3, 1fr); padding: 3px; background: var(--surface); border: 1px solid var(--faint); border-radius: var(--r-panel); align-self: start; }
     .tabs button { height: 36px; background: none; border: 0; border-radius: var(--r-ctl); color: var(--dim); font: 500 14px/1 var(--body); display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
     .tabs button[aria-selected="true"] { background: var(--surface-2); color: var(--ink); box-shadow: 0 1px 0 rgba(255, 255, 255, .04) inset, 0 1px 2px rgba(0, 0, 0, .4); }
     .tabs .badge { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); font-size: 0; }
     .tabs .badge:empty { display: none; }
-    #brainPanel, #jobsPanel, .log { grid-row: 4; }
+    #brainPanel, #jobsPanel, .log { grid-row: 5; }
     .log { max-height: none; }
     [data-tab]:not(.active) { display: none !important; }
     #brainPanel, #jobsPanel { background: none; border: 0; border-radius: 0; }

@@ -242,3 +242,12 @@ $("jobMode").addEventListener("click", () => {
   $("q").focus();
 });
 
+
+/* ---------- Readout under the dial: the same numbers the rings draw ---------- */
+function readout() {
+  const d = mindData();
+  $("rNotes").textContent = nodes.length; $("rLinks").textContent = d.links;
+  $("rJobs").innerHTML = `${d.done}<small> / ${d.done + d.live + d.need}</small>`;
+  $("rLessons").innerHTML = `${d.filed}<small>${d.waiting ? " +" + d.waiting : ""}</small>`;
+}
+readout(); setInterval(readout, 2000);

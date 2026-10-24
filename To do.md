@@ -15,6 +15,10 @@ Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's n
 - [ ] Jarvis repo is public, so brain notes (including [[Personal]]) are visible to anyone: TJ to decide on making it private (check).
 
 - [ ] Suspend agency-api, agency-dashboard, agency-send and agency-db on Render (dashboard, bulk Suspend). Next day, check Billing "unbilled usage" stays flat (check whether a suspended database still bills storage).
+- [ ] Business paperwork (from [[Gym service agreement]] research, 2026-10-24): file an Arkansas LLC online at sos.arkansas.gov ($45, then $150 franchise tax every May 1; TJ can be his own registered agent). Over the $25 line, so Approve button.
+- [ ] Get 2 free insurance quotes: technology E&O + general liability (typical $80-200/mo together). Buy only when the first gym agrees to pay.
+- [ ] Lawyer glance at [[Gym service agreement]] and [[Camera privacy notice]] before any gym signs (check: flat-fee review cost).
+- [ ] With the outreach domain Tuesday: SPF, DKIM, DMARC (p=none) and Google Postmaster Tools; keep spam complaints under 0.1%.
 - [ ] Tuesday 2026-10-27: make the business card (Privacy.com, steps in money/BUDGET.md), set the Anthropic workspace limit to $20 with auto-reload off, and log the first charges in money/budget/ledger.csv.
 
 ## Setup

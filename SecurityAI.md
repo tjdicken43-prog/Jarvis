@@ -16,7 +16,7 @@ Watches a gym's entrance camera during the hours the gym picks. When more people
 [[How SecurityAI works]] · [[Front-desk reader]] · [[Check-in systems]]
 
 ## Running it
-[[Install a new gym]] · [[Fixing things remotely]] · [[Pricing]] · [[Ground rules]]
+[[Gym service agreement]] · [[Camera privacy notice]] · [[J Street pilot case study]] · [[Install a new gym]] · [[Fixing things remotely]] · [[Pricing]] · [[Ground rules]]
 
 ## Keeping track
 [[Decisions]] · [[To do]] · [[Release history]]

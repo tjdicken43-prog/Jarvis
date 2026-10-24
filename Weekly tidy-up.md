@@ -9,7 +9,7 @@ Every Monday Claude tidies the brain so it never drifts. Part of [[Jarvis]]. Rul
 ## What it does
 1. Runs `.claude/weekly-tidy.sh`. It starts this week's note from [[Weekly note template]], carries over last week's "Next" and the open "Now" items in [[To do]], and lists what needs a look.
 2. Ticked items in [[To do]] move to the week's Done.
-3. Facts marked "(check)" and dated facts older than 30 days get listed for TJ in the week's "Next". Claude never guesses an answer; old facts move under "History", nothing gets deleted.
+3. Facts marked "(check)" and dated facts older than 30 days: Jarvis verifies each one he can (web, Render, GitHub, connectors) and fixes the note with "checked YYYY-MM-DD". Only what needs TJ goes in the week's "Next". Open items in [[To do]] get the same pass: Jarvis does what he can, moves his own work to "Jarvis is on it", and leaves TJ only boss-only items. Claude never guesses an answer; old facts move under "History", nothing gets deleted.
 4. Fixes broken links. If something looks like a leaked key, it stops and tells TJ, and writes nothing about it.
 5. Commits and pushes to a Claude branch on the Jarvis repo. Never touches Gym-security.
 

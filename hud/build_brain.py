@@ -17,6 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 LINK = re.compile(r"\[\[([^\]|#]+)")
 SKIP = {"README.md"}
+CHECK = re.compile(r'(?<!")\(check\)')  # a quoted "(check)" is a rule about the marker, not a check
 
 
 def read_note(path):
@@ -37,10 +38,12 @@ def main():
     paths += list((ROOT / "Weekly").glob("*.md")) if (ROOT / "Weekly").is_dir() else []
     notes = [read_note(p) for p in sorted(paths)]
     todo = next((n["text"] for n in notes if n["name"] == "To do"), "")
+    tj, _, jarvis = todo.partition("\n## Jarvis is on it")
     stats = {
         "notes": len(notes),
-        "open_todos": todo.count("- [ ]"),
-        "checks": sum(n["text"].count("(check)") for n in notes),
+        "open_todos": tj.count("- [ ]"),  # only what needs TJ; see the rule at the top of To do
+        "jarvis_queue": len(re.findall(r"^- ", jarvis.split("\n## ")[0], re.M)),
+        "checks": sum(len(CHECK.findall(n["text"])) for n in notes),
     }
     out = ROOT / "hud" / "brain.js"
     brain = {"notes": notes, "stats": stats, "budget": budget_snapshot()}

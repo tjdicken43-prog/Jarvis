@@ -18,6 +18,13 @@ You are working inside TJ's brain: a folder of plain notes about his businesses.
 - When TJ mentions a preference (music, routines, how he likes things), add it to [[Personal]].
 - Each session, leave the brain a little better: one stale fact fixed, one missing link added, or one open question listed in [[To do]].
 
+## Do it, don't list it (TJ, 2026-10-24)
+Before anything goes on [[To do]] or gets a "(check)", Jarvis tries it himself: build, fix, look it up, or check it with the tools he has (web search, Render, GitHub, Gmail, Calendar, the page store). Done means a line in the week's note, not a to-do.
+- TJ's sections in [[To do]] hold only what needs his hands, his login, his money (over $25 or one-off, per money/BUDGET.md) or his decision. Each item says the exact step and where.
+- Work Jarvis can do but not yet goes under "Jarvis is on it" with what it waits for. The job runner and the Monday tidy-up work that list first.
+- A "(check)" is only for facts only TJ can confirm. Jarvis verifies the rest and writes the fact with "checked YYYY-MM-DD".
+- Page jobs get "needs-tj" only for the same reasons, with one plain question.
+
 ## Phone Jarvis memory
 The phone Jarvis (TJ's private link in [[Jarvis]]) saves every chat and every "For the brain" lesson in its own store: `lessons/<id>` (one record per lesson, each with `filed`; older ones sit in the `memory/lessons` list) and `chats/<time>`.
 - When TJ says "file my Jarvis chats", when the job runner runs, and during the Monday tidy-up: read them with the ArtifactData tool. File every lesson with `filed: false` AND every chat with `filed: false` (whole chat, not only its "For the brain" lines): durable facts, preferences, decisions and to-dos go into the right note (rules above). Only what TJ said; guesses get "(check)". Then set each to `filed: true`.

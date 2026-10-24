@@ -65,7 +65,7 @@
   .icon:hover, .icon:active { border-color: var(--line); color: var(--ink); }
 
   /* buttons: secondary by default, .primary carries the amber */
-  .gear, dialog .row button, #night button { min-height: 40px; padding: 0 14px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-ctl);
+  .gear, dialog .row button, #night button { min-height: 44px; padding: 0 14px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-ctl);
     color: var(--ink); font: 500 14px/1 var(--body); }
   .gear:hover, dialog .row button:hover { border-color: rgba(255, 255, 255, .24); }
   .gear:active, dialog .row button:active { background: var(--faint); }
@@ -132,13 +132,13 @@
   .brief .bh b { font: 500 15px/1.3 var(--body); }
   .brief .bh span { font: 400 13px/1.3 var(--body); color: var(--mute); white-space: nowrap; }
   .brief .flaw { margin: 0; font-size: 14px; color: #d3dce2; }
-  .brief details summary { font: 500 13px/1 var(--body); color: var(--dim); cursor: pointer; min-height: 28px; display: inline-flex; align-items: center; list-style: none; }
+  .brief details summary { font: 500 13px/1 var(--body); color: var(--dim); cursor: pointer; min-height: 44px; display: inline-flex; align-items: center; list-style: none; }
   .brief details summary::-webkit-details-marker { display: none; }
   .brief .mail { margin: 4px 0 2px; padding: 10px 12px; background: rgba(255, 255, 255, .03); border-left: 2px solid var(--line); font-size: 14px; line-height: 1.5; color: #c9d3da; white-space: pre-wrap; }
   .brief .mail b { display: block; color: var(--ink); font-weight: 500; margin-bottom: 4px; }
   .brief a { color: var(--arc); font-size: 13.5px; text-decoration: none; }
   .brief .ba { display: flex; gap: 8px; margin-top: 4px; }
-  .brief .ba .gear { min-height: 40px; }
+  .brief .ba .gear { min-height: 44px; }
   .brief .ba .primary { flex: 1; }
   .brief.done { opacity: .6; }
   .brief .ok { font-size: 13.5px; color: var(--ok); }
@@ -153,14 +153,14 @@
   .msg.jarvis .line { font: 400 19px/1.45 var(--body); letter-spacing: -.005em; color: var(--ink); }
   .msg.jarvis.brief .line::before { content: "Morning brief"; display: block; font: 500 13px/1 var(--body); color: var(--gold); margin-bottom: 6px; }
   .msg.jarvis details { margin-top: 6px; }
-  .msg.jarvis summary { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; cursor: pointer; font: 500 13px/1 var(--body); color: var(--dim); list-style: none; }
+  .msg.jarvis summary { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; cursor: pointer; font: 500 13px/1 var(--body); color: var(--dim); list-style: none; }
   .msg.jarvis summary::-webkit-details-marker { display: none; }
   .msg.jarvis summary::after { content: ""; width: 6px; height: 6px; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg) translate(-2px, -1px); transition: transform .15s; }
   .msg.jarvis details[open] summary::after { transform: rotate(-135deg) translate(-1px, -2px); }
   .msg.jarvis .detail { font-size: 15px; line-height: 1.55; color: #c9d3da; white-space: pre-wrap; }
   .msg.note { align-self: center; max-width: 92%; font: 400 13.5px/1.45 var(--body); color: var(--mute); text-align: center; }
   .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
-  .chips button { min-height: 40px; padding: 0 14px; background: rgba(6, 11, 16, .7); border: 1px solid var(--line); border-radius: var(--r-ctl);
+  .chips button { min-height: 44px; padding: 0 14px; background: rgba(6, 11, 16, .7); border: 1px solid var(--line); border-radius: var(--r-ctl);
     color: var(--dim); font: 400 14px/1.2 var(--body); animation: in .3s ease-out backwards; }
   .chips button:hover { color: var(--ink); }
   .chips button:nth-child(2) { animation-delay: .05s; } .chips button:nth-child(3) { animation-delay: .1s; } .chips button:nth-child(4) { animation-delay: .15s; }
@@ -189,7 +189,7 @@
   /* composer */
   form#ask { display: flex; align-items: center; gap: 4px; max-width: 760px; width: 100%; justify-self: center; padding: 6px;
     background: rgba(4, 8, 12, .88); border: 1px solid var(--line); border-radius: var(--r-panel); }
-  form#ask:focus-within { border-color: rgba(var(--arc-rgb), .5); }
+  form#ask:focus-within { border-color: var(--arc); outline: 2px solid rgba(var(--arc-rgb), .5); outline-offset: 2px; }
   .mode { flex: none; height: 44px; display: inline-flex; align-items: center; gap: 7px; padding: 0 12px; background: none; border: 0; border-right: 1px solid var(--faint);
     border-radius: 0; color: var(--dim); font: 500 14px/1 var(--body); }
   .mode svg { width: 17px; height: 17px; }
@@ -228,8 +228,10 @@
   dialog input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--arc); margin: 0; }
   dialog input:not([type="checkbox"]), dialog select { width: 100%; height: 44px; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: var(--r-ctl); padding: 0 12px; font: 15px var(--body); }
   dialog input:focus, dialog select:focus { outline: none; border-color: var(--arc); }
+  dialog input:focus-visible, dialog select:focus-visible { outline: 2px solid var(--arc); outline-offset: 1px; }
   dialog .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; flex-wrap: wrap; }
   dialog .row.split { justify-content: stretch; }
+  dialog .row.flush { margin-top: 0; }
   dialog .row.split button { flex: 1; }
   .group { margin-top: 24px; padding-top: 4px; border-top: 1px solid var(--faint); }
   .chatList, .memList { max-height: 56vh; overflow-y: auto; margin: 14px 0 0; display: grid; }
@@ -243,7 +245,7 @@
   .memList h4 + .memItem { border-top: 0; }
   .memItem span { flex: 1; }
   .memItem small { display: block; font: 400 12.5px/1.5 var(--body); color: var(--mute); margin-top: 2px; }
-  .memItem button { flex: none; min-height: 32px; background: none; border: 1px solid var(--line); border-radius: var(--r-ctl); color: var(--dim); font: 500 13px/1 var(--body); padding: 0 10px; }
+  .memItem button { flex: none; min-height: 44px; background: none; border: 1px solid var(--line); border-radius: var(--r-ctl); color: var(--dim); font: 500 13px/1 var(--body); padding: 0 10px; }
   .memFix { display: flex; gap: 8px; margin: 0 0 10px; }
   .memFix input { flex: 1; min-width: 0; }
 
@@ -332,7 +334,7 @@
   @media (min-width: 901px) and (max-height: 760px) {
     .top h1 { font-size: 22px; }
     .sub { margin-top: 2px; }
-    .chips button { min-height: 36px; }
+    .chips button { min-height: 44px; }
     .chips button:nth-child(n+3) { display: none; }
   }
 
@@ -346,7 +348,7 @@
     .mid { grid-template-columns: minmax(0, 1fr); grid-template-rows: 34vh auto auto minmax(0, 1fr); grid-template-areas: "slot" "status" "tabs" "content"; row-gap: 10px; }
     .left { display: contents; }
     .tabs { display: grid; grid-template-columns: repeat(3, 1fr); padding: 3px; background: var(--surface); border: 1px solid var(--faint); border-radius: var(--r-panel); }
-    .tabs button { height: 38px; background: none; border: 0; border-radius: var(--r-ctl); color: var(--dim); font: 500 14.5px/1 var(--body); display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    .tabs button { height: 44px; background: none; border: 0; border-radius: var(--r-ctl); color: var(--dim); font: 500 14.5px/1 var(--body); display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
     .tabs button[aria-selected="true"] { background: rgba(var(--arc-rgb), .1); color: var(--ink); box-shadow: inset 0 0 0 1px rgba(var(--arc-rgb), .3); }
     .tabs .badge { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); font-size: 0; }
     .tabs .badge:empty { display: none; }
@@ -380,13 +382,22 @@
     body.ambient .big b { font-size: 72px; }
     #fsBtn { display: none; }
   }
-  @media (max-width: 370px) { .icon { width: 40px; } .mode span { display: none; } }
-  @media (prefers-reduced-motion: reduce) { .msg, #card.show, dialog[open], .chips button { animation: none; } .chip.working::before, .status::before { animation: none !important; } }
-  .memList:focus-visible, .chatList:focus-visible { outline: none; }
+  @media (max-width: 370px) { .icon { width: 44px; } .mode span { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .msg, #card.show, dialog[open], .chips button, #night .breath { animation: none; } .chip.working::before, .status::before { animation: none !important; } }
+  .memList:focus-visible, .chatList:focus-visible { outline: 1px solid var(--line); outline-offset: -1px; }
   /* fewer details: each to-do shows two lines, the full text is in the note */
   .now li { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; padding-bottom: 0; margin-bottom: 10px; }
   .now li:last-child { margin-bottom: 0; }
   @media (max-width: 480px) {
     .top h1 { font-size: 23px; white-space: nowrap; }
+  }
+  /* narrow phones: the tools share the brand line and the greeting gets the full width below (no overlap at 360px) */
+  @media (max-width: 400px) {
+    .top { display: grid; grid-template-columns: 1fr auto; column-gap: 8px; align-items: center; }
+    .top > div:first-child { display: contents; }
+    .top .brand { grid-column: 1; grid-row: 1; }
+    .top .tools { grid-column: 2; grid-row: 1; }
+    .top h1, .top .sub { grid-column: 1 / -1; }
+    .top h1 { margin-top: 4px; }
     .status { position: relative; z-index: 1; padding: 6px 12px; border-radius: var(--r-ctl); background: rgba(6, 10, 14, .72); }
   }

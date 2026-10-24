@@ -37,9 +37,9 @@ ticked=$(grep -n '^- \[x\]' "To do.md" 2>/dev/null)
 [ -n "$ticked" ] && printf -- '- Ticked in [[To do]], move to a week'"'"'s Done:\n%s\n' "$ticked"
 
 # Unconfirmed facts.
-checks=$(grep -Hn '(check)' --exclude=CLAUDE.md --exclude=Jarvis.md -- *.md 2>/dev/null
-         grep -Hn '(check) ' Jarvis.md 2>/dev/null | grep -v 'Guesses get')
-[ -n "$checks" ] && printf -- '- Marked (check), ask TJ:\n%s\n' "$checks"
+# A quoted "(check)" is a rule about the marker, not a check (same rule as hud/build_brain.py).
+checks=$(grep -Hn '(check)' -- *.md 2>/dev/null | grep -v '"(check)"')
+[ -n "$checks" ] && printf -- '- Marked (check): Jarvis verifies what he can (web, Render, GitHub, connectors) and fixes the note; only the rest goes to TJ:\n%s\n' "$checks"
 
 # Dated facts older than 30 days in living notes (logs and week notes are history by design).
 cutoff=$(date -d "$day -30 days" +%F)

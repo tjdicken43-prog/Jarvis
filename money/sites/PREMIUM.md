@@ -43,13 +43,17 @@ Things several pro sources agree on. ✅ = in the golden sites now. 🔒 = needs
 **In the paid build (not the preview)**
 - One page per service and one per main town (pros' local SEO structure), each with its own form.
 - Calls and forms sent to the owner by text right away (pros: leads go cold in minutes). This is Front Desk.
+
+**Front Desk on every preview (2026-10-24)**
+19. ✅ A "Calling after hours?" section for customers: the answering assistant, what it asks, and the trade's safety line. Honest that it's automated.
+20. ✅ An owner-only panel at the bottom (comes off at go-live): a sample after-hours call labeled as an example, the next-morning call log, and the two plans with our prices. Nothing else on the page names a price.
 - A gallery sorted by job type once they send photos.
 
 ## No AI tells (Tj, 2026-10-23: "no pill shaped buttons, no AI indicators at all")
 A site must not look AI-made to a designer or an owner. Researched 2026-10-23; the sources are design-critique posts and community ban lists, so treat this as consensus, not measured data.
 
 **Never use (giveaways):**
-- Pill buttons or pill chips (radius 999px). Buttons and chips get 4px corners, cards and panels 6 to 8px. Everything heavily rounded (16 to 24px) reads as a template.
+- Pill buttons or pill chips (radius 999px), or round number badges (radius 50%). Buttons and chips get 4px corners, cards and panels 6 to 8px. Everything heavily rounded (16 to 24px) reads as a template.
 - Purple, indigo or blue-to-purple gradients, gradient text, blurred glow blobs behind the hero, or glass panels. Colors come from the business's own logo, truck or old site.
 - Emoji used as icons, sparkle icons, or a matching icon on every card. Use a few simple inline SVGs, or none.
 - The default AI landing page: a centered hero, then three identical rounded cards with icon, title and blurb, all on the same spacing. Vary section shape and density (a ruled list, a numbered strip, a form band, a map).

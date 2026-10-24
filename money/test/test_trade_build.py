@@ -42,4 +42,20 @@ try:
     tb.render(dict(base, trade="auto repair")); raise SystemExit("trades only")
 except ValueError:
     pass
+
+# Front Desk (the AI receptionist): customer section always, owner panel with our prices on previews only
+assert 'id="after-hours"' in page and "automated assistant" in page and "Smell gas" in page
+assert 'id="owner"' in page and "$149" in page and "$249" in page and "$299 setup" in page and 'href="#owner"' in page
+live = tb.render(dict(full, preview=False))
+assert 'id="after-hours"' in live and 'id="owner"' not in live and "$149" not in live and "noindex" not in live
+assert 'id="after-hours"' not in tb.render(dict(full, front_desk=False))
+bill = (pathlib.Path(__file__).parents[1] / "agency" / "api" / "billing.py").read_text()
+assert f"SETUP_CENTS = {tb.PLANS['setup']}00" in bill and f'"monthly_cents": {tb.PLANS["front_desk"][0]}00, "minutes": {tb.PLANS["front_desk"][1]}' in bill
+assert f'"monthly_cents": {tb.PLANS["plus"][0]}00, "minutes": {tb.PLANS["plus"][1]}' in bill and "OVERAGE_CENTS_PER_MIN = 25" in bill
+
+# the golden sites pass the same audit and carry the receptionist sections
+for g in ("one-call-hvac", "its-plumbing", "johns-quality-roofing"):
+    gp = (pathlib.Path(__file__).parents[1] / "sites" / "golden" / g / "index.html").read_text()
+    assert tb.audit(gp) == [], (g, tb.audit(gp))
+    assert 'id="after-hours"' in gp and 'id="owner"' in gp, g
 print("trade build ok")

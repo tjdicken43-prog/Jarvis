@@ -1,5 +1,5 @@
 {
-  "_doc": "Rules live in money/BUDGET.md. Agents may add a recurring line of $25 or less (with a cap of at most $25); anything else only after TJ says so in chat. TJ 2026-10-24: refills $175 on 2026-10-27 then $100 every two weeks; Render runs through up to $35 a month.",
+  "_doc": "Rules live in money/BUDGET.md. Agents may add a recurring line of $25 or less (with a cap of at most $25); anything else only after TJ says so in chat. TJ 2026-10-24: refills $175 on 2026-10-27 then $100 every two weeks; Render runs through up to $35 a month. Lanes (TJ 2026-10-24): each money lane spends only its own 30-day wallet; money/LANES.md.",
   "refill": {
     "amount": 100,
     "first_amount": 175,
@@ -13,7 +13,9 @@
     "anthropic-api": 20,
     "render": 35,
     "google-workspace": 9,
-    "domains": 15
+    "domains": 15,
+    "etsy": 40,
+    "etsy-setup": 29
   },
   "recurring": [
     {
@@ -45,5 +47,17 @@
   ],
   "ask_over_by_service": {
     "render": 35
+  },
+  "lanes": {
+    "etsy-digital": {
+      "status": "planned",
+      "start": null,
+      "allowance_30d": 40,
+      "first_term_days": 60,
+      "services": [
+        "etsy"
+      ],
+      "note": "Etsy digital downloads (TJ go 2026-10-24). Starts about 2026-11-03 once TJ opens the shop. Setup fee is a one-off: TJ's Approve button. Rules: money/LANES.md"
+    }
   }
 }

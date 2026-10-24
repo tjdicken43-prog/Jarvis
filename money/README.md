@@ -9,6 +9,7 @@ Code for TJ's money engines. Plans: project files `video-research/` (playbook, m
 | `prospects/scan.py` | Finds independent shops in Bentonville–Fayetteville (OpenStreetMap), audits their websites, scores them 0–10. | GitHub Actions `money-prospects`, Mondays 6am Central |
 | `fomo/paper.py` | Meme coin **paper** trader, two strategies, Fomo's fees modeled. No wallet, no real money. | GitHub Actions `money-fomo-paper`, by hand only (schedule off 2026-10-23, TJ: wasted usage) |
 | `AGENT.md` | What the daily "Money agent" scheduled task does each run. Edit it to change the agent. | scheduled task, 5:47am Central |
+| `LANES.md`, `lanes/` | Extra revenue lanes run like a small government: each has a monthly wallet and shuts down when it's empty or a month loses money (TJ, 2026-10-24). `budget.py lanes` reports them. First lane: `lanes/etsy-digital/LANE.md`. | Monday tidy-up, job runner |
 | `fomo/rugcheck.py` | Green/yellow/red check on one token before TJ buys by hand. | GitHub Actions `money-rugcheck` (run with a token address) |
 
 Bot output goes to the `money-data` branch (`prospects/nwa.md`, `fomo/summary.md`, `rugcheck/<token>.md`), not to main.

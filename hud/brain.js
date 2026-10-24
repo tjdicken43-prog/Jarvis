@@ -330,12 +330,12 @@ window.BRAIN = {
   "checks": 35
  },
  "budget": {
-  "as_of": "2026-10-23",
+  "as_of": "2026-10-24",
   "balance": 0,
   "floor": 25,
   "refill": 150,
   "next_refill": "2026-10-27",
-  "days_to_refill": 4,
+  "days_to_refill": 3,
   "committed": 0,
   "headroom": 0,
   "coming": [],

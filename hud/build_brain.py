@@ -86,6 +86,11 @@ def write_artifact(dest, brain_js):
     html = html.replace('<script src="brain.js"></script>', "<script>" + brain_js.replace("</", "<\\/") + "</script>")
     factory = (ROOT / "hud" / "factory.js").read_text(encoding="utf-8")
     html = html.replace('<script src="factory.js"></script>', "<script>" + factory.replace("</", "<\\/") + "</script>")
+    workshop = (ROOT / "hud" / "src" / "workshop.js").read_text(encoding="utf-8")
+    assert "</script" not in workshop, "workshop.js has </script in it; split the string"
+    tag = '<script type="module" src="src/workshop.js"></script>'
+    assert tag in html, "index.html lost the workshop.js module tag"
+    html = html.replace(tag, '<script type="module">\n' + workshop + "</script>")
     dest.write_text(html.strip() + "\n", encoding="utf-8")
     print(f"Wrote artifact copy to {dest}")
 

@@ -400,8 +400,8 @@ const coreTint = new THREE.Color();
 function render(now) {
   requestAnimationFrame(render);
   if (SHOW() || document.hidden || !$("night").hidden || window.JarvisFactory?.isOpen?.()) { last = now; return; }
-  const dt = Math.min(0.05, (now - last) / 1000); last = now;
-  const t = (now - t0) / 1000, boot = Math.min(1, t / BOOT);
+  const dt = Math.max(0, Math.min(0.05, (now - last) / 1000)); last = now; // rAF time can trail performance.now() on the first frame
+  const t = Math.max(0, (now - t0) / 1000), boot = Math.min(1, t / BOOT);
   // a slow device drops its pixel ratio once rather than stutter
   if (dt > 0.034 && t > 4) { if (++slowFrames > 90 && pixelRatio > 1) { pixelRatio = 1; renderer.setPixelRatio(1); layout(); } } else slowFrames = Math.max(0, slowFrames - 1);
 
@@ -464,7 +464,7 @@ function render(now) {
   const speed = mode === "thinking" ? 2.4 : 1;
   for (let i = 0; i < PK; i++) {
     const p = pk[i]; p.t += p.v * speed * dt;
-    if (p.t > 1) { p.t = 0; p.arc = Math.floor(rand() * arcs.length); }
+    if (!(p.t >= 0 && p.t <= 1)) { p.t = 0; p.arc = Math.floor(rand() * arcs.length); }
     const a = arcs[p.arc]?.pts; if (!a) continue;
     const f = p.t * SEG, j = Math.min(SEG - 1, Math.floor(f)), v = a[j].clone().lerp(a[j + 1], f - j);
     pkGeo.attributes.position.setXYZ(i, v.x, v.y, v.z);

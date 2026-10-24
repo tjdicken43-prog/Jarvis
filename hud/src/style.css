@@ -361,3 +361,10 @@
   @media (max-width: 370px) { .icon { width: 40px; } .mode span { display: none; } }
   @media (prefers-reduced-motion: reduce) { .msg, #card.show, dialog[open], .chips button { animation: none; } .chip.working::before, .status::before { animation: none !important; } }
   .memList:focus-visible, .chatList:focus-visible { outline: none; }
+  /* fewer details: each to-do shows two lines, the full text is in the note */
+  .now li { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; padding-bottom: 0; margin-bottom: 10px; }
+  .now li:last-child { margin-bottom: 0; }
+  @media (max-width: 480px) {
+    .top h1 { font-size: 23px; white-space: nowrap; }
+    .status { position: relative; z-index: 1; padding: 6px 12px; border-radius: var(--r-ctl); background: rgba(6, 10, 14, .72); }
+  }

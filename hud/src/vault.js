@@ -1028,7 +1028,7 @@ export function createVault(container, opts = {}) {
   { const a = newItem("yuji"); const b = newItem("yuta"); b.tag.visible = true; b.screen.visible = true; const c = newItem("gojo"); c.body.visible = false; c.env.visible = true; c.ok.visible = true; }
 
   return {
-    CAST, moves: MOVES, scene, camera,
+    CAST, moves: MOVES, scene, camera, renderer,
     setDirector(on) { director = on; if (!on) { goal = home(); focusUntil = 0; curPri = 0; focusId = null; } },
     home() { userUntil = 0; focusUntil = 0; curPri = 0; focusId = null; goal = home(); },
     focus(id) { userUntil = 0; focus(id, 1e9, { r: 6, el: 0.22, ty: 1.2, az: 0.55, pri: 3 }); },

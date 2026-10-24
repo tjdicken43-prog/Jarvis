@@ -90,7 +90,7 @@ export function openVault(o = {}) {
   };
   const portraits = {};
   v.CAST.forEach((c) => { const b = document.createElement("button"); b.title = `${c.name} · ${c.job}`; b.innerHTML = `<img alt="${c.name}">`; b.onclick = () => { v.focus(c.id); card(v.profile(c.id)); }; $(".vault-cast").append(b);
-    requestAnimationFrame(() => (b.querySelector("img").src = portraits[c.id] ||= v.portrait(c.id))); });
+    setTimeout(() => (b.querySelector("img").src = portraits[c.id] ||= v.portrait(c.id)), 400 + v.CAST.indexOf(c) * 160); }); // one portrait at a time: each is a GPU read, so they never stall the first frames
   $(".mii-x").onclick = () => { $(".mii").classList.remove("on"); open = null; v.home(); };
   el.querySelector('[data-a="dir"]').onclick = (e) => { const on = e.currentTarget.getAttribute("aria-pressed") !== "true"; e.currentTarget.setAttribute("aria-pressed", on); v.setDirector(on); };
   el.querySelector('[data-a="home"]').onclick = () => { $(".mii").classList.remove("on"); open = null; v.home(); };

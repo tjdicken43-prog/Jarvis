@@ -190,3 +190,89 @@ CREATE TABLE IF NOT EXISTS sms_optouts (        -- replied STOP: never text this
 ALTER TABLE emails DROP CONSTRAINT IF EXISTS emails_kind_check;
 ALTER TABLE emails ADD CONSTRAINT emails_kind_check CHECK (kind IN ('first','follow_up_1','follow_up_2','follow_up_3'));
 CREATE INDEX IF NOT EXISTS emails_provider_id ON emails (provider_id) WHERE provider_id IS NOT NULL;
+
+-- Step 9 (2026-10-24): what the demos sell. Caller details, owner notices (emergency heads-up, new booking, next-morning
+-- summary), Plus booking with a calendar feed, Plus review requests, and the client's live site. Sends are stubs until
+-- NOTIFY=smtp; texts are stubs until an SMS provider with A2P 10DLC, on TJ's word.
+ALTER TABLE receptionist_calls ADD COLUMN IF NOT EXISTS caller_number text;    -- caller id, 10 digits
+ALTER TABLE receptionist_calls ADD COLUMN IF NOT EXISTS caller_name text;
+ALTER TABLE receptionist_calls ADD COLUMN IF NOT EXISTS callback_number text;
+ALTER TABLE receptionist_calls ADD COLUMN IF NOT EXISTS town text;
+ALTER TABLE receptionist_calls ADD COLUMN IF NOT EXISTS problem text;
+ALTER TABLE receptionist_calls ADD COLUMN IF NOT EXISTS emergency boolean NOT NULL DEFAULT false;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS notify_email text;              -- where summaries go; empty = clients.email
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS summary_hour smallint NOT NULL DEFAULT 6 CHECK (summary_hour BETWEEN 4 AND 11);
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS booking jsonb;                  -- Plus: {"windows":[8,10,13,15],"length":2,...}; null = off
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS calendar_token text UNIQUE;     -- /cal/{token}.ics, the owner's calendar feed
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS review_url text;                -- the shop's Google "write a review" link
+CREATE TABLE IF NOT EXISTS owner_notices (     -- every email to a client owner, sent or stubbed
+  id          serial PRIMARY KEY,
+  client_id   int NOT NULL REFERENCES clients(id),
+  kind        text NOT NULL CHECK (kind IN ('emergency','booking','web_request','summary')),
+  day         date,                            -- summaries: the Central date it covers up to; one per client per day
+  period_end  timestamptz,                     -- summaries: calls before this are covered
+  to_email    text NOT NULL,
+  subject     text NOT NULL,
+  body        text NOT NULL,
+  status      text NOT NULL CHECK (status IN ('stub','sent','failed')),
+  error       text,
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS owner_notices_summary_day ON owner_notices (client_id, day) WHERE kind = 'summary';
+CREATE TABLE IF NOT EXISTS bookings (          -- Plus: a visit window the receptionist booked from the shop's openings
+  id              serial PRIMARY KEY,
+  client_id       int NOT NULL REFERENCES clients(id),
+  vapi_call_id    text,
+  window_start    timestamptz NOT NULL,
+  window_end      timestamptz NOT NULL,
+  customer_name   text NOT NULL,
+  callback_number text NOT NULL,
+  address         text,
+  problem         text,
+  ok_to_text      boolean NOT NULL DEFAULT false, -- the caller said yes on the call to texts about this visit
+  customer_email  text,
+  status          text NOT NULL DEFAULT 'booked' CHECK (status IN ('booked','cancelled','done')),
+  created_at      timestamptz NOT NULL DEFAULT now(),
+  updated_at      timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS bookings_client_window ON bookings (client_id, window_start);
+CREATE TABLE IF NOT EXISTS review_requests (   -- Plus: one ask after a finished job; everyone is asked, no filtering
+  id              serial PRIMARY KEY,
+  client_id       int NOT NULL REFERENCES clients(id),
+  booking_id      int UNIQUE REFERENCES bookings(id),
+  customer_name   text NOT NULL,
+  to_number       text,
+  to_email        text,
+  channel         text NOT NULL CHECK (channel IN ('email','sms')),
+  body            text NOT NULL,
+  send_after      timestamptz NOT NULL,
+  status          text NOT NULL DEFAULT 'queued' CHECK (status IN ('queued','stub','sent','skipped','failed')),
+  detail          text,
+  sent_at         timestamptz,
+  created_at      timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS review_requests_due ON review_requests (status, send_after);
+CREATE TABLE IF NOT EXISTS client_sites (      -- the live site: same builder as the preview, no owner panel, indexable
+  client_id    int PRIMARY KEY REFERENCES clients(id),
+  slug         text UNIQUE NOT NULL,           -- /s/{slug}
+  domain       text UNIQUE,                    -- their own domain once it points here (added on Render by TJ)
+  html         text NOT NULL,
+  published_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS site_requests (     -- the live site's "request a call back" form
+  id          serial PRIMARY KEY,
+  client_id   int NOT NULL REFERENCES clients(id),
+  name        text NOT NULL,
+  phone       text NOT NULL,
+  job         text,
+  town        text,
+  day         text,
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS site_requests_client ON site_requests (client_id, created_at);
+CREATE TABLE IF NOT EXISTS site_request_photos (
+  token        text PRIMARY KEY,               -- unguessable; /p/{token}
+  request_id   int NOT NULL REFERENCES site_requests(id),
+  content_type text NOT NULL,
+  data         bytea NOT NULL
+);

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { api, errMsg } from "@/lib/api";
 import { PLAN_NAME, usd } from "@/lib/format";
 import type { Client, Clients } from "@/lib/types";
@@ -78,7 +79,7 @@ export default async function ClientsPage() {
                   {paying.map((c) => (
                     <tr key={c.id}>
                       <td>
-                        {c.business_name}
+                        <Link href={`/clients/${c.id}`}>{c.business_name}</Link>
                         <div className="muted small">{c.trade}{c.started_at ? `, since ${c.started_at.slice(0, 10)}` : ""}</div>
                       </td>
                       <td data-label="Plan">{PLAN_NAME[c.plan]}</td>
@@ -105,7 +106,7 @@ export default async function ClientsPage() {
               <h2 className="section">Receptionist <span className="muted small">hours in Central; Front Desk answers outside them, Plus 24/7</span></h2>
               {paying.filter((c) => c.status !== "cancelled").map((c) => (
                 <article key={c.id} className="panel">
-                  <header className="card-head"><h2>{c.business_name}</h2></header>
+                  <header className="card-head"><h2>{c.business_name}</h2><Link className="small" href={`/clients/${c.id}`}>Calls, bookings, site</Link></header>
                   <ReceptionistSetup c={c} />
                 </article>
               ))}

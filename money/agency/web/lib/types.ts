@@ -85,7 +85,45 @@ export type Client = {
   close_hour: number;
   open_saturday: boolean;
   textback_enabled: boolean;
+  notify_email: string | null;
+  summary_hour: number;
+  booking: BookingSettings | null;
+  calendar_url: string | null;
+  review_url: string | null;
+  site_url: string | null;
 };
+export type BookingSettings = { windows: number[]; length: number; per_window: number; days_ahead: number; lead_hours: number };
+export type Call = {
+  id: number;
+  started_at: string;
+  seconds: number;
+  after_hours: boolean;
+  outcome: "booked" | "message" | "spam" | "hung_up" | null;
+  summary: string | null;
+  caller_name: string | null;
+  callback_number: string | null;
+  caller_number: string | null;
+  town: string | null;
+  problem: string | null;
+  emergency: boolean;
+  textback: string | null;
+};
+export type Booking = {
+  id: number;
+  window_start: string;
+  window_end: string;
+  customer_name: string;
+  callback_number: string;
+  address: string | null;
+  problem: string | null;
+  ok_to_text: boolean;
+  customer_email: string | null;
+  status: "booked" | "cancelled" | "done";
+  review: string | null;
+};
+export type Notice = { id: number; kind: string; subject: string; body: string; status: string; error: string | null; created_at: string };
+export type ReviewRequest = { id: number; customer_name: string; channel: string; status: string; detail: string | null; send_after: string; sent_at: string | null };
+export type SiteRequest = { id: number; name: string; phone: string; job: string | null; town: string | null; day: string | null; photos: number; created_at: string };
 export type ReceptionistResult = { mode: "stub" | "vapi"; assistant_id: string | null; client: Client };
 export type Clients = {
   month: string;

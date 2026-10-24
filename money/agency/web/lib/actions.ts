@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { api, errMsg } from "./api";
-import type { ApproveResult, CheckoutResult, Client, DraftResult, ReceptionistResult, SendResult, Suppression } from "./types";
+import type { ApproveResult, BookingSettings, CheckoutResult, Client, DraftResult, ReceptionistResult, SendResult, Suppression } from "./types";
 
 type R<T> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -73,4 +73,29 @@ export async function setUpReceptionist(
   body: { open_hour: number; close_hour: number; open_saturday: boolean; textback_enabled: boolean; receptionist_number?: string },
 ): Promise<R<ReceptionistResult>> {
   return run(() => api<ReceptionistResult>(`/clients/${id}/receptionist`, { method: "POST", body }));
+}
+// Where the owner's emails go, when the morning summary lands, and the Google review link
+export async function saveOwner(id: number, body: { notify_email: string; summary_hour: number; review_url: string }): Promise<R<Client>> {
+  return run(() => api<Client>(`/clients/${id}/owner`, { method: "POST", body }));
+}
+// Plus: booking windows; also updates the Vapi assistant's tools
+export async function saveBooking(
+  id: number,
+  body: Partial<BookingSettings> & { enabled: boolean },
+): Promise<R<{ mode: string; booking: BookingSettings | null; calendar_url: string | null }>> {
+  return run(() => api(`/clients/${id}/booking`, { method: "POST", body }));
+}
+// Mark a visit done (queues the Plus review ask) or cancelled
+export async function setBooking(id: number, status: string, customer_email?: string): Promise<R<{ review: { queued: boolean; reason?: string; channel?: string } | null }>> {
+  return run(() => api(`/bookings/${id}`, { method: "POST", body: { status, customer_email: customer_email?.trim() || undefined } }));
+}
+export async function askForReview(
+  id: number,
+  body: { customer_name: string; email?: string; phone?: string; ok_to_text: boolean },
+): Promise<R<unknown>> {
+  return run(() => api(`/clients/${id}/review-requests`, { method: "POST", body }));
+}
+// Build the live site from the preview facts (and attach their domain once it points here)
+export async function publishSite(id: number, domain: string): Promise<R<{ url: string }>> {
+  return run(() => api<{ url: string }>(`/clients/${id}/site`, { method: "POST", body: domain.trim() ? { domain: domain.trim() } : {} }));
 }

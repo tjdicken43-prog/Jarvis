@@ -1,6 +1,7 @@
 """Postgres connection: psycopg 3, plain SQL, rows as dicts."""
 import psycopg
 from psycopg.rows import dict_row
+from psycopg.types.json import Json  # noqa: F401  (main.py writes jsonb with it)
 
 import config
 

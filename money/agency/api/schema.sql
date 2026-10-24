@@ -276,3 +276,51 @@ CREATE TABLE IF NOT EXISTS site_request_photos (
   content_type text NOT NULL,
   data         bytea NOT NULL
 );
+-- Accuracy pass (2026-10-24): one log for the whole line, TJ's corrections, receptionist go-live checklist
+CREATE TABLE IF NOT EXISTS events (            -- every step writes one row: what ran, for whom, passed or failed, why
+  id          bigserial PRIMARY KEY,
+  at          timestamptz NOT NULL DEFAULT now(),
+  step        text NOT NULL,                   -- flaw, mockup, draft, approve, skip, edit, send, inbox, stripe, receptionist, call_review, golive
+  ok          boolean NOT NULL,
+  reason      text,
+  prospect_id text,
+  email_id    int,
+  client_id   int,
+  detail      jsonb
+);
+CREATE INDEX IF NOT EXISTS events_step_at ON events (step, at DESC);
+CREATE INDEX IF NOT EXISTS events_failed ON events (at DESC) WHERE NOT ok;
+CREATE TABLE IF NOT EXISTS corrections (       -- TJ skipped or edited a draft: each one can become a test case
+  id             serial PRIMARY KEY,
+  email_id       int,
+  prospect_id    text NOT NULL,
+  kind           text NOT NULL CHECK (kind IN ('skip','edit')),
+  reason         text NOT NULL CHECK (reason IN ('wrong_flaw','weak_mockup','tone','wrong_shop','bad_fact','not_a_fit','edited','other')),
+  note           text,
+  before_subject text,
+  before_body    text,
+  after_subject  text,
+  after_body     text,
+  flaw           text,                         -- what the flaw finder said at the time
+  signals        jsonb,                        -- what it saw, so a wrong flaw can be replayed in the evals
+  frozen         boolean NOT NULL DEFAULT false, -- already copied into evals/cases.json
+  created_at     timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS test_call_at timestamptz;          -- a call reached Clients through Vapi
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS forwarding_confirmed_at timestamptz; -- TJ called the shop's own line after hours and it reached us
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS hours_confirmed_at timestamptz;    -- the shop OK'd the hours we saved
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS live_at timestamptz;               -- all three done and paying
+ALTER TABLE receptionist_calls ADD COLUMN IF NOT EXISTS reviewed_at timestamptz; -- TJ listened to it
+ALTER TABLE receptionist_calls ADD COLUMN IF NOT EXISTS review_ok boolean;
+ALTER TABLE receptionist_calls ADD COLUMN IF NOT EXISTS review_note text;
+ALTER TABLE emails DROP CONSTRAINT IF EXISTS emails_status_check;
+ALTER TABLE emails ADD CONSTRAINT emails_status_check CHECK (status IN
+  ('draft','approved','sending','sent','failed','bounced','replied','cancelled'));  -- sending: claimed by one run; failed: address refused
+CREATE INDEX IF NOT EXISTS emails_due ON emails (status, send_after);
+CREATE INDEX IF NOT EXISTS emails_sent_at ON emails (sent_at) WHERE sent_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS prospects_email ON prospects (lower(email));
+CREATE INDEX IF NOT EXISTS mockups_prospect ON mockups (prospect_id);
+CREATE INDEX IF NOT EXISTS shots_prospect ON shots (prospect_id);
+CREATE UNIQUE INDEX IF NOT EXISTS clients_vapi_assistant ON clients (vapi_assistant_id) WHERE vapi_assistant_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS clients_receptionist_number ON clients (right(regexp_replace(receptionist_number, '\D', '', 'g'), 10))
+  WHERE receptionist_number IS NOT NULL;  -- one shop per receptionist number, so calls can't land on the wrong client

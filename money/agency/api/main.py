@@ -5,6 +5,7 @@ Every route except /health, the public links (/u/, /m/, /shots/, /paid) and the 
 """
 import datetime as dt
 import html
+import json
 import secrets
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, UploadFile
@@ -15,12 +16,14 @@ import billing
 import booking
 import config
 import db
+import events
 import flaws
 import followups
 import mailer
 import mockup
 import notices
 import outreach
+import quality
 import receptionist
 import reviews
 import sites
@@ -30,7 +33,7 @@ app = FastAPI(title="Trades agency", docs_url=None, redoc_url=None)
 
 def operator(authorization: str = Header(default="")):
     token = authorization.removeprefix("Bearer ").strip()
-    if not config.OPERATOR_TOKEN or not secrets.compare_digest(token, config.OPERATOR_TOKEN):
+    if not config.OPERATOR_TOKEN or not secrets.compare_digest(token.encode(), config.OPERATOR_TOKEN.encode()):
         raise HTTPException(401, "operator token required")
 
 
@@ -74,19 +77,31 @@ def health(conn=Conn):
         "receptionist": config.receptionist(), "vapi_webhook_secret_set": bool(config.VAPI_WEBHOOK_SECRET),
         "textback": config.TEXTBACK, "notify": config.notifier(), "browser": flaws.browser_status(),
         "inbox": "imap" if config.mailer() == "smtp" else "stub", "follow_up_days": [d for _, d in followups.STEPS],
+        "cap_today": mailer.daily_cap(conn, now)[0], "cap_reason": mailer.daily_cap(conn, now)[1],
+        "warmup_started": db.setting(conn, "warmup_started"), "stopped_steps": events.stopped(conn),
+        "public_url_ok": config.PUBLIC_URL.startswith("https://"),
+        "last_24h": events.summary(conn), "stuck_sending": conn.execute(
+            "SELECT count(*) AS n FROM emails WHERE status = 'sending'").fetchone()["n"],
     }
 
 
 @app.get("/stats", dependencies=op)
 def stats(conn=Conn):
     count = lambda t: {r["status"]: r["n"] for r in conn.execute(f"SELECT status, count(*) AS n FROM {t} GROUP BY status")}
+    q = conn.execute("""SELECT count(*) FILTER (WHERE status IN ('approved','sending','sent','replied','bounced')) AS approved,
+                               count(*) FILTER (WHERE status IN ('approved','sending','sent','replied','bounced') AND NOT edited)
+                               AS as_drafted FROM emails WHERE kind = 'first'""").fetchone()
+    skips = {r["reason"]: r["n"] for r in conn.execute(
+        "SELECT reason, count(*) AS n FROM corrections WHERE kind = 'skip' GROUP BY reason")}
     return {"prospects": count("prospects"), "emails": count("emails"),
-            "suppressions": conn.execute("SELECT count(*) AS n FROM suppressions").fetchone()["n"]}
+            "suppressions": conn.execute("SELECT count(*) AS n FROM suppressions").fetchone()["n"],
+            "approved_as_drafted_pct": round(100 * q["as_drafted"] / q["approved"]) if q["approved"] else None,
+            "skip_reasons": skips}
 
 
 @app.get("/queue", dependencies=op)
 def queue(status: str = "draft", conn=Conn):
-    if status not in {"draft", "approved", "sent", "cancelled", "bounced", "replied"}:
+    if status not in {"draft", "approved", "sending", "sent", "failed", "cancelled", "bounced", "replied"}:
         raise HTTPException(400, "unknown status")
     order = "e.created_at, e.id" if status in {"draft", "approved"} else "coalesce(e.sent_at, e.created_at) DESC, e.id DESC"
     rows = conn.execute(ITEM + f" WHERE e.status = %s ORDER BY {order} LIMIT 200", (status,)).fetchall()
@@ -112,9 +127,29 @@ def edit_email(email_id: int, edit: Edit, conn=Conn):
     body = (edit.body if edit.body is not None else cur["email"]["body"]).strip()
     if not subject or not body:
         raise HTTPException(400, "subject and body can't be empty")
+    if (subject, body) == (cur["email"]["subject"], cur["email"]["body"]):
+        return get_item(conn, email_id)
     conn.execute("UPDATE emails SET subject = %s, body = %s, edited = true WHERE id = %s", (subject, body, email_id))
+    correct(conn, cur, "edit", "edited", None, subject, body)
     conn.commit()
     return get_item(conn, email_id)
+
+
+SKIP_REASONS = {"wrong_flaw": "Wrong flaw", "weak_mockup": "Weak preview", "tone": "Email doesn't sound right",
+                "wrong_shop": "Wrong shop (not a trade, closed, chain)", "bad_fact": "Says something untrue",
+                "not_a_fit": "Not a fit right now", "other": "Other"}
+
+
+def correct(conn, cur, kind, reason, note=None, after_subject=None, after_body=None):
+    """Save TJ's correction with what the factory saw, so it can become a test case (evals/freeze.py)."""
+    p = conn.execute("SELECT flaw, facts FROM prospects WHERE id = %s", (cur["prospect"]["id"],)).fetchone()
+    conn.execute("""INSERT INTO corrections (email_id, prospect_id, kind, reason, note, before_subject, before_body,
+                    after_subject, after_body, flaw, signals) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb)""",
+                 (cur["email"]["id"], cur["prospect"]["id"], kind, reason, note, cur["email"]["subject"],
+                  cur["email"]["body"], after_subject, after_body, p["flaw"],
+                  json.dumps((p["facts"] or {}).get("signals"))))
+    events.log(kind, True, reason + (f": {note}" if note else ""), prospect_id=cur["prospect"]["id"],
+               email_id=cur["email"]["id"])
 
 
 @app.post("/emails/{email_id}/approve", dependencies=op)
@@ -129,9 +164,33 @@ def approve(email_id: int, conn=Conn):
         conn.commit()
         raise HTTPException(409, "this shop is on the do-not-email list; draft cancelled")
     kind = cur["email"]["kind"]
-    problems = outreach.preflight(cur["email"]["subject"], cur["email"]["body"], p, kind)
+    full = conn.execute("SELECT * FROM prospects WHERE id = %s", (p["id"],)).fetchone()
+    if kind == "first" and quality.stale(full):  # evidence, not memory: look at their site again before it goes
+        try:
+            flaws.find_and_save(conn, p["id"])
+        except Exception as e:
+            conn.rollback()
+            events.log("approve", False, f"couldn't re-check their site: {e}"[:300], prospect_id=p["id"], email_id=email_id)
+            raise HTTPException(503, f"couldn't re-check their site before sending ({type(e).__name__}); try again")
+        fresh = conn.execute("SELECT * FROM prospects WHERE id = %s", (p["id"],)).fetchone()
+        if not fresh["flaw"]:
+            conn.execute("UPDATE emails SET status = 'cancelled' WHERE id = %s", (email_id,))
+            conn.execute("UPDATE prospects SET status = 'skip', updated_at = now() WHERE id = %s", (p["id"],))
+            conn.commit()
+            events.log("approve", True, "their site no longer has the flaw; draft cancelled", prospect_id=p["id"], email_id=email_id)
+            raise HTTPException(409, "they fixed it: their site no longer has that flaw, so the draft is cancelled")
+        if fresh["flaw"] != full["flaw"]:
+            events.log("approve", True, f"flaw changed from {full['flaw']} to {fresh['flaw']}", prospect_id=p["id"], email_id=email_id)
+            raise HTTPException(409, f"their site changed: the flaw is now \"{fresh['flaw']}\". Tap Redraft, then approve")
+        full = fresh
+    if missing := quality.contract("approve", full):
+        raise HTTPException(400, "not ready: " + "; ".join(missing))
+    edited = cur["email"]["edited"]
+    problems = outreach.preflight(cur["email"]["subject"], cur["email"]["body"], full, kind, grounded=not edited)
     if problems:
+        events.log("approve", False, "; ".join(problems), prospect_id=p["id"], email_id=email_id)
         raise HTTPException(400, "fix before approving: " + "; ".join(problems))
+    warnings = quality.grounding(cur["email"]["subject"], cur["email"]["body"], full) if edited and kind == "first" else []
     now = dt.datetime.now(dt.timezone.utc)
     send_after = mailer.next_window(now)
     if kind != "first":  # a follow-up put back to draft and edited still waits for its day
@@ -146,7 +205,11 @@ def approve(email_id: int, conn=Conn):
     conn.commit()
     when = send_after.astimezone(mailer.CENTRAL).strftime("%a %b %-d, %-I:%M%p Central")
     note = "" if config.mailer() == "smtp" else " Stub mailer is on, so it won't really send."
-    return {"item": get_item(conn, email_id), "queued": True, "detail": f"Queued for the send window ({when}).{note}"}
+    if warnings:  # TJ's own words win, but he sees what the checker couldn't back up
+        note += " Check: " + "; ".join(warnings) + "."
+    events.log("approve", True, kind, prospect_id=p["id"], email_id=email_id, detail={"warnings": warnings} if warnings else None)
+    return {"item": get_item(conn, email_id), "queued": True, "warnings": warnings,
+            "detail": f"Queued for the send window ({when}).{note}"}
 
 
 @app.post("/emails/{email_id}/unapprove", dependencies=op)
@@ -161,15 +224,46 @@ def unapprove(email_id: int, conn=Conn):
     return get_item(conn, email_id)
 
 
+class SkipAsk(BaseModel):
+    reason: str
+    note: str | None = Field(default=None, max_length=500)
+
+
 @app.post("/emails/{email_id}/cancel", dependencies=op)
-def cancel(email_id: int, conn=Conn):
+def cancel(email_id: int, ask: SkipAsk, conn=Conn):
+    """Skip a shop. The reason is required: it is how the factory learns what TJ won't send."""
+    if ask.reason not in SKIP_REASONS:
+        raise HTTPException(400, "pick a reason: " + ", ".join(SKIP_REASONS))
     cur = get_item(conn, email_id)
     if cur["email"]["status"] not in {"draft", "approved"}:
         raise HTTPException(409, "already sent")
+    correct(conn, cur, "skip", ask.reason, (ask.note or "").strip() or None)
     conn.execute("UPDATE emails SET status = 'cancelled' WHERE id = %s", (email_id,))
     conn.execute("UPDATE prospects SET status = 'skip', updated_at = now() WHERE id = %s AND status IN ('checked','built','approved')",
                  (cur["prospect"]["id"],))
     conn.commit()
+    return get_item(conn, email_id)
+
+
+@app.post("/emails/{email_id}/redraft", dependencies=op)
+def redraft(email_id: int, conn=Conn):
+    """Write a draft again from what we know now (after the flaw changed, or TJ wants another go)."""
+    cur = get_item(conn, email_id)
+    if cur["email"]["status"] != "draft" or cur["email"]["kind"] != "first":
+        raise HTTPException(409, "only first-email drafts can be redrafted")
+    p = conn.execute("SELECT * FROM prospects WHERE id = %s", (cur["prospect"]["id"],)).fetchone()
+    try:
+        subject, body = (outreach.claude_draft(p, outreach.tj_examples(conn)) if config.drafter() == "claude"
+                         else outreach.template_draft(p))
+    except Exception as e:
+        events.log("draft", False, f"redraft failed: {e}"[:300], prospect_id=p["id"], email_id=email_id)
+        raise HTTPException(502, f"redraft failed: {type(e).__name__}")
+    if problems := outreach.preflight(subject, body, p):
+        events.log("draft", False, "; ".join(problems), prospect_id=p["id"], email_id=email_id)
+        raise HTTPException(400, "the new draft didn't pass: " + "; ".join(problems))
+    conn.execute("UPDATE emails SET subject = %s, body = %s, edited = false WHERE id = %s", (subject, body, email_id))
+    conn.commit()
+    events.log("draft", True, "redrafted", prospect_id=p["id"], email_id=email_id)
     return get_item(conn, email_id)
 
 
@@ -220,8 +314,9 @@ def mockup_font():
 
 @app.get("/m/{slug}", response_class=HTMLResponse)
 def mockup_page(slug: str, conn=Conn):  # public: the link in the email
-    row = conn.execute("SELECT html FROM mockups WHERE slug = %s", (slug,)).fetchone()
-    if not row:
+    row = conn.execute("""SELECT m.html FROM mockups m JOIN prospects p ON p.id = m.prospect_id WHERE m.slug = %s
+                          AND p.status NOT IN ('unsubscribed', 'skip', 'lost', 'no-email')""", (slug,)).fetchone()
+    if not row:  # also gone once they opt out or we skip them
         raise HTTPException(404, "no such preview")
     return HTMLResponse(row["html"], headers=NOINDEX)
 
@@ -242,6 +337,7 @@ def send(conn=Conn):
     except Exception as e:  # can't tell who replied: hold the follow-ups, first emails can still go
         conn.rollback()
         inbox = {"error": f"inbox check failed: {type(e).__name__}"}
+        events.log("inbox", False, f"inbox check failed: {type(e).__name__}: {e}"[:300])
     out = mailer.send_due(conn, hold_follow_ups=bool(inbox.get("error")))
     return dict(out, inbox=inbox)
 
@@ -280,6 +376,48 @@ def pause(p: Pause, conn=Conn):
     return {"paused": p.paused}
 
 
+class Warmup(BaseModel):
+    started: dt.date
+
+
+@app.post("/settings/warmup", dependencies=op)
+def warmup(w: Warmup, conn=Conn):
+    """The day the cold inbox started warming up. The daily cap ramps from it (mailer.RAMP)."""
+    conn.execute("""INSERT INTO settings (key, value, updated_at) VALUES ('warmup_started', %s::jsonb, now())
+                    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()""",
+                 (json.dumps(w.started.isoformat()),))
+    conn.commit()
+    cap, why = mailer.daily_cap(conn, dt.datetime.now(dt.timezone.utc))
+    return {"warmup_started": w.started.isoformat(), "cap_today": cap, "detail": why,
+            "ramp": [{"from_day": (mailer.RAMP[i - 1][0] if i else 0) + 1, "per_day": n} for i, (_, n) in enumerate(mailer.RAMP)]
+            + [{"from_day": mailer.RAMP[-1][0] + 1, "per_day": min(mailer.RAMP_AFTER, config.DAILY_SEND_CAP)}]}
+
+
+class Resume(BaseModel):
+    step: str
+
+
+@app.post("/settings/resume", dependencies=op)
+def resume_step(r: Resume, conn=Conn):
+    """TJ looked at the log: let a stopped step run again. Sending also needs its own unpause."""
+    if r.step not in events.stopped(conn):
+        raise HTTPException(409, f"{r.step} isn't stopped")
+    events.resume(conn, r.step)
+    return {"stopped_steps": events.stopped(conn)}
+
+
+@app.get("/events", dependencies=op)
+def event_log(step: str | None = None, failed: bool = False, limit: int = 100, conn=Conn):
+    return {"items": events.recent(conn, step, failed, min(max(limit, 1), 500)), "last_24h": events.summary(conn),
+            "stopped_steps": events.stopped(conn)}
+
+
+@app.get("/corrections", dependencies=op)
+def corrections(conn=Conn):
+    return {"items": conn.execute("SELECT * FROM corrections ORDER BY id DESC LIMIT 200").fetchall(),
+            "reasons": SKIP_REASONS}
+
+
 @app.get("/suppressions", dependencies=op)
 def suppressions(conn=Conn):
     return {"items": conn.execute("SELECT * FROM suppressions ORDER BY created_at DESC, id DESC").fetchall()}
@@ -302,7 +440,7 @@ def suppress(conn, email, domain, reason):
                OR split_part(regexp_replace(lower(website), '^(https?://)?(www\\.)?', ''), '/', 1) = %(d)s"""
     ids = [r["id"] for r in conn.execute(match, {"e": email, "d": domain})]
     if ids:
-        conn.execute("UPDATE prospects SET status = 'unsubscribed', updated_at = now() WHERE id = ANY(%s)", (ids,))
+        conn.execute("UPDATE prospects SET status = 'unsubscribed', updated_at = now() WHERE id = ANY(%s) AND status <> 'won'", (ids,))
         conn.execute("UPDATE emails SET status = 'cancelled' WHERE prospect_id = ANY(%s) AND status IN ('draft','approved')", (ids,))
     conn.commit()
     return conn.execute("SELECT * FROM suppressions WHERE lower(email) = %s OR lower(domain) = %s ORDER BY id DESC LIMIT 1",
@@ -330,9 +468,17 @@ def unsubscribe(token, conn):
                                         f"{html.escape(config.SENDER_BUSINESS)}."))
 
 
+CONFIRM = PAGE.replace("<p>{msg}</p>", """<p>Stop all emails from {who}?</p>
+<form method="post"><button style="font:inherit;padding:.6rem 1.2rem;border:1px solid #1d1d1f;border-radius:4px;
+background:#1d1d1f;color:#fff">Unsubscribe</button></form>""")
+
+
 @app.get("/u/{token}", response_class=HTMLResponse)
 def unsubscribe_link(token: str, conn=Conn):
-    return unsubscribe(token, conn)
+    """A button, not an instant opt-out: mail scanners open links on their own. Mail apps' one-click POST still works."""
+    if not conn.execute("SELECT 1 FROM emails WHERE unsub_token = %s", (token,)).fetchone():
+        return unsubscribe(token, conn)
+    return HTMLResponse(CONFIRM.format(who=html.escape(config.SENDER_BUSINESS)))
 
 
 @app.post("/u/{token}", response_class=HTMLResponse)
@@ -345,7 +491,8 @@ def unsubscribe_one_click(token: str, conn=Conn):  # RFC 8058: mail apps POST he
 CLIENT_COLS = """id, prospect_id, business_name, contact_name, email, phone, trade, plan, billing, setup_cents,
   monthly_cents, included_minutes, status, site_url, receptionist_number, checkout_url, started_at, cancelled_at,
   created_at, stripe_customer_id IS NOT NULL AS has_stripe, open_hour, close_hour, open_saturday, textback_enabled,
-  vapi_assistant_id IS NOT NULL AS has_receptionist, notify_email, summary_hour, booking, calendar_token, review_url"""
+  vapi_assistant_id IS NOT NULL AS has_receptionist, notify_email, summary_hour, booking, calendar_token, review_url,
+  test_call_at, forwarding_confirmed_at, hours_confirmed_at, live_at"""
 
 
 def client_view(c, used):
@@ -354,7 +501,12 @@ def client_view(c, used):
     over, cents = billing.overage(minutes, c["included_minutes"])
     c = dict(c)
     token = c.pop("calendar_token", None)
-    return dict(c, calendar_url=booking.calendar_url(token), minutes_used=minutes, calls=u.get("calls", 0), after_hours_calls=u.get("after_hours", 0),
+    golive = {"paying": c["status"] in ("active", "past_due"), "receptionist_built": c["has_receptionist"],
+              "test_call": bool(c["test_call_at"]), "forwarding": bool(c["forwarding_confirmed_at"]),
+              "hours": bool(c["hours_confirmed_at"])}
+    return dict(c, calendar_url=booking.calendar_url(token), golive=golive,
+                golive_missing=[k for k, v in golive.items() if not v], minutes_used=minutes, calls=u.get("calls", 0),
+                after_hours_calls=u.get("after_hours", 0),
                 missed_calls=u.get("missed", 0), over_minutes=over, overage_cents=cents,
                 price_cents=billing.price_cents(c["plan"], c["billing"]),
                 monthly_value_cents=billing.monthly_value_cents(c["plan"], c["billing"]))
@@ -428,7 +580,11 @@ def add_client(n: NewClient, conn=Conn):
                        (n.prospect_id, name, n.contact_name, email, n.phone or p.get("phone"), trade, n.plan,
                         n.billing, billing.SETUP_CENTS, plan["monthly_cents"], plan["minutes"],
                         p.get("mockup_url"))).fetchone()
+    if n.prospect_id:  # they said yes: no more cold follow-ups
+        conn.execute("UPDATE emails SET status = 'cancelled' WHERE prospect_id = %s AND status IN ('draft','approved')",
+                     (n.prospect_id,))
     conn.commit()
+    events.log("client", True, "added", prospect_id=n.prospect_id, client_id=row["id"])
     return get_client(conn, row["id"])
 
 
@@ -531,7 +687,11 @@ def set_up_receptionist(client_id: int, ask: ReceptionistAsk, conn=Conn):
     number = (ask.receptionist_number or "").strip() or None
     if number and not receptionist.digits(number):
         raise HTTPException(400, "receptionist number needs 10 digits")
-    get_client(conn, client_id)
+    if get_client(conn, client_id)["status"] not in ("active", "past_due"):
+        raise HTTPException(409, "set up the receptionist after they pay (client is not active)")
+    if number and conn.execute("""SELECT 1 FROM clients WHERE id <> %s AND right(regexp_replace(coalesce(receptionist_number,
+                                  ''), '\\D', '', 'g'), 10) = %s""", (client_id, receptionist.digits(number))).fetchone():
+        raise HTTPException(409, "another client already has that receptionist number")
     conn.execute("""UPDATE clients SET open_hour = %s, close_hour = %s, open_saturday = %s, textback_enabled = %s,
                     receptionist_number = coalesce(%s, receptionist_number) WHERE id = %s""",
                  (ask.open_hour, ask.close_hour, ask.open_saturday, ask.textback_enabled, number, client_id))
@@ -540,8 +700,11 @@ def set_up_receptionist(client_id: int, ask: ReceptionistAsk, conn=Conn):
         out = receptionist.set_up(conn, c)
     except receptionist.VapiError as e:
         conn.rollback()
+        events.log("receptionist", False, f"Vapi: {e}"[:300], client_id=client_id)
         raise HTTPException(502, f"Vapi: {e}")
+    conn.execute("UPDATE clients SET hours_confirmed_at = NULL, live_at = NULL WHERE id = %s", (client_id,))  # new hours: confirm again
     conn.commit()
+    events.log("receptionist", True, f"set up ({out['mode']})", client_id=client_id)
     return dict(out, client=client_view(get_client(conn, client_id), {}))
 
 
@@ -565,6 +728,70 @@ async def vapi_webhook(request: Request, conn=Conn):  # public, but only request
     except ValueError:
         raise HTTPException(400, "not JSON")
     return receptionist.handle(conn, payload if isinstance(payload, dict) else {})
+
+
+# Go-live: a receptionist counts as live only after a real test call landed here, TJ called the shop's own line
+# after hours and reached it, and the shop OK'd the hours. Then TJ spot-checks real calls for the first month.
+
+GOLIVE = {"forwarding": "forwarding_confirmed_at", "hours": "hours_confirmed_at"}
+
+
+class GoLiveStep(BaseModel):
+    step: str
+    done: bool = True
+
+
+@app.post("/clients/{client_id}/golive", dependencies=op)
+def golive_step(client_id: int, g: GoLiveStep, conn=Conn):
+    if g.step not in GOLIVE:
+        raise HTTPException(400, "step must be forwarding or hours (the test call is ticked by the call itself)")
+    get_client(conn, client_id)
+    conn.execute(f"UPDATE clients SET {GOLIVE[g.step]} = {'now()' if g.done else 'NULL'} WHERE id = %s", (client_id,))
+    if not g.done:
+        conn.execute("UPDATE clients SET live_at = NULL WHERE id = %s", (client_id,))
+    conn.commit()
+    events.log("golive", True, f"{g.step} {'confirmed' if g.done else 'unticked'}", client_id=client_id)
+    return client_view(get_client(conn, client_id), {})
+
+
+@app.post("/clients/{client_id}/live", dependencies=op)
+def go_live(client_id: int, conn=Conn):
+    c = client_view(get_client(conn, client_id), {})
+    if c["golive_missing"]:
+        events.log("golive", False, "not ready: " + ", ".join(c["golive_missing"]), client_id=client_id)
+        raise HTTPException(409, "not ready to go live: " + ", ".join(c["golive_missing"]))
+    conn.execute("UPDATE clients SET live_at = coalesce(live_at, now()) WHERE id = %s", (client_id,))
+    conn.commit()
+    events.log("golive", True, "live", client_id=client_id)
+    return client_view(get_client(conn, client_id), {})
+
+
+@app.get("/calls/to-review", dependencies=op)
+def calls_to_review(conn=Conn):
+    """Up to 3 calls a week per client in its first 30 days live, for TJ to listen to."""
+    return {"items": conn.execute("""SELECT * FROM (
+        SELECT r.id, r.client_id, c.business_name, r.started_at, r.seconds, r.outcome, r.summary,
+               row_number() OVER (PARTITION BY r.client_id ORDER BY r.started_at DESC) AS n
+        FROM receptionist_calls r JOIN clients c ON c.id = r.client_id
+        WHERE c.live_at > now() - interval '30 days' AND r.started_at > now() - interval '7 days'
+          AND r.reviewed_at IS NULL AND r.outcome <> 'spam') x WHERE n <= 3 ORDER BY started_at DESC""").fetchall()}
+
+
+class CallReview(BaseModel):
+    ok: bool
+    note: str | None = Field(default=None, max_length=500)
+
+
+@app.post("/calls/{call_id}/review", dependencies=op)
+def review_call(call_id: int, r: CallReview, conn=Conn):
+    row = conn.execute("""UPDATE receptionist_calls SET reviewed_at = now(), review_ok = %s, review_note = %s
+                          WHERE id = %s RETURNING client_id""", (r.ok, r.note, call_id)).fetchone()
+    if not row:
+        raise HTTPException(404, "no such call")
+    conn.commit()
+    events.log("call_review", r.ok, r.note or ("good call" if r.ok else "bad call"), client_id=row["client_id"],
+               detail={"call_id": call_id})
+    return {"call_id": call_id, "ok": r.ok}
 
 
 class OptOut(BaseModel):

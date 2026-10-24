@@ -144,6 +144,29 @@ ask after the job. Open each client from Clients to see all of it.
 sends from the Workspace inbox (`NOTIFY_FROM_EMAIL`, default `FROM_EMAIL`). Vapi tool and structured-data field names
 follow docs.vapi.ai as of 2026-10: check with Tuesday's real test call.
 
+## Accuracy: how the factory checks itself (2026-10-24)
+
+Details and what's left: `ACCURACY.md`. Plan: https://claude.ai/artifact/HLXwNiWB6r1hpjWUtpJsb2
+- **Handoff contracts** (`api/quality.py`): a shop can't be drafted, approved or sent with a missing piece (fresh
+  flaw check, screenshot, https preview). A site that blocked our checker is held for a look by hand.
+- **Evidence, not memory:** approve re-checks a flaw older than 7 days. Fixed = draft cancelled; changed = Redraft.
+  A first email never sends on a check older than 14 days.
+- **Grounding:** every number, year, link, phone, town and claim in a Claude draft must come from their own site or
+  our record, and it must name the flaw we found. Ratings, reviews, competitors and guarantees are never claimed.
+  TJ's own edits aren't blocked; he sees a "Check:" note instead.
+- **One log** (`events`, Log page): every step writes a row. The same step failing 3 times in a row stops it
+  (sending also pauses) until TJ resumes it on the Queue.
+- **TJ's corrections:** Skip needs a reason; edits are saved before and after. The drafter copies the tone of his
+  last 3 rewrites. `evals/freeze.py` turns "wrong flaw" and "untrue" skips into test cases.
+- **Frozen test set:** `python3 money/agency/api/evals/run.py` (CI runs it). Real NWA shops (`real_shops.json`,
+  checked by eye from screenshots), hand-made traps (`cases.json`), TJ's corrections (`tj.json`). Never edit a case to
+  make it pass.
+- **Warm-up ramp:** set the warm-up start date on the Queue. Days 1-7 nothing cold, then 3 a day, 5 from day 15,
+  10 from day 22, 20 from day 29 (`DAILY_SEND_CAP` is the ceiling). One run sends at a time; free-mail addresses count
+  per address, not per domain; a refused address goes on the list and the rest keep going.
+- **Go-live** (client page): paid, receptionist built, a real test call landed, forwarding works after hours, the shop
+  OK'd the hours. Then up to 3 calls a week to listen to in the first month.
+
 ## Tuesday checklist (in order; keys go on Render, never here)
 
 1. **Cold domain** (~$12/yr), not TJ's main one. **Google Workspace Business Starter** on it, one inbox for TJ.

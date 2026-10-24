@@ -196,6 +196,15 @@ def inspect_site(url):
         return http_inspect(url), None
 
 
+PARKED_TEXT = re.compile(r"coming soon|parked free", re.I)
+FOR_SALE = re.compile(r"domain (name\s+)?(\S+\s+)?is for sale|domain (is )?for sale|buy this domain|"
+                      r"this domain may be for sale", re.I)
+PARKED_HOSTS = ("forsale.godaddy.com", "sedo.com", "afternic.com", "dan.com", "hugedomains.com", "parkingcrew.net",
+                "bodis.com", "sav.com", "undeveloped.com")
+CHALLENGE = re.compile(r"checking (the site connection security|your browser)|verify you are (a )?human|"
+                       r"just a moment\.\.\.|attention required|enable javascript and cookies to continue", re.I)
+
+
 def pick(s, today=None):
     """One flaw, worst first. Returns (flaw, site_state) or (None, state) when the site is fine or we couldn't tell.
 
@@ -204,11 +213,15 @@ def pick(s, today=None):
     today = today or dt.date.today()
     if s.get("down"):
         return f"Site down: {s['down']}", "DOWN"
-    if s.get("blocked"):
+    text = (s.get("text") or "")[:3000]
+    if s.get("blocked") or CHALLENGE.search(text):  # a bot wall isn't their site: we can't tell, so no email
         return None, None
     if s.get("status") and s["status"] >= 400:
         return f"Site down: page error {s['status']}", "DOWN"
-    if s.get("html_len", 1000) < 800 or re.search(r"coming soon|domain (is )?for sale|parked free", (s.get("text") or "")[:3000], re.I):
+    parked_host = re.sub(r"^https?://", "", (s.get("final_url") or "").lower()).split("/")[0]
+    if FOR_SALE.search(text) or any(parked_host == h or parked_host.endswith("." + h) for h in PARKED_HOSTS):
+        return "Site down: domain for sale", "DOWN"
+    if s.get("html_len", 1000) < 800 or PARKED_TEXT.search(text):
         return "Site down: parked or empty page", "DOWN"
     found = []
     if not s.get("viewport_meta") or (s.get("scroll_width") or 0) > (s.get("viewport_width") or 390) + 8:
@@ -264,5 +277,8 @@ def find_and_save(conn, prospect_id, inspect=None):
            WHERE id = %s""",
         (flaw, evidence, state, json.dumps(facts), prospect_id))
     conn.commit()
+    import events
+    events.log("flaw", True, flaw or ("blocked us; kept the scout's flaw" if state is None else "no clear flaw"),
+               prospect_id=prospect_id, detail={"state": state, "mode": signals.get("mode")})
     return {"prospect_id": prospect_id, "name": p["name"], "flaw": flaw, "site_state": state, "evidence": evidence,
             "mode": signals.get("mode")}

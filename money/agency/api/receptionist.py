@@ -155,8 +155,20 @@ def set_up(conn, c):
     return {"mode": "vapi", "assistant_id": out["id"], "assistant": a}
 
 
+def turn_off(conn, c):
+    """Cancelled: delete the client's assistant on Vapi so the forwarded line stops reaching it."""
+    aid = c.get("vapi_assistant_id")
+    if not aid:
+        return "none set up"
+    if config.receptionist() != "stub":
+        vapi("DELETE", f"/assistant/{aid}")
+    conn.execute("UPDATE clients SET vapi_assistant_id = NULL, live_at = NULL WHERE id = %s", (c["id"],))
+    return "turned off"
+
+
 def secret_ok(header):
-    return bool(config.VAPI_WEBHOOK_SECRET) and secrets.compare_digest(header or "", config.VAPI_WEBHOOK_SECRET)
+    return bool(config.VAPI_WEBHOOK_SECRET) and secrets.compare_digest((header or "").encode(),
+                                                                       config.VAPI_WEBHOOK_SECRET.encode())
 
 
 def digits(n):
@@ -239,6 +251,7 @@ def record_call(conn, payload, now=None):
     if not row:
         conn.commit()
         return {"ok": True, "duplicate": True}
+    conn.execute("UPDATE clients SET test_call_at = coalesce(test_call_at, now()) WHERE id = %s", (c["id"],))  # go-live tick
     text = textback(conn, c, row["id"], caller, o, started, now) if o == "hung_up" else None
     alert = notices.emergency(conn, c, row) if emergency and c["status"] in ("active", "past_due") else None
     conn.commit()

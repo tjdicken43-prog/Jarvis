@@ -24,6 +24,8 @@ Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's n
 - [ ] Texting (Twilio) and alert email on the domain.
 
 ## Sites by TJ
+- [ ] Tuesday, once the cold inbox exists: set the warm-up start date on the Queue (cold email starts day 8, 3 a day).
+- [ ] Glance at the 21 real-shop flaws in money/agency/api/evals/real_shops.json and say if any look wrong (check).
 - [x] Front Desk pieces the demos sell are built (step 9, 2026-10-24): booking, review asks, morning summary, urgent alert, live site + quote form. Still stubs: real texts (text-back, review texts) wait on an SMS provider with 10DLC (TJ's call). After the first paying shop: set NOTIFY=smtp on Render and do a real test call to check Vapi's tool and structured-data fields (check).
 - [ ] Trades MVP (steps 1-8 built: receptionist + Render blueprint done 2026-10-23) needs from TJ on Tue 2026-10-27: follow the ordered "Tuesday checklist" in money/agency/README.md (cold domain + Workspace + DNS, warm-up, mailing address, Render blueprint, Anthropic, Stripe test, Vapi). Chromium on Render: solved with a Docker image (tested locally). Check Arkansas rules before switching on the 15% matchmaker (check). Missed-call text-back stays a stub until an SMS provider with 10DLC registration (TJ's call). Mockups are served from the API for now; move to <slug>.<cold domain> once the domain exists.
 - [ ] Before any outreach: 3 golden sites (HVAC, roofing, plumbing) for real NWA businesses must each score 8+ from TJ and two other people, per money/SITE_BAR.md. See [[Sites by TJ]].

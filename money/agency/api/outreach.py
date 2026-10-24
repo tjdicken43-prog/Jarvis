@@ -10,8 +10,10 @@ import secrets
 
 import config
 import db
+import events
 import flaws
 import mockup
+import quality
 from mailer import host
 
 EMERGENCY = {"plumbing": "a burst pipe", "hvac": "a dead AC", "roofing": "a leaking roof"}
@@ -36,6 +38,8 @@ def plain_flaw(flaw):
     """Scout flags ('no tap-to-call, © 2019') -> what a shop owner would see on their own phone."""
     flaw = (flaw or "").strip()
     if flaw.lower().startswith("site down"):
+        if "for sale" in flaw.lower():
+            return ['your web address now shows a "domain for sale" page']
         return ["your website shows an empty placeholder page" if "parked" in flaw.lower() else "your website doesn't load"]
     out = []
     for f in [x.strip() for x in flaw.split(",") if x.strip()]:
@@ -71,8 +75,9 @@ def template_draft(p):
     seen = plain_flaw(p["flaw"])
     a = angle(p)
     if a == "losing calls":
-        parked = "parked" in (p.get("flaw") or "").lower()
-        state, saw = ("is blank", "only showed a placeholder page") if parked else ("isn't loading", "didn't load")
+        low = (p.get("flaw") or "").lower()
+        state, saw = (("shows a for-sale page", 'showed a "domain for sale" page') if "for sale" in low else
+                      ("is blank", "only showed a placeholder page") if "parked" in low else ("isn't loading", "didn't load"))
         subject = f"{name}'s website {state}"
         first = (f"I tried to pull up {host(p.get('website')) or 'your website'} today and it {saw}, "
                  f"so people searching for a {TRADE_WORD[p['trade']]} in {city} hit a dead end.")
@@ -113,7 +118,15 @@ SCHEMA = {
 }
 
 
-def claude_draft(p):
+def tj_examples(conn, n=3):
+    """The last few first emails TJ rewrote himself: the drafter copies his style, never his facts."""
+    return [r["after_body"] for r in conn.execute(
+        """SELECT c.after_body FROM corrections c JOIN emails e ON e.id = c.email_id
+           WHERE c.kind = 'edit' AND e.kind = 'first' AND c.after_body IS NOT NULL ORDER BY c.id DESC LIMIT %s""",
+        (n,)).fetchall()]
+
+
+def claude_draft(p, examples=()):
     import anthropic
 
     facts = {
@@ -126,7 +139,9 @@ def claude_draft(p):
         max_tokens=2000,
         system=SYSTEM,
         output_config={"effort": "low", "format": {"type": "json_schema", "schema": SCHEMA}},
-        messages=[{"role": "user", "content": "Write the email from these facts:\n" + json.dumps(facts)}],
+        messages=[{"role": "user", "content": "Write the email from these facts:\n" + json.dumps(facts) + (
+            "\n\nEmails TJ rewrote himself, for tone only. Never reuse their facts, names or links:\n"
+            + "\n---\n".join(examples) if examples else "")}],
     )
     if resp.stop_reason != "end_turn":
         raise RuntimeError(f"Claude stopped early ({resp.stop_reason})")
@@ -135,8 +150,9 @@ def claude_draft(p):
     return out["subject"].strip(), out["body"].strip()
 
 
-def preflight(subject, body, p, kind="first"):
-    """Reasons this draft must not reach the queue (empty list = fine)."""
+def preflight(subject, body, p, kind="first", grounded=True):
+    """Reasons this draft must not reach the queue (empty list = fine). Follow-ups are fixed text, so only the
+    AI-written first email gets the grounding check."""
     problems = []
     if not subject.strip() or not body.strip():
         problems.append("empty subject or body")
@@ -151,29 +167,58 @@ def preflight(subject, body, p, kind="first"):
         problems.append("preview link missing")
     if "!" in subject:
         problems.append("exclamation mark in subject")
+    if kind == "first" and grounded:
+        problems += quality.grounding(subject, body, p)
     return problems
 
 
 def draft_first_emails(conn, limit=10, prospect_ids=None, drafter=None):
     """Draft first emails for up to `limit` eligible shops. Returns {created, skipped}."""
-    write = drafter or (claude_draft if config.drafter() == "claude" else template_draft)
+    if drafter:
+        write = drafter
+    elif config.drafter() == "claude":
+        examples = tj_examples(conn)
+        write = lambda p: claude_draft(p, examples)  # noqa: E731
+    else:
+        write = template_draft
     only = "AND p.id = ANY(%(ids)s)" if prospect_ids else ""
     rows = conn.execute(ELIGIBLE.format(only=only),
                         {"min_rating": config.MIN_RATING, "limit": limit, "ids": prospect_ids}).fetchall()
     created, skipped = [], []
+    if "draft" in events.stopped(conn):
+        return {"created": [], "skipped": [], "stopped": "drafting stopped after repeated failures; check the log, then resume it"}
+    taken = set()  # one shop, one sequence: the cold list can hold the same business twice
+    for r in conn.execute("""SELECT lower(q.email) AS email, q.website FROM emails e JOIN prospects q ON q.id = e.prospect_id
+                             WHERE e.kind = 'first' AND e.status <> 'cancelled'""").fetchall():
+        taken |= {r["email"], host(r["website"])} - {None, ""}
     for p in rows:
+        def skip(reason, ok=False):
+            skipped.append({"prospect_id": p["id"], "name": p["name"], "reason": reason})
+            events.log("draft", ok, reason, prospect_id=p["id"])
         if db.suppressed(conn, p["email"], host(p.get("website"))):
             conn.execute("UPDATE prospects SET status = 'unsubscribed', updated_at = now() WHERE id = %s", (p["id"],))
-            skipped.append({"prospect_id": p["id"], "name": p["name"], "reason": "on the do-not-email list"})
+            skip("on the do-not-email list", ok=True)
+            continue
+        mine = {(p["email"] or "").lower(), host(p.get("website"))} - {None, ""}
+        if mine & taken:
+            conn.execute("UPDATE prospects SET status = 'skip', updated_at = now() WHERE id = %s", (p["id"],))
+            skip("same shop as one we already wrote to", ok=True)
+            continue
+        if missing := quality.contract("draft", p):
+            skip("not ready to draft: " + "; ".join(missing))
+            continue
+        if quality.mail_domain_ok(p["email"]) is False:  # it would bounce, and bounces hurt a new domain most
+            conn.execute("UPDATE prospects SET status = 'no-email', updated_at = now() WHERE id = %s", (p["id"],))
+            skip(f"{p['email'].split('@')[-1]} doesn't take email", ok=True)
             continue
         try:
             subject, body = write(p)
         except Exception as e:  # one bad draft never stops the batch
-            skipped.append({"prospect_id": p["id"], "name": p["name"], "reason": f"draft failed: {e}"[:200]})
+            skip(f"draft failed: {e}"[:200])
             continue
         problems = preflight(subject, body, p)
         if problems:
-            skipped.append({"prospect_id": p["id"], "name": p["name"], "reason": "; ".join(problems)})
+            skip("; ".join(problems))
             continue
         row = conn.execute(
             """INSERT INTO emails (prospect_id, kind, subject, body, unsub_token)
@@ -181,7 +226,9 @@ def draft_first_emails(conn, limit=10, prospect_ids=None, drafter=None):
             (p["id"], subject, body, secrets.token_urlsafe(24)),
         ).fetchone()
         if row:
+            taken |= mine
             created.append({"email_id": row["id"], "prospect_id": p["id"], "name": p["name"]})
+            events.log("draft", True, "drafted", prospect_id=p["id"], email_id=row["id"], detail={"drafter": config.drafter()})
     conn.commit()
     return {"created": created, "skipped": skipped}
 
@@ -209,6 +256,10 @@ def prepare(conn, limit=5, prospect_ids=None, drafter=None, inspect=None):
                         {"min_rating": config.MIN_RATING, "limit": limit, "ids": prospect_ids}).fetchall()
     checked, built, held = [], [], []
     ready = []
+    stops = events.stopped(conn)
+    if "flaw" in stops or "mockup" in stops:
+        return {"checked": [], "built": [], "created": [], "skipped": [],
+                "stopped": "the flaw finder or mockup builder stopped after repeated failures; check the log, then resume it"}
     for p in rows:
         if db.suppressed(conn, p["email"], host(p.get("website"))):
             conn.execute("UPDATE prospects SET status = 'unsubscribed', updated_at = now() WHERE id = %s", (p["id"],))
@@ -221,6 +272,7 @@ def prepare(conn, limit=5, prospect_ids=None, drafter=None, inspect=None):
             except Exception as e:  # one bad site never stops the batch
                 conn.rollback()
                 held.append({"prospect_id": p["id"], "name": p["name"], "reason": f"flaw finder failed: {e}"[:200]})
+                events.log("flaw", False, f"flaw finder failed: {type(e).__name__}: {e}"[:300], prospect_id=p["id"])
                 continue
         cur = conn.execute("SELECT flaw FROM prospects WHERE id = %s", (p["id"],)).fetchone()
         if not cur["flaw"]:

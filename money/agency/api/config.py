@@ -28,9 +28,12 @@ FROM_NAME = env("FROM_NAME", "TJ")
 SENDER_BUSINESS = env("SENDER_BUSINESS", "Sites by TJ")
 MAILING_ADDRESS = env("MAILING_ADDRESS")          # CAN-SPAM: real postal address or PO box; nothing sends without it
 
-DAILY_SEND_CAP = int(env("DAILY_SEND_CAP", "5"))  # start at 5, raise about 5 a week, max 30
+DAILY_SEND_CAP = int(env("DAILY_SEND_CAP", "30"))  # ceiling; the warm-up ramp in mailer.py sets the real cap each day
 SEND_WINDOW = (int(env("SEND_HOUR_START", "9")), int(env("SEND_HOUR_END", "11")))  # weekdays, Central
 MIN_RATING = float(env("MIN_RATING", "2.8"))      # Checker skips shops under 2.8 stars
+FLAW_MAX_AGE_DAYS = int(env("FLAW_MAX_AGE_DAYS", "7"))   # older than this at approve time: look at their site again
+SEND_FLAW_MAX_AGE_DAYS = int(env("SEND_FLAW_MAX_AGE_DAYS", "14"))  # a first email never goes out on an older check
+REPEAT_FAILS = int(env("REPEAT_FAILS", "3"))    # this many failures in a row stops that step until TJ looks
 CHROMIUM_PATH = env("CHROMIUM_PATH")              # flaw finder: a Chromium build when Playwright's own isn't installed
 
 STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY")      # sk_test_... until TJ goes live

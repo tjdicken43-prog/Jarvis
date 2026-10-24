@@ -23,8 +23,27 @@ export async function draftNew(): Promise<R<DraftResult>> {
 export async function approve(id: string | number): Promise<R<ApproveResult>> {
   return run(() => api<ApproveResult>(`/emails/${id}/approve`, { method: "POST" }), false);
 }
-export async function skip(id: string | number): Promise<R<unknown>> {
-  return run(() => api(`/emails/${id}/cancel`, { method: "POST" }));
+// Skip needs a reason: it's how the factory learns what TJ won't send
+export async function skip(id: string | number, reason: string, note: string): Promise<R<unknown>> {
+  return run(() => api(`/emails/${id}/cancel`, { method: "POST", body: { reason, note: note.trim() || undefined } }));
+}
+export async function redraft(id: string | number): Promise<R<unknown>> {
+  return run(() => api(`/emails/${id}/redraft`, { method: "POST" }));
+}
+export async function setWarmup(started: string): Promise<R<{ cap_today: number; detail: string }>> {
+  return run(() => api<{ cap_today: number; detail: string }>("/settings/warmup", { method: "POST", body: { started } }));
+}
+export async function resumeStep(step: string): Promise<R<unknown>> {
+  return run(() => api("/settings/resume", { method: "POST", body: { step } }));
+}
+export async function goLiveStep(id: number, step: "forwarding" | "hours", done: boolean): Promise<R<Client>> {
+  return run(() => api<Client>(`/clients/${id}/golive`, { method: "POST", body: { step, done } }));
+}
+export async function goLive(id: number): Promise<R<Client>> {
+  return run(() => api<Client>(`/clients/${id}/live`, { method: "POST" }));
+}
+export async function reviewCall(id: number, ok: boolean, note: string): Promise<R<unknown>> {
+  return run(() => api(`/calls/${id}/review`, { method: "POST", body: { ok, note: note.trim() || undefined } }));
 }
 export async function sendApproved(): Promise<R<SendResult>> {
   return run(() => api<SendResult>("/send", { method: "POST" }));

@@ -4,12 +4,14 @@ from the facts the flaw finder saved, runs the site bar checks, and serves it at
 Pages live in the database, not the repo. Their logo is linked from their own site, never copied here.
 A mockup that fails the checks is not saved, so no email can point to it.
 """
-import hashlib
+import secrets
 import importlib.util
 import pathlib
 import re
 
 import config
+import events
+import quality
 from mailer import host
 
 SITES = pathlib.Path(__file__).resolve().parents[2] / "sites"
@@ -21,7 +23,7 @@ _spec.loader.exec_module(trade_build)
 
 def slug_for(p):
     base = re.sub(r"[^a-z0-9]+", "-", p["name"].lower()).strip("-")[:40].strip("-") or "shop"
-    return f"{base}-{hashlib.sha1(p['id'].encode()).hexdigest()[:5]}"
+    return f"{base}-{secrets.token_hex(6)}"  # random, so nobody can guess another shop's preview
 
 
 def content_for(p):
@@ -41,10 +43,14 @@ def build_and_save(conn, prospect_id):
     p = conn.execute("SELECT * FROM prospects WHERE id = %s", (prospect_id,)).fetchone()
     if not p:
         return {"prospect_id": prospect_id, "error": "no such prospect"}
+    if missing := quality.contract("mockup", p):
+        events.log("mockup", False, "not ready: " + "; ".join(missing), prospect_id=prospect_id)
+        return {"prospect_id": prospect_id, "name": p["name"], "built": False, "problems": missing}
     c = content_for(p)
     page = trade_build.render(c)
     problems = trade_build.audit(page, c)
     if problems:
+        events.log("mockup", False, "; ".join(problems), prospect_id=prospect_id)
         return {"prospect_id": prospect_id, "name": p["name"], "built": False, "problems": problems}
     slug = p.get("mockup_slug") or slug_for(p)
     url = f"{config.PUBLIC_URL}/m/{slug}"
@@ -54,4 +60,5 @@ def build_and_save(conn, prospect_id):
                     status = CASE WHEN status IN ('new', 'checked') THEN 'built' ELSE status END WHERE id = %s""",
                  (slug, url, prospect_id))
     conn.commit()
+    events.log("mockup", True, "built", prospect_id=prospect_id, detail={"url": url})
     return {"prospect_id": prospect_id, "name": p["name"], "built": True, "mockup_url": url}

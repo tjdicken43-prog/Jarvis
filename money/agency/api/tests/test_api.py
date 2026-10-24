@@ -353,6 +353,21 @@ for i, (kind, want) in enumerate([("invoice.payment_failed", "past_due"), ("invo
         "object": "invoice", "customer": "cus_1", "parent": {"subscription_details": {"subscription": "sub_1"}}}}}).encode()
     assert hook(e, billing.sign(e, "whsec_test")).json()["status"] == want
 
+# Paid invoices land in payments for the tax set-aside: setup line split out, replays ignored
+inv = {"id": "evt_pay", "type": "invoice.paid", "livemode": False, "data": {"object": {
+    "object": "invoice", "id": "in_1", "customer": "cus_1", "amount_paid": 44800, "tax": 0, "status_transitions": {"paid_at": 1793000000},
+    "lines": {"data": [{"amount": 14900, "description": "Front Desk"}, {"amount": 29900, "description": "One-time setup"}]}}}}
+e = json.dumps(inv).encode()
+ok(hook(e, billing.sign(e, "whsec_test")))
+e2 = json.dumps(dict(inv, id="evt_pay_again")).encode()
+ok(hook(e2, billing.sign(e2, "whsec_test")))
+pay = api.get("/payments", headers=H).json()["items"]
+mine = [p for p in pay if p["note"] == "in_1"]
+assert [(p["item"], p["amount"]) for p in mine] == [("setup", 299.0), ("receptionist", 149.0)], pay
+assert mine[0]["date"] == "2026-10-26", mine  # 1793000000 is 2026-10-26 Central
+ok(api.get("/payments?since=nope", headers=H), 400)
+ok(api.get("/payments"), 401)
+
 # Usage this month and overage: Plus includes 800 min; 812 min used = 12 over = $3.00
 now = dt.datetime.now(dt.timezone.utc)
 _, mstart, _ = billing.month_bounds()

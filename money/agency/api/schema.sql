@@ -342,3 +342,14 @@ CREATE TABLE IF NOT EXISTS ai_usage (
   client_id     int REFERENCES clients(id)
 );
 CREATE INDEX IF NOT EXISTS ai_usage_at ON ai_usage (at);
+
+-- Taxes (TJ, 2026-10-24): every paid invoice, so Jarvis can work out the tax set-aside (money/TAX.md, money/tax/)
+CREATE TABLE IF NOT EXISTS payments (
+  stripe_invoice_id text PRIMARY KEY,
+  client_id         int REFERENCES clients(id),
+  paid_at           timestamptz NOT NULL,
+  amount_cents      int NOT NULL,             -- what the client paid, tax included
+  tax_cents         int NOT NULL DEFAULT 0,   -- sales tax Stripe added (none on the agency's items today)
+  setup_cents       int NOT NULL DEFAULT 0    -- the one-time setup line, if this invoice had it
+);
+CREATE INDEX IF NOT EXISTS payments_paid_at ON payments (paid_at);

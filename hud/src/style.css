@@ -235,6 +235,30 @@
   .memFix { display: flex; gap: 8px; margin: 0 0 10px; }
   .memFix input { flex: 1; min-width: 0; }
 
+  /* budget sheet */
+  .icon.alert { color: var(--gold); }
+  .bTop { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 16px 0 12px; }
+  .bCell { background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-ctl); padding: 10px; }
+  .bCell b { display: block; font: 600 22px/1.1 var(--mono); color: var(--ink); }
+  .bCell span { font: 400 12px/1.4 var(--body); color: var(--mute); }
+  .bCell.good b { color: var(--ok); }
+  .bCell.bad b { color: var(--red); }
+  .bBar { display: flex; height: 10px; border-radius: 3px; overflow: hidden; background: var(--faint); }
+  .bBar i { display: block; height: 100%; }
+  .bBar .due { background: var(--amber); }
+  .bBar .floor { background: var(--red); opacity: .7; }
+  .bBar .free { background: var(--ok); }
+  .bKey { font: 400 12px/1.5 var(--body); color: var(--mute); margin-top: 6px; }
+  .bAlerts { margin: 12px 0 0; padding: 10px 12px 10px 28px; border: 1px solid var(--gold); border-radius: var(--r-ctl); font: 400 14px/1.45 var(--body); color: var(--ink); }
+  #budgetBody h4 { margin: 18px 0 4px; font: 500 12.5px/1 var(--body); color: var(--mute); }
+  .bRow { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; border-top: 1px solid var(--faint); padding: 9px 0; font: 400 14.5px/1.4 var(--body); }
+  #budgetBody h4 + .bRow { border-top: 0; }
+  .bRow b { font: 500 14px/1.4 var(--mono); }
+  .bRow small { display: block; font: 400 12px/1.5 var(--body); color: var(--mute); }
+  .bRow.svc i { grid-column: 1 / -1; height: 4px; background: var(--faint); border-radius: 2px; overflow: hidden; }
+  .bRow.svc u { display: block; height: 100%; background: var(--ok); }
+  .bRow.svc.hot u { background: var(--gold); }
+
   /* night mode */
   #night { position: fixed; inset: 0; z-index: 60; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 32px; color: rgba(var(--arc-rgb), .6); }
   #night[hidden] { display: none; }

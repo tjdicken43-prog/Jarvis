@@ -1,0 +1,204 @@
+{
+  "_doc": "Rules and sources: money/TAX.md (checked 2026-10-24). Rates are estimates; a CPA checks the method once before the first quarterly payment. Prices change only with TJ's OK.",
+  "cpa_checked": false,
+  "w2_wages": null,
+  "llc_formed": null,
+  "remind_days": 10,
+  "setaside": {
+    "min_pct": 25
+  },
+  "sales_tax": {
+    "state": 0.065,
+    "county": 0.01,
+    "city": 0.02,
+    "combined": 0.095,
+    "where": "Bentonville",
+    "permit_from": null,
+    "frequency": "monthly",
+    "due_day": 20,
+    "form": "ET-1 sales and use tax return (ATAP)",
+    "pay_url": "https://atap.arkansas.gov/",
+    "how": "Sign in to ATAP, pick the sales and use tax account, File return, type the numbers above, pay by bank draft."
+  },
+  "federal": {
+    "form": "Form 1040-ES",
+    "form_name": "Federal estimate",
+    "payment_type": "Estimated tax, 1040-ES",
+    "pay_url": "https://www.irs.gov/payments/direct-pay",
+    "how": "IRS Direct Pay: Make a payment, reason Estimated Tax, apply to 1040ES, tax year above, then the amount. Save the confirmation number.",
+    "required_over": 1000,
+    "se_base_share": 0.9235,
+    "ss_rate": 0.124,
+    "medicare_rate": 0.029,
+    "ss_wage_base": 184500,
+    "qbi_rate": 0.2,
+    "standard_deduction": 16100,
+    "brackets": [
+      [
+        12400,
+        0.1
+      ],
+      [
+        50400,
+        0.12
+      ],
+      [
+        105700,
+        0.22
+      ],
+      [
+        201775,
+        0.24
+      ],
+      [
+        256225,
+        0.32
+      ],
+      [
+        640600,
+        0.35
+      ],
+      [
+        null,
+        0.37
+      ]
+    ]
+  },
+  "arkansas": {
+    "form": "AR1000ES",
+    "form_name": "Arkansas estimate",
+    "payment_type": "Estimated payment, AR1000ES",
+    "pay_url": "https://atap.arkansas.gov/",
+    "how": "ATAP: Make a payment (no login needed), Individual income tax, Estimated payment, tax year above, then the amount.",
+    "standard_deduction": 2410,
+    "brackets": [
+      [
+        5599,
+        0.0
+      ],
+      [
+        11199,
+        0.02
+      ],
+      [
+        15999,
+        0.03
+      ],
+      [
+        26399,
+        0.034
+      ],
+      [
+        null,
+        0.037
+      ]
+    ]
+  },
+  "franchise": {
+    "amount": 150,
+    "form": "LLC annual franchise tax report",
+    "pay_url": "https://www.sos.arkansas.gov/business-commercial-services-bcs/",
+    "how": "Arkansas Secretary of State business site: file the LLC franchise tax report and pay the $150. Late adds $25 plus interest."
+  },
+  "items": {
+    "receptionist": {
+      "label": "AI receptionist, $149 or $249 a month",
+      "price": 149,
+      "cost": 60,
+      "taxable": false,
+      "why": "Software used online, nothing downloaded. Arkansas rule GR-25 doesn't tax it (likely; DFA asked in writing)."
+    },
+    "setup": {
+      "label": "Setup fee, $299",
+      "price": 299,
+      "cost": 0,
+      "taxable": false,
+      "why": "Setting up a non-taxable service. Not on Arkansas's list of taxed services."
+    },
+    "site": {
+      "label": "Website build or hosting",
+      "price": 0,
+      "cost": 0,
+      "taxable": false,
+      "why": "Custom programming and hosting aren't taxed services in Arkansas (GR-25(H)(2))."
+    },
+    "monitoring": {
+      "label": "Gym security, $200 a month + $100 per extra entrance",
+      "price": 200,
+      "cost": 10,
+      "taxable": true,
+      "why": "Security and alarm monitoring is taxed (rule GR-9.12). Treated as taxed until DFA says otherwise."
+    },
+    "hardware": {
+      "label": "Camera kit sold at cost, about $275",
+      "price": 275,
+      "cost": 275,
+      "taxable": true,
+      "why": "Goods are taxed. Buy the kit tax-free for resale (form ST391 with the permit number), charge the gym 9.5%."
+    },
+    "install": {
+      "label": "Install labor, billed on its own",
+      "price": 0,
+      "cost": 0,
+      "taxable": false,
+      "why": "Alarm install isn't taxed (GR-9.12) when it's a separate line on the invoice."
+    }
+  },
+  "has_contractors": false,
+  "insurance_renews": null,
+  "deadlines": [
+    {
+      "id": "bentonville-registry",
+      "title": "Bentonville business registry renewal",
+      "month": 12,
+      "day": 31,
+      "remind_from": "11-01",
+      "when": "income",
+      "steps": [
+        "Renew between Nov 1 and Dec 31 each year (new businesses: within 60 days of starting).",
+        "Fee: $15 a year per the city FAQ (check). Working from home as a Type A home occupation may be exempt (check with Planning, 479-271-3122)."
+      ],
+      "url": "https://www.bentonville.ar.gov/FAQ.aspx?QID=256",
+      "how": "City business registry online, or email businessregistry@bentonvillear.com."
+    },
+    {
+      "id": "1099-nec",
+      "title": "1099-NEC to anyone paid $2,000+",
+      "month": 1,
+      "day": 31,
+      "remind_from": "01-05",
+      "when": "contractors",
+      "steps": [
+        "Only if a contractor got $2,000 or more from the business last year (2026 rule; check).",
+        "Get a W-9 from every contractor before the first payment."
+      ],
+      "url": "https://www.irs.gov/filing/e-file-information-returns-with-iris",
+      "how": "IRS IRIS portal, free. Copy to the contractor the same day."
+    },
+    {
+      "id": "annual-return",
+      "title": "Yearly returns: 1040 + Schedule C/SE, Arkansas AR1000F",
+      "month": 4,
+      "day": 15,
+      "remind_from": "03-01",
+      "when": "income",
+      "steps": [
+        "Jarvis packs the year's income, card charges and estimates paid from money/tax and money/budget.",
+        "Hand it to the CPA, or file it yourself."
+      ],
+      "url": "https://www.irs.gov/filing",
+      "how": "Through the CPA or IRS-approved software. Arkansas follows a federal extension."
+    },
+    {
+      "id": "insurance",
+      "title": "Business insurance renewal",
+      "date_key": "insurance_renews",
+      "when": "insurance",
+      "steps": [
+        "Compare 2 quotes 30 days before. Tech E&O + general liability."
+      ],
+      "url": "https://www.insureon.com/",
+      "how": "Renew with the current insurer, or switch."
+    }
+  ]
+}

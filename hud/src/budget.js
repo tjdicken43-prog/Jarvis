@@ -80,7 +80,7 @@ dbPromise.then((db) => {
   db.collection("spend").orderBy("asked", "desc").limit(20).onSnapshot((snap) => {
     asks = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     const n = asks.filter((a) => a.status === "pending").length;
-    $("budgetBtn").classList.toggle("alert", n > 0 || !!BUDGET?.frozen || !!BUDGET?.alerts?.length);
+    $("budgetBtn").classList.toggle("alert", n > 0 || !!BUDGET?.frozen || !!BUDGET?.alerts?.length || (typeof taxSoon === "function" && taxSoon() > 0));
     $("budgetBtn").dataset.count = n || "";
     if ($("budget").open) renderBudget();
   });

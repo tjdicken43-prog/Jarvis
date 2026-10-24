@@ -112,7 +112,14 @@
   <h3>Budget</h3>
   <p>The business card. Agents only buy by the rules in money/BUDGET.md, and the reserve is never spent.</p>
   <div id="budgetBody"></div>
-  <div class="row"><button type="button" id="budgetDone" class="primary">Done</button></div>
+  <div class="row"><button type="button" id="taxBtn">Taxes</button><button type="button" id="budgetDone" class="primary">Done</button></div>
+</dialog>
+
+<dialog id="tax">
+  <h3>Taxes</h3>
+  <p>What to set aside from each payment, and every filing with its numbers ready. Approve opens the official payment page; you pay there.</p>
+  <div id="taxBody"></div>
+  <div class="row"><button type="button" id="taxDone" class="primary">Done</button></div>
 </dialog>
 
 <dialog id="setup">
@@ -174,6 +181,7 @@
 <script src="src/jobs.js"></script>
 <script src="src/think.js"></script>
 <script src="src/budget.js"></script>
+<script src="src/tax.js"></script>
 <script src="src/briefs.js"></script>
 <script type="module" src="src/workshop.js"></script>
 <script type="module" src="src/vault-ui.js"></script>

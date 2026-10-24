@@ -66,6 +66,12 @@ def refills(cfg, until):
         d += step
 
 
+def refill_amount(cfg, d):
+    """The first refill can differ from the rest (TJ, 2026-10-24: $175 on 2026-10-27, then $100 every two weeks)."""
+    r = cfg["refill"]
+    return r.get("first_amount", r["amount"]) if d.isoformat() == r["first"] else r["amount"]
+
+
 def next_refill(cfg, today):
     d, step = date.fromisoformat(cfg["refill"]["first"]), timedelta(days=cfg["refill"]["every_days"])
     while d <= today:
@@ -107,7 +113,7 @@ def unpaid(items, rows, today):
 def balance(cfg, rows, today):
     """Money left on the card today. A refill counts on its date even before TJ logs it, since he raises the limit that day."""
     logged = {r["date"] for r in rows if r["kind"] == "refill"}
-    bal = sum(cfg["refill"]["amount"] for d in refills(cfg, today) if d.isoformat() not in logged)
+    bal = sum(refill_amount(cfg, d) for d in refills(cfg, today) if d.isoformat() not in logged)
     for r in rows:
         if date.fromisoformat(r["date"]) > today:
             continue
@@ -144,8 +150,8 @@ def status(cfg, rows, today):
         alerts.append(f"Below the {m(floor)} floor: all spending is frozen until {nxt.isoformat()}.")
     elif headroom < 0:
         alerts.append(f"Charges due before {nxt.isoformat()} ({m(committed)}) would take the card under {m(floor)}. Cut or pause one now.")
-    if next_need > cfg["refill"]["amount"] - floor:
-        alerts.append(f"The next two weeks need {m(next_need)}, more than the {m(cfg['refill']['amount'] - floor)} a refill can safely cover.")
+    if next_need > refill_amount(cfg, nxt) - floor:
+        alerts.append(f"The next two weeks need {m(next_need)}, more than the {m(refill_amount(cfg, nxt) - floor)} a refill can safely cover.")
     for c in coming:
         if c["date"] < today.isoformat():
             alerts.append(f"{c['service']} {m(c['amount'])} was due {c['date']} but isn't in the ledger. Check the card and log it.")
@@ -153,7 +159,7 @@ def status(cfg, rows, today):
         if s["spent_30d"] >= cfg["warn_at_cap"] * s["cap"] > 0:
             alerts.append(f"{s['service']} has used {m(s['spent_30d'])} of its {m(s['cap'])} cap.")
     return {
-        "as_of": today.isoformat(), "balance": bal, "floor": floor, "refill": cfg["refill"]["amount"],
+        "as_of": today.isoformat(), "balance": bal, "floor": floor, "refill": refill_amount(cfg, nxt),
         "next_refill": nxt.isoformat(), "days_to_refill": (nxt - today).days,
         "committed": committed, "headroom": max(headroom, 0), "coming": coming,
         "next_period": next_period, "next_period_need": next_need,
@@ -184,7 +190,8 @@ def check(cfg, rows, service, amount, today, recurring_bill=False):
     if left < st["floor"]:
         hard.append(f"That leaves {m(left)} after charges due before "
                     f"{st['next_refill']}, under the {m(st['floor'])} reserve.")
-    limit = cfg.get("ask_over", 25)
+    # TJ can raise the run-through limit for one service (2026-10-24: Render up to $35 a month)
+    limit = cfg.get("ask_over_by_service", {}).get(service, cfg.get("ask_over", 25))
     recurring = recurring_bill or service in {r["service"] for r in cfg.get("recurring", [])}
     spent = spent_30d(rows, service, today)
     if not recurring:

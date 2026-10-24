@@ -277,6 +277,14 @@
   .bAsk small { display: block; font: 400 12.5px/1.45 var(--body); color: var(--dim); margin-top: 4px; }
   .bBtns { display: flex; gap: 8px; justify-content: flex-end; }
   .bBtns button:disabled { opacity: .45; }
+  #taxBody h4 { margin: 18px 0 4px; font: 500 12.5px/1 var(--body); color: var(--mute); }
+  #taxBody h4 + .bRow { border-top: 0; }
+  .tFile { border-color: var(--line); }
+  .tFile.soon { border-color: var(--gold); }
+  .tFile > small { margin-top: 0; }
+  .tNums { margin: 0; padding: 8px 0 0 18px; border-top: 1px solid var(--faint); font: 400 13.5px/1.5 var(--body); color: var(--ink); font-variant-numeric: tabular-nums; }
+  .bBtns a.gear { display: inline-flex; align-items: center; text-decoration: none; }
+  .tFine { font: 400 12px/1.5 var(--body); color: var(--mute); margin-top: 16px; }
   #budgetBtn { position: relative; }
   #budgetBtn[data-count]:not([data-count=""])::after { content: attr(data-count); position: absolute; top: 2px; right: 2px; min-width: 16px; height: 16px; border-radius: 8px; background: var(--gold); color: var(--on-amber); font: 600 10px/16px var(--body); text-align: center; }
 

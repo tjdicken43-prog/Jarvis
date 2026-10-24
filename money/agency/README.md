@@ -96,7 +96,7 @@ Leads (matchmaker) are display only until the Arkansas license question is check
 ## AI receptionist (Vapi)
 
 1. **Set up** on Clients (Receptionist section): the shop's hours (Central), text-back on or off, and its Vapi number.
-   `POST /clients/<id>/receptionist` builds the assistant: answers as "the after-hours assistant", says the call may be
+   `POST /clients/<id>/receptionist` builds the assistant: answers as "the automated after-hours assistant", says the call may be
    recorded, takes name, callback number, town, problem and urgency. Never quotes prices, books slots or claims to be
    a person. Gas smell or CO alarm: get out, call 911 or the gas company. Without `VAPI_API_KEY` it's a dry run;
    with it, it creates (then updates) the assistant on Vapi. It never places calls.

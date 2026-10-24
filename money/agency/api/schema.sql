@@ -185,3 +185,8 @@ CREATE TABLE IF NOT EXISTS sms_optouts (        -- replied STOP: never text this
   number     text PRIMARY KEY,
   created_at timestamptz NOT NULL DEFAULT now()
 );
+
+-- Follow-ups: three after the first email (days 3, 7, 14), approved with it, stopped by any reply, bounce or opt-out
+ALTER TABLE emails DROP CONSTRAINT IF EXISTS emails_kind_check;
+ALTER TABLE emails ADD CONSTRAINT emails_kind_check CHECK (kind IN ('first','follow_up_1','follow_up_2','follow_up_3'));
+CREATE INDEX IF NOT EXISTS emails_provider_id ON emails (provider_id) WHERE provider_id IS NOT NULL;

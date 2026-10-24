@@ -54,7 +54,7 @@ def next_window(now):
 
 def sent_today(conn, now):
     midnight = dt.datetime.combine(now.astimezone(CENTRAL).date(), dt.time(0), CENTRAL)
-    return conn.execute("SELECT count(*) AS n FROM emails WHERE status = 'sent' AND sent_at >= %s", (midnight,)).fetchone()["n"]
+    return conn.execute("SELECT count(*) AS n FROM emails WHERE sent_at >= %s", (midnight,)).fetchone()["n"]  # replied ones count too
 
 
 def build(row):
@@ -63,6 +63,9 @@ def build(row):
     msg["To"] = row["to_email"]
     msg["Subject"] = row["subject"]
     msg["Message-ID"] = make_msgid(domain=(config.FROM_EMAIL.split("@")[-1] or None))
+    if row.get("thread"):  # follow-ups land in the same thread as the first email
+        msg["In-Reply-To"] = row["thread"][-1]
+        msg["References"] = " ".join(row["thread"])
     msg["List-Unsubscribe"] = f"<{unsub_url(row['unsub_token'])}>"
     msg["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click"
     msg.set_content(row["body"].rstrip() + "\n\n" + footer(row["unsub_token"]) + "\n")
@@ -80,12 +83,13 @@ def smtp_send(msg):
 DUE = """
 SELECT e.*, p.email AS to_email, p.website, p.name FROM emails e JOIN prospects p ON p.id = e.prospect_id
 WHERE e.status = 'approved' AND (e.send_after IS NULL OR e.send_after <= %s)
-ORDER BY e.approved_at, e.id
+ORDER BY e.send_after NULLS FIRST, e.approved_at, e.id
 """
 
 
-def send_due(conn, now=None, send=None):
+def send_due(conn, now=None, send=None, hold_follow_ups=False):
     """Send what is approved and due. Returns {sent, dry_run, held, detail}."""
+    import followups  # imports this module
     now = now or dt.datetime.now(dt.timezone.utc)
     live = config.mailer() == "smtp"
     send = send or smtp_send
@@ -108,7 +112,7 @@ def send_due(conn, now=None, send=None):
     room = config.DAILY_SEND_CAP - sent_today(conn, now)
     domains_today = {host(r["to_email"].split("@")[-1]) for r in conn.execute(
         "SELECT p.email AS to_email FROM emails e JOIN prospects p ON p.id = e.prospect_id "
-        "WHERE e.status = 'sent' AND e.sent_at >= %s", (now - dt.timedelta(hours=24),)).fetchall()}
+        "WHERE e.sent_at >= %s", (now - dt.timedelta(hours=24),)).fetchall()}
     would = 0
     for r in rows:
         domain = r["to_email"].split("@")[-1].lower()
@@ -116,6 +120,14 @@ def send_due(conn, now=None, send=None):
             conn.execute("UPDATE emails SET status = 'cancelled' WHERE id = %s", (r["id"],))
             conn.execute("UPDATE prospects SET status = 'unsubscribed', updated_at = now() WHERE id = %s", (r["prospect_id"],))
             held.append({"email_id": r["id"], "reason": "on the do-not-email list; cancelled"})
+            continue
+        if hold_follow_ups and r["kind"] != "first":
+            held.append({"email_id": r["id"], "reason": "inbox check failed, so follow-ups wait"})
+            continue
+        if why := followups.blocked(conn, r):
+            if why[0] == "stop":
+                conn.execute("UPDATE emails SET status = 'cancelled' WHERE id = %s", (r["id"],))
+            held.append({"email_id": r["id"], "reason": why[1] + ("; cancelled" if why[0] == "stop" else "")})
             continue
         if room <= 0:
             held.append({"email_id": r["id"], "reason": f"daily cap of {config.DAILY_SEND_CAP} reached"})
@@ -129,7 +141,7 @@ def send_due(conn, now=None, send=None):
             domains_today.add(domain)
             continue
         try:
-            provider_id = send(build(r))
+            provider_id = send(build(dict(r, thread=followups.thread_ids(conn, r["prospect_id"]))))
         except Exception as e:
             held.append({"email_id": r["id"], "reason": f"send failed: {type(e).__name__}"})
             conn.commit()
@@ -138,6 +150,13 @@ def send_due(conn, now=None, send=None):
                      (now, provider_id, r["id"]))
         conn.execute("UPDATE prospects SET status = 'emailed', updated_at = now() WHERE id = %s", (r["prospect_id"],))
         conn.commit()
+        if r["kind"] == "first":
+            try:
+                followups.schedule(conn, r["prospect_id"], now)
+                conn.commit()
+            except Exception as e:  # the first one went out; TJ sees why its follow-ups didn't queue
+                conn.rollback()
+                held.append({"email_id": r["id"], "reason": f"sent, but follow-ups not queued: {e}"[:200]})
         sent += 1
         room -= 1
         domains_today.add(domain)

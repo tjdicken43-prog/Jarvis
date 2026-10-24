@@ -11,6 +11,7 @@ Prices (2026-10-23): $299 setup + $149/mo Front Desk (300 min) or $249/mo Front 
 | 2. FastAPI server (`api/main.py`), Render blueprint (`render.yaml`) | done, not deployed |
 | 3. Outreach Agent: flaw finder (`api/flaws.py`), mockups (`api/mockup.py` + `../sites/trade_build.py`), drafts (`api/outreach.py`) | done |
 | 4. Next.js Approval Queue (`web/`), nothing sends without TJ's tap | done |
+| 4b. Follow-ups (`api/followups.py`): days 3, 7, 14, same thread, stop on reply/bounce/opt-out | done, stub until Tuesday's keys |
 | 5. Clients + Leads views (`web/app/clients`, `web/app/leads`) | done |
 | 6. Stripe checkout, webhook, overage (`api/billing.py`), TEST mode only | done, not deployed |
 | 7. AI receptionist (`api/receptionist.py`): Vapi assistant per client, call webhook, missed-call text-back stub | done, dry run until Vapi key |
@@ -61,7 +62,17 @@ Render image: `docker build -f money/agency/api/Dockerfile -t agency-api .` from
    the window, under the daily cap (5 to start), and no one at that domain got mail in 24 hours. Re-checks the list
    again. Adds the footer (TJ, Sites by TJ, postal address, unsubscribe link) and one-click unsubscribe headers.
    Stops on the first error. `MAILER=stub` runs all of this and sends nothing.
-4. **Unsubscribe** (`/u/{token}`, GET or one-click POST): adds the address to `suppressions` forever, marks the shop
+4. **Follow-ups** (`api/followups.py`, no AI): three short ones on days 3, 7 and 14 after the first email, each a new
+   angle (after-hours calls, no work on their end, a polite close), never "just bumping this". They are approved with
+   the first email: its card shows them before TJ taps, and when the first one really sends they queue in the same
+   thread (`Re:` subject, `In-Reply-To`/`References`). Each waits for its day and the next window, counts against the
+   cap, gets the same footer, and can be undone, edited or skipped on the Approved tab.
+   **Stops:** every `/send` first reads the Workspace inbox over IMAP (read only; same app password). A reply stops the
+   sequence and marks the shop replied (TJ answers it himself); "stop", "unsubscribe", "not interested" and the like
+   above the quote = do-not-email list; a bounce = do-not-email list. Out-of-office replies don't stop anything. If the
+   inbox can't be read, follow-ups wait and first emails can still go. With the stub mailer TJ marks replies and
+   bounces by hand on the Sent tab (`POST /prospects/<id>/replied` or `/bounced`).
+5. **Unsubscribe** (`/u/{token}`, GET or one-click POST): adds the address to `suppressions` forever, marks the shop
    unsubscribed, cancels anything pending.
 
 ## Getting paid (Stripe, test mode)
@@ -117,7 +128,8 @@ Leads (matchmaker) are display only until the Arkansas license question is check
    with the four events listed above, paste its signing secret into `STRIPE_WEBHOOK_SECRET`.
 8. **Vapi**: sign up, put the private key in `VAPI_API_KEY` on agency-api (`VAPI_WEBHOOK_SECRET` is generated). Buy a
    number only when the first shop pays. Test: set up a receptionist for a test client, call it, check Clients.
-9. **Workspace app password** (2-Step Verification on first): `SMTP_USER`, `SMTP_PASSWORD`, `FROM_EMAIL`.
+9. **Workspace app password** (2-Step Verification on first): `SMTP_USER`, `SMTP_PASSWORD`, `FROM_EMAIL`. The same
+   password reads replies and bounces over IMAP (`imap.gmail.com`; IMAP must be allowed in the Workspace admin (check)).
 10. **After warm-up**: `MAILER=smtp`, then unpause in the dashboard. That last tap is TJ's.
 
 | Set | Turns on |

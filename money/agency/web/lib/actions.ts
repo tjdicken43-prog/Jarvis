@@ -39,6 +39,13 @@ export async function addSuppression(kind: "email" | "domain", value: string, re
     api<Suppression>("/suppressions", { method: "POST", body: { [kind]: v, reason: reason.trim() || "manual" } }),
   );
 }
+// They replied (no more follow-ups) or the address bounced (never email it again)
+export async function markReplied(prospectId: string | number): Promise<R<unknown>> {
+  return run(() => api(`/prospects/${prospectId}/replied`, { method: "POST" }));
+}
+export async function markBounced(prospectId: string | number): Promise<R<unknown>> {
+  return run(() => api(`/prospects/${prospectId}/bounced`, { method: "POST" }));
+}
 export async function unapprove(id: string | number): Promise<R<unknown>> {
   return run(() => api(`/emails/${id}/unapprove`, { method: "POST" }));
 }

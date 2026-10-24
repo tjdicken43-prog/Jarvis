@@ -491,4 +491,135 @@ assert receptionist.is_after_hours(dict(sat, open_saturday=False), dt.datetime(2
 config.VAPI_WEBHOOK_SECRET = ""
 ok(api.post("/vapi/webhook", json=report("v9", now, 5), headers=vh), 503)
 
+# Follow-ups: days 3, 7 and 14 in the same thread, approved with the first email, stopped by reply, bounce or "stop"
+import followups  # noqa: E402
+sys.path.insert(0, str(API.parents[1] / "sites"))
+from audit import banned_words  # noqa: E402
+with db.connect() as c:
+    c.execute("""INSERT INTO prospects (id, name, trade, city, email, website, rating, flaw, mockup_url, status) VALUES
+      ('fu/k', 'Kings Plumbing', 'plumbing', 'Rogers', 'kim@kingsplumb.com', 'kingsplumb.com', 4.4, 'no tap-to-call', 'https://api.example.test/m/kings', 'built'),
+      ('fu/l', 'Lake Air', 'hvac', 'Lowell', 'lee@lakeair.com', 'lakeair.com', 4.2, 'no https', NULL, 'checked'),
+      ('fu/m', 'Mesa Roofing', 'roofing', 'Bentonville', 'max@mesaroof.com', 'mesaroof.com', 4.0, '© 2019', NULL, 'checked')""")
+    c.commit()
+    out = outreach.draft_first_emails(c, 10, ["fu/k", "fu/l", "fu/m"], drafter=outreach.template_draft); made = out["created"]
+assert len(made) == 3, out
+fu_ids = {x["prospect_id"]: x["email_id"] for x in made}
+k = api.get(f"/emails/{fu_ids['fu/k']}", headers=H).json()
+assert [f["day"] for f in k["follow_ups"]] == [3, 7, 14], k
+for kind_id in fu_ids.values():
+    for f in api.get(f"/emails/{kind_id}", headers=H).json()["follow_ups"]:
+        text = f["subject"] + " " + f["body"]
+        assert f["subject"].startswith("Re: ") and len(f["body"].split()) <= outreach.MAX_WORDS, f
+        assert "!" not in text and "—" not in text and not banned_words(text) and "bump" not in text.lower(), f
+        assert not outreach.PLACEHOLDER.search(text) and "$" not in text, f
+assert "https://api.example.test/m/kings" in k["follow_ups"][0]["body"] and "https://api.example.test/m/kings" in k["follow_ups"][1]["body"]
+assert "burst pipe" in k["follow_ups"][0]["body"] and "stop writing" in k["follow_ups"][2]["body"], k
+for i in fu_ids.values():
+    ok(api.post(f"/emails/{i}/approve", headers=H))
+assert "follow_ups" not in api.get("/queue?status=sent", headers=H).json()["items"][0]
+
+config.MAILER, config.DAILY_SEND_CAP = "smtp", 20
+sent.clear()
+fake_send = lambda msg: sent.append(msg) or msg["Message-ID"]
+day = lambda m, d, h=15: dt.datetime(2026, m, d, h, 0, tzinfo=dt.timezone.utc)  # 15:00Z = 9 or 10am Central
+with db.connect() as c:
+    res = mailer.send_due(c, day(10, 27), fake_send)
+    assert res["sent"] == 3 and len(sent) == 3 and not any(m["In-Reply-To"] for m in sent), res
+    first_ids = {m["To"]: m["Message-ID"] for m in sent}
+    fus = c.execute("SELECT prospect_id, kind, status, send_after FROM emails WHERE prospect_id LIKE 'fu/%%' AND kind <> 'first' "
+                    "ORDER BY prospect_id, kind").fetchall()
+    assert len(fus) == 9 and {f["status"] for f in fus} == {"approved"}, fus
+    when = {f["kind"]: f["send_after"].astimezone(mailer.CENTRAL) for f in fus if f["prospect_id"] == "fu/k"}
+    assert [when[x].date() for x in ("follow_up_1", "follow_up_2", "follow_up_3")] == \
+        [dt.date(2026, 10, 30), dt.date(2026, 11, 3), dt.date(2026, 11, 10)] and all(mailer.in_window(w) for w in when.values()), when
+    followups.schedule(c, "fu/k", day(10, 27)); c.commit()  # twice is harmless
+    assert c.execute("SELECT count(*) AS n FROM emails WHERE prospect_id = 'fu/k'").fetchone()["n"] == 4
+    sent.clear()
+    assert mailer.send_due(c, day(10, 29), fake_send)["sent"] == 0 and not sent  # day 2: nothing due yet
+
+# Undo a follow-up, edit it, approve again: it still waits for its day
+mid = next(f for f in fus if f["prospect_id"] == "fu/m" and f["kind"] == "follow_up_2")
+with db.connect() as c:
+    m2 = c.execute("SELECT id FROM emails WHERE prospect_id = 'fu/m' AND kind = 'follow_up_2'").fetchone()["id"]
+ok(api.post(f"/emails/{m2}/unapprove", headers=H))
+ok(api.patch(f"/emails/{m2}", json={"body": "Hi,\n\nShort and plain. Worth a call this week?"}, headers=H))
+r = api.post(f"/emails/{m2}/approve", headers=H); ok(r)
+assert dt.datetime.fromisoformat(r.json()["item"]["email"]["send_after"]) >= mid["send_after"], r.json()
+with db.connect() as c:
+    assert c.execute("SELECT status FROM prospects WHERE id = 'fu/m'").fetchone()["status"] == "emailed"
+
+
+def mail(frm, subject, body, **hdr):
+    head = "".join(f"{k.replace('_', '-')}: {v}\r\n" for k, v in hdr.items())
+    return f"From: {frm}\r\nTo: tj@cold.example.test\r\nSubject: {subject}\r\n{head}\r\n{body}\r\n".encode()
+
+
+inbox = [
+    mail("Lee <LEE@lakeair.com>", "Re: x", "Stop by Monday, I'm free after 2.\r\n\r\nOn Tue, TJ wrote:\r\n> stop by anytime",
+         In_Reply_To=first_ids["lee@lakeair.com"]),
+    mail("Max <max@mesaroof.com>", "Automatic reply: x", "I'm out until Friday.", Auto_Submitted="auto-replied"),
+    mail("someone@else.com", "Hello", "Unrelated."),
+]
+with db.connect() as c:
+    got = followups.check_inbox(c, day(10, 30, 14), fetch=lambda since: inbox)
+    assert got["replied"] == ["fu/l"] and not got["bounced"] and not got["stopped"], got
+    st = {r["kind"]: r["status"] for r in c.execute("SELECT kind, status FROM emails WHERE prospect_id = 'fu/l'")}
+    assert st == {"first": "replied", "follow_up_1": "cancelled", "follow_up_2": "cancelled", "follow_up_3": "cancelled"}, st
+    assert c.execute("SELECT status FROM prospects WHERE id = 'fu/l'").fetchone()["status"] == "replied"
+    assert c.execute("SELECT status FROM prospects WHERE id = 'fu/m'").fetchone()["status"] == "emailed"  # out of office
+    sent.clear()
+    res = mailer.send_due(c, day(10, 30), fake_send)
+    assert res["sent"] == 2 and sorted(m["To"] for m in sent) == ["kim@kingsplumb.com", "max@mesaroof.com"], res
+    kfu = next(m for m in sent if m["To"] == "kim@kingsplumb.com")
+    assert kfu["In-Reply-To"] == first_ids["kim@kingsplumb.com"] and kfu["Subject"].startswith("Re: "), kfu
+    assert "PO Box 1" in kfu.get_content() and kfu["List-Unsubscribe-Post"], kfu
+
+# Bounce (a delivery report naming the address) puts it on the do-not-email list and ends the sequence
+dsn = mail("Mail Delivery Subsystem <mailer-daemon@googlemail.com>", "Delivery Status Notification (Failure)",
+           "Your message wasn't delivered to max@mesaroof.com because the address couldn't be found.")
+with db.connect() as c:
+    got = followups.check_inbox(c, day(11, 2), fetch=lambda since: [dsn] + inbox)
+    assert got["bounced"] == ["fu/m"] and got["replied"] == [], got  # lee already handled, not counted twice
+    assert db.suppressed(c, "max@mesaroof.com")
+    assert c.execute("SELECT count(*) AS n FROM emails WHERE prospect_id = 'fu/m' AND status = 'approved'").fetchone()["n"] == 0
+    assert c.execute("SELECT status FROM emails WHERE prospect_id = 'fu/m' AND kind = 'follow_up_1'").fetchone()["status"] == "bounced"
+    sent.clear()
+    res = mailer.send_due(c, day(11, 3), fake_send)
+    assert res["sent"] == 1 and sent[0]["To"] == "kim@kingsplumb.com", res
+    assert sent[0]["References"].split() == [first_ids["kim@kingsplumb.com"], kfu["Message-ID"]], sent[0]["References"]
+    # "Please stop" in the reply (above the quote) = opt-out, not a warm lead
+    stop_msg = mail("kim@kingsplumb.com", "Re: x", "Please stop emailing me.\r\n\r\n> Hi, if a new site sounds like a lot of work",
+                    References=sent[0]["Message-ID"])
+    got = followups.check_inbox(c, day(11, 4), fetch=lambda since: [stop_msg])
+    assert got["stopped"] == ["fu/k"] and db.suppressed(c, "kim@kingsplumb.com"), got
+    assert c.execute("SELECT status FROM emails WHERE prospect_id = 'fu/k' AND kind = 'follow_up_3'").fetchone()["status"] == "cancelled"
+    assert mailer.send_due(c, day(11, 10), fake_send)["sent"] == 0
+
+# A follow-up whose first email never went out is cancelled by the sender, not sent
+with db.connect() as c:
+    c.execute("""INSERT INTO prospects (id, name, trade, city, email, website, status) VALUES
+                 ('fu/n', 'Nash Heat', 'hvac', 'Rogers', 'n@nashheat.com', 'nashheat.com', 'emailed')""")
+    c.execute("""INSERT INTO emails (prospect_id, kind, subject, body, status, unsub_token, approved_at)
+                 VALUES ('fu/n', 'follow_up_1', 'Re: x', 'Hi', 'approved', 'tok-n', now())""")
+    c.commit()
+    sent.clear()
+    res = mailer.send_due(c, day(11, 10), fake_send)
+    assert not sent and any("first email was not sent" in h["reason"] for h in res["held"]), res
+
+# Marked by hand from the Sent tab; an inbox that can't be read holds follow-ups but not first emails
+ok(api.post("/prospects/fu/zz/replied", headers=H), 404)
+ok(api.post("/prospects/fu/n/replied"), 401)
+r = api.post("/prospects/fu/n/replied", headers=H); ok(r)
+assert r.json()["status"] == "replied" and r.json()["cancelled"] == 0, r.json()
+r = api.post("/prospects/fu/n/bounced", headers=H); ok(r)
+with db.connect() as c:
+    assert db.suppressed(c, "n@nashheat.com")
+followups.imap_fetch = lambda since: (_ for _ in ()).throw(OSError("no route"))
+r = api.post("/send", headers=H); ok(r)
+assert "inbox check failed" in r.json()["inbox"]["error"], r.json()
+config.MAILER = "stub"
+assert "by hand" in api.post("/outreach/inbox", headers=H).json()["detail"]
+h = api.get("/health").json()
+assert h["inbox"] == "stub" and h["follow_up_days"] == [3, 7, 14], h
+
 print("agency api ok")

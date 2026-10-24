@@ -1,6 +1,6 @@
 # Budget: the business card
 
-TJ's rule (2026-10-24): one virtual card, $150 every two weeks, covers every business expense. Jarvis spends it on making money; TJ is asked only for buys over $25 or one-offs. Agents run the money by these rules. The card never hits $0.
+TJ's rule (2026-10-24): one virtual card covers every business expense. Refills: $175 on 2026-10-27, then $100 every two weeks until the first client (TJ, 2026-10-24). Jarvis spends it on making money; TJ is asked only for buys over $25 or one-offs. Agents run the money by these rules. The card never hits $0.
 
 How this works for real: agents can't hold the card or move money. They govern through these rules, the ledger, and asking TJ. The hard stops sit outside the AI: the card's own limit, the merchant lock, and each service's own cap. That's on purpose. OWASP says authorization belongs in systems outside the model, not in the model's judgment.
 
@@ -31,15 +31,15 @@ Files: `money/budget/budget.json` (refill, floor, caps, recurring charges), `mon
 |---|---|---|
 | anthropic-api | $20 | API credits for the agency drafter. Prepaid, auto-reload off |
 | google-workspace | $9 | Business Starter, 1 user, cold-email inbox (check price at signup) |
-| render | $10 | Gym-security Starter + disk, if this card goes on Render (check). Agency stack is suspended |
+| render | $35 | Gym-security Starter + disk, plus the agency stack (about $25) once it's resumed. TJ OK'd Render running through up to $35 a month (2026-10-24) |
 | domains | $15 | Outreach domain, about $12/yr (check) |
 
-Planned first two weeks, about $48 of the $150. That leaves about $77 safe to spend over the $25 floor.
+Planned first two weeks, about $48 of the $175. Taxes never go on this card: they come out of client income into a separate tax savings account (money/TAX.md).
 
 ## Ledger
 
 `money/budget/ledger.csv`, one line per money event, amounts always positive:
-- `refill`: TJ raised the card limit by $150 on payday (counted automatically on refill dates, so logging it is optional).
+- `refill`: TJ raised the card limit on payday ($175 the first time, then $100) (counted automatically on refill dates, so logging it is optional).
 - `charge`: money out. `approved_by` = `TJ` (with a chat yes) or `recurring` (a line from budget.json).
 - `refund`: money back.
 
@@ -47,7 +47,7 @@ Run `python3 money/budget/budget.py lint` after editing. Then refresh the Jarvis
 
 ## TJ's card setup (Tuesday, about 10 minutes)
 
-1. Optional, but it gives the card a real $150: open a free second checking account that's only for business. Set an automatic $150 transfer every payday and turn overdraft coverage off. That account's balance is the true hard stop.
+1. Optional, but it gives the card a real hard limit: open a free second checking account that's only for business. Set an automatic transfer every payday ($175 the first time, then $100) and turn overdraft coverage off. That account's balance is the true hard stop.
 2. Privacy.com: sign up (free plan, up to 12 new cards a month) and link that account as the funding source.
 3. Make one merchant-locked card per service, each with a monthly limit equal to its cap: Anthropic $20, Google Workspace $9, Render $10. For the domain, make a single-use card for the exact price.
 4. Type each card into that merchant's own checkout yourself. Don't paste it to Claude.

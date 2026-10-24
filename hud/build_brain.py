@@ -46,7 +46,7 @@ def main():
         "checks": sum(len(CHECK.findall(n["text"])) for n in notes),
     }
     out = ROOT / "hud" / "brain.js"
-    brain = {"notes": notes, "stats": stats, "budget": budget_snapshot()}
+    brain = {"notes": notes, "stats": stats, "budget": budget_snapshot(), "tax": tax_snapshot()}
     out.write_text("window.BRAIN = " + json.dumps(brain, indent=1) + ";\n", encoding="utf-8")
     print(f"Packed {stats['notes']} notes into {out.relative_to(ROOT)}")
     if "--artifact" in sys.argv:
@@ -62,6 +62,20 @@ def budget_snapshot():
     problems = b.lint(cfg, rows)
     snap = b.status(cfg, rows, datetime.now(ZoneInfo("America/Chicago")).date())
     snap["alerts"] = ["The ledger has a problem: " + p for p in problems] + snap["alerts"]
+    return snap
+
+
+def tax_snapshot():
+    """The Tax sheet's numbers, from money/tax (income + rules)."""
+    spec = importlib.util.spec_from_file_location("tax", ROOT / "money" / "tax" / "tax.py")
+    t = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(t)
+    cfg, income, paid, ledger = t.load()
+    problems = t.lint(cfg, income, paid)
+    if problems:
+        income, paid = [], []
+    snap = t.status(cfg, income, paid, ledger, datetime.now(ZoneInfo("America/Chicago")).date())
+    snap["alerts"] = ["The tax files have a problem: " + p for p in problems] + snap["alerts"]
     return snap
 
 

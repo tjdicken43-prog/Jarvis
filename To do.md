@@ -13,12 +13,18 @@ Covers [[SecurityAI]], [[Basis]], [[Jarvis]] and [[Sites by TJ]]. Done items mov
 - [ ] Finish the custom domain DNS on Namecheap for [[SecurityAI]] (needs TJ's Namecheap login).
 - [ ] Photo of an Ashbourne denied scan.
 - [ ] Score the 3 golden sites (HVAC, roofing, plumbing) and get two other people to score them; each needs 8+ before any outreach, per money/SITE_BAR.md. See [[Sites by TJ]].
+- [ ] Gym price: keep $200/entrance, or $149 + $79 each extra to undercut Kisi and Camio? Numbers in money/TAX.md "Prices after tax". Your call.
+- [ ] Send the Arkansas DFA tax question (draft is in your Gmail Drafts, to Sales.tax@dfa.arkansas.gov). Keep their reply.
+- [ ] Tell Jarvis about how much J Street pays you a year, so the tax estimate counts your bracket right.
 - [ ] Read and say what to change: [[Backend proficiency checklist]], [[J Street pilot pitch]], and the 35-day line in [[Gym service agreement]].
 
 ## Tuesday 2026-10-27 (payday)
 - [ ] Follow the ordered "Tuesday checklist" in money/agency/README.md and money/BUDGET.md, in one sitting: make the business card (Privacy.com), set the Anthropic workspace limit to $20 with auto-reload off, buy the outreach domain + Google Workspace Business Starter, then the DNS records Jarvis gives (SPF, DKIM, DMARC p=none, Postmaster Tools), resume agency-db and agency-api on Render, add OPERATOR_TOKEN in Project settings, sign up at Vapi (free) and add VAPI_API_KEY. Jarvis does every step after the keys are in (warm-up start date, Stripe test, receptionist setup, ledger lines).
 
 ## When a client says yes
+- [ ] Open a free business savings account for taxes. Same day each client pays: move what the Taxes sheet says (all sales tax + 25% of profit). See money/TAX.md.
+- [ ] One CPA visit before the first quarterly payment (likely 2027-01-15), about $150 to $300 (check). Bring money/TAX.md.
+- [ ] Before the first gym invoice or kit sale: Arkansas sales tax permit on ATAP (atap.arkansas.gov), $50 one time. Then tell Jarvis the permit date.
 - [ ] File an Arkansas LLC at sos.arkansas.gov ($45, then $150 franchise tax every May 1; TJ can be his own registered agent). Over $25, so the Approve button.
 - [ ] Get 2 free insurance quotes: technology E&O + general liability (typical $80-200/mo together). Buy only when the first gym agrees to pay.
 - [ ] Lawyer glance at [[Gym service agreement]] and [[Camera privacy notice]] before any gym signs.
@@ -37,4 +43,5 @@ Not TJ's to do. Each line says what it waits for; the job runner and the Monday 
 - After the first month of bills: check the cost estimates in money/agency/api/costs.py (hosting $21/mo, Vapi 13 cents a minute) against the real bills and fix them.
 - Before switching on the 15% matchmaker: look up the Arkansas rules.
 - Once the outreach domain exists: move mockups to <slug>.<cold domain>.
+- Taxes: log each client payment in money/tax/income.csv (waits on the first Stripe payment), copy paid filings from the page store into paid.csv, refresh the Taxes sheet. Once the first gym is close: add "plus Arkansas sales tax" to gym quotes and Stripe invoices (waits on TJ's gym price call).
 - Missed-call and review texts stay stubs until TJ picks an SMS provider with 10DLC (his call, after the first paying shop). Then set NOTIFY=smtp on Render and do a real test call to check Vapi's tool fields.

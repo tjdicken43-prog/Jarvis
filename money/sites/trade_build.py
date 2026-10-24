@@ -267,7 +267,7 @@ def owner_html(trade, name, short, city):
 <h2 id="owh">Never miss the call that comes in after you close</h2>
 <p class="olede">This site comes with Front Desk: an AI receptionist that answers your line when you can't, takes the job details and hands them to you. You keep your number and forward it only when you want to.</p>
 <div class="two"><div><h3>An after-hours call</h3>
-<dl class="ocall"><dt>Assistant</dt><dd>Thanks for calling {esc(name)}. This is the after-hours assistant, and this call may be recorded. What's going on?</dd>
+<dl class="ocall"><dt>Assistant</dt><dd>Thanks for calling {esc(name)}. This is the automated after-hours assistant, and this call may be recorded. What's going on?</dd>
 <dt>Caller</dt><dd>{esc(ask)}</dd><dt>Assistant</dt><dd>Sorry to hear it. Can I get your name and the best number to call you back?</dd>
 <dt>Caller</dt><dd>Dana. Same number I'm calling from.</dd><dt>Assistant</dt><dd>Thanks, Dana. What's the address or town, and can it wait until morning?</dd>
 <dt>Caller</dt><dd>{esc(city)}. {esc(wait)}</dd><dt>Assistant</dt><dd>Got it. {esc(safe)} Someone from {esc(short)} will call you back first thing.</dd></dl>

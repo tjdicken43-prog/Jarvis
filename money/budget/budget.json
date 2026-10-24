@@ -1,7 +1,8 @@
 {
-  "_doc": "Rules live in money/BUDGET.md. Agents may add a recurring line of $25 or less (with a cap of at most $25); anything else only after TJ says so in chat.",
+  "_doc": "Rules live in money/BUDGET.md. Agents may add a recurring line of $25 or less (with a cap of at most $25); anything else only after TJ says so in chat. TJ 2026-10-24: refills $175 on 2026-10-27 then $100 every two weeks; Render runs through up to $35 a month.",
   "refill": {
-    "amount": 150,
+    "amount": 100,
+    "first_amount": 175,
     "every_days": 14,
     "first": "2026-10-27"
   },
@@ -10,7 +11,7 @@
   "warn_at_cap": 0.8,
   "caps_30d": {
     "anthropic-api": 20,
-    "render": 10,
+    "render": 35,
     "google-workspace": 9,
     "domains": 15
   },
@@ -31,7 +32,7 @@
       "service": "render",
       "amount": 7.25,
       "monthly_from": "2026-11-01",
-      "note": "Gym-security Starter $7 + 1 GB disk; only if this card goes on Render (check). Agency stack suspended 2026-10-24, +$25/mo if resumed"
+      "note": "Gym-security Starter $7 + 1 GB disk. Agency stack suspended 2026-10-24, about +$25/mo when resumed; TJ OK'd Render up to $35/mo (2026-10-24)"
     }
   ],
   "planned": [
@@ -41,5 +42,8 @@
       "date": "2026-10-27",
       "note": "outreach domain, 1 year (check price before buying)"
     }
-  ]
+  ],
+  "ask_over_by_service": {
+    "render": 35
+  }
 }

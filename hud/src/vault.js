@@ -10,6 +10,8 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import { VK } from "./vault-kit.js";
+import { WINGS } from "./vault-wings.js";
 
 const TAU = Math.PI * 2, UP = new THREE.Vector3(0, 1, 0);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -95,6 +97,10 @@ export function createVault(container, opts = {}) {
   const bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.75, 0.5, 0.82);
   if (!phone) composer.addPass(bloom);
   composer.addPass(new OutputPass());
+  // round 9: hit-stop, the impact frame, rooms dressed as where each fighter fought, dummies in their opponent's costume
+  const impact = VK.impactFrame(renderer, scene, camera), portraitOf = VK.portraitMaker(renderer), AG = WINGS.agency;
+  const calm = matchMedia("(prefers-reduced-motion: reduce)").matches, BIG = new Set(["launch", "dust", "slice", "ash"]);
+  let stopT = 0, lastImpact = -99;
 
   /* ---------- materials and helpers ---------- */
   const MATS = new Map();
@@ -209,9 +215,8 @@ export function createVault(container, opts = {}) {
   const partM = new THREE.MeshStandardMaterial({ map: steel.clone(), roughness: 0.6, metalness: 0.35 }); partM.map.needsUpdate = true; partM.map.repeat.set(1, 0.7);
   for (const x of [-16, -8, 0, 8, 16]) { mesh(box(0.3, 3.2, 5.5), partM, world, x, 1.6, -5.25); mesh(box(0.3, 2.0, 6), partM, world, x, 1.0, 4.5); }
   const lowM = mat("#46535a", { m: 0.4, r: 0.6 });
-  const plaque = (id, x, z) => { const t = tex(512, 112, (g, w, h) => { g.fillStyle = "#1e2427"; g.fillRect(0, 0, w, h); g.strokeStyle = id === "throne" ? "#ffb547" : "#d9a91b"; g.lineWidth = 8; g.strokeRect(4, 4, w - 8, h - 8);
-      g.fillStyle = "#efe6cf"; g.font = "600 52px system-ui, sans-serif"; g.textBaseline = "middle"; g.textAlign = "center"; g.fillText(id === "throne" ? "Your desk" : CASTBY[id].job, w / 2, h / 2 + 2); });
-    mesh(new THREE.PlaneGeometry(1.9, 0.42), new THREE.MeshStandardMaterial({ map: t, roughness: 0.7 }), world, x, 2.75, z + 0.1, false); };
+  const plaque = (id, x, z) => { const t = id === "throne" ? VK.plaqueTex("Your desk", null, "#ffb547") : VK.plaqueTex(CASTBY[id].job, AG.rooms[id].place);
+    mesh(new THREE.PlaneGeometry(1.9, 0.5), new THREE.MeshStandardMaterial({ map: t, roughness: 0.7 }), world, x, 2.8, z + 0.1, false); };
   for (const id in ROOMX) {
     const cx = ROOMX[id], z = BACKROW.has(id) ? -2.5 : 1.5, dx = DOORX(id);
     const a = cx - 4, b = dx - 0.9, c = dx + 0.9, e = cx + 4;
@@ -221,6 +226,11 @@ export function createVault(container, opts = {}) {
     plaque(id, dx, z);
     if (!BACKROW.has(id)) mesh(box(8, 0.35, 0.2), lowM, world, cx, 0.17, 7.5);
   }
+  /* ---------- each room dressed as where its fighter fought: a painted backdrop on the back wall, the floor tinted to match ---------- */
+  { const ct = VK.concrete().clone(); ct.repeat.set(2, 1.5); ct.needsUpdate = true;
+    for (const id in ROOMX) { if (id === "throne") continue; const cx = ROOMX[id], back = BACKROW.has(id);
+      const fl = mesh(new THREE.PlaneGeometry(7.7, back ? 5.4 : 5.8), new THREE.MeshStandardMaterial({ color: AG.floors[id], map: ct, roughness: 0.95 }), world, cx, 0.008, back ? -5.25 : 4.5, false); fl.rotation.x = -Math.PI / 2;
+      if (back) mesh(new THREE.PlaneGeometry(7.5, 3.1), new THREE.MeshBasicMaterial({ map: VK.backdrop(AG.rooms[id].bd), toneMapped: false, color: "#e0e0e0" }), world, cx, 1.75, -7.9, false); } }
   /* ---------- terminals and signs ---------- */
   const screens = {};
   const terminal = (id, x, z, ry = 0) => {
@@ -323,7 +333,7 @@ export function createVault(container, opts = {}) {
   const F = {}; // fighters by id
   const fighter = (id, R, extra = {}) => {
     const [x, z, ry] = POS[id]; R.root.position.set(x, 0, z); R.root.rotation.y = ry; R.base = R.root.position.clone(); R.ry = ry;
-    R.root.traverse((o) => (o.userData.fid = id)); world.add(R.root);
+    R.root.traverse((o) => (o.userData.fid = id)); world.add(R.root); VK.inkLayer(R.root);
     F[id] = Object.assign(R, { id, act: null, idle: extra.idle || "stand", phase: rnd() * TAU, count: 0, last: "" }, extra);
     return F[id];
   };
@@ -530,23 +540,14 @@ export function createVault(container, opts = {}) {
 
 
   /* ---------- crash-test dummies: every move lands on one, and each breaks its own way (TJ, 2026-10-24) ---------- */
-  const targetTex = tex(64, 64, (g) => { g.fillStyle = "#f1cf3a"; g.beginPath(); g.arc(32, 32, 30, 0, TAU); g.fill(); g.fillStyle = "#151515"; for (const a of [0, Math.PI]) { g.beginPath(); g.moveTo(32, 32); g.arc(32, 32, 30, a, a + Math.PI / 2); g.fill(); } });
-  const targetMat = new THREE.MeshBasicMaterial({ map: targetTex, transparent: true });
   const DOFF = { mahoraga: 1.9, hanami: 1.7, gojo: 1.4, jogo: 2.0, sukuna: 1.7, todo: 1.5 };
   const dummies = {}, debris = [];
   const after = (sec, fn) => effect(sec, () => {}, fn);
   const makeDummy = (id, rise = true) => {
     const f = F[id]; if (!f) return;
-    const ms = { body: new THREE.MeshStandardMaterial({ color: "#e3be3a", roughness: 0.55, flatShading: true, transparent: true }), dark: new THREE.MeshStandardMaterial({ color: "#26262a", roughness: 0.7, flatShading: true, transparent: true }) };
-    const g = new THREE.Group(); const off = new THREE.Vector3((DOFF[id] || 1.3) * 0.9, 0, 0.55).applyAxisAngle(UP, f.ry);
-    g.position.copy(f.base).add(off); g.rotation.y = Math.atan2(f.base.x - g.position.x, f.base.z - g.position.z); world.add(g);
-    const lower = grp(g), upper = grp(g, 0, 0.95, 0);
-    for (const sx of [-1, 1]) { mesh(box(0.16, 0.9, 0.18), ms.body, lower, sx * 0.11, 0.45, 0); mesh(box(0.17, 0.06, 0.19), ms.dark, lower, sx * 0.11, 0.48, 0); }
-    mesh(box(0.4, 0.2, 0.24), ms.dark, lower, 0, 0.95, 0);
-    mesh(box(0.46, 0.5, 0.26), ms.body, upper, 0, 0.35, 0); mesh(box(0.47, 0.04, 0.27), ms.dark, upper, 0, 0.2, 0);
-    for (const sx of [-1, 1]) { const a = mesh(box(0.13, 0.62, 0.14), ms.body, upper, sx * 0.31, 0.3, 0); a.rotation.z = sx * 0.12; }
-    const head = mesh(ball(0.17, 1), ms.body, upper, 0, 0.82, 0);
-    for (const sx of [-1, 1]) { const t = mesh(new THREE.CircleGeometry(0.08, 12), targetMat, head, sx * 0.172, 0, 0, false); t.rotation.y = sx * Math.PI / 2; }
+    const D0 = VK.dummy(AG.dummies[id]?.look), g = D0.g, ms = D0.ms, upper = D0.upper, lower = D0.lower; // the yellow dummy, dressed as the opponent this fighter beat
+    const off = new THREE.Vector3((DOFF[id] || 1.3) * 0.9, 0, 0.55).applyAxisAngle(UP, f.ry);
+    g.position.copy(f.base).add(off); g.rotation.y = Math.atan2(f.base.x - g.position.x, f.base.z - g.position.z); world.add(g); g.userData.dummy = id; VK.inkLayer(g);
     const d = dummies[id] = { id, g, upper, lower, ms, alive: true, home: g.position.clone() };
     if (rise) { g.position.y = -2; effect(0.9, (q) => (g.position.y = -2 + 2 * out(q))); burst(d.home.clone().setY(0.1), 10, ["#e0b21c", "#ffffff"], 2, { life: 0.5 }); }
     return d;
@@ -558,7 +559,7 @@ export function createVault(container, opts = {}) {
     debris.push({ o, v, w: w || new THREE.Vector3((rnd() - 0.5) * 12, (rnd() - 0.5) * 12, (rnd() - 0.5) * 12), life, max: life, grav });
   };
   const shatter = (d, base, spread = 3, o = {}) => { // every part flies off on its own
-    const parts = []; d.g.traverse((m) => m.isMesh && m.material !== targetMat && parts.push(m));
+    const parts = []; d.g.traverse((m) => m.isMesh && m.material !== VK.targetMat() && parts.push(m));
     parts.forEach((m) => { const side = new THREE.Vector3(m.getWorldPosition(new THREE.Vector3()).x - d.g.position.x, 0, 0);
       toss(m, base.clone().add(new THREE.Vector3((rnd() - 0.5) * spread, rnd() * spread * 0.8, (rnd() - 0.5) * spread)).addScaledVector(side, o.side || 0), null, o.life, o.grav); });
     world.remove(d.g);
@@ -567,6 +568,9 @@ export function createVault(container, opts = {}) {
   const away = (id, d) => d.g.position.clone().sub(F[id].base).setY(0).normalize();
   const kill = (id, style) => {
     const d = dummies[id]; if (!d || !d.alive) return; d.alive = false; const P = d.g.position.clone(), mid = P.clone().setY(1.1);
+    if (!calm) stopT = Math.max(stopT, BIG.has(style) ? 0.09 : 0.06); // hit-stop: the floor holds still for a blink as the hit lands
+    { const ring = VK.dustRing(world, P.x, P.z); effect(0.6, (q) => { ring.scale.setScalar(0.3 + q * 1.6); ring.material.opacity = 0.6 * (1 - q); }, () => world.remove(ring)); }
+    if (!calm && BIG.has(style) && focusId === id && now - lastImpact > 8) { lastImpact = now; impact.fire(); } // one ink-on-white impact frame, only on the big moves you're watching
     switch (style) {
       case "launch": { const a = away(id, d); burst(mid, 30, ["#ff2a3a", "#e3be3a", "#111"], 6, { life: 0.7 }); shatter(d, a.multiplyScalar(10).setY(5), 4); break; } // Black Flash: blown back in pieces
       case "pin": { const a = away(id, d); effect(0.5, (q) => { d.g.position.copy(P).addScaledVector(a, out(q) * 3); d.g.position.y = Math.sin(q * Math.PI) * 0.8; d.g.rotation.x = -q * 1.4; }, () => { burst(d.g.position.clone().setY(0.4), 20, ["#e3be3a", "#cfc6b5"], 4, { life: 0.6 }); shatter(d, new THREE.Vector3(0, 2, 0), 3); }); break; } // Toji: spear through, flung and pinned to the floor
@@ -817,10 +821,14 @@ export function createVault(container, opts = {}) {
   };
   const newItem = (id, hidden) => { const c = makeCrate(); c.g.scale.setScalar(0.62); c.g.visible = !hidden; items.push(c); c.at = id; ST[id].queue.push(c); restack(id); return c; };
   const items = [];
-  const dropAt = (id, P) => { // the job falls out of the broken dummy, already worked on
-    const st = ST[id]; if (st.phase !== "work" || !st.item) return; const c = st.item;
-    world.attach(c.g); c.g.visible = true; c.g.scale.setScalar(0.62); c.g.position.set(P.x, 0.02, P.z); c.g.rotation.y = rnd() * TAU;
-    burst(new THREE.Vector3(P.x, 0.4, P.z), 12, ["#ffd34a", "#ffffff"], 2.5, { life: 0.5 }); st.phase = "pick";
+  const dropAt = (id, P) => { // the job pops out of the broken dummy on an arc, squashes as it lands, bounces once, then dust
+    const st = ST[id]; if (st.phase !== "work" || !st.item) return; const c = st.item; st.phase = "drop";
+    world.attach(c.g); c.g.visible = true; c.g.scale.setScalar(0.62); c.g.rotation.y = rnd() * TAU; const from = P.clone().setY(1.0), to = new THREE.Vector3(P.x, 0.02, P.z);
+    effect(0.5, (q) => { const k = Math.min(1, q / 0.8), land = q > 0.78 && q < 0.9 ? Math.sin(((q - 0.78) / 0.12) * Math.PI) : 0;
+        c.g.position.lerpVectors(from, to, k); c.g.position.y = 0.02 + (1 - k) * 0.98 + Math.sin(Math.PI * k) * 0.7 + (q > 0.8 ? Math.sin((Math.PI * (q - 0.8)) / 0.2) * 0.12 : 0);
+        c.g.scale.set(0.62 * (1 + land * 0.3), 0.62 * (1 - land * 0.35), 0.62 * (1 + land * 0.3)); },
+      () => { c.g.scale.setScalar(0.62); c.g.position.copy(to); const r = VK.dustRing(world, to.x, to.z); effect(0.45, (q) => { r.scale.setScalar(0.2 + q * 0.6); r.material.opacity = 0.5 * (1 - q); }, () => world.remove(r)); st.phase = "pick"; });
+    burst(from, 12, ["#ffd34a", "#ffffff"], 2.5, { life: 0.5 });
   };
   const walkTo = (f, pts, done) => { f.walk = { pts: pts.map((p) => new THREE.Vector3(p[0], 0, p[1])), i: 0, done, t: 0 }; };
   const route = (from, to, end) => { // out of one room, along the corridor, into the next; lanes keep walkers apart
@@ -940,10 +948,14 @@ export function createVault(container, opts = {}) {
   const zoom = (k) => { userUntil = now + 20; goal.r = clamp(goal.r * k, 4, 80); };
   const pick = (e) => {
     const r = canvas.getBoundingClientRect(); ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
-    ray.setFromCamera(ndc, camera); const hit = ray.intersectObjects(Object.values(F).map((f) => f.root), true)[0];
-    const id = hit?.object.userData.fid; if (id) { userUntil = now + 20; userUntil = 0; focus(id, 1e9, { r: 6, el: 0.22, ty: 1.2, az: 0.55, pri: 3 }); userUntil = now + 20; opts.onPick?.(profile(id)); }
+    ray.setFromCamera(ndc, camera); const hit = ray.intersectObjects([...Object.values(F).map((f) => f.root), ...Object.values(dummies).filter((d) => d.g.parent).map((d) => d.g)], true)[0];
+    let o = hit?.object; while (o && o.userData.dummy == null && !o.userData.fid) o = o.parent;
+    const id = o?.userData.fid; if (id) { userUntil = 0; focus(id, 1e9, { r: 6, el: 0.22, ty: 1.2, az: 0.55, pri: 3 }); userUntil = now + 20; opts.onPick?.(profile(id)); }
+    else if (o?.userData.dummy) { const did = o.userData.dummy; userUntil = 0; focus(did, 1e9, { r: 6, el: 0.22, ty: 1.2, az: -0.2, pri: 3 }); userUntil = now + 20; opts.onPick?.(dummyProfile(did)); }
   };
-  const profile = (id) => ({ ...CASTBY[id], count: F[id].count, lastLine: F[id].last, portrait: () => portrait(id) });
+  const profile = (id) => ({ ...CASTBY[id], place: AG.rooms[id]?.place, beat: AG.dummies[id]?.name, count: F[id].count, lastLine: F[id].last, portrait: () => portrait(id) });
+  const dummyProfile = (id) => { const c = CASTBY[id], d = AG.dummies[id]; return { id, dummy: true, name: d.name, job: `Beaten by ${c.name}`, look: d.full, who: d.who, breaks: d.breaks, place: AG.rooms[id].place, honest: !!d.honest, count: F[id].count,
+    portrait: () => portraitOf(VK.dummy(d.look).g, 1.77, 1) }; };
 
   /* ---------- Mii portrait: render a fighter's head and shoulders into a small image for the card ---------- */
   const pCam = new THREE.PerspectiveCamera(26, 1, 0.05, 30), pRT = new THREE.WebGLRenderTarget(256, 256, { colorSpace: THREE.SRGBColorSpace });
@@ -984,6 +996,7 @@ export function createVault(container, opts = {}) {
     // slow device: after ~3 s of slow frames drop to 1x pixels and no bloom (the same guard workshop.js uses)
     if (real > 0.034 && now > 4) { if (++slow > 90 && !lowPower) { lowPower = true; pr = 1; renderer.setPixelRatio(1); layout(); } } else slow = Math.max(0, slow - 1);
     if (phone) { acc += dt; accR += real; if (acc < 1 / 31) return; dt = acc; real = accR; acc = accR = 0; }
+    impact.tick(real || dt); if (stopT > 0) { stopT -= real || dt; dt = 0; } // hit-stop
     now += dt; tick(dt, real || dt); render();
   };
   const tick = (dt, real = dt) => { // dt is sim time (clamped); flashes and shake fade in real time so a slow frame rate can't leave the screen washed out
@@ -1022,7 +1035,7 @@ export function createVault(container, opts = {}) {
     placeTags();
   };
   const resetPose = (R) => { for (const k of ["armL", "armR", "legL", "legR", "torso", "head"]) R[k].rotation.set(0, 0, 0); R.armL.fore.rotation.set(0, 0, 0); R.armR.fore.rotation.set(0, 0, 0); R.legL.shin.rotation.set(0, 0, 0); R.legR.shin.rotation.set(0, 0, 0); R.root.position.copy(R.base); R.hips.position.y = 0.95; };
-  const render = () => { if (phone || lowPower) renderer.render(scene, camera); else composer.render(); };
+  const render = () => { if (impact.on) impact.render(); else if (phone || lowPower) renderer.render(scene, camera); else composer.render(); };
   raf = requestAnimationFrame(frame);
   // warm start: jobs already waiting in a few rooms so the floor is never empty
   { const a = newItem("yuji"); const b = newItem("yuta"); b.tag.visible = true; b.screen.visible = true; const c = newItem("gojo"); c.body.visible = false; c.env.visible = true; c.ok.visible = true; }
@@ -1032,7 +1045,7 @@ export function createVault(container, opts = {}) {
     setDirector(on) { director = on; if (!on) { goal = home(); focusUntil = 0; curPri = 0; focusId = null; } },
     home() { userUntil = 0; focusUntil = 0; curPri = 0; focusId = null; goal = home(); },
     focus(id) { userUntil = 0; focus(id, 1e9, { r: 6, el: 0.22, ty: 1.2, az: 0.55, pri: 3 }); },
-    profile, portrait,
+    profile, portrait, dummyProfile, wing: { id: "agency" },
     // rows from the events table, newest last; once any arrive the demo stops and only real events play
     feed(rows) { const fresh = rows.filter((r) => !live.seen.has(r.id)); fresh.forEach((r) => live.seen.add(r.id)); if (!rows.length) return; if (mode === "demo") { mode = "live"; items.forEach((c) => (c.gone = true)); return; } queue.push(...fresh); },
     get mode() { return mode; },

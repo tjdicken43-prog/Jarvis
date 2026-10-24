@@ -123,8 +123,8 @@
       "why": "Custom programming and hosting aren't taxed services in Arkansas (GR-25(H)(2))."
     },
     "monitoring": {
-      "label": "Gym security, $200 a month + $100 per extra entrance",
-      "price": 200,
+      "label": "Gym security, $149 a month + $79 per extra entrance",
+      "price": 149,
       "cost": 10,
       "taxable": true,
       "why": "Security and alarm monitoring is taxed (rule GR-9.12). Treated as taxed until DFA says otherwise."

@@ -212,9 +212,23 @@ const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
 const jobCounts = () => { const v = Object.values(jobsSeen || {}); return [v.filter((s) => s === "queued" || s === "working").length, v.filter((s) => s === "done").length]; };
 // The factory gate: the Sites by TJ factory floats inside the brain, live, wired to the core (hud/factory.js)
 const GATE = { pos: [2.4, 0.3, 1.6], r: 0.85, rect: null };
-const factoryLine = () => { const s = window.JarvisFactory?.status?.() || {}; return `${plural(s.working || 0, "worker")} busy, ${plural(s.rail || 0, "job")} on the rail. Tap the gate to walk in.`; };
+const factoryLine = () => "Four wings, one per business, fighters in their own rooms. Tap the gate to walk in.";
+// Vault 479's face for the gate and the home card: four wing doors in each business's colour (the walk-in view is the 3D Vault, vault-ui.js)
+const VAULT_DOORS = [["#c9a24a", "SITES"], ["#e07a2a", "BASIS"], ["#9aa0b0", "GYM"], ["#3a8ad0", "ETSY"]];
+function vaultFace(g, x, y, w, h, tt) {
+  g.fillStyle = "#0b0e11"; g.fillRect(x, y, w, h);
+  const gap = w * 0.03, dw = (w - gap * 5) / 4, dh = h * 0.62, dy = y + h * 0.2;
+  VAULT_DOORS.forEach(([c, name], i) => {
+    const dx = x + gap + i * (dw + gap), pulse = 0.5 + 0.5 * Math.sin(tt * 1.6 + i * 1.5);
+    g.fillStyle = "#151a1e"; g.fillRect(dx, dy, dw, dh);
+    const lg = g.createLinearGradient(0, dy, 0, dy + dh); lg.addColorStop(0, c + "00"); lg.addColorStop(1, c + (pulse > 0.5 ? "88" : "55")); g.fillStyle = lg; g.fillRect(dx, dy, dw, dh);
+    g.strokeStyle = c; g.lineWidth = Math.max(1, w * 0.004); g.strokeRect(dx, dy, dw, dh);
+    g.fillStyle = "#ece7dc"; g.font = `600 ${Math.max(9, w * 0.032)}px system-ui, sans-serif`; g.textAlign = "center"; g.fillText(name, dx + dw / 2, dy + dh + h * 0.09);
+  });
+  g.fillStyle = "#ece7dc"; g.font = `600 ${Math.max(11, w * 0.06)}px system-ui, sans-serif`; g.textAlign = "center"; g.fillText("VAULT 479", x + w / 2, y + h * 0.13);
+}
 { const o = V.norm(GATE.pos); GATE.stop = { p: V.add(GATE.pos, V.add(V.mul(o, 1.8), [0, 0.15, 0])), l: GATE.pos, hold: 14, gate: true,
-  cap: () => ({ tag: "THE FACTORY · SITES BY TJ", title: "THE FACTORY", line: factoryLine() }) }; }
+  cap: () => ({ tag: "THE FACTORY · VAULT 479", title: "VAULT 479", line: factoryLine() }) }; }
 const FSTOPS = [
   { p: [0, 2, -15], l: [0, 0, 0], hold: 2.6, cap: () => ({ tag: "LIVE DEMO · FLYING IN", title: `THE BRAIN · ${nodes.length} NOTES`, line: "Every star a note, every line a link. Going in." }) },
   GATE.stop,
@@ -251,7 +265,7 @@ function drawGate(q, core) {
   cx.fillStyle = halo; cx.fillRect(x - hw * 1.5, y - hw * 1.5, hw * 3, hw * 3);
   cx.save(); octPath(x, y, hw, hh, cut); cx.clip();
   cx.fillStyle = "#020106"; cx.fillRect(x - hw, y - hh, hw * 2, hh * 2);
-  if (F && hw > 30) { cx.drawImage(F.tick(), x - hw, y - hh, hw * 2, hh * 2); }
+  if (hw > 30) vaultFace(cx, x - hw, y - hh, hw * 2, hh * 2, t);
   const sweep = ((t * 0.35) % 1.4 - 0.2) * hh * 2; // a scan line rolls down the portal
   cx.fillStyle = "rgba(159,232,255,.08)"; cx.fillRect(x - hw, y - hh + sweep, hw * 2, hh * 0.12);
   cx.restore();
@@ -262,7 +276,7 @@ function drawGate(q, core) {
   for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { cx.fillStyle = `rgba(255,211,74,${0.5 + 0.5 * Math.sin(t * 3 + sx + sy * 2)})`; cx.fillRect(x + sx * (hw - cut * 0.5) - 3, y + sy * (hh - cut * 0.5) - 3, 6, 6); }
   if (hw > 40) {
     cx.font = `600 ${Math.max(11, Math.min(16, hw * 0.06))}px 'Chakra Petch', sans-serif`; cx.textAlign = "center"; cx.fillStyle = "#ffd34a";
-    cx.fillText("THE FACTORY · TAP TO ENTER", x, y - hh - hw * 0.11);
+    cx.fillText("VAULT 479 · TAP TO ENTER", x, y - hh - hw * 0.11);
   }
   GATE.rect = [x - hw, y - hh, x + hw, y + hh, t];
 }
@@ -271,8 +285,8 @@ function drawGate(q, core) {
 let demo = false, demoSaid = new Set();
 const DEMO_LINES = [
   () => `Welcome inside my brain. Every star out there is one of TJ's notes, ${nodes.length} of them. Let's fly in.`,
-  () => "This is the factory. My crew finds local businesses with bad websites, builds them a better one, and writes the email. Nothing goes out until TJ taps approve on his throne.",
-  () => "And this is my core, wired to every station in the factory. Thanks for visiting. Tap anywhere when you're done.",
+  () => "This is Vault 479, my factory. Four wings, one for each of TJ's businesses, with a fighter at every station. The sites crew finds local shops with bad websites, builds them a better one and writes the email. Nothing goes out until TJ taps approve.",
+  () => "And this is my core, wired to every wing of the vault. Thanks for visiting. Tap anywhere when you're done.",
 ];
 const flight = { on: false, t0: 0, k: -1, flash: 0, inside: null, lastP: null };
 let warpBoost = 0;

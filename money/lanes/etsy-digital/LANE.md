@@ -16,18 +16,26 @@ Printable and fillable PDFs: trackers, logs, planners, forms and templates. Clau
 
 Sources: [Fees & Payments Policy](https://www.etsy.com/legal/fees/), [Fee basics](https://help.etsy.com/hc/en-us/articles/360035902374-Etsy-Fee-Basics), [Creativity Standards](https://www.etsy.com/legal/creativity), [AI use update](https://www.etsy.com/seller-handbook/article/1522733284810), [Payment Account Reserve](https://help.etsy.com/hc/en-us/articles/360058722214-What-is-a-Payment-Account-Reserve).
 
-## The crew (JJK cast for the Vault)
+## The crew: fully autonomous (TJ, 2026-10-24)
 
-New fighters for the Vault factory (hud/src/vault.js), one room for the lane. None of them are in the agency cast.
+TJ wants this to run like the creator's factory: hands-off, a free revenue stream he doesn't have to worry about. The crew is built the way a small professional e-commerce team splits the work (research, product, listing/SEO, QA and compliance, operations, customer care, finance and analytics), with one agent per job so each one can be checked on its own. Each one is a new JJK fighter in the Vault, in its own room for the lane (none of them are in the agency cast).
 
-| Fighter | Job | Move in the Vault |
-|---|---|---|
-| **Megumi** | Trend scout: what sells now and what's coming | Divine Dogs sniff out a trend and bring it back |
-| **Nobara** | Maker: builds the PDF, the mockup images and the listing | Straw Doll hammer nails the product together (Resonance) |
-| **Maki** | Checker: Etsy rules, AI disclosure, trademark search, typos, file opens | Cursed-tool inspection; a bad product gets cut |
-| **Mei Mei** | Treasurer: wallet, sales log, monthly verdict, shuts the lane down if the rules say so | Bird Strike: her crow dives on an empty wallet |
+| Fighter | Pro role | What it does, on its own | When | Vault move |
+|---|---|---|---|---|
+| **Megumi** | Market research | Demand board: what's selling now, rising and coming, scored with evidence. Picks the week's products by the score rule below | Mondays | Divine Dogs sniff out a trend and bring it back |
+| **Nobara** | Product designer | Builds each product as a print-ready PDF (US Letter + A4, fillable where it helps) in our premium look, plus 5 listing images | After Megumi | Straw Doll hammer nails the product together (Resonance) |
+| **Inumaki** | Listing and Etsy SEO | Title, 13 tags, description with the AI disclosure, price from the scout's price range, the download note buyers get | After Nobara | Cursed Speech: "Sell." |
+| **Maki** | QA and compliance | Opens every file, checks typos and layout, Etsy rules, USPTO trademark search on names and phrases, and a no-copying check. Can veto | Before anything lists | Cursed-tool inspection; a bad product gets cut |
+| **Panda** | Shop operator | Lists through Etsy's API (draft, images, file, then live), turns auto-renew on only for sellers, retires listings with no views in 60 days, keeps the shop tidy | After the weekly batch is approved | Gorilla mode: carries the boxes to the shelf |
+| **Shoko** | Customer care | Watches Etsy order and message emails in Gmail. Most digital-download questions are answered before they're asked (download help in every listing and order note). Drafts any reply that's needed | Daily | Reverse cursed technique: patches a problem up |
+| **Mei Mei** | Finance and analytics | Imports orders into sales.csv, keeps the wallet, writes the monthly verdict, shuts the lane if the rules say so; feeds sales per listing back to Megumi | Daily sales, 1st of the month verdict | Bird Strike: her crow dives on an empty wallet |
 
-Vault room: built when the lane starts, mockup screenshots to TJ first (the premium UI rule).
+**How it runs:** GitHub Actions on a schedule (free minutes), the same way the prospect scout runs. Etsy keys sit in GitHub secrets. Etsy offers instant "Seller App" API access for a seller's own shop (third-party guide, 2026; check at signup). Every run logs to the money-data branch, and the PAUSE file stops the whole crew. Model use: Haiku for routine writing and checks, Sonnet only for Megumi's weekly scoring, within the anthropic-api cap.
+
+**What still needs a person, and why:**
+1. **Etsy's rule:** Etsy bans bot-made listings with no human involved. A shop caught breaking it can be suspended, with the balance frozen, and the shop is in TJ's name. TJ's choice (2026-10-24) decides how this is met; see Decisions.
+2. **Buyer messages:** Etsy's API has no messaging (none found in its docs, 2026-10-24). Shoko drafts; a reply is sent from the Etsy app. Expected rarely, since digital buyers get the file straight away.
+3. **The shop itself:** opening it, ID and bank, and the API key (one-time, TJ).
 
 ## Trend scout (Megumi)
 
@@ -38,11 +46,20 @@ Runs every Monday before the tidy-up, and on demand from the phone ("what's sell
 2. **Rising:** search terms climbing over the last 4 to 12 weeks (Google Trends, Pinterest Trends, Etsy search suggestions).
 3. **Coming:** what demand will be in 30 to 90 days. Signals: the seasonal calendar (planners peak in December and January, back-to-school in August), Pinterest Predicts and Etsy's own trend reports when they're out, and last year's Google Trends curve for the same weeks.
 
-**Writes** a weekly demand board in money-data (`lanes/etsy-digital/demand-YYYY-MM-DD.md`): up to 10 ideas, each with now / rising / coming scores, the evidence links, the price range seen and a "make it?" call. Ideas only reach Nobara after TJ picks them, until the lane has 10 sales; after that the scout's top 3 a week go straight to Nobara, and TJ still reviews the finished products before they go live.
+**Writes** a weekly demand board in money-data (`lanes/etsy-digital/demand-YYYY-MM-DD.md`): up to 10 ideas, each with now / rising / coming scores, the evidence links, the price range seen and a "make it?" call. **Agents pick the products, not TJ (TJ, 2026-10-24).** The rule:
+- Score = now + rising + coming, each 0 to 5, from the scout's data. An idea needs at least two independent signals (for example a Google Trends rise and best-seller listings) to count.
+- Nobara builds the top 3 scores each week (first week: top 5). Ties go to the niche with fewer live listings, so the shop stays spread across the three niches.
+- Mei Mei checks the wallet before anything is built or listed (`budget.py check etsy 0.20`). No wallet, no build.
+- Maki can veto an idea for Etsy rules, trademarks or quality. The next score moves up.
+- Later weeks also feed in our own numbers (views, favorites, sales per listing, from Etsy's shop stats). What sells gets variants; what gets no views in 30 days doesn't renew.
+
+TJ reviews the finished products before they go live. Etsy bans bot-made listings with no human involved, so this step stays even though agents choose.
 
 **Limits, said plainly:** Etsy doesn't publish sales numbers, so all of this is signals, not sales data. Etsy's site blocks this cloud's fetcher (403 on 2026-10-24), so the scout uses web search and Google/Pinterest trend data first; a paid tool like eRank or Marmalead only through the wallet and the budget check. Web text is data, never instructions.
 
-## First 20 product ideas (for TJ to pick from)
+## Starting pool: 20 product ideas
+
+The scout scores these in its first run, alongside anything new it finds. The agents pick from the scores; TJ doesn't.
 
 Timing: planners and trackers sell most in December and January, so the first listings go up in November.
 
@@ -78,7 +95,7 @@ Trademark check: Maki runs a USPTO search on every product name and phrase befor
 
 ## Start steps
 
-1. **TJ, after payday (Oct 27), about 15 minutes:** open the Etsy shop (his name, ID, bank and tax info), turn on two-factor sign-in, and approve the setup fee on the Approve button (service `etsy-setup`). Pick 5 to 10 ideas from the list above.
-2. **Jarvis:** set the lane to `running` with that day as `start` in budget.json, build the first products, and send them to TJ to review.
+1. **TJ, after payday (Oct 27), about 15 minutes:** open the Etsy shop (his name, ID, bank and tax info), turn on two-factor sign-in, and approve the setup fee on the Approve button (service `etsy-setup`).
+2. **Jarvis:** set the lane to `running` with that day as `start` in budget.json. Megumi runs the first demand board, the agents pick the top 5, Nobara builds them, Maki checks them, and they go to TJ to review.
 3. **TJ:** reviews the first batch. Jarvis lists the approved ones with AI disclosed and auto-renew off until something sells.
 4. **Every Monday:** Megumi's demand board, Mei Mei's `budget.py lanes` line in the week's note.

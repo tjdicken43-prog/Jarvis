@@ -20,7 +20,7 @@ Covers [[SecurityAI]], [[Basis]], [[Jarvis]] and [[Sites by TJ]]. Done items mov
 ## Tuesday 2026-10-27 (payday)
 - [ ] Follow the ordered "Tuesday checklist" in money/agency/README.md and money/BUDGET.md, in one sitting: make the business card (Privacy.com), set the Anthropic workspace limit to $20 with auto-reload off, buy the outreach domain + Google Workspace Business Starter, then the DNS records Jarvis gives (SPF, DKIM, DMARC p=none, Postmaster Tools), resume agency-db and agency-api on Render, add OPERATOR_TOKEN in Project settings, sign up at Vapi (free) and add VAPI_API_KEY. Jarvis does every step after the keys are in (warm-up start date, Stripe test, receptionist setup, ledger lines).
 
-- [ ] Open the Etsy shop for the digital downloads lane: etsy.com/sell, your name, ID, bank and tax info, turn on two-factor sign-in, then approve the setup fee on the Approve button (service etsy-setup). Pick 5 to 10 product ideas from money/lanes/etsy-digital/LANE.md and tell Jarvis. See money/LANES.md.
+- [ ] Open the Etsy shop for the digital downloads lane: etsy.com/sell, your name, ID, bank and tax info, turn on two-factor sign-in, then approve the setup fee on the Approve button (service etsy-setup). The agents pick the products from the trend scout's data; you only review the finished ones before they list. See money/LANES.md.
 
 ## When a client says yes
 - [ ] Open a free business savings account named "Tax savings" (at your bank, or one with percentage auto-transfer rules such as Relay (check)).
@@ -47,5 +47,5 @@ Not TJ's to do. Each line says what it waits for; the job runner and the Monday 
 - Before switching on the 15% matchmaker: look up the Arkansas rules.
 - Once the outreach domain exists: move mockups to <slug>.<cold domain>.
 - Taxes: log each client payment in money/tax/income.csv (waits on the first Stripe payment), copy paid filings from the page store into paid.csv, refresh the Taxes sheet. Once the first gym is close: add "plus Arkansas sales tax" to gym quotes and Stripe invoices (waits on TJ's gym price call).
-- Etsy digital lane: set it to running, build the first products for TJ's review, build the Vault room (Megumi, Nobara, Maki, Mei Mei; mockup first), and start the Monday trend scout. Waits on TJ opening the shop and picking ideas. Money rules: money/LANES.md.
+- Etsy digital lane: set it to running, run the trend scout's first demand board, let the agents pick and build the top 5 for TJ's review, build the Vault room (Megumi, Nobara, Maki, Mei Mei; mockup first), and start the Monday trend scout. Waits on TJ opening the shop. Money rules: money/LANES.md.
 - Missed-call and review texts stay stubs until TJ picks an SMS provider with 10DLC (his call, after the first paying shop). Then set NOTIFY=smtp on Render and do a real test call to check Vapi's tool fields.

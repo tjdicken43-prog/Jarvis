@@ -20,6 +20,8 @@ Quote requests with the address and photos, so trips aren't wasted. Storm calls 
 6. FAQ, plus FAQPage schema.
 7. Where we work: town chips. Then call-or-stop-by details, and a sticky Call / Get a quote bar.
 
+**Front Desk (every trade, 2026-10-24):** before the final call band, a **Calling after hours?** section (the answering assistant takes name, number, address and the problem; says it is automated if asked; the trade's safety line). On previews only, an owner panel at the bottom (`#owner`, linked from the concept bar): a sample after-hours call, the next-morning call log, and the two plans. Both come from `trade_build.py` (`after_hours_html`, `owner_html`), so copy and prices stay in one place.
+
 ## Reusable tool copy (general, safe for any roofer)
 - Signs: roof about 20+ years old; curling, cracked or missing shingles in more than one spot; granules in gutters; leaks in more than one place; dipping roofline; moss or dark streaks over big areas.
 - Verdicts: 0 = nothing yet; 1 = likely a repair; 2-3 = get an inspection; 4+ = ask about replacement. Always add "A general guide, not a diagnosis."

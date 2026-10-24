@@ -18,6 +18,7 @@ Websites for local shops in Bentonville and NWA. Started 2026-10-22. See [[Decis
 - Our cost per client about $29 to $58/mo (Plus $41 to $129), fixed about $60/mo (check). See [[Decisions]].
 - Code: money/agency/ (step 1 schema + import, PR #62; step 2 API + email drafts + Approval Queue dashboard, PR #64; step 3 flaw finder + auto mockups, 2026-10-23). Not deployed yet. Sending starts paused, cap 5 a day, weekdays 9-11am Central, from the Google Workspace inbox on the cold domain.
 - Flaw finder (money/agency/api/flaws.py): opens each shop's site in Chromium at phone size and picks one true flaw (down, not mobile-friendly, no tap-to-call, phone hidden, slow, no https, old footer), with a screenshot. No clear flaw = no email.
+- Demos sell Front Desk (2026-10-24): every golden site and auto mockup has a "Calling after hours?" section and, on previews, an owner panel with a sample call and the two plans.
 - Auto mockups (money/sites/trade_build.py): option C preview per shop from their own site's facts (logo linked, brand color, 24/7, towns, services they name, Google stars), checked against the site bar, served at the API's /m/<slug> with noindex. One button in the Approval Queue runs check, mockup and draft.
 
 ## History
@@ -34,7 +35,7 @@ Websites for local shops in Bentonville and NWA. Started 2026-10-22. See [[Decis
 - Quality bar (TJ, 2026-10-23): every site must pass money/SITE_BAR.md before anyone sees it: nothing that looks AI-made, custom to the business, fast and clean on a phone, better than the best local competitor. No outreach until 3 golden sites score 8+.
 - Domain is always in the client's name.
 - Never auto-send email. CAN-SPAM: real postal address, opt-out, honest subject.
-- No fake reviews or testimonials. Previews use the shop's public facts, stock photos, "concept preview" bar, noindex, removed after 14 days.
+- No fake reviews or testimonials. Previews use the shop's public facts, their own photos only (never stock people), "concept preview" bar, noindex, removed after 14 days.
 
 ## Arkansas (checked 2026-10-22)
 - Web hosting isn't a taxable service in Arkansas (DFA legal opinion 20180219, via Aprio). Web design: likely not taxable (not on the list of taxable services) (check with DFA).

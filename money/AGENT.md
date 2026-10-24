@@ -35,7 +35,7 @@ If a bot's last run failed (GitHub tools: list workflow runs), read its log and 
    - The walk-in lines.
    - An email draft under a `## Email` heading (playbook template, under 80 words). Put the CAN-SPAM footer ("[mailing address]" and the opt-out line) under a line that is just `--`; the footer isn't counted in the 80.
    - The two follow-ups.
-   - Price to quote: launch $299 while fewer than 3 clients, else Starter $499.
+   - Price to quote: trades only, $299 setup + $149/mo Front Desk or $249/mo Front Desk Plus (see [[Sites by TJ]]).
    - **Auditor (script):** `python3 money/sites/audit.py --suppress /tmp/md/prospects/suppress.csv money/sites/shops/<slug>`. Fix every FAIL and run it again, 2 tries max, then mark the lead `skip`. It doesn't replace the screenshot check in [SITE_BAR.md](SITE_BAR.md).
 6. Only once the audit passes: set the shop's status to `built` in `prospects/status.json` on money-data (key is the `id`; ids start with `node/`, `way/` or `overture/`) and push money-data. Statuses: new, checked, skip, no-email, built, approved, emailed, replied, won, lost, unsubscribed.
 7. Commit the shops on a branch, open a PR, wait for `money-tests` to pass, merge. Jarvis is TJ's own repo: merging is fine.
@@ -47,7 +47,7 @@ If a bot's last run failed (GitHub tools: list workflow runs), read its log and 
 - **DOWN**: "Your site isn't loading for customers right now ([what we saw]). Here's a working version: [preview]." Only if a normal browser confirms it.
 - **DATED**: point to one visible thing (old year, no tap-to-call, not phone-friendly), then the preview.
 - **WEAK**: lead with what they'd gain (calls from the phone, hours, reviews), then the preview.
-- Trades and home services also get the Front Desk line ("never lose a caller"); food and shops get the one-time price.
+- Every email sells Front Desk (site + after-hours receptionist, "never lose a caller"). Trades only: plumbing, HVAC, roofing (Tj, 2026-10-23).
 - Every email: under 80 words, one question, real mailing address, opt-out line. Nothing is sent until TJ approves it.
 
 ## 2. Rug checks

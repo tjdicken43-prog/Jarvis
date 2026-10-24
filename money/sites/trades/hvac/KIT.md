@@ -18,6 +18,8 @@ Fewer wasted trips (a tripped breaker, dead thermostat batteries, a clogged filt
 5. **Tune-up reminders** form (preview only until sold), plus explainers for what they sell (geothermal, heat pumps), and FAQ.
 6. Where we work: a map with town dots plus the list. Then contact, and a sticky Call / Book bar.
 
+**Front Desk (every trade, 2026-10-24):** before the final call band, a **Calling after hours?** section (the answering assistant takes name, number, address and the problem; says it is automated if asked; the trade's safety line). On previews only, an owner panel at the bottom (`#owner`, linked from the concept bar): a sample after-hours call, the next-morning call log, and the two plans. Both come from `trade_build.py` (`after_hours_html`, `owner_html`), so copy and prices stay in one place.
+
 ## Reusable tool copy (general, safe)
 - No heat: thermostat on Heat and set above the room; new thermostat batteries; furnace breaker and service switch; filter.
 - No cooling: Cool plus fan Auto; both breakers (indoor and outdoor); filter; ice on the lines means turn cooling off, fan On, and call.

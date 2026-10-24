@@ -50,3 +50,10 @@ Tj gave layout B 10/10 and picked "B for everyone". `index.html` is layout B on 
 
 ## Round 6: option C is the standard (2026-10-23)
 Tj: "Boom we found it! Make C the guideline for trade companies." All three `index.html` files are now option C. The previous versions are `layout-b.html` and `layout-a.html`. Following Tj's no-pill rule, every button is square (4px corners). Google ratings, read from Google Maps on 2026-10-23: One Call 4.9, It's Plumbing 4.8, John's 4.8. It's Plumbing's top bar links to its shut-off steps instead of "tap to call", because they aren't 24/7. Lighthouse mobile is 100 / 100 / 100 on all three. Weights: One Call 65 KB, It's Plumbing 78 KB, John's 133 KB.
+
+## Round 7: Front Desk on the demos (2026-10-24)
+Tj asked to bring the demos in line with the trades offer (rebuilt site + AI receptionist) and the site rules. All three `index.html` files now have:
+- **Calling after hours?** (customer side, before the final call band): the answering assistant takes name, number, address and the problem, says it is automated if asked, plus the trade's safety line (same rules as `agency/api/receptionist.py`). One Call and John's say "every call gets answered" (they advertise 24/7); It's Plumbing says "when the office is closed".
+- **Owner panel** (`#owner`, linked from the concept bar, preview only): a sample after-hours call labeled as an example, the next-morning call log, and the plan table ($299 setup, $149 Front Desk 300 min, $249 Plus 800 min, $0.25/min over, 12 months for 10).
+- **Rules pass:** the leftover 10px corners are now 8px (buttons 4px) and the round step numbers are square, so all three pass `trade_build.audit()` (tested in `money/test/test_trade_build.py`). Checked at 375, 390 and 1280 px: no sideways scroll.
+- Still open (check): calendar booking and review requests (Plus) and the owner's next-morning summary are sold but not built yet; text-back is a stub until an SMS provider.

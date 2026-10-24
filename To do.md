@@ -21,6 +21,7 @@ Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's n
 - [ ] Texting (Twilio) and alert email on the domain.
 
 ## Sites by TJ
+- [ ] Front Desk sold on the demos but not built yet: Plus calendar booking and review requests, the owner's next-morning call summary, real text-back (SMS provider). (2026-10-24)
 - [ ] Trades MVP (steps 1-8 built: receptionist + Render blueprint done 2026-10-23) needs from TJ on Tue 2026-10-27: follow the ordered "Tuesday checklist" in money/agency/README.md (cold domain + Workspace + DNS, warm-up, mailing address, Render blueprint, Anthropic, Stripe test, Vapi). Chromium on Render: solved with a Docker image (tested locally). Check Arkansas rules before switching on the 15% matchmaker (check). Missed-call text-back stays a stub until an SMS provider with 10DLC registration (TJ's call). Mockups are served from the API for now; move to <slug>.<cold domain> once the domain exists.
 - [ ] Before any outreach: 3 golden sites (HVAC, roofing, plumbing) for real NWA businesses must each score 8+ from TJ and two other people, per money/SITE_BAR.md. See [[Sites by TJ]].
 

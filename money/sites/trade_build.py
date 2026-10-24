@@ -213,6 +213,92 @@ def tool_html(trade, tel, phone, cta):
 </ol></div></div></section>"""
 
 
+# Front Desk: the after-hours AI receptionist sold with every site (Tj, 2026-10-23). Mirrors money/agency/api/billing.py
+# and receptionist.py; test_trade_build.py checks the prices match billing.
+PLANS = {"setup": 299, "front_desk": (149, 300), "plus": (249, 800), "over": "0.25"}
+# What the assistant tells callers in danger: the same rules receptionist.py gives it, in customer words
+CALLER_SAFETY = {
+    "plumbing": "<b>Water pouring in?</b> Shut off the main water valve first. <b>Smell gas?</b> Leave the house and "
+                "call 911 or the gas company from outside.",
+    "hvac": "<b>Smell gas, or a carbon monoxide alarm going off?</b> Leave the house now and call 911 or the gas "
+            "company from outside.",
+    "roofing": "<b>Water coming through a ceiling?</b> Move your things and stay out from under any sagging spot. "
+               "Don't climb onto the roof.",
+}
+# One example call per trade for the owner panel, written by us and labeled as an example
+SAMPLE_CALL = {
+    "plumbing": ("There's water coming up around the water heater in the garage.", "It's not spreading. It can wait till morning if someone comes early.",
+                 "If it starts pouring, shut off the main water valve.", "Water around the water heater, garage floor. Not spreading."),
+    "hvac": ("Our furnace quit and the house is down to 58.", "We have space heaters. Morning is fine.",
+             "If you smell gas, leave the house and call 911 from outside.", "Furnace not running, house at 58. Space heaters on."),
+    "roofing": ("The storm took some shingles and there's a drip in the upstairs bedroom.", "I've got a bucket under it. It can wait till morning.",
+                "Keep the bucket there and stay off the roof.", "Storm damage, missing shingles, slow drip upstairs."),
+}
+
+
+def after_hours_html(trade, short, tel, phone, open_247=False, preview=True):
+    """Customer side: every call gets answered. Honest that it's an automated assistant."""
+    if open_247:
+        lead = (f"Every call gets answered. If the crew is out on a job and can't pick up, our answering assistant "
+                f"takes your details and {esc(short)} calls you back.")
+    else:
+        lead = (f"Call anyway. When the office is closed, our answering assistant picks up, takes your details, and "
+                f"{esc(short)} calls you back.")
+    call = f'<a class="btn" href="tel:{tel}">{PHONE_SVG}Call {esc(phone)}</a>' if tel else ""
+    note = '<p class="fdnote">Preview only. The answering line is not connected yet.</p>' if preview else ""
+    return f"""<section id="after-hours" class="fd"><div class="wrap two"><div>
+<h2>Calling after hours?</h2><p>{lead}</p>
+<p class="fdsafe" role="note">{CALLER_SAFETY[trade]}</p></div>
+<div><ol class="fdlist"><li><b>Say what's wrong</b><span>In your own words.</span></li><li><b>Give your name, number and address</b><span>It reads your number back to be sure.</span></li><li><b>Get a call back</b><span>From the team. If you ask, it will tell you it's an automated assistant.</span></li></ol>
+{call}{note}</div></div></section>"""
+
+
+def owner_html(trade, name, short, city):
+    """Owner side, preview only: what the site comes with (Front Desk) and the prices Tj approved."""
+    ask, wait, safe, log = SAMPLE_CALL[trade]
+    fd, plus = PLANS["front_desk"], PLANS["plus"]
+    rows = [("This site, rebuilt and hosted", "Yes", "Yes"), ("Your calls answered", "After hours", "Day and night"),
+            ("Minutes a month", str(fd[1]), str(plus[1])), ("Text back when a caller hangs up", "Yes", "Yes"),
+            ("Calendar booking and review requests", "No", "Yes")]
+    body = "".join(f"<tr><th scope=\"row\">{a}</th><td>{b}</td><td>{c}</td></tr>" for a, b, c in rows)
+    return f"""<section id="owner" class="owner" aria-labelledby="owh"><div class="wrap">
+<p class="okick">For {esc(short)} only. This part comes off when the site goes live.</p>
+<h2 id="owh">Never miss the call that comes in after you close</h2>
+<p class="olede">This site comes with Front Desk: an AI receptionist that answers your line when you can't, takes the job details and hands them to you. You keep your number and forward it only when you want to.</p>
+<div class="two"><div><h3>An after-hours call</h3>
+<dl class="ocall"><dt>Assistant</dt><dd>Thanks for calling {esc(name)}. This is the after-hours assistant, and this call may be recorded. What's going on?</dd>
+<dt>Caller</dt><dd>{esc(ask)}</dd><dt>Assistant</dt><dd>Sorry to hear it. Can I get your name and the best number to call you back?</dd>
+<dt>Caller</dt><dd>Dana. Same number I'm calling from.</dd><dt>Assistant</dt><dd>Thanks, Dana. What's the address or town, and can it wait until morning?</dd>
+<dt>Caller</dt><dd>{esc(city)}. {esc(wait)}</dd><dt>Assistant</dt><dd>Got it. {esc(safe)} Someone from {esc(short)} will call you back first thing.</dd></dl>
+<div class="olog"><b>What you get next morning</b><span>Dana, {esc(city)}, 11:42 pm, 2 min</span><span>{esc(log)}</span><span>Emergency: no. Call back: first thing.</span></div>
+<p class="ofine">An example we wrote to show how it works. Not a real call. It never quotes prices, diagnoses or promises a time.</p></div>
+<div><h3>Two plans</h3><table class="oplans"><thead><tr><td></td><th scope="col">Front Desk</th><th scope="col">Front Desk Plus</th></tr></thead>
+<tbody><tr class="oprice"><th scope="row">A month</th><td>${fd[0]}</td><td>${plus[0]}</td></tr>{body}</tbody></table>
+<p class="ofine">${PLANS['setup']} setup, once. Over your minutes: ${PLANS['over']} a minute. Pay for the year and get 12 months for the price of 10. Questions? Reply to the email this came with.</p></div></div>
+</div></section>"""
+
+
+# Shared by trade_build pages and the golden sites. Works with either palette (--acc/--ink here, --cedar/--slate there).
+FD_CSS = """.pv a{color:#fff;font-weight:600}
+.fd,.owner{--fa:var(--acc,var(--cedar));--fi:var(--ink,var(--slate));--fl:var(--line,#d4dae2)}
+.fd{background:#fff;border-top:1px solid var(--fl);border-bottom:1px solid var(--fl)}
+.fd p{max-width:52ch}.fdsafe{border-left:4px solid var(--fa);background:#f6f7f9;padding:12px 14px;margin:18px 0 0}
+.fdlist{list-style:none;margin:0 0 20px;padding:0;border-top:1px solid var(--fl)}
+.fdlist li{display:grid;gap:2px;padding:14px 0;border-bottom:1px solid var(--fl)}.fdlist b{font-size:18px}.fdlist span{color:#4a5668}
+.fdnote,.ofine{font-size:15px;color:#4a5668;margin:12px 0 0}
+.owner{background:#e9edf1;border-top:6px solid var(--fi);color:#1d232b}
+.owner h3{font-size:22px;margin:28px 0 12px}
+.okick{font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#4a5668;margin:0 0 10px}
+.olede{max-width:60ch;font-size:18px}
+.ocall{margin:0;display:grid;grid-template-columns:96px 1fr;gap:10px 14px;border-top:1px solid #cfd6de;padding-top:14px}
+.ocall dt{font-weight:700;font-size:15px;color:#4a5668}.ocall dd{margin:0}
+.olog{display:grid;gap:4px;background:#fff;border:1px solid #cfd6de;border-left:4px solid var(--fa);border-radius:6px;padding:14px 16px;margin-top:18px}
+.oplans{width:100%;border-collapse:collapse;background:#fff;border:1px solid #cfd6de;border-radius:6px}
+.oplans th,.oplans td{padding:12px;text-align:left;border-bottom:1px solid #e1e6ec;font-size:16px;vertical-align:top}
+.oplans thead th{font-size:17px}.oplans tbody th{font-weight:600;color:#3a4250}
+.oprice td{font-size:28px;font-weight:800;color:var(--fi)}"""
+
+
 CSS = """@font-face{font-family:"Libre Franklin";font-weight:100 900;font-display:swap;src:url(%(font)s) format("woff2")}
 :root{--ink:%(ink)s;--ink2:#4a5668;--paper:#eef1f4;--line:#d4dae2;--acc:%(acc)s;--acc2:%(acc2)s}
 *{box-sizing:border-box}html{-webkit-text-size-adjust:100%%}
@@ -340,7 +426,8 @@ for(var k=1;k<=6;k++){var t=new Date(d.getFullYear(),d.getMonth(),d.getDate()+k)
 
 def render(c):
     """c: name, trade, city, phone, email, website, rating, review_count, logo_url, colors, open_247, licensed,
-    since, site_text (their own words, for services), towns, font_url, preview (default True)."""
+    since, site_text (their own words, for services), towns, font_url, preview (default True),
+    front_desk (default True: the after-hours receptionist section, plus the owner panel on previews)."""
     trade = c["trade"]
     if trade not in TRADES:
         raise ValueError(f"trades only: {trade}")
@@ -415,7 +502,7 @@ def render(c):
     ld = json.dumps({k: v for k, v in ld.items() if v}).replace("</", "<\\/")
     source = esc(c.get("source_note") or "their website and Google profile")
     pv = (f'<div class="pv"><b>Concept preview</b> made by Sites by TJ for {esc(name)}. Not the official site. '
-          f'Facts come from {source}.</div>') if c.get("preview", True) else ""
+          f'Facts come from {source}. <a href="#owner">What it comes with</a></div>') if c.get("preview", True) else ""
     robots = '<meta name="robots" content="noindex,nofollow">' if c.get("preview", True) else ""
     call_btn = f'<a class="btn" href="tel:{tel}">{PHONE_SVG}Call {esc(phone)}</a>' if tel else ""
     css = CSS % {"font": esc(c.get("font_url") or "libre-franklin-latin-wght-normal.woff2"), "ink": INK, "acc": acc,
@@ -445,6 +532,7 @@ def render(c):
 <link rel="preload" href="{esc(c.get('font_url') or 'libre-franklin-latin-wght-normal.woff2')}" as="font" type="font/woff2" crossorigin>
 <style>
 {css}
+{FD_CSS}
 </style>
 <script type="application/ld+json">{ld}</script>
 <script type="application/ld+json">{faq_ld}</script>
@@ -498,8 +586,10 @@ def render(c):
 </div></section>
 <section id="faq"><div class="wrap split"><div><h2>Questions</h2><p>Ask anything else when you call.</p></div><div class="faq">{faq_html}</div></div></section>
 <section id="area" class="alt"><div class="wrap"><h2>Where we work</h2><ul class="towns">{''.join(f'<li>{esc(x)}</li>' for x in towns)}</ul></div></section>
+{after_hours_html(trade, short, tel, phone, c.get('open_247'), c.get('preview', True)) if c.get('front_desk', True) else ''}
 <section class="final"><div class="wrap"><h2>{esc(t['final'])}</h2><p>Call or send a few details.</p><div class="hbtns"><a class="btn" href="#book">{esc(cta)}</a>{f'<a class="btn line" href="tel:{tel}">Call {esc(phone)}</a>' if tel else ''}</div></div></section>
 <section id="visit"><div class="wrap visit"><div><h2>Get in touch</h2><dl>{''.join(contact)}</dl></div><div>{call_btn}</div></div></section>
+{owner_html(trade, name, short, city) if c.get('preview', True) and c.get('front_desk', True) else ''}
 </main>
 <div class="ft"><div class="wrap">{esc(name)} · {esc(city)}, AR{f' · <a href="tel:{tel}">{esc(phone)}</a>' if tel else ''}</div></div>
 <div class="bar">{f'<a class="btn" href="tel:{tel}">{PHONE_SVG}Call</a>' if tel else ''}<a class="btn line" href="#book">{esc(cta)}</a></div>

@@ -19,6 +19,8 @@ Less damage before they arrive, photos with requests, honest after-hours expecta
 5. **Is your water heater on its way out?** 4 signs plus a CTA, and FAQ.
 6. Contact with a map link. Sticky Call / Request bar.
 
+**Front Desk (every trade, 2026-10-24):** before the final call band, a **Calling after hours?** section (the answering assistant takes name, number, address and the problem; says it is automated if asked; the trade's safety line). On previews only, an owner panel at the bottom (`#owner`, linked from the concept bar): a sample after-hours call, the next-morning call log, and the two plans. Both come from `trade_build.py` (`after_hours_html`, `owner_html`), so copy and prices stay in one place.
+
 ## Reusable tool copy (general, safe)
 - Main shut-off: usually where the line enters (garage, crawlspace, utility room, by the water heater). Turn the handle clockwise, or the lever across the pipe.
 - Water heater: close the cold valve on top, then turn off its breaker or set gas to Pilot.

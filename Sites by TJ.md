@@ -16,7 +16,7 @@ Websites for local shops in Bentonville and NWA. Started 2026-10-22. See [[Decis
 - Front Desk: $299 setup + $149/mo (site, hosting, after-hours receptionist, 300 min, missed-call text-back).
 - Front Desk Plus: $299 setup + $249/mo (24/7, 800 min, calendar booking, review requests). Over the minutes: $0.25/min.
 - Built 2026-10-24 (money/agency/README.md, step 9): owner gets an urgent email at once, a morning summary at 6am, booking emails and a phone calendar feed (Plus), review asks after a job (Plus), a live site with a working quote form. Emails stub until NOTIFY=smtp; texts stub until 10DLC.
-- Our cost per client about $29 to $58/mo (Plus $41 to $129), fixed about $60/mo (check). See [[Decisions]].
+- Our cost per client about $29 to $58/mo (Plus $41 to $129), fixed about $60/mo: estimates in money/agency/api/costs.py; Jarvis checks them against the first real bills. See [[Decisions]].
 - Code: money/agency/ (step 1 schema + import, PR #62; step 2 API + email drafts + Approval Queue dashboard, PR #64; step 3 flaw finder + auto mockups, 2026-10-23). Deployed on Render 2026-10-24, then TJ chose to suspend it the same night to save about $25/mo (resume from the Render dashboard when ready). All costs go on the business card under money/BUDGET.md. Sending starts paused, cap 5 a day, weekdays 9-11am Central, from the Google Workspace inbox on the cold domain.
 - Follow-ups (2026-10-24, money/agency/api/followups.py): 3 after the first email, days 3, 7 and 14, same thread, new angle each (after-hours calls, no work on their end, polite close). Approved with the first email per the master prompt. Any reply, bounce or "stop" ends the sequence; the inbox is read over IMAP once Workspace is live, by hand on the Sent tab until then.
 - Flaw finder (money/agency/api/flaws.py): opens each shop's site in Chromium at phone size and picks one true flaw (down, not mobile-friendly, no tap-to-call, phone hidden, slow, no https, old footer), with a screenshot. No clear flaw = no email.
@@ -42,8 +42,8 @@ Websites for local shops in Bentonville and NWA. Started 2026-10-22. See [[Decis
 ## Arkansas (checked 2026-10-22)
 - Web hosting isn't a taxable service in Arkansas (DFA legal opinion 20180219, via Aprio). Web design: likely not taxable (not on the list of taxable services) (check with DFA).
 - Digital books and video sold as downloads are taxable in Arkansas.
-- Business name: file an assumed name with the Benton County Clerk; fee varies by county (check).
-- Bentonville city business license: (check).
+- Business name (looked up 2026-10-24): as a sole owner, file an assumed name with the Benton County Clerk (neighbouring Washington County charges $25; Benton's fee not published online, call the clerk). Once the LLC exists, its trade name is filed with the Secretary of State instead (Ark. Code 4-70-201).
+- Bentonville business registry (looked up 2026-10-24): Type A home occupations (no customers or staff coming to the house) are exempt; anything with a physical location registers online through eTrakit (479-271-3126 for the fee).
 
 ## Clients
 None yet.

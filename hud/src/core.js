@@ -29,7 +29,7 @@ tick(); setInterval(tick, 10000);
 const byName = new Map(BRAIN.notes.map((n) => [n.name, n]));
 function renderBrain(memories) {
   const s = BRAIN.stats;
-  const cells = [[s.notes ?? 0, "notes"], [s.open_todos ?? 0, "open to-dos"], [s.checks ?? 0, "to check", s.checks > 0], [memories, "memories"]];
+  const cells = [[s.notes ?? 0, "notes"], [s.open_todos ?? 0, "for you"], [s.checks ?? 0, "to check", s.checks > 0], [memories, "memories"]];
   $("stats").innerHTML = "";
   for (const [v, k, warn] of cells) {
     const el = document.createElement("div"); el.className = "stat" + (warn ? " warn" : "");

@@ -23,7 +23,7 @@ function watchJobs(db) {
       if (j.answer) { const a = document.createElement("div"); a.className = "answer"; a.textContent = j.answer; el.append(a); }
       for (const l of j.links || []) {
         if (!/^https:\/\//.test(l.url || "")) continue;
-        const a = document.createElement("a"); a.href = l.url; a.target = "_blank"; a.rel = "noopener"; a.textContent = "↗ " + (l.title || l.url); el.append(a);
+        const a = document.createElement("a"); a.href = l.url; a.target = "_blank"; a.rel = "noopener"; a.textContent = l.title || l.url; el.append(a);
       }
       list.append(el);
       if (fresh) {
@@ -128,13 +128,13 @@ async function setReminder(local, text) {
   try {
     if (!mcp) throw new Error("no connectors here");
     await mcp.callTool("Google Calendar", "create_event", {
-      summary: "⏰ " + text, startTime: local + ":00", endTime: plus15(local), timeZone: CENTRAL,
+      summary: text, startTime: local + ":00", endTime: plus15(local), timeZone: CENTRAL,
       overrideReminders: [{ method: "popup", minutes: 0 }], description: "Set by Jarvis from your phone page.",
     });
     say("note", `Reminder set for ${whenText(local)}: ${text}. Your calendar app will ping you.`);
   } catch (e) {
     const code = e?.code || e?.message || e;
-    if (await queueJob(`Create a Google Calendar event on TJ's primary calendar titled "⏰ ${text}" at ${local} America/Chicago, 15 minutes long, with a popup reminder at 0 minutes.`))
+    if (await queueJob(`Create a Google Calendar event on TJ's primary calendar titled "${text}" at ${local} America/Chicago, 15 minutes long, with a popup reminder at 0 minutes.`))
       say("note", `Couldn't reach Google Calendar from here (${code}), so Jarvis backend will add the reminder.`);
   }
 }

@@ -5,6 +5,8 @@ type: log
 
 Newest first. Covers [[SecurityAI]], [[Basis]] and [[Jarvis]].
 
+- **2026-10-24** [[Jarvis]] does everything he can on his own; only items that need TJ's hands, login, money (over $25 or one-off) or decision land on TJ's [[To do]] and "(check)" lists. Jarvis's own pending work sits under "Jarvis is on it". The page counts only TJ's items. Closed the same day: no Anthropic API key for the page (it uses TJ's claude.ai account), no paid voice (free built-in voices, chosen 2026-10-21). Why: TJ asked for the list to shrink and stay boss-only.
+
 - **2026-10-22** Start [[Sites by TJ]] in Bentonville/NWA: $299 launch (first 3), $499 Starter, $999 Business, $49 Care, $89 Care Plus, $99/month no money down. Prospect scout and meme coin paper bot run free on GitHub Actions; real-money trading stays off until paper wins for 30 days and TJ says go. Why: TJ said this is how he'll make money, asked for competitive Bentonville prices and gave standing OK.
 
 - **2026-10-21** [[Jarvis]] gets a morning brief, calendar reminders and a memory panel (copied from ChatGPT Pulse, Gemini, ChatGPT memory). Job runner moves to 6:15am, 9:15, 12:15, 3:15, 6:15 and 9:15pm Central so the first run brings the brief; same number of runs. Routines and email triage wait. Why: TJ said "Let's do it" to the top three; free and phone-only.

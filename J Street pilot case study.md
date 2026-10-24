@@ -28,7 +28,7 @@ One page that sells the next gym. Fill it from the [[J Street Gym]] pilot month,
 
 **Quote.** "[Owner's words]" — [Name, role]
 
-**Cost.** $200 a month per entrance. Paid for itself at [N] tailgates a month.
+**Cost.** $149 a month for the first entrance, $79 each extra. Paid for itself at [N] tailgates a month.
 
 ---
 

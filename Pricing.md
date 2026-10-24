@@ -7,7 +7,7 @@ Part of [[SecurityAI]].
 
 - $149 a month for the first entrance, month to month (TJ, 2026-10-24; was $200). Setup done with the gym.
 - +$79 a month for each extra entrance or gym (TJ, 2026-10-24; was $100).
-- A sneak-in is worth about $10, so catching 20 a month covers the bill.
+- A sneak-in is worth about $10, so catching 15 a month covers the bill.
 - AI costs must stay low: new features avoid extra Claude calls where possible.
 
 Changing a price is a big call: write it in [[Decisions]] first.

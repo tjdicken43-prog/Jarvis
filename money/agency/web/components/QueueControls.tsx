@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { approve, draftNew, markBounced, markReplied, saveEmail, sendApproved, setPaused, skip, unapprove } from "@/lib/actions";
+import { approve, draftNew, markBounced, markReplied, saveEmail, sendApproved, setPaused, unapprove } from "@/lib/actions";
+import { RedraftButton, SkipPicker } from "./QualityControls";
 import type { DraftResult, SendResult } from "@/lib/types";
 import Link from "next/link";
 
@@ -94,6 +95,7 @@ export function CardActions({ id }: { id: string | number }) {
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
   const [done, setDone] = useState(false);
+  const [skipping, setSkipping] = useState(false);
   if (done) return <p className="note" role="status">{msg}</p>;
   return (
     <div>
@@ -116,20 +118,12 @@ export function CardActions({ id }: { id: string | number }) {
           Approve &amp; send
         </button>
         <Link className="btn" href={`/queue/${id}`}>Edit</Link>
-        <button
-          className="btn"
-          disabled={pending}
-          onClick={() =>
-            start(async () => {
-              setErr("");
-              const r = await skip(id);
-              if (!r.ok) setErr(r.error);
-            })
-          }
-        >
+        <RedraftButton id={id} />
+        <button className="btn" disabled={pending} onClick={() => setSkipping(true)}>
           Skip
         </button>
       </div>
+      {skipping && <SkipPicker id={id} onClose={() => setSkipping(false)} />}
       {err && <p className="err">{err}</p>}
     </div>
   );

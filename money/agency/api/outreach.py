@@ -38,6 +38,8 @@ def plain_flaw(flaw):
     """Scout flags ('no tap-to-call, © 2019') -> what a shop owner would see on their own phone."""
     flaw = (flaw or "").strip()
     if flaw.lower().startswith("site down"):
+        if "for sale" in flaw.lower():
+            return ['your web address now shows a "domain for sale" page']
         return ["your website shows an empty placeholder page" if "parked" in flaw.lower() else "your website doesn't load"]
     out = []
     for f in [x.strip() for x in flaw.split(",") if x.strip()]:
@@ -73,8 +75,9 @@ def template_draft(p):
     seen = plain_flaw(p["flaw"])
     a = angle(p)
     if a == "losing calls":
-        parked = "parked" in (p.get("flaw") or "").lower()
-        state, saw = ("is blank", "only showed a placeholder page") if parked else ("isn't loading", "didn't load")
+        low = (p.get("flaw") or "").lower()
+        state, saw = (("shows a for-sale page", 'showed a "domain for sale" page') if "for sale" in low else
+                      ("is blank", "only showed a placeholder page") if "parked" in low else ("isn't loading", "didn't load"))
         subject = f"{name}'s website {state}"
         first = (f"I tried to pull up {host(p.get('website')) or 'your website'} today and it {saw}, "
                  f"so people searching for a {TRADE_WORD[p['trade']]} in {city} hit a dead end.")
@@ -184,6 +187,10 @@ def draft_first_emails(conn, limit=10, prospect_ids=None, drafter=None):
     created, skipped = [], []
     if "draft" in events.stopped(conn):
         return {"created": [], "skipped": [], "stopped": "drafting stopped after repeated failures; check the log, then resume it"}
+    taken = set()  # one shop, one sequence: the cold list can hold the same business twice
+    for r in conn.execute("""SELECT lower(q.email) AS email, q.website FROM emails e JOIN prospects q ON q.id = e.prospect_id
+                             WHERE e.kind = 'first' AND e.status <> 'cancelled'""").fetchall():
+        taken |= {r["email"], host(r["website"])} - {None, ""}
     for p in rows:
         def skip(reason, ok=False):
             skipped.append({"prospect_id": p["id"], "name": p["name"], "reason": reason})
@@ -191,6 +198,11 @@ def draft_first_emails(conn, limit=10, prospect_ids=None, drafter=None):
         if db.suppressed(conn, p["email"], host(p.get("website"))):
             conn.execute("UPDATE prospects SET status = 'unsubscribed', updated_at = now() WHERE id = %s", (p["id"],))
             skip("on the do-not-email list", ok=True)
+            continue
+        mine = {(p["email"] or "").lower(), host(p.get("website"))} - {None, ""}
+        if mine & taken:
+            conn.execute("UPDATE prospects SET status = 'skip', updated_at = now() WHERE id = %s", (p["id"],))
+            skip("same shop as one we already wrote to", ok=True)
             continue
         if missing := quality.contract("draft", p):
             skip("not ready to draft: " + "; ".join(missing))
@@ -214,6 +226,7 @@ def draft_first_emails(conn, limit=10, prospect_ids=None, drafter=None):
             (p["id"], subject, body, secrets.token_urlsafe(24)),
         ).fetchone()
         if row:
+            taken |= mine
             created.append({"email_id": row["id"], "prospect_id": p["id"], "name": p["name"]})
             events.log("draft", True, "drafted", prospect_id=p["id"], email_id=row["id"], detail={"drafter": config.drafter()})
     conn.commit()

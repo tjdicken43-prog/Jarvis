@@ -40,11 +40,44 @@ export type Health = {
   send_window: string;
   in_window: boolean;
   inbox?: string;
+  cap_today?: number;
+  cap_reason?: string;
+  warmup_started?: string | null;
+  stopped_steps?: string[];
+  public_url_ok?: boolean;
+  stuck_sending?: number;
+  last_24h?: Record<string, { ok: number; failed: number }>;
 };
+export type LogEvent = {
+  id: number;
+  at: string;
+  step: string;
+  ok: boolean;
+  reason: string | null;
+  prospect_id: string | null;
+  email_id: number | null;
+  client_id: number | null;
+};
+export type Correction = {
+  id: number;
+  email_id: number | null;
+  prospect_id: string;
+  kind: "skip" | "edit";
+  reason: string;
+  note: string | null;
+  before_body: string | null;
+  after_body: string | null;
+  flaw: string | null;
+  frozen: boolean;
+  created_at: string;
+};
+export type ReviewCall = { id: number; client_id: number; business_name: string; started_at: string; seconds: number; outcome: string | null; summary: string | null };
 export type Stats = {
   prospects: Record<string, number>;
   emails: Record<string, number>;
   suppressions: number;
+  approved_as_drafted_pct?: number | null;
+  skip_reasons?: Record<string, number>;
 };
 export type DraftResult = {
   created: { email_id: number | string; prospect_id: number | string; name: string }[];
@@ -52,7 +85,7 @@ export type DraftResult = {
   checked?: { prospect_id: string; name: string; flaw: string | null }[];
   built?: { prospect_id: string; name: string; mockup_url: string }[];
 };
-export type ApproveResult = { item: Item; queued: boolean; sent?: boolean; dry_run?: boolean; detail: string };
+export type ApproveResult = { item: Item; queued: boolean; sent?: boolean; dry_run?: boolean; detail: string; warnings?: string[] };
 export type SendResult = { sent: number; dry_run: boolean; held: { email_id: number | string; reason: string }[]; detail?: string };
 export type Suppression = { id: number | string; email: string | null; domain: string | null; reason: string; created_at: string };
 export type Plan = { name: string; monthly_cents: number; minutes: number };
@@ -91,6 +124,9 @@ export type Client = {
   calendar_url: string | null;
   review_url: string | null;
   site_url: string | null;
+  golive?: Record<"paying" | "receptionist_built" | "test_call" | "forwarding" | "hours", boolean>;
+  golive_missing?: string[];
+  live_at?: string | null;
 };
 export type BookingSettings = { windows: number[]; length: number; per_window: number; days_ahead: number; lead_hours: number };
 export type Call = {

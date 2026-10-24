@@ -1,0 +1,406 @@
+{
+ "flaw": [
+  {
+   "name": "Bentonville Winnelson (https://bentonville.cylex-usa.com/company/bentonville-winnelson-17571663.html)",
+   "today": "2026-10-24",
+   "signals": {
+    "mode": "browser",
+    "status": 403,
+    "final_url": "https://www.cylex.us.com/company/bentonville-winnelson-17571663.html",
+    "seconds": 1.2,
+    "blocked": true,
+    "text": ""
+   },
+   "expect": [
+    null,
+    null
+   ],
+   "checked": "what the site did on 2026-10-24 (no page to look at)"
+  },
+  {
+   "name": "Carr Plumbing (http://carrplumbinginc.com/)",
+   "today": "2026-10-24",
+   "signals": {
+    "mode": "browser",
+    "down": "no DNS",
+    "text": ""
+   },
+   "expect": [
+    "Site down: no DNS",
+    "DOWN"
+   ],
+   "checked": "what the site did on 2026-10-24 (no page to look at)"
+  },
+  {
+   "name": "Mac's Plumbing (http://plumbingbymac.com/)",
+   "today": "2026-10-24",
+   "signals": {
+    "mode": "browser",
+    "down": "no DNS",
+    "text": ""
+   },
+   "expect": [
+    "Site down: no DNS",
+    "DOWN"
+   ],
+   "checked": "what the site did on 2026-10-24 (no page to look at)"
+  },
+  {
+   "name": "Davis Plumbing & Repairs, Llc (https://dplumb.com)",
+   "today": "2026-10-24",
+   "signals": {
+    "mode": "browser",
+    "down": "didn't load",
+    "text": ""
+   },
+   "expect": [
+    "Site down: didn't load",
+    "DOWN"
+   ],
+   "checked": "what the site did on 2026-10-24 (no page to look at)"
+  },
+  {
+   "name": "Leak Detection Rapid Results (https://www.leakdetectionrapidresults.com)",
+   "today": "2026-10-24",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "https://www.leakdetectionrapidresults.com/",
+    "seconds": 1.0,
+    "viewport_meta": false,
+    "scroll_width": 980,
+    "viewport_width": 980,
+    "tel_links": 0,
+    "tel_on_first_screen": false,
+    "phone_on_first_screen": false,
+    "html_len": 39,
+    "text": ""
+   },
+   "expect": [
+    "Site down: parked or empty page",
+    "DOWN"
+   ],
+   "checked": "checked by eye on the phone screenshot 2026-10-24 (Claude); TJ to confirm"
+  },
+  {
+   "name": "R Squared Plumbing & Drain Service (http://www.rsquaredplumbing.com)",
+   "today": "2026-10-24",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "https://forsale.godaddy.com/forsale/RSQUAREDPLUMBING.COM?traffic_id=GoDaddy_DLS&traffic_type=TDFS&utm_campaign=TDFS_GoDaddy_DLS&utm_medium=sn_affiliate_click&utm_source=TDFS",
+    "seconds": 2.1,
+    "viewport_meta": true,
+    "scroll_width": 390,
+    "viewport_width": 390,
+    "tel_links": 0,
+    "tel_on_first_screen": false,
+    "phone_on_first_screen": true,
+    "html_len": 262835,
+    "text": "Skip to main content\nExcellent\n4.5 out of 5\nThe domain name\nrsquaredplumbing.com\nis for sale!\nPREMIUM\nVERIFIED DOMAIN\n\nContact us now.\n\n1-855-646-1390\n(Toll Free in the U.S. and Canada)\n\n+1 781-373-6808\n(International number)\n\nGet a price instantly\nFirst Name\n*\nLast Name\n*\nEmail\n*\nPhone\n*\nUnited States\nAfghanistan\nÅland Islands\nAlbania\nAlgeria\nAmerican Samoa\nAndorra\nAngola\nAnguilla\nAntarctica\nAntigua and Barbuda\nArgentina\nArmenia\nAruba\nAscension Island\nAustralia\nAustria\nAzerbaijan\nBahamas\nBahrain\nBangladesh\nBarbados\nBelarus\nBelgium\nBelize\nBenin\nBermuda\nBhutan\nBolivia\nBonaire, Sint Eustatius and Saba\nBosnia and Herzegovina\nBotswana\nBouvet Island\nBrazil\nBritish Indian Ocean Territory\nBrunei Darussalam\nBulgaria\nBurkina Faso\nBurundi\nCambodia\nCameroon\nCanada\nCape Verde Islands\nCayman Islands\nCentral African Republic\nChad\nChile\nChina\nChristmas Island\nCocos (Keeling) Islands\nColombia\nComoros\nCongo, Democratic Republic of\nCongo, Republic of\nCook Islands\nCosta Rica\nCote d'Ivoire\nCroatia\nCuracao\nCyprus\nCzech Republic\nDenmark\nDjibouti\nDominica\nDominican Republic\nEast Timor\nEcuador\nEgypt\nEl Salvador\nEquatorial Guinea\nEritrea\nEstonia\nEthiopia\nFalkland Islands\nFaroe Islands\nFiji\nFinland\nFrance\nFrench Guiana\nFrench Polynesia\nFrench Southern Territories\nGabon\nGambia\nGeorgia\nGermany\nGhana\nGibraltar\nGreece\nGreenland\nGrenada\nGuadeloupe\nGuam\nGuatemala\nGuernsey\nGuinea\nGuinea-Bissau\nGuyana\nHaiti\nHeard and McDonald Islands\nHonduras\nHong Kong\nHungary\nIceland\nIndia\nIndonesia\nIraq\nIreland\nIsle of Man\nIsrael\nItaly\nJamaica\nJapan\nJersey\nJordan\nKazakhstan\nKenya\nKiribati\nKorea, Republic of (South Korea)\nKosovo\nKuwait\nKyrgyzstan\nLaos\nLatvia\nLebanon\nLesotho\nLiberia\nLibya\nLiechtenstein\nLithuania\nLuxembourg\nMacau\nMadagascar\nMalawi\nMalaysia\nMaldives\nMali\nMalta\nMarshall Islands\nMartinique\nMauritania\nMauritius\nMayotte Island\nMexico\nMicronesia\nMoldova\nMonaco\nMongolia\nMontenegro\nMontserrat\nMorocco\nMozambique\nMyanmar\nNamibia\nNauru\nNepal\nNetherlands\nNew Caledonia\nNew Zealand\nNicaragua\nNiger\nNigeria\nNiue\nNorfolk Island\nNorth Macedonia\nNorthern Mariana Islands\nNorway\nOman\nPakistan\nPalau\nPalestinian Territories\nPanama\nPapua New Guinea\nParaguay\nPeru\nPhilippines\nPitcairn Island\nPoland\nPortugal\nPuerto Rico\nQatar\nReunion Island\nRomania\nRussian Federation\nRwanda\nSaint Helena\nSaint Kitts and Nevis\nSaint Lucia\nSaint Pierre and Miquelon\nSaint Vincent and the Grenadines\nSan Marino\nSao Tome and Principe\nSaudi Arabia\nSenegal\nSerbia\nSeychelles\nSierra Leone\nSingapore\nSint Maarten\nSlovak Republic\nSlovenia\nSolomon Islands\nSomalia\nSouth Africa\nSouth Georgia and South Sandwich Islands\nSpain\nSri Lanka\nSudan\nSuriname\nSvalbard and Jan Mayen Islands\nSwaziland\nSweden\nSwitzerland\nTaiwan\nTajikistan\nTanzania\nThailand\nTimor-Leste\nTogo\nTokelau\nTonga Islands\nTrinidad and Tobago\nTunisia\nTurkey\nTurkmenistan\nTurks and Caicos Islands\nTuvalu\nUganda\nUkraine\nUnited Arab Emirates\nUnited Kingdom\nUnited States\nUruguay\nUS Minor Outlying Islands\nUzbekistan\nVanuatu\nVatican City\nVenezuela\nVietnam\nVirgin Islands (British)\nVirgin Islands (USA)\nWallis and Futuna Islands\nWestern Sahara\nWestern Samoa\nYemen\nZambia\nZimbabwe\n\nBy submitting, you agree to our \nPrivacy Policy\n.\n\nGet Price\n\nSafe & secure transactions\n\nFast & easy transfers\n\nHassle free payments\n\nThe simple, and safe way to buy domain names\n\nNo matter what kind of domain you want to buy or lease, we make the transfer simple and safe.\n\nHere's how it works\nCopyright © 2026 GoDaddy Operating Company, LLC. All Rights Reserved.\nDo not share my personal information\n•\nPrivacy Settings"
+   },
+   "expect": [
+    "Site down: domain for sale",
+    "DOWN"
+   ],
+   "checked": "checked by eye on the phone screenshot 2026-10-24 (Claude); TJ to confirm; the old pick was wrong"
+  },
+  {
+   "name": "Bub's (https://www.bubsinc.com)",
+   "today": "2026-10-24",
+   "signals": {
+    "mode": "browser",
+    "down": "security warning (bad certificate)",
+    "text": ""
+   },
+   "expect": [
+    "Site down: security warning (bad certificate)",
+    "DOWN"
+   ],
+   "checked": "what the site did on 2026-10-24 (no page to look at)"
+  },
+  {
+   "name": "Lennox Stores (Parts Plus) (https://www.lennoxpros.com/stores/location/springdale)",
+   "today": "2026-10-24",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "https://m.lennoxpros.com/stores/location/springdale?isMobile=true",
+    "seconds": 3.3,
+    "viewport_meta": true,
+    "scroll_width": 390,
+    "viewport_width": 390,
+    "tel_links": 5,
+    "tel_on_first_screen": true,
+    "phone_on_first_screen": true,
+    "html_len": 430616,
+    "text": "EN\nSign In\nSearch\n\nLennox Powered by Samsung Mini-Splits\n\nCurrent Promotions\n\nLatest Site Updates\n\nLennox Stores (PartsPlus)\n Springdale , AR\nContact Information\n\nLennox Stores (PartsPlus)\n5322 Hailey Ave, Springdale, Arkansas 72762-7465\n\nGet Directions\n\nPhone: 479-717-5477\n\nStore Hours\n\tRegular Hours\tEmergency / After Hours*\nMonday\t07:30 am - 04:30 pm\t04:30 pm - 06:30 pm\nTuesday\t07:30 am - 04:30 pm\t04:30 pm - 06:30 pm\nWednesday\t07:30 am - 04:30 pm\t04:30 pm - 06:30 pm\nThursday\t07:30 am - 04:30 pm\t04:30 pm - 06:30 pm\nFriday\t07:30 am - 04:30 pm\t04:30 pm - 06:30 pm\nSaturday\tClosed\t10:00 am - 02:00 pm\nSunday\tClosed\t12:00 pm - 04:00 pm\n\n*Service fee applies when store is opened upon request\n\nView Holiday Schedule\n\nFind More Locations\nMap\nSatellite\nKeyboard shortcuts\nMap data ©2026 Google\nTerms\nWe're your Springdale leader for quality HVAC parts and supplies.\n\nPreviously known as Lennox Parts Plus, Lennox Stores are designed to help you deliver perfect air. Inside our stores, you'll find:\n\nExpert staff\nIndustry leading equipment\nParts & supplies\nAnd much more\n\nLennox Stores welcome fully licensed HVAC professionals. Come in today to find out what local promotions are available to benefit you and your customers.\n\nDirect to Dealer\nFamiliar Brands\nWarranties\nProducts\nAir Conditioners\nCoils\nHeat Pumps\nFilters and Indoor Air Quality\nFurnaces\nMini-Splits\n\nParts & Supplies\n\nThermostats\nSmart Home Devices\nInstallation Supplies\nTools\nControls\nOEM Repair Parts\nComfort for the Whole Planet\n\nAs members of the United States Thermostat Recycling Corporation and Canadian Thermostat Recovery Program , we are committed to proper thermostat recycling to keep toxic materials, such as mercury, out of our landfills.\n\nAny store in the U.S. and Canada will accept and recycle old thermostats containing mercury switches, to make sure they're safely removed from the waste stream. Dispose of your mercury switch thermostats at Lennox Stores, at your convenience.\n\nFind More Locations\n\nLennox Stores welcome fully licensed HVAC professionals. Interested in partnering with the best HVAC experts the indoor comfort industry has to offer? Join below.\n\nBecome a Lennox Dealer\nNearby Locations\nLennox Stores Springfield\n\nAddress: 1900 W Sunset St,\nSpringfield, Missouri, 65807\n\nDirections\n\nPhone: 417-855-7100\n\nDrive-Thru: M-F: 7:30 am - 4:30 pm\n\nLennox Stores Broken Arrow\n\nAddress: 2301 N Sweet Gum Ave,\nBroken Arrow, Oklahoma, 74012\n\nDirections\n\nPhone: 918-994-3220\n\nDrive-Thru: M-F: 7:30 am - 4:30 pm\n\nLennox Stores Little Rock\n\nAddress: 10620 Colonel Glenn Rd Ste 100,\nLittle Rock, Arkansas, 72204-8035\n\nDirections\n\nPhone: 501-225-5718\n\nDrive-Thru: M-F: 7:30 am - 4:30 pm\n\nAre you a homeowner in need of a part or equipment installed?\nContact us.\n\n1-800-9-LENNOX\n(1-800-953-6669)\n\nMonday - Friday, 9am - 7pm EST\n\nTrying to find your nearest HVAC professional?\n\nFind a Lennox Dealer\n Back to Top\nPRODUCT\nProduct Catalog\nClearance Center\nCurrent Promotion\nRESOURCES\nWarranty\nPartner Resources\nStore Locator\nPreferred Vendor Program\nFind an HVAC Pro\nWhy LennoxPros?\nBecome a Lennox Dealer\nCUSTOMER SUPPORT\nHelp Center\nReturn/Exchange Policies\nEmployee Registration\nALSO OF INTEREST\nFind Product Documents\nTop 10 character-revealing interview questions\nThe End of an Era\n\n© 2026 Lennox International, Inc.\n\nSite MapCanada Accessibility PolicyPrivacy PolicyTerms Of UseYour Privacy Choices\nThis website uses cookies and similar technologies to support site functionality, understand how our services are used, and improve your experience. You can choose which categories of cookies you allow. If your browser sends an opt‑out preference signal, we will honor it.Learn more\nCustomize Settings Reject All Accept Cookies"
+   },
+   "expect": [
+    null,
+    "OK"
+   ],
+   "checked": "checked by eye on the phone screenshot 2026-10-24 (Claude); TJ to confirm"
+  },
+  {
+   "name": "NWA Cooling & Heating (http://www.nwacoolingandheating.net)",
+   "today": "2026-10-24",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "http://nwacoolingandheating.net/",
+    "seconds": 7.9,
+    "viewport_meta": true,
+    "scroll_width": 390,
+    "viewport_width": 390,
+    "tel_links": 1,
+    "tel_on_first_screen": true,
+    "phone_on_first_screen": false,
+    "html_len": 70285,
+    "text": "Your Premier NWA Cooling / Heating Specialists\n\noffice@nwacoolingandheating.net\n\nMenu\nNorthwest Arkansas’ Premier HVAC Company\nBook Online\n\nCall Us\nEmail Us\n\nACCOUNTABILITY – INTEGRITY – PERSISTENCE – CONTINUOUS IMPROVEMENT – CRAFTSMANSHIP\n\nCooling & Heating Specialist for NWA\nRogers – Bentonville – Springdale – Fayetteville\nURGENT INFORMATION ABOUT UPCOMING REFRIGERANT CHANGES\nAir Conditioning / Heating / Commercial Refrigeration / Generator \nService – New Installation – Replacement\n\nNorthwest Arkansas Arkansas\nAvoca – Bella Vista – Bentonville – Decatur – Eureka Springs – Farmington – Fayetteville – Garfield – Gentry – Gravette – Greenland – Holiday Island – Lowell – Lincoln – Pea Ridge – Prairie Grove – Rogers – Siloam Springs – Springdale – West Fork – Winslow\n\nRiver Valley\nAlma – Barling – Fort Smith – Greenwood – Hacket – Van Buren – Surrounding Area\n\nMissouri\nAnderson – Cassville – Caverna – Goodman – Jane – Joplin – Neosho – Noel – Pineville – Seligman (Outlying- Greater Joplin Area – Southwest City)\n\nServicing all of Northwest Arkansas and Southwest Missouri\n\nEnjoy Lasting Comfort with Help from a Full-Service HVAC Contractor\n\nYou deserve to enjoy a comfortably cool or warm indoor space no matter what the temperature is outside. When you’re not getting the performance you’d like out of your cooling or heating system, turn to our full-service HVAC contractor in the Northwest Arkansas and Southwest Missouri. The dedicated team at NWA Cooling & Heating ensures you have a reliable means of keeping your home or business comfortable whether it’s hot or cold outside.\n\nChoose Us for Your Every HVAC Service Need\n\nMany local home and business owners entrust our specialists with their HVAC installation, repair, replacement, and maintenance needs. Our clients know that when they put their needs in our capable hands, they are sure to receive excellent service. Some of the benefits of turning to our locally owned and operated company include:\n\nCompetitive Pricing\nCustomized Solutions\nFree Replacement Estimates\nFree 2nd Opinions\nAffordable HVAC & Generator Service Plans\nDetailed digital estimates for repair & installation\nScheduling & communication with Housecall Pro\nOnline Booking through Housecall Pro\n5 Star Rated\n\n \n\nRecent Posts\nNWA Cooling & Heating November Newsletter November 12, 2024\nTornado Damage and What to Do May 28, 2024\nHonoring Sacrifice: The Meaning and Observance of Memorial Day May 24, 2024\nGetting Your Home Summer-Ready: A Comprehensive Guide May 22, 2024\nEnhancing Reliability: Upgrade Your Air Conditioner Contactor to Emerson Sure Switch May 9, 2024\nUpgrade to ECM Condenser Fan Motor: A Smart Investment for Energy Savings with NWA Cooling & Heating April 30, 2024\nUnlocking Comfort: A Dive into Residential Heat Pump Operation March 22, 2024\n5 Preventable Causes of Compressor Failure March 21, 2024\nBeat the Heat: The Importance of Regular Air Conditioner Maintenance for Energy Efficiency March 16, 2024\nDustBunny January 12, 2023\nArchives\nNovember 2024\nMay 2024\nApril 2024\nMarch 2024\nJanuary 2023\nDecember 2022\nApril 2022\nMarch 2022\nFebruary 2021\nMarch 2020\nApril 2019\nOctober 2018\nCategories\nAir Quality (1)\nCommercial (4)\nCooling & Heating (4)\nCooling & Heating (7)\nNewsletter (1)\nResidential (10)\nStand By Power (1)\nUncategorized (13)\nNWA Cooling and Heating Theme By SKT Handyman"
+   },
+   "expect": [
+    "slow (7.9s)",
+    "DATED"
+   ],
+   "checked": "checked by eye on the phone screenshot 2026-10-24 (Claude); TJ to confirm"
+  },
+  {
+   "name": "One Call Heating Cooling and Refrig (https://onecallnwa.com/)",
+   "today": "2026-10-24",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "https://onecallnwa.com/",
+    "seconds": 1.0,
+    "viewport_meta": false,
+    "scroll_width": 1040,
+    "viewport_width": 1040,
+    "tel_links": 0,
+    "tel_on_first_screen": false,
+    "phone_on_first_screen": false,
+    "html_len": 53945,
+    "text": "Serving Benton County, Washington County, Bella Vista, and the greater NW Arkansas area\nWe understand you need skilled heating, AC / air conditioning service technician to repair heating and cooling problems. We provide affordable routine maintenance service. Have your heating, AC, air conditioning unit checked twice each year. Routine maintenance on your heating / AC / air conditioning system saves money over time! We provide heating, AC, air conditioning Repair services - New heating, AC, air conditioning and Refrigeration Installation services - Preventative Routine Maintenance on your heating and air conditioning unit.\nAboutServicesContact\nAbout One Call Heating, Cooling & Refrigeration\n\nWith over 30 years of experience, One Call Heating, Cooling & Refrigeration understands your need for a skilled heating and air conditioning service technician with the knowledge to solve heating and cooling problems of any size.\n\nAlong with providing skilled repair services, we also provides affordable routine maintenance services. We recommend having your HVAC unit checked and serviced twice each year. Routine maintenance on your system helps save you money by having minor issues fixed before they turn into something major!\n\nOne Call provides:\n• Repair services - 24/7 Emergency Assistance\n• New Heating, AC / Air Conditioning, and\n• Refrigeration Installation services\n• Preventative Routine Maintenance\n\nWe strive for 100% customer satisfaction! Call today and let One Call\nsolve your heating, cooling (air conditioning), or refrigeration issues.\n\nLearn more about our services\nSchedule an appointment\nAll Major Credit Cards Accepted\n\n \n \nOne Call Heating, Cooling & Refrigeration serves Benton and Washington County, including\nAvoca | Bella Vista | Bentonville | Bethel Heights | Cave Springs | Centerton | Decatur | Elkins | Elm Springs | Farmington | Fayetteville | Garfield | Gateway | Gentry | Goshen | Gravette | Greenland | Highfill | Johnson | Little Flock | Lincoln | Lowell | Pea Ridge | Prairie Grove | Rogers | Siloam Springs | Springdale | Springtown | Sulphur Springs | Tontitown | War Eagle | West Fork | Winslow\n \n \nOne Call Heating, Cooling & Refrigeration can also be found on\nYellow Pages | Manta | Kudzu | Merchant Circle | Super Pages | Mojo Pages | Right Contractors | Air Conditioning Professionals | Insider Pages\nRepairAirConditioning.net | air cond repair directory |\n\nabout us | services | contact us\n©2026 One Call Heating, Cooling & Refrigeration | One Call Solves All | (479) 273-2914 | 24/7 Emergency Service | Insured & Licensed"
+   },
+   "expect": [
+    "not mobile-friendly",
+    "DATED"
+   ],
+   "checked": "checked by eye on the phone screenshot 2026-10-24 (Claude); TJ to confirm"
+  },
+  {
+   "name": "One Call Heating, Cooling & Refrigeration (https://onecallnwa.com/)",
+   "today": "2026-10-24",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "https://onecallnwa.com/",
+    "seconds": 1.0,
+    "viewport_meta": false,
+    "scroll_width": 1040,
+    "viewport_width": 1040,
+    "tel_links": 0,
+    "tel_on_first_screen": false,
+    "phone_on_first_screen": false,
+    "html_len": 53945,
+    "text": "Serving Benton County, Washington County, Bella Vista, and the greater NW Arkansas area\nWe understand you need skilled heating, AC / air conditioning service technician to repair heating and cooling problems. We provide affordable routine maintenance service. Have your heating, AC, air conditioning unit checked twice each year. Routine maintenance on your heating / AC / air conditioning system saves money over time! We provide heating, AC, air conditioning Repair services - New heating, AC, air conditioning and Refrigeration Installation services - Preventative Routine Maintenance on your heating and air conditioning unit.\nAboutServicesContact\nAbout One Call Heating, Cooling & Refrigeration\n\nWith over 30 years of experience, One Call Heating, Cooling & Refrigeration understands your need for a skilled heating and air conditioning service technician with the knowledge to solve heating and cooling problems of any size.\n\nAlong with providing skilled repair services, we also provides affordable routine maintenance services. We recommend having your HVAC unit checked and serviced twice each year. Routine maintenance on your system helps save you money by having minor issues fixed before they turn into something major!\n\nOne Call provides:\n• Repair services - 24/7 Emergency Assistance\n• New Heating, AC / Air Conditioning, and\n• Refrigeration Installation services\n• Preventative Routine Maintenance\n\nWe strive for 100% customer satisfaction! Call today and let One Call\nsolve your heating, cooling (air conditioning), or refrigeration issues.\n\nLearn more about our services\nSchedule an appointment\nAll Major Credit Cards Accepted\n\n \n \nOne Call Heating, Cooling & Refrigeration serves Benton and Washington County, including\nAvoca | Bella Vista | Bentonville | Bethel Heights | Cave Springs | Centerton | Decatur | Elkins | Elm Springs | Farmington | Fayetteville | Garfield | Gateway | Gentry | Goshen | Gravette | Greenland | Highfill | Johnson | Little Flock | Lincoln | Lowell | Pea Ridge | Prairie Grove | Rogers | Siloam Springs | Springdale | Springtown | Sulphur Springs | Tontitown | War Eagle | West Fork | Winslow\n \n \nOne Call Heating, Cooling & Refrigeration can also be found on\nYellow Pages | Manta | Kudzu | Merchant Circle | Super Pages | Mojo Pages | Right Contractors | Air Conditioning Professionals | Insider Pages\nRepairAirConditioning.net | air cond repair directory |\n\nabout us | services | contact us\n©2026 One Call Heating, Cooling & Refrigeration | One Call Solves All | (479) 273-2914 | 24/7 Emergency Service | Insured & Licensed"
+   },
+   "expect": [
+    "not mobile-friendly",
+    "DATED"
+   ],
+   "checked": "checked by eye on the phone screenshot 2026-10-24 (Claude); TJ to confirm"
+  },
+  {
+   "name": "American Air Conditioning & Mechanical (http://www.aamcinc.com/)",
+   "today": "2026-10-24",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "https://www.aamcinc.com/",
+    "seconds": 2.7,
+    "viewport_meta": true,
+    "scroll_width": 399,
+    "viewport_width": 399,
+    "tel_links": 0,
+    "tel_on_first_screen": false,
+    "phone_on_first_screen": false,
+    "html_len": 142232,
+    "text": "\t\nHOME\nSERVICES \nGALLERY\nRESOURCES\nTESTIMONIALS\nHVAC\nPLUMBING\nCAREERS\nABOUT US\nCONTACT US\n​​HVAC | PLUMBING\nCOMMERCIAL | RESIDENTIAL | SERVICE\n© COPYRIGHT 2015. ALL RIGHTS RESERVED.\nFurnaces\nAir conditioners\nVIEW SERVICES\nHeat Pumps\nget  In  touch  now!\nReach out to us for all of your HVAC and Plumbing needs!\nOur team is ready to assist you with top-notch services.\n* Indicates required field\nFirst Name *\nLast Name *\nEmail *\nPhone Number *\nAddress\nResidential or Commercial *\nResidential\nCommercial\nServices needed *\nHeating Installation\nCooling Installation\nPlumbing Installation\nHeating Maintenance\nCooling Maintenance\nPlumbing Maintenance\nHeating Repair\nCooling Repair\nPlumbing Repair\nComment *\nSUBMIT\n​Get in touch now!\n✆ (479)-872-0361\n✉  aamcincinvoices.com\nSocials\n​Facebook\nInstagram\nYelp\nGoogle Review\n\n     \n​Location\n ⚲ 4315 N Thompson St. Springdale, AR 72764 US\n​Hours\nMonday           7:00am - 4:00pm\n​Tuesday           7:00am - 4:00pm\nWednesday      7:00am - 4:00pm\nThursday          7:00am - 4:00pm\nFriday               7:00am - 4:00pm\nExpert    hvac & plumbing services\nProviding quality heating, cooling, and plumbing solutions for residential cand commercial clients.\nAt American A/C & Mechanical, we believe there is a better way to meet our clients' needs. We're a company that exists to help you achieve more than you ever thought possible.\n\nUnderstanding all the unique touchpoints of each client is essential to our business. We focus on building reliable connections, amazing results, and trusted experiences that are useful as they are memorable.\n​\nLet's do great things together. We can't wait to work with you.\n\n\nGET IN TOUCH\nheating,  cooling,  plumbing\n\nExpert services for your comfort\n\nProviding top-quality installation, maintenance, and repair services for residential and commercial clients.\nheating installation\nProfessional heating solutions for your comfort.\ncommercial hvac installation\nTailored HVAC solutions for your business needs\ncooling maintenance\nExpert cooling care for a refreshing environment.\nemergency hvac repair\nRapid response for urgent HVAC issues.\nPlumbing repair\nSwift plumbing solutions for your peace of mind.\nwater heater maintenance\nEfficient care for your water heating needs.\nLOCATION\nWHAT OUR CLIENTS ARE SAYING\nTHE TEAM WORKED EFFICIENTLY AND EFFECTIVELY. THEY SHOWED UP ON TIME RIGHT WHEN THEY SAID THEY WOULD. THEY WERE CLEAN, RESPECTFUL AND FRIENDLY. I WOULD RECOMMEND THIS COMPANY FOR YOUR AC NEEDS. \n​ - A. ADAMS\n\nCONTACT US\nGET IN TOUCH"
+   },
+   "expect": [
+    "no tap-to-call",
+    "DATED"
+   ],
+   "checked": "checked by eye on the phone screenshot 2026-10-24 (Claude); TJ to confirm"
+  },
+  {
+   "name": "Pro Heating & Cooling (http://Www.proheatncool.com/)",
+   "today": "2026-10-24",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "http://www.proheatncool.com/",
+    "seconds": 0.9,
+    "viewport_meta": false,
+    "scroll_width": 980,
+    "viewport_width": 980,
+    "tel_links": 0,
+    "tel_on_first_screen": false,
+    "phone_on_first_screen": true,
+    "html_len": 61972,
+    "text": "HOME\nSERVICES\nRESIDENTIAL\nNEW CONSTRUCTION\nCONTACT US\n\nCALL TODAY\n\n\n(479) 419-9595\n\nPRO Heating and Cooling LLC has over 20 years experience. We provide heating and cooling needs to all existing homes and new construction.  We serve all of Northwest Arkansas. \n\n\n​​​​PRO Heating and Cooling LLC\n\n\nPRO Heating and Cooling LLC ©  All Rights Reserved                                                                                         Office Hours: Monday-Friday 8:30 am-4:00 pm\n\n\n(479) 419-9595                                                                                                                                                           Phone Services: Available 24/7"
+   },
+   "expect": [
+    "not mobile-friendly",
+    "DATED"
+   ],
+   "checked": "checked by eye on the phone screenshot 2026-10-24 (Claude); TJ to confirm"
+  },
+  {
+   "name": "Elite Building Solutions (http://ebscommercial.com)",
+   "today": "2026-10-24",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "https://ebscommercial.com/",
+    "seconds": 5.0,
+    "viewport_meta": true,
+    "scroll_width": 390,
+    "viewport_width": 390,
+    "tel_links": 0,
+    "tel_on_first_screen": false,
+    "phone_on_first_screen": true,
+    "html_len": 68149,
+    "text": "Skip to content\n\n479.770.5566\n\n446 N 40th Street, Springdale, AR 72762\n\n479.646.8349\n\n3615 Wheeler Ave., Fort Smith, AR 72901\nHOME\nABOUT\nSERVICES\nCONTACTS\nWELCOME TO ELITE BUILDING SOLUTIONS\n\nFor All Your Commercial HVAC Needs\n\nElite Building Solutions\n\nElite Building Solutions (EBS) was founded in 2006. It has been historically locally owned and operated. EBS proudly serves all of Northwest Arkansas and Fort Smith/River Valley.\n\nEBS provides HVAC repair, maintenance, and installation services for large commercial customers. We strive to set the standard in commercial HVAC products and service at the best possible price.\n\nEBS is led by a team of professionals with many years of HVAC experience. We believe that our team members are capable of handling any potential problem that you may have. In fact, our team members have experience with working with all of the major brands.\n\nOur Services\n\nHVAC REPAIR\n\nwe strive to combine affordability and superior customer services …\n\nHVAC Repair\n\nMAINTENANCE\n\nwe provide a customized maintenance program for your HVAC systems…\n\nHVAC Maintenance\n\nINSTALLATION\n\ngiven our ability to work with any HVAC brand, we are able to provide…\n\nHVAC Installation\nWhat We Do\n\nEBS provides HVAC repair, maintenance, and installation services for large commercial customers. Our trained and certified technicians have provided a full line of air conditioning, heating, and maintenance service with courtesy and professionalism.\n\nOur client base is primarily located in Northwest Arkansas and Fort Smith/River Valley. We have over 150 commercial customers with many of our clients that include banks, hotels, churches, hospitals, etc. We provide warranty repair work and installation to our regular preventive maintenance services to our clients.\n\nTrusted HVAC Solutions\nTo Serve Our Customers Graciously\n\nABOUT US\n\nElite Building Solutions (EBS) was founded in 2006. It has been historically locally owned and operated. EBS proudly serves all of Northwest Arkansas and Fort Smith/River Valley.\n\nEBS provides HVAC repair, maintenance, and installation services for large commercial customers. We strive to set the standard in commercial HVAC products and service at the best possible price.\n\nQUICK CONTACT\n\n446 North 40th Street, Springdale, AR 72762\n479.770.5566\n3615 Wheeler Ave., Fort Smith, AR 72901\n479.646.8349\ninfo@ebscommercial.com\nFacebook\n\nQUICK MENU\n\nHome\nAbout\nServices\nContacts\n© 2026 Elite Building Solutions – All Rights Reserved\nWe use cookies to ensure that we give you the best experience on our website. If you continue to use this site we will assume that you are happy with it.\nOk"
+   },
+   "expect": [
+    "no tap-to-call",
+    "DATED"
+   ],
+   "checked": "checked by eye on the phone screenshot 2026-10-24 (Claude); TJ to confirm"
+  },
+  {
+   "name": "Domino Roofing (http://dominoroofing.com)",
+   "today": "2026-10-24",
+   "signals": {
+    "mode": "browser",
+    "status": 202,
+    "final_url": "http://dominoroofing.com/",
+    "seconds": 0.1,
+    "viewport_meta": true,
+    "scroll_width": 390,
+    "viewport_width": 390,
+    "tel_links": 0,
+    "tel_on_first_screen": false,
+    "phone_on_first_screen": false,
+    "html_len": 11801,
+    "text": "dominoroofing.com\n\nChecking the site connection security\n\nThis page requires cookies to be enabled in your browser settings. Please check this setting and enable cookies (if disabled)"
+   },
+   "expect": [
+    null,
+    null
+   ],
+   "checked": "checked by eye on the phone screenshot 2026-10-24 (Claude); TJ to confirm; the old pick was wrong"
+  },
+  {
+   "name": "Crown Roofing (http://CrownRoofingNWA.com/)",
+   "today": "2026-10-24",
+   "signals": {
+    "mode": "browser",
+    "down": "no DNS",
+    "text": ""
+   },
+   "expect": [
+    "Site down: no DNS",
+    "DOWN"
+   ],
+   "checked": "what the site did on 2026-10-24 (no page to look at)"
+  },
+  {
+   "name": "Robin Hood Roofing (https://robinhoodroofing.com)",
+   "today": "2026-10-24",
+   "signals": {
+    "mode": "browser",
+    "down": "security warning (bad certificate)",
+    "text": ""
+   },
+   "expect": [
+    "Site down: security warning (bad certificate)",
+    "DOWN"
+   ],
+   "checked": "what the site did on 2026-10-24 (no page to look at)"
+  },
+  {
+   "name": "Quality Assurance Roofing (https://www.myassuranceroofing.com)",
+   "today": "2026-10-24",
+   "signals": {
+    "mode": "browser",
+    "status": 404,
+    "final_url": "https://www.myassuranceroofing.com/",
+    "seconds": 0.6,
+    "blocked": false,
+    "text": ""
+   },
+   "expect": [
+    "Site down: page error 404",
+    "DOWN"
+   ],
+   "checked": "what the site did on 2026-10-24 (no page to look at)"
+  },
+  {
+   "name": "Jm Roofing Innovations And Construction (http://www.rogersroofingpros.com)",
+   "today": "2026-10-24",
+   "signals": {
+    "mode": "browser",
+    "down": "no DNS",
+    "text": ""
+   },
+   "expect": [
+    "Site down: no DNS",
+    "DOWN"
+   ],
+   "checked": "what the site did on 2026-10-24 (no page to look at)"
+  },
+  {
+   "name": "AER Roofing (https://www.arkansaseliteroofing.com/)",
+   "today": "2026-10-24",
+   "signals": {
+    "mode": "browser",
+    "status": 404,
+    "final_url": "https://www.arkansaseliteroofing.com/",
+    "seconds": 0.7,
+    "blocked": false,
+    "text": ""
+   },
+   "expect": [
+    "Site down: page error 404",
+    "DOWN"
+   ],
+   "checked": "what the site did on 2026-10-24 (no page to look at)"
+  },
+  {
+   "name": "Oz Home Services (http://ozhomeservices.com/)",
+   "today": "2026-10-24",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "https://www.ozhomeservices.com/",
+    "seconds": 1.5,
+    "viewport_meta": true,
+    "scroll_width": 390,
+    "viewport_width": 390,
+    "tel_links": 0,
+    "tel_on_first_screen": false,
+    "phone_on_first_screen": false,
+    "html_len": 427619,
+    "text": "Oz Home Services\n\nRoof Repairs \nRoof Installations\nRoof Replacement\nRoof Inspections\nRoof Upgrades\nRoof Decking\nStorm Repairs\nHail Repairs\nWind Repairs\nRoof Leak Repairs\nGutter Repairs\nSiding Repairs\nFascia Repairs\nSoffit Repairs\nChimney Flashing\nRoof Repairs\nNot Wizards at Everything, Just Experts in\n\nOz Home Services: We’re here for you after storm damage, handling repairs and insurance with care and ease\n\nGet a Quote\n\nAbout Us\n\nYour Local Roofing Experts\n\nBased in NW Arkansas, Oz Home Services specializes in helping homeowners recover from storm damage. From roofing to full exterior restoration, our team is committed to quality craftsmanship and ensuring your insurance claim covers as much as possible\n\nOur Services\n\nComprehensive Roofing  Solutions\n\nRoof Replacement\n\nRoof Repair\n\nInsurance Assistance\n\nCommercial \n\nRoof Replacement\n\nComplete roof replacement with quality materials to restore your home after severe storm damage.\n\nAreas We Serve\n\nProudly Serving NW Arkansas\n\nWe provide expert roofing and exterior restoration services across Bentonville, Rogers, Centerton, Springdale, Fayetteville, and nearby areas.\n\nWhy Us\n\nWhy Homeowners Trust Oz Home Services\nQuality Guaranteed\n\nWe stand behind our work with a commitment to quality craftsmanship.\n\nFully Insured\n\nWe’re fully insured for your peace of mind on every project.\n\nLocally Owned\n\nAs a local business, we understand the unique needs of our community.\n\nQuick Repairs\n\nFast and efficient repairs to minimize disruption to your home.\n\nNo Hassle, Free Inspections\n\nWe offer free inspections with no pressure, just honest assessments.\n\nLots of Happy Customers\n\nOur satisfied customers speak to the reliability and trustworthiness of our services.\n\nFinancing Available\n\nContact us to learn more about available plans and eligibility.\n\nLatest Blog\n\nRead Our Latest Article & Blog\n\nDec 15, 2023\n\nStep-by-Step Guide to Filing a Roof Replacement Insurance Claim\n\nRead More\n\nJun 23, 2023\n\nHow to Tell If Your Roof Damage Qualifies for an Insurance Claim\n\nRead More\n\nJan 15, 2023\n\nAll About Roofing: A Comprehensive Guide for Your Home\n\nRead More\n\nReady to Restore  \nYour Home?\n\nGet a Quote\n\nOz Home Services: Expert roofing and exterior restoration for homes across NW Arkansas and beyond.\n\nQuick Links\n\nSchedule a Roof Inspection\n\nBlog\n\nContact Us\n\nContact Us\n\n2401 SE C St, Bentonville, AR 72712 \n\n479-358-7238\n\ninfo@ozhomeservices.com\n\nCopyright © 2024 Oz Home Services. All Rights Reserved.\n\nPrivacy Policy\n\nTerms and Conditions"
+   },
+   "expect": [
+    "no tap-to-call",
+    "WEAK"
+   ],
+   "checked": "checked by eye on the phone screenshot 2026-10-24 (Claude); TJ to confirm"
+  }
+ ]
+}

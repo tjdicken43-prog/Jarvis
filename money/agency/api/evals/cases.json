@@ -1,0 +1,1322 @@
+{
+ "flaw": [
+  {
+   "name": "fine site",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "https://x.test/",
+    "seconds": 1.2,
+    "viewport_meta": true,
+    "scroll_width": 390,
+    "viewport_width": 390,
+    "tel_links": 2,
+    "tel_on_first_screen": true,
+    "phone_on_first_screen": true,
+    "text": "Plumbing in Rogers. (c) 2026 words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words ",
+    "html_len": 40000
+   },
+   "expect": [
+    null,
+    "OK"
+   ]
+  },
+  {
+   "name": "no DNS",
+   "signals": {
+    "down": "no DNS"
+   },
+   "expect": [
+    "Site down: no DNS",
+    "DOWN"
+   ]
+  },
+  {
+   "name": "blocked 403",
+   "signals": {
+    "status": 403,
+    "blocked": true
+   },
+   "expect": [
+    null,
+    null
+   ]
+  },
+  {
+   "name": "page error 500",
+   "signals": {
+    "status": 500
+   },
+   "expect": [
+    "Site down: page error 500",
+    "DOWN"
+   ]
+  },
+  {
+   "name": "for-sale page (was \"parked\", the email now says what they would see)",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "https://x.test/",
+    "seconds": 1.2,
+    "viewport_meta": true,
+    "scroll_width": 390,
+    "viewport_width": 390,
+    "tel_links": 2,
+    "tel_on_first_screen": true,
+    "phone_on_first_screen": true,
+    "text": "This domain is for sale w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w ",
+    "html_len": 40000
+   },
+   "expect": [
+    "Site down: domain for sale",
+    "DOWN"
+   ]
+  },
+  {
+   "name": "empty page",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "https://x.test/",
+    "seconds": 1.2,
+    "viewport_meta": true,
+    "scroll_width": 390,
+    "viewport_width": 390,
+    "tel_links": 2,
+    "tel_on_first_screen": true,
+    "phone_on_first_screen": true,
+    "text": "Plumbing in Rogers. (c) 2026 words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words ",
+    "html_len": 300
+   },
+   "expect": [
+    "Site down: parked or empty page",
+    "DOWN"
+   ]
+  },
+  {
+   "name": "sideways scroll",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "https://x.test/",
+    "seconds": 1.2,
+    "viewport_meta": true,
+    "scroll_width": 1040,
+    "viewport_width": 390,
+    "tel_links": 2,
+    "tel_on_first_screen": true,
+    "phone_on_first_screen": true,
+    "text": "Plumbing in Rogers. (c) 2026 words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words ",
+    "html_len": 40000
+   },
+   "expect": [
+    "not mobile-friendly",
+    "WEAK"
+   ]
+  },
+  {
+   "name": "no viewport + no tel",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "https://x.test/",
+    "seconds": 1.2,
+    "viewport_meta": false,
+    "scroll_width": 390,
+    "viewport_width": 390,
+    "tel_links": 0,
+    "tel_on_first_screen": true,
+    "phone_on_first_screen": true,
+    "text": "Plumbing in Rogers. (c) 2026 words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words ",
+    "html_len": 40000
+   },
+   "expect": [
+    "not mobile-friendly",
+    "DATED"
+   ]
+  },
+  {
+   "name": "no tel only",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "https://x.test/",
+    "seconds": 1.2,
+    "viewport_meta": true,
+    "scroll_width": 390,
+    "viewport_width": 390,
+    "tel_links": 0,
+    "tel_on_first_screen": true,
+    "phone_on_first_screen": true,
+    "text": "Plumbing in Rogers. (c) 2026 words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words ",
+    "html_len": 40000
+   },
+   "expect": [
+    "no tap-to-call",
+    "WEAK"
+   ]
+  },
+  {
+   "name": "phone below fold",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "https://x.test/",
+    "seconds": 1.2,
+    "viewport_meta": true,
+    "scroll_width": 390,
+    "viewport_width": 390,
+    "tel_links": 2,
+    "tel_on_first_screen": false,
+    "phone_on_first_screen": false,
+    "text": "Plumbing in Rogers. (c) 2026 words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words ",
+    "html_len": 40000
+   },
+   "expect": [
+    "phone number hidden on phones",
+    "WEAK"
+   ]
+  },
+  {
+   "name": "phone below fold, http mode",
+   "signals": {
+    "mode": "http",
+    "status": 200,
+    "final_url": "https://x.test/",
+    "seconds": 1.2,
+    "viewport_meta": true,
+    "scroll_width": 390,
+    "viewport_width": 390,
+    "tel_links": 2,
+    "tel_on_first_screen": false,
+    "phone_on_first_screen": false,
+    "text": "Plumbing in Rogers. (c) 2026 words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words ",
+    "html_len": 40000
+   },
+   "expect": [
+    null,
+    "OK"
+   ]
+  },
+  {
+   "name": "slow",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "https://x.test/",
+    "seconds": 6.4,
+    "viewport_meta": true,
+    "scroll_width": 390,
+    "viewport_width": 390,
+    "tel_links": 2,
+    "tel_on_first_screen": true,
+    "phone_on_first_screen": true,
+    "text": "Plumbing in Rogers. (c) 2026 words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words ",
+    "html_len": 40000
+   },
+   "expect": [
+    "slow (6.4s)",
+    "WEAK"
+   ]
+  },
+  {
+   "name": "4.0s is not slow",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "https://x.test/",
+    "seconds": 4.0,
+    "viewport_meta": true,
+    "scroll_width": 390,
+    "viewport_width": 390,
+    "tel_links": 2,
+    "tel_on_first_screen": true,
+    "phone_on_first_screen": true,
+    "text": "Plumbing in Rogers. (c) 2026 words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words ",
+    "html_len": 40000
+   },
+   "expect": [
+    null,
+    "OK"
+   ]
+  },
+  {
+   "name": "http only",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "http://x.test/",
+    "seconds": 1.2,
+    "viewport_meta": true,
+    "scroll_width": 390,
+    "viewport_width": 390,
+    "tel_links": 2,
+    "tel_on_first_screen": true,
+    "phone_on_first_screen": true,
+    "text": "Plumbing in Rogers. (c) 2026 words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words ",
+    "html_len": 40000
+   },
+   "expect": [
+    "no https",
+    "WEAK"
+   ]
+  },
+  {
+   "name": "old footer",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "https://x.test/",
+    "seconds": 1.2,
+    "viewport_meta": true,
+    "scroll_width": 390,
+    "viewport_width": 390,
+    "tel_links": 2,
+    "tel_on_first_screen": true,
+    "phone_on_first_screen": true,
+    "text": "© 2019 Ozark Pipe w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w ",
+    "html_len": 40000
+   },
+   "expect": [
+    "© 2019",
+    "WEAK"
+   ]
+  },
+  {
+   "name": "footer range ends recent",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "https://x.test/",
+    "seconds": 1.2,
+    "viewport_meta": true,
+    "scroll_width": 390,
+    "viewport_width": 390,
+    "tel_links": 2,
+    "tel_on_first_screen": true,
+    "phone_on_first_screen": true,
+    "text": "Copyright 2016 - 2025 w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w ",
+    "html_len": 40000
+   },
+   "expect": [
+    null,
+    "OK"
+   ]
+  },
+  {
+   "name": "footer 3 years back",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "https://x.test/",
+    "seconds": 1.2,
+    "viewport_meta": true,
+    "scroll_width": 390,
+    "viewport_width": 390,
+    "tel_links": 2,
+    "tel_on_first_screen": true,
+    "phone_on_first_screen": true,
+    "text": "© 2023 Shop w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w ",
+    "html_len": 40000
+   },
+   "expect": [
+    "© 2023",
+    "WEAK"
+   ]
+  },
+  {
+   "name": "two flaws worst first",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "http://x.test/",
+    "seconds": 1.2,
+    "viewport_meta": true,
+    "scroll_width": 390,
+    "viewport_width": 390,
+    "tel_links": 0,
+    "tel_on_first_screen": true,
+    "phone_on_first_screen": true,
+    "text": "Plumbing in Rogers. (c) 2026 words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words ",
+    "html_len": 40000
+   },
+   "expect": [
+    "no tap-to-call",
+    "DATED"
+   ]
+  },
+  {
+   "name": "8px scroll tolerance",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "https://x.test/",
+    "seconds": 1.2,
+    "viewport_meta": true,
+    "scroll_width": 398,
+    "viewport_width": 390,
+    "tel_links": 2,
+    "tel_on_first_screen": true,
+    "phone_on_first_screen": true,
+    "text": "Plumbing in Rogers. (c) 2026 words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words ",
+    "html_len": 40000
+   },
+   "expect": [
+    null,
+    "OK"
+   ]
+  },
+  {
+   "name": "coming soon page",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "https://x.test/",
+    "seconds": 1.2,
+    "viewport_meta": true,
+    "scroll_width": 390,
+    "viewport_width": 390,
+    "tel_links": 2,
+    "tel_on_first_screen": true,
+    "phone_on_first_screen": true,
+    "text": "Coming soon! w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w w ",
+    "html_len": 40000
+   },
+   "expect": [
+    "Site down: parked or empty page",
+    "DOWN"
+   ]
+  },
+  {
+   "name": "bot wall is not their site",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "https://x.test/",
+    "seconds": 1.2,
+    "viewport_meta": true,
+    "scroll_width": 390,
+    "viewport_width": 390,
+    "tel_links": 0,
+    "tel_on_first_screen": true,
+    "phone_on_first_screen": true,
+    "text": "Checking your browser before accessing x.com",
+    "html_len": 40000
+   },
+   "expect": [
+    null,
+    null
+   ]
+  },
+  {
+   "name": "redirect to GoDaddy for-sale",
+   "signals": {
+    "mode": "browser",
+    "status": 200,
+    "final_url": "https://forsale.godaddy.com/forsale/X.COM",
+    "seconds": 1.2,
+    "viewport_meta": true,
+    "scroll_width": 390,
+    "viewport_width": 390,
+    "tel_links": 2,
+    "tel_on_first_screen": true,
+    "phone_on_first_screen": true,
+    "text": "Plumbing in Rogers. (c) 2026 words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words words ",
+    "html_len": 40000
+   },
+   "expect": [
+    "Site down: domain for sale",
+    "DOWN"
+   ]
+  }
+ ],
+ "email": [
+  {
+   "name": "grounded email",
+   "subject": "Calls from Ozark Pipe Co's website",
+   "body": "Hi,\n\nI looked at your site on my phone and there's no tap-to-call button, so someone in Rogers with a burst pipe has to copy your number by hand. I built you a preview with one, set up so after-hours calls get answered too:\nhttps://api.example.test/m/ozark-pipe-co-1a2b3c\n\nIs it worth a quick look?",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "no tap-to-call",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    }
+   },
+   "expect": "pass"
+  },
+  {
+   "name": "site's own claims are fine",
+   "subject": "Calls from Ozark Pipe Co's website",
+   "body": "Hi,\n\nI looked at your site on my phone and there's no tap-to-call button, so someone in Rogers with a burst pipe has to copy your number by hand. You're licensed and insured and open 24/7, so I built you a preview with one, set up so after-hours calls get answered too:\nhttps://api.example.test/m/ozark-pipe-co-1a2b3c\n\nIs it worth a quick look?",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "no tap-to-call",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    }
+   },
+   "expect": "pass"
+  },
+  {
+   "name": "since year from site",
+   "subject": "Quick note",
+   "body": "Hi,\n\nI looked at your site on my phone and there's no tap-to-call button, so someone in Rogers with a burst pipe has to copy your number by hand. I built you a preview with one, set up so after-hours calls get answered too:\nhttps://api.example.test/m/ozark-pipe-co-1a2b3c\n\nYou've been at it since 2004. Is it worth a quick look?",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "no tap-to-call",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    }
+   },
+   "expect": "pass"
+  },
+  {
+   "name": "invented rating",
+   "subject": "Calls",
+   "body": "Hi,\n\nI looked at your site on my phone and there's no tap-to-call button, so someone in Rogers with a burst pipe has to copy your number by hand. I built you a preview with one, set up so after-hours calls get answered too:\nhttps://api.example.test/m/ozark-pipe-co-1a2b3c\n\nWith your 4.9 stars, is it worth a quick look?",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "no tap-to-call",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    }
+   },
+   "expect": [
+    "4.9",
+    "stars"
+   ]
+  },
+  {
+   "name": "invented review count",
+   "subject": "Calls",
+   "body": "Hi,\n\nI looked at your site on my phone and there's no tap-to-call button, so someone in Rogers with a burst pipe has to copy your number by hand. I built you a preview with one, set up so after-hours calls get answered too:\nhttps://api.example.test/m/ozark-pipe-co-1a2b3c\n\nYour 212 reviews are great. Is it worth a quick look?",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "no tap-to-call",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    }
+   },
+   "expect": [
+    "212",
+    "reviews"
+   ]
+  },
+  {
+   "name": "competitor talk",
+   "subject": "Calls",
+   "body": "Hi,\n\nI looked at your site on my phone and there's no tap-to-call button, so someone in Rogers with a burst pipe has to copy your number by hand. I built you a preview with one, set up so after-hours calls get answered too:\nhttps://api.example.test/m/ozark-pipe-co-1a2b3c\n\nYour competitors already do this. Is it worth a quick look?",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "no tap-to-call",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    }
+   },
+   "expect": [
+    "competitor"
+   ]
+  },
+  {
+   "name": "wrong town",
+   "subject": "Calls",
+   "body": "Hi,\n\nI looked at your site on my phone and there's no tap-to-call button, so someone in Springdale with a burst pipe has to copy your number by hand. I built you a preview with one, set up so after-hours calls get answered too:\nhttps://api.example.test/m/ozark-pipe-co-1a2b3c\n\nIs it worth a quick look?",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "no tap-to-call",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    }
+   },
+   "expect": [
+    "Springdale"
+   ]
+  },
+  {
+   "name": "strange link",
+   "subject": "Calls",
+   "body": "Hi,\n\nI looked at your site on my phone and there's no tap-to-call button, so someone in Rogers with a burst pipe has to copy your number by hand. I built you a preview with one, set up so after-hours calls get answered too:\nhttps://api.example.test/m/ozark-pipe-co-1a2b3c\n\nIs it worth a quick look?\nhttps://bit.ly/x",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "no tap-to-call",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    }
+   },
+   "expect": [
+    "bit.ly"
+   ]
+  },
+  {
+   "name": "their own site link is fine",
+   "subject": "Calls",
+   "body": "Hi,\n\nI looked at https://ozarkpipe.com and your site on my phone and there's no tap-to-call button, so someone in Rogers with a burst pipe has to copy your number by hand. I built you a preview with one, set up so after-hours calls get answered too:\nhttps://api.example.test/m/ozark-pipe-co-1a2b3c\n\nIs it worth a quick look?",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "no tap-to-call",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    }
+   },
+   "expect": "pass"
+  },
+  {
+   "name": "wrong phone",
+   "subject": "Calls",
+   "body": "Hi,\n\nI looked at your site on my phone and there's no tap-to-call button, so someone in Rogers with a burst pipe has to copy your number by hand. I built you a preview with one, set up so after-hours calls get answered too:\nhttps://api.example.test/m/ozark-pipe-co-1a2b3c\n\nCall me at 479-555-7777. Is it worth a quick look?",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "no tap-to-call",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    }
+   },
+   "expect": [
+    "479-555-7777"
+   ]
+  },
+  {
+   "name": "email address in body",
+   "subject": "Calls",
+   "body": "Hi,\n\nI looked at your site on my phone and there's no tap-to-call button, so someone in Rogers with a burst pipe has to copy your number by hand. I built you a preview with one, set up so after-hours calls get answered too:\nhttps://api.example.test/m/ozark-pipe-co-1a2b3c\n\nWrite tj@other.example. Is it worth a quick look?",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "no tap-to-call",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    }
+   },
+   "expect": [
+    "email address"
+   ]
+  },
+  {
+   "name": "made-up stat",
+   "subject": "Calls",
+   "body": "Hi,\n\nI looked at your site on my phone and there's no tap-to-call button, so someone in Rogers with a burst pipe has to copy your number by hand. I built you a preview with one, set up so after-hours calls get answered too:\nhttps://api.example.test/m/ozark-pipe-co-1a2b3c\n\nShops lose 62% of calls. Is it worth a quick look?",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "no tap-to-call",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    }
+   },
+   "expect": [
+    "62"
+   ]
+  },
+  {
+   "name": "price not ours",
+   "subject": "Calls",
+   "body": "Hi,\n\nI looked at your site on my phone and there's no tap-to-call button, so someone in Rogers with a burst pipe has to copy your number by hand. I built you a preview with one, set up so after-hours calls get answered too:\nhttps://api.example.test/m/ozark-pipe-co-1a2b3c\n\nIt's $500. Is it worth a quick look?",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "no tap-to-call",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    }
+   },
+   "expect": [
+    "$500"
+   ]
+  },
+  {
+   "name": "our price still not a site fact",
+   "subject": "Calls",
+   "body": "Hi,\n\nI looked at your site on my phone and there's no tap-to-call button, so someone in Rogers with a burst pipe has to copy your number by hand. I built you a preview with one, set up so after-hours calls get answered too:\nhttps://api.example.test/m/ozark-pipe-co-1a2b3c\n\nSetup is $299. Is it worth a quick look?",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "no tap-to-call",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    }
+   },
+   "expect": [
+    "299"
+   ]
+  },
+  {
+   "name": "guarantee",
+   "subject": "Calls",
+   "body": "Hi,\n\nI looked at your site on my phone and there's no tap-to-call button, so someone in Rogers with a burst pipe has to copy your number by hand. I built you a preview with one, set up so after-hours calls get answered too:\nhttps://api.example.test/m/ozark-pipe-co-1a2b3c\n\nI guarantee more calls. Is it worth a quick look?",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "no tap-to-call",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    }
+   },
+   "expect": [
+    "guarantee"
+   ]
+  },
+  {
+   "name": "family-owned not on site",
+   "subject": "Calls",
+   "body": "Hi,\n\nI looked at your site on my phone and there's no tap-to-call button, so someone in Rogers with a burst pipe has to copy your number by hand. I built you a preview with one, set up so after-hours calls get answered too:\nhttps://api.example.test/m/ozark-pipe-co-1a2b3c\n\nLove that you're family-owned. Is it worth a quick look?",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "no tap-to-call",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    }
+   },
+   "expect": [
+    "family-owned"
+   ]
+  },
+  {
+   "name": "doesn't name the flaw",
+   "subject": "Quick note",
+   "body": "Hi,\n\nI made you a new website for Ozark Pipe Co in Rogers. Here it is:\nhttps://api.example.test/m/ozark-pipe-co-1a2b3c\n\nIs it worth a quick look?",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "no tap-to-call",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    }
+   },
+   "expect": [
+    "flaw"
+   ]
+  },
+  {
+   "name": "preview link missing",
+   "subject": "Calls",
+   "body": "Hi,\n\nI looked at your site on my phone and there's no tap-to-call button, so someone in Rogers with a burst pipe has to copy your number by hand. I built you a preview with one, set up so after-hours calls get answered too:\n(link)\n\nIs it worth a quick look?",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "no tap-to-call",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    }
+   },
+   "expect": [
+    "preview link missing"
+   ]
+  },
+  {
+   "name": "placeholder",
+   "subject": "Calls",
+   "body": "Hi [First Name],\n\nI looked at your site on my phone and there's no tap-to-call button, so someone in Rogers with a burst pipe has to copy your number by hand. I built you a preview with one, set up so after-hours calls get answered too:\nhttps://api.example.test/m/ozark-pipe-co-1a2b3c\n\nIs it worth a quick look?",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "no tap-to-call",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    }
+   },
+   "expect": [
+    "placeholder"
+   ]
+  },
+  {
+   "name": "too long",
+   "subject": "Calls",
+   "body": "Hi,\n\nI looked at your site on my phone and there's no tap-to-call button, so someone in Rogers with a burst pipe has to copy your number by hand. I built you a preview with one, set up so after-hours calls get answered too:\nhttps://api.example.test/m/ozark-pipe-co-1a2b3c\n\nIs it worth a quick look? more more more more more more more more more more more more more more more more more more more more more more more more more more more more more more more more more more more more more more more more",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "no tap-to-call",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    }
+   },
+   "expect": [
+    "words"
+   ]
+  },
+  {
+   "name": "exclamation in subject",
+   "subject": "Calls!",
+   "body": "Hi,\n\nI looked at your site on my phone and there's no tap-to-call button, so someone in Rogers with a burst pipe has to copy your number by hand. I built you a preview with one, set up so after-hours calls get answered too:\nhttps://api.example.test/m/ozark-pipe-co-1a2b3c\n\nIs it worth a quick look?",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "no tap-to-call",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    }
+   },
+   "expect": [
+    "exclamation"
+   ]
+  },
+  {
+   "name": "follow-ups skip grounding",
+   "subject": "Re: Calls",
+   "body": "Hi,\n\nA 10-minute call this week? https://api.example.test/m/ozark-pipe-co-1a2b3c",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "no tap-to-call",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    }
+   },
+   "expect": "pass",
+   "kind": "follow_up_2"
+  }
+ ],
+ "draft": [
+  {
+   "name": "template: no tap-to-call",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "no tap-to-call",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    },
+    "site_state": "WEAK"
+   }
+  },
+  {
+   "name": "template: not mobile-friendly",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "not mobile-friendly",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    },
+    "site_state": "WEAK"
+   }
+  },
+  {
+   "name": "template: no https",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "no https",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    },
+    "site_state": "WEAK"
+   }
+  },
+  {
+   "name": "template: © 2019",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "© 2019",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    },
+    "site_state": "WEAK"
+   }
+  },
+  {
+   "name": "template: slow (5.2s)",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "slow (5.2s)",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    },
+    "site_state": "WEAK"
+   }
+  },
+  {
+   "name": "template: phone number hidden on phones",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "phone number hidden on phones",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    },
+    "site_state": "WEAK"
+   }
+  },
+  {
+   "name": "template: Site down: no DNS",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "Site down: no DNS",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    },
+    "site_state": "DOWN"
+   }
+  },
+  {
+   "name": "template: Site down: parked or empty page",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "Site down: parked or empty page",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    },
+    "site_state": "DOWN"
+   }
+  },
+  {
+   "name": "template: hvac",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "hvac",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "no https",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    }
+   }
+  },
+  {
+   "name": "template: roofing",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "roofing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "no https",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    }
+   }
+  },
+  {
+   "name": "template: Site down: domain for sale",
+   "prospect": {
+    "name": "Ozark Pipe Co",
+    "trade": "plumbing",
+    "city": "Rogers",
+    "phone": "479-555-0101",
+    "website": "https://ozarkpipe.com",
+    "flaw": "Site down: domain for sale",
+    "mockup_url": "https://api.example.test/m/ozark-pipe-co-1a2b3c",
+    "facts": {
+     "site_text": "Licensed and insured plumbers serving Rogers and Lowell since 2004. 24/7 emergency service. © 2019",
+     "towns": [
+      "Rogers",
+      "Lowell"
+     ],
+     "since": 2004,
+     "checked_at": "2026-10-24T00:00:00+00:00"
+    },
+    "site_state": "DOWN"
+   }
+  }
+ ],
+ "reply": [
+  {
+   "name": "plain stop",
+   "text": "stop",
+   "expect": "stop"
+  },
+  {
+   "name": "please stop emailing",
+   "text": "Please stop emailing me.",
+   "expect": "stop"
+  },
+  {
+   "name": "unsubscribe",
+   "text": "unsubscribe",
+   "expect": "stop"
+  },
+  {
+   "name": "not interested",
+   "text": "Not interested, thanks.",
+   "expect": "stop"
+  },
+  {
+   "name": "yes with quote",
+   "text": "Sure, call me Tuesday.\n\nOn Mon, TJ wrote:\n> Not interested? One click",
+   "expect": "replied"
+  },
+  {
+   "name": "yes with outlook quote",
+   "text": "Sounds good, what's the price?\n\nFrom: TJ\nSent: Monday\nNot interested? One click and you won't hear from me again",
+   "expect": "replied"
+  },
+  {
+   "name": "long maybe-later",
+   "text": "No thanks for now, we are slammed this month, but send me something in the spring and I will look at it again with the office manager who handles all of this.",
+   "expect": "replied"
+  },
+  {
+   "name": "question",
+   "text": "How much is it?",
+   "expect": "replied"
+  },
+  {
+   "name": "stop by",
+   "text": "Stop by Monday, I'm free after 2.",
+   "expect": "replied"
+  },
+  {
+   "name": "phone footer",
+   "text": "Call me\n\nSent from my iPhone\nunsubscribe",
+   "expect": "replied"
+  }
+ ],
+ "bounce": [
+  {
+   "name": "gmail address not found",
+   "raw": "From: Mail Delivery Subsystem <mailer-daemon@googlemail.com>\nTo: tj@cold.example.test\nSubject: Delivery Status Notification (Failure)\n\nYour message wasn't delivered to a@b.com because the address couldn't be found.\n",
+   "expect": true
+  },
+  {
+   "name": "gmail delay",
+   "raw": "From: Mail Delivery Subsystem <mailer-daemon@googlemail.com>\nTo: tj@cold.example.test\nSubject: Delivery Status Notification (Delay)\n\nDelivery to a@b.com is delayed. We'll keep trying.\n",
+   "expect": false
+  },
+  {
+   "name": "dsn failed 5.1.1",
+   "raw": "From: Mail Delivery Subsystem <mailer-daemon@googlemail.com>\nTo: tj@cold.example.test\nSubject: Undelivered\nContent-Type: multipart/report; report-type=delivery-status; boundary=\"b\"\n\n--b\nContent-Type: message/delivery-status\n\nAction: failed\nStatus: 5.1.1\n--b--\n",
+   "expect": true
+  },
+  {
+   "name": "dsn delayed 4.4.7",
+   "raw": "From: Mail Delivery Subsystem <mailer-daemon@googlemail.com>\nTo: tj@cold.example.test\nSubject: Delayed\nContent-Type: multipart/report; report-type=delivery-status; boundary=\"b\"\n\n--b\nContent-Type: message/delivery-status\n\nAction: delayed\nStatus: 4.4.7\n--b--\n",
+   "expect": false
+  },
+  {
+   "name": "read receipt",
+   "raw": "From: a@b.com\nTo: tj@cold.example.test\nSubject: Read: x\nContent-Type: multipart/report; report-type=disposition-notification; boundary=\"b\"\n\n--b\nContent-Type: text/plain\n\nRead.\n--b--\n",
+   "expect": false
+  }
+ ]
+}

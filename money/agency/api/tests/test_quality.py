@@ -116,6 +116,13 @@ assert st["skip_reasons"] == {"tone": 1}, st
 log = api.get("/events?step=draft", headers=H).json()["items"]
 assert log[0]["ok"] and log[0]["email_id"] == eid, log
 
+# The cold list can hold one business twice: only one gets a sequence
+shop("dup1", email="office@samebiz.com", website="https://samebiz.com")
+shop("dup2", email="office@samebiz.com", website="https://www.samebiz.com/")
+with db.connect() as c:
+    out = outreach.draft_first_emails(c, 10, ["dup1", "dup2"], drafter=outreach.template_draft)
+assert len(out["created"]) == 1 and "same shop" in out["skipped"][0]["reason"], out
+
 # Approve re-checks a stale flaw: fixed -> cancelled; changed -> redraft first; same -> goes
 seen = {}
 flaws.inspect_site = lambda url: (seen[url], b"\x89PNG")

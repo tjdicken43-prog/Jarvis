@@ -99,3 +99,21 @@ td.num, td .num { white-space: nowrap; }
 .fups { margin-top: 8px; }
 .fups summary { cursor: pointer; font-size: 13px; color: var(--muted); }
 .fups .mail { margin-top: 8px; }
+/* Accuracy pass: skip reasons, two-step confirms, stopped-step alert, go-live checklist, call spot checks */
+.btn.danger { background: transparent; border-color: var(--bad); color: var(--bad); }
+.confirm { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.picker { border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; margin: 10px 0 0; display: flex; flex-direction: column; gap: 8px; }
+.picker legend { padding: 0 4px; }
+.choices { display: flex; flex-wrap: wrap; gap: 6px; }
+.choice { font: inherit; color: var(--muted); background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 10px; cursor: pointer; }
+.choice.on { color: var(--text); border-color: var(--accent); }
+.alert { border: 1px solid var(--bad); border-radius: var(--radius); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.alert p { margin: 0; }
+.checklist { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.checklist li { display: grid; grid-template-columns: 20px 1fr auto; gap: 10px; align-items: start; }
+.checklist .mark { width: 18px; height: 18px; border: 1px solid var(--line); border-radius: 3px; display: grid; place-items: center; font-size: 12px; color: var(--accent-ink); }
+.checklist li.done .mark { background: var(--accent); border-color: var(--accent); }
+.live { color: var(--accent); font-weight: 600; }
+.reviews { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.reviews p { margin: 4px 0 6px; }
+label.inline { display: inline; margin: 0; }

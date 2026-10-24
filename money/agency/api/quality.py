@@ -27,7 +27,7 @@ CLAIMS = {
 }
 # Words that show the email names the flaw we found (sentence 1 rule)
 FLAW_WORDS = {
-    "down": ("load", "placeholder", "blank", "down", "error", "dead end"),
+    "down": ("load", "placeholder", "blank", "down", "error", "dead end", "for sale", "for-sale"),
     "not mobile-friendly": ("pinch", "zoom", "fit", "mobile", "sideways"),
     "no tap-to-call": ("tap-to-call", "tap to call", "call button", "copy your number", "tap"),
     "phone number hidden on phones": ("first screen", "scroll", "number isn't", "number is not", "find your number"),

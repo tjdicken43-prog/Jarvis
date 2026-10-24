@@ -70,7 +70,7 @@ Banned on sight. The Auditor greps for these and looks at the screenshot.
 ## How the factory uses this
 - **Builder:** reads this file before every build.
 - **Auditor:**
-  - Runs the checks a script can do: banned words, placeholders, overflow at 375/390, tap target sizes, Lighthouse, links, console errors.
+  - Runs the checks a script can do. `money/sites/audit.py` covers banned words, placeholders, exclamation marks, em dashes, gradient text, emoji or slogan headings, tap-to-call, viewport, noindex on previews, review credits, the pitch email (80 words, one question, opt-out, address) and the do-not-email list. Still by hand with Playwright: overflow at 375/390, tap target sizes, Lighthouse, links, console errors.
   - Then makes a screenshot judgment on sections 1, 2 and 4.
   - Writes PASS or FAIL with the reason on the card.
 - **TJ's card:** shows the score next to the old site vs the new one. A FAIL never reaches TJ; it goes back to the Builder with the reason, 2 tries max, then it's skipped.

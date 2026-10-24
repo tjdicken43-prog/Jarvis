@@ -58,13 +58,20 @@ export const CAST = [
 const CASTBY = Object.fromEntries(CAST.map((c) => [c.id, c]));
 
 /* ---------- layout (metres). The camera looks from +z; back row at z = -3.6, front row at z = 2.6 ---------- */
+/* ---------- layout (metres): twelve rooms off one corridor. Back row z -8 to -2.5, corridor -2.5 to 1.5, front row 1.5 to 7.5 ---------- */
+const ROOMX = { toji: -20, yuji: -12, hanami: -4, yuta: 4, mahoraga: 12, throne: 20, jogo: -20, sukuna: -12, nanami: -4, hakari: 4, gojo: 12, todo: 20 };
+const BACKROW = new Set(["toji", "yuji", "hanami", "yuta", "mahoraga", "throne"]);
 const POS = {
-  toji: [-17.5, -3.8, 0], yuji: [-10.5, -3.8, 0], hanami: [-3.5, -4.2, 0], yuta: [3.5, -3.8, 0], mahoraga: [10.5, -4.2, 0],
-  throne: [21, 1.5, -Math.PI / 2], todo: [17.2, 1.5, Math.PI / 2], gojo: [11, 2.4, 0], hakari: [4, 2.4, 0],
-  nanami: [-5.5, 7.6, 0], sukuna: [-13.5, 7.4, 0], jogo: [-21, 2.5, Math.PI / 2],
+  toji: [-21, -5, 0], yuji: [-13, -5, 0], hanami: [-5, -5.2, 0], yuta: [3, -5, 0], mahoraga: [11, -5.4, 0], throne: [21.5, -5.5, -Math.PI / 2],
+  jogo: [-21.5, 4.5, Math.PI / 2], sukuna: [-12, 5.4, 0], nanami: [-4.5, 5.6, 0], hakari: [3, 4.0, 0], gojo: [11, 4.0, 0], todo: [19, 4.5, 0],
 };
-const BACK = [[-20, -1.6], [19.2, -1.6]];          // lead line: Toji → checker → TJ's desk
-const FRONT = [[15.6, 4.6], [-0.5, 4.6]];          // send line: Todo swaps approved cards here → Gojo → Hakari → out
+const OLD = { // where each station's props were drawn; they are moved into the rooms by the difference
+  toji: [-17.5, -3.8], yuji: [-10.5, -3.8], hanami: [-3.5, -4.2], yuta: [3.5, -3.8], mahoraga: [10.5, -4.2], throne: [21, 1.5],
+  todo: [17.2, 1.5], gojo: [11, 2.4], hakari: [4, 2.4], nanami: [-5.5, 7.6], sukuna: [-13.5, 7.4], jogo: [-21, 2.5],
+};
+const NEXT = { toji: "yuji", yuji: "hanami", hanami: "yuta", yuta: "mahoraga", mahoraga: "throne", nanami: "throne" };
+const DOORX = (id) => ROOMX[id] + 2;
+const INNERZ = (id) => (BACKROW.has(id) ? -3.4 : 2.4);
 
 export function createVault(container, opts = {}) {
   const phone = opts.phone ?? (matchMedia("(pointer: coarse)").matches || innerWidth < 760);
@@ -128,7 +135,7 @@ export function createVault(container, opts = {}) {
   const hazard = tex(256, 32, (g, w, h) => { g.fillStyle = "#e0b21c"; g.fillRect(0, 0, w, h); g.fillStyle = "#16130f"; for (let x = -h; x < w + h; x += 32) { g.beginPath(); g.moveTo(x, h); g.lineTo(x + 16, h); g.lineTo(x + 16 + h, 0); g.lineTo(x + h, 0); g.fill(); } noise(g, w, h, 600, 0.4, ["#000", "#6b5a2a"]); }, [1, 1]);
   const stripe = (x, z, len, rot, wdt = 0.35) => { const t = hazard.clone(); t.needsUpdate = true; t.wrapS = THREE.RepeatWrapping; t.repeat.set(len / 2.2, 1);
     const m = mesh(new THREE.PlaneGeometry(len, wdt), new THREE.MeshStandardMaterial({ map: t, roughness: 0.8 }), world, x, 0.012, z, false); m.rotation.set(-Math.PI / 2, 0, rot); };
-  stripe(0, 9.2, 46, 0); stripe(-23.5, 2, 20, Math.PI / 2);
+  stripe(0, 7.9, 48, 0); stripe(0, -2.3, 48, 0, 0.2); stripe(0, 1.3, 48, 0, 0.2);
 
   /* ---------- sacred geometry: brass inlays in the floor and on the door (TJ, 2026-10-24: order and calm on the floor) ---------- */
   const centres = (r, rings) => { const pts = [[0, 0]]; for (const [d, off] of rings) for (let i = 0; i < 6; i++) { const a = off + (i * Math.PI) / 3; pts.push([Math.cos(a) * d * r, Math.sin(a) * d * r]); } return pts; };
@@ -146,7 +153,7 @@ export function createVault(container, opts = {}) {
     const m = new THREE.MeshStandardMaterial({ map: t, transparent: true, emissive: color, emissiveMap: t, emissiveIntensity: 0.35, roughness: 0.35, metalness: 0.8, depthWrite: false });
     const me = mesh(new THREE.PlaneGeometry(size, size), m, world, x, 0.016, z, false); me.rotation.x = -Math.PI / 2; return me;
   };
-  const geo = [inlay((g, c) => flowerOfLife(g, c, c, 160), -7.5, 1.55, 5.2), inlay((g, c) => metatron(g, c, c, 105), -15, 1.55, 5.2)];
+  const geo = [inlay((g, c) => flowerOfLife(g, c, c, 160), 0, -0.5, 3.4), inlay((g, c) => metatron(g, c, c, 105), -8, -0.5, 3.4), inlay((g, c) => metatron(g, c, c, 105), 8, -0.5, 3.4), inlay((g, c) => flowerOfLife(g, c, c, 160), -16, -0.5, 3.4), inlay((g, c) => flowerOfLife(g, c, c, 160), 16, -0.5, 3.4)];
 
   const steel = tex(512, 256, (g, w, h) => {
     g.fillStyle = "#3d4a50"; g.fillRect(0, 0, w, h); noise(g, w, h, 5000, 0.25, ["#24302f", "#56656a"]);
@@ -158,12 +165,12 @@ export function createVault(container, opts = {}) {
   }, [6, 2]);
   const wallM = new THREE.MeshStandardMaterial({ map: steel, roughness: 0.6, metalness: 0.35 });
   const back = mesh(box(52, 9, 0.6), wallM, world, 0, 4.5, -8.3, false);
-  const sideL = mesh(box(0.6, 9, 20), wallM, world, -26, 4.5, 1.7, false);
-  const sideR = mesh(box(0.6, 4.5, 20), wallM, world, 26, 2.25, 1.7, false);
+  const sideL = mesh(box(0.6, 9, 16.4), wallM, world, -24.3, 4.5, -0.1, false);
+  const sideR = mesh(box(0.6, 3.2, 16.4), wallM, world, 24.3, 1.6, -0.1, false);
   const band = tex(1024, 64, (g, w, h) => { g.fillStyle = "#c99a17"; g.fillRect(0, 0, w, h); g.fillStyle = "#1b1712"; g.font = "600 40px system-ui, sans-serif"; g.textBaseline = "middle"; for (let x = 30; x < w; x += 340) g.fillText("Vault 479", x, h / 2 + 2); noise(g, w, h, 1500, 0.35, ["#000", "#7a5c12"]); }, [1, 1]);
   mesh(box(52, 0.7, 0.62), new THREE.MeshStandardMaterial({ map: band, roughness: 0.7 }), world, 0, 1.2, -8.28, false);
   // the gear door: a vault door in the back wall, rolled half open for the shift
-  const door = grp(world, 7, 4.6, -7.9);
+  const door = grp(world, -23.9, 2.0, -0.5); door.rotation.y = Math.PI / 2; door.scale.setScalar(0.52); // the vault's gear door, rolled open at the corridor's end
   mesh(cyl(3.6, 3.6, 0.5, 32), mat("#4c575c", { m: 0.6, r: 0.5 }), door, 0, 0, -0.1).rotation.x = Math.PI / 2;
   mesh(new THREE.TorusGeometry(3.62, 0.12, 6, 40), mat("#d9a91b", { r: 0.6 }), door, 0, 0, 0.16, false);
   const disc = grp(door, 0, 0, 0.35);
@@ -182,7 +189,7 @@ export function createVault(container, opts = {}) {
   pipe(-26, 26, 7.6, -7.6, 0.28, "#8a5a32"); pipe(-26, 26, 7.0, -7.7, 0.18, "#55706a"); pipe(-26, 26, 8.1, -7.3, 0.14, "#9a9488");
   const vp = mesh(cyl(0.3, 0.3, 7, 10), mat("#8a5a32", { m: 0.7, r: 0.4 }), world, -25.4, 4, -2, false);
   const lamps = [];
-  [[-14, -1], [-3, -1], [8, -1], [16, 4], [-9, 6], [4, 6]].forEach(([x, z], i) => {
+  [[-12, -5], [4, -5], [-16, -0.5], [8, -0.5], [-4, 4.5], [12, 4.5]].forEach(([x, z], i) => {
     const l = grp(world, x, 6.7, z);
     mesh(cyl(0.02, 0.02, 1.9, 4), mat("#222"), l, 0, 0.95, 0, false);
     mesh(cone(0.65, 0.55, 12), mat("#2f4a3a", { m: 0.5, r: 0.5 }), l, 0, 0, 0, false);
@@ -197,24 +204,23 @@ export function createVault(container, opts = {}) {
   scene.add(sun);
   const fill = new THREE.DirectionalLight("#7fd1a8", 0.35); fill.position.set(12, 8, 10); scene.add(fill);
 
-  /* ---------- belts ---------- */
-  const beltTex = tex(64, 64, (g, w, h) => { g.fillStyle = "#1c1d1e"; g.fillRect(0, 0, w, h); g.fillStyle = "#2c2e30"; for (let x = 0; x < w; x += 16) g.fillRect(x, 0, 6, h); noise(g, w, h, 200, 0.4, ["#000", "#444"]); }, [1, 1]);
   const belts = [];
-  const belt = ([a, b]) => {
-    const len = Math.abs(b[0] - a[0]), cx = (a[0] + b[0]) / 2, z = a[1], dir = Math.sign(b[0] - a[0]);
-    const t = beltTex.clone(); t.needsUpdate = true; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(len / 1.0, 1);
-    mesh(box(len, 0.08, 1.1), new THREE.MeshStandardMaterial({ map: t, roughness: 0.9 }), world, cx, 0.62, z);
-    mesh(box(len, 0.3, 1.25), mat("#3a3f41", { m: 0.5 }), world, cx, 0.43, z);
-    for (const s of [-1, 1]) { const r = mesh(box(len, 0.12, 0.08), new THREE.MeshStandardMaterial({ map: hazard, roughness: 0.8 }), world, cx, 0.7, z + s * 0.6); r.material.map = hazard.clone(); r.material.map.needsUpdate = true; r.material.map.wrapS = THREE.RepeatWrapping; r.material.map.repeat.set(len / 2, 1); }
-    for (let x = Math.min(a[0], b[0]) + 0.5; x < Math.max(a[0], b[0]); x += 2.2) for (const s of [-1, 1]) mesh(box(0.12, 0.3, 0.12), mat("#2a2e30", { m: 0.5 }), world, x, 0.15, z + s * 0.5);
-    belts.push({ t, dir, a, b, len });
-  };
-  belt(BACK); belt(FRONT);
-  // the chute at the end of the send line, and the intake at the start
-  mesh(box(1.4, 1.2, 1.6), mat("#2c3235", { m: 0.5 }), world, -1.2, 0.6, 4.6);
-  mesh(box(1.1, 0.06, 1.2), glow("#7fe0a0", { op: 0.5 }), world, -1.2, 1.22, 4.6, false);
-  mesh(box(1.6, 2.2, 1.6), mat("#2c3235", { m: 0.5 }), world, -20.6, 1.1, -1.6);
-
+  /* ---------- rooms: partitions, low corridor walls with door frames, a plaque over each door ---------- */
+  const partM = new THREE.MeshStandardMaterial({ map: steel.clone(), roughness: 0.6, metalness: 0.35 }); partM.map.needsUpdate = true; partM.map.repeat.set(1, 0.7);
+  for (const x of [-16, -8, 0, 8, 16]) { mesh(box(0.3, 3.2, 5.5), partM, world, x, 1.6, -5.25); mesh(box(0.3, 2.0, 6), partM, world, x, 1.0, 4.5); }
+  const lowM = mat("#46535a", { m: 0.4, r: 0.6 });
+  const plaque = (id, x, z) => { const t = tex(512, 112, (g, w, h) => { g.fillStyle = "#1e2427"; g.fillRect(0, 0, w, h); g.strokeStyle = id === "throne" ? "#ffb547" : "#d9a91b"; g.lineWidth = 8; g.strokeRect(4, 4, w - 8, h - 8);
+      g.fillStyle = "#efe6cf"; g.font = "600 52px system-ui, sans-serif"; g.textBaseline = "middle"; g.textAlign = "center"; g.fillText(id === "throne" ? "Your desk" : CASTBY[id].job, w / 2, h / 2 + 2); });
+    mesh(new THREE.PlaneGeometry(1.9, 0.42), new THREE.MeshStandardMaterial({ map: t, roughness: 0.7 }), world, x, 2.75, z + 0.1, false); };
+  for (const id in ROOMX) {
+    const cx = ROOMX[id], z = BACKROW.has(id) ? -2.5 : 1.5, dx = DOORX(id);
+    const a = cx - 4, b = dx - 0.9, c = dx + 0.9, e = cx + 4;
+    mesh(box(b - a, 1.1, 0.25), lowM, world, (a + b) / 2, 0.55, z); mesh(box(e - c, 1.1, 0.25), lowM, world, (c + e) / 2, 0.55, z);
+    for (const sx of [-1, 1]) { const post = mesh(box(0.16, 2.6, 0.3), new THREE.MeshStandardMaterial({ map: hazard, roughness: 0.8 }), world, dx + sx * 0.92, 1.3, z); post.material.map = hazard.clone(); post.material.map.needsUpdate = true; post.material.map.rotation = Math.PI / 2; }
+    mesh(box(2.0, 0.18, 0.3), mat("#2b3134", { m: 0.6 }), world, dx, 2.5, z);
+    plaque(id, dx, z);
+    if (!BACKROW.has(id)) mesh(box(8, 0.35, 0.2), lowM, world, cx, 0.17, 7.5);
+  }
   /* ---------- terminals and signs ---------- */
   const screens = {};
   const terminal = (id, x, z, ry = 0) => {
@@ -237,7 +243,8 @@ export function createVault(container, opts = {}) {
     sc.tx.needsUpdate = true;
   };
   const signList = [];
-  const signs = (id, x, y, z, ry = 0) => {
+  const signs = () => {}; // rooms carry plaques over their doors instead (above)
+  const oldSigns = (id, x, y, z, ry = 0) => {
     const t = tex(512, 112, (g, w, h) => { g.fillStyle = "#1e2427"; g.fillRect(0, 0, w, h); g.strokeStyle = "#d9a91b"; g.lineWidth = 8; g.strokeRect(4, 4, w - 8, h - 8);
       g.fillStyle = "#efe6cf"; g.font = "600 52px system-ui, sans-serif"; g.textBaseline = "middle"; g.textAlign = "center"; g.fillText(CASTBY[id].job, w / 2, h / 2 + 2); });
     const sg = grp(world); sg.userData.sid = id; signList.push(sg);
@@ -440,14 +447,18 @@ export function createVault(container, opts = {}) {
     fighter("jogo", R, { lava, idle: "fume" }); }
 
   /* ---------- stations: what stands round each fighter ---------- */
+  let n0 = world.children.length;
+  const room = (id) => { const d = [POS[id][0] - OLD[id][0], POS[id][1] - OLD[id][1]]; for (let i = n0; i < world.children.length; i++) { world.children[i].position.x += d[0]; world.children[i].position.z += d[1]; } n0 = world.children.length; };
   terminal("toji", -16, -5.4, 0.2); signs("toji", -17.5, 3.6, -5.2);
   mesh(box(1.4, 1.8, 0.1), mat("#5a4a32"), world, -19, 1.6, -5.6); // the target board
   for (let i = 0; i < 9; i++) mesh(ball(0.05, 0), glow(i % 3 ? "#ff5a4a" : "#ffd34a"), world, -19.5 + rnd(), 1.1 + rnd() * 1.1, -5.53, false);
+  room("toji");
   terminal("yuji", -9, -5.4, -0.15); signs("yuji", -10.5, 3.6, -5.2);
   const gate = grp(world, -10.5, 0, -1.6); // the phone-size scanner arch the leads pass through
   for (const sx of [-1, 1]) mesh(box(0.18, 2.1, 0.3), mat("#323a3e", { m: 0.5 }), gate, sx * 0.8, 1.05, 0);
   mesh(box(1.78, 0.2, 0.3), mat("#323a3e", { m: 0.5 }), gate, 0, 2.1, 0);
   const gateBar = mesh(box(1.4, 0.04, 0.04), glow("#ff3b3b"), gate, 0, 1.95, 0.16, false);
+  room("yuji");
   terminal("hanami", -2, -5.6, -0.1); signs("hanami", -3.5, 3.9, -5.6);
   const siteFrame = grp(world, -1.4, 0, -3.9); // the preview grows here: a tall phone-shaped frame
   mesh(box(1.2, 2.2, 0.1), mat("#2c2620"), siteFrame, 0, 1.3, 0);
@@ -456,15 +467,20 @@ export function createVault(container, opts = {}) {
   const roots = grp(world, -3.5, 0, -3.2);
   for (let i = 0; i < 9; i++) { const r = grp(roots, (rnd() - 0.5) * 3.2, 0, (rnd() - 0.5) * 1.6); r.rotation.set((rnd() - 0.5) * 0.6, 0, (rnd() - 0.5) * 0.6);
     mesh(cyl(0.03, 0.09, 1.4, 5), mat("#6f543c"), r, 0, 0.7, 0); mesh(ball(0.09, 0), mat("#f3a7c2", { e: "#f3a7c2", ei: 0.3 }), r, 0, 1.42, 0, false); r.scale.y = 0.001; r.visible = false; }
+  room("hanami");
   terminal("yuta", 5, -5.4, -0.15); signs("yuta", 3.5, 3.6, -5.2);
   mesh(box(1.1, 0.75, 0.6), mat("#6b4e32"), world, 2.1, 0.38, -4.2); mesh(box(0.5, 0.18, 0.36), mat("#2a2a2c", { m: 0.4 }), world, 2.1, 0.85, -4.2);
+  room("yuta");
   terminal("mahoraga", 12.4, -5.6, -0.2); signs("mahoraga", 10.5, 4.4, -5.6);
+  room("mahoraga");
   terminal("todo", 17.4, -0.2, Math.PI / 2 + 0.3);
+  room("todo");
   terminal("gojo", 12.8, 1.6, 0); signs("gojo", 11, 3.6, 1.6);
   const tube = grp(world, 11, 0, 4.6);
   mesh(cyl(0.55, 0.55, 7.2, 16, 1), new THREE.MeshStandardMaterial({ color: "#9fd6ff", transparent: true, opacity: 0.18, roughness: 0.1, metalness: 0.2, depthWrite: false }), tube, 0, 4.6, 0, false);
   for (const y of [1.0, 4.6, 8.2]) mesh(new THREE.TorusGeometry(0.58, 0.06, 6, 20), mat("#3a4448", { m: 0.6 }), tube, 0, y, 0, false).rotation.x = Math.PI / 2;
   const tubeGlow = mesh(new THREE.TorusGeometry(0.58, 0.03, 4, 20), glow("#6fc8ff", { op: 0.0 }), tube, 0, 1.2, 0, false); tubeGlow.rotation.x = Math.PI / 2;
+  room("gojo");
   terminal("hakari", 2.2, 1.6, 0.1); signs("hakari", 4, 3.6, 1.6);
   const cab = grp(world, 6.2, 0, 2.2); cab.rotation.y = -0.35; // the pachinko cabinet: three reels and a ring of lights
   mesh(box(1.3, 2.4, 0.8), mat("#2a1f3a", { r: 0.5 }), cab, 0, 1.2, 0);
@@ -472,6 +488,7 @@ export function createVault(container, opts = {}) {
   const reels = reelTex.map((t, i) => mesh(new THREE.PlaneGeometry(0.3, 0.42), new THREE.MeshBasicMaterial({ map: t, toneMapped: false }), cab, -0.36 + i * 0.36, 1.55, 0.41, false));
   const cabLights = []; for (let i = 0; i < 14; i++) { const a = (i / 14) * TAU; cabLights.push(mesh(ball(0.045, 0), glow("#ffd34a"), cab, Math.cos(a) * 0.58, 1.55 + Math.sin(a) * 0.5, 0.42, false)); }
   const reelState = reels.map(() => ({ off: 0, v: 0, stop: null }));
+  room("hakari");
   const booth = grp(world, -5.5, 0, 6.6); // Nanami's front desk: a switchboard, a desk phone and a wall clock past five
   mesh(box(2.6, 0.8, 0.9), mat("#6b4e32"), booth, 0, 0.4, 0.5);
   mesh(box(2.6, 2.3, 0.25), mat("#2f3a36", { m: 0.4 }), booth, 0, 1.15, -0.5);
@@ -482,6 +499,7 @@ export function createVault(container, opts = {}) {
   const ratioBoard = grp(booth, -0.6, 1.2, -0.35);
   const slash = mesh(box(1.2, 0.035, 0.01), glow("#ff4040"), ratioBoard, 0, 0, 0.02, false); slash.visible = false;
   signs("nanami", -5.5, 3.4, 6.0);
+  room("nanami");
   const shrine = grp(world, -13.5, 0, 5.6); // the shrine stays sunk under the floor until money lands
   const sm = mat("#1a1014", { r: 0.7 }), sr = mat("#5a1218", { r: 0.6 });
   mesh(box(4, 0.4, 2.4), sm, shrine, 0, 0.2, 0); for (const sx of [-1.6, -0.55, 0.55, 1.6]) mesh(box(0.22, 2.2, 0.22), sr, shrine, sx, 1.5, 0.8);
@@ -491,6 +509,7 @@ export function createVault(container, opts = {}) {
   shrine.position.y = -3.6; shrine.visible = false;
   const cuts = []; for (let i = 0; i < (phone ? 26 : 48); i++) { const c = mesh(new THREE.PlaneGeometry(2.6, 0.035), glow("#ff2840", { side: THREE.DoubleSide }), world, 0, 0, 0, false); c.visible = false; cuts.push(c); }
   mesh(box(2.6, 0.18, 2.6), mat("#3a1418"), world, -13.5, 0.09, 7.4); signs("sukuna", -13.5, 3.6, 8.4);
+  room("sukuna");
   const boiler = grp(world, -22.6, 0, 2.5); // Jogo's furnace and its pressure gauge
   mesh(cyl(1.1, 1.2, 3.2, 12), mat("#5c3a28", { m: 0.5, r: 0.55 }), boiler, 0, 1.6, 0);
   mesh(cyl(0.3, 0.3, 4.2, 8), mat("#3a3230", { m: 0.5 }), boiler, 0, 5.3, 0);
@@ -498,7 +517,8 @@ export function createVault(container, opts = {}) {
   const gauge = grp(boiler, 0.95, 2.3, 0.6); gauge.rotation.y = 1.0; mesh(cyl(0.22, 0.22, 0.06, 14), mat("#e8e2d2"), gauge, 0, 0, 0, false).rotation.x = Math.PI / 2;
   const needle = mesh(box(0.02, 0.17, 0.02), mat("#c41e1e"), gauge, 0, 0, 0.05, false); needle.geometry = new THREE.BoxGeometry(0.02, 0.17, 0.02).translate(0, 0.08, 0);
   signs("jogo", -21.6, 3.8, 0.2, Math.PI / 2);
-  const throne = grp(world, 21, 0, 1.5); throne.rotation.y = -Math.PI / 2; // TJ's desk: nothing goes out without your tap
+  room("jogo");
+  const throne = grp(world, 22.4, 0, 1.5); throne.rotation.y = -Math.PI / 2; // TJ's desk: nothing goes out without your tap
   mesh(box(1.3, 0.5, 1.2), mat("#3a2a1c"), throne, 0, 0.45, 0); mesh(box(1.3, 2.0, 0.25), mat("#3a2a1c"), throne, 0, 1.45, -0.55);
   mesh(box(1.2, 0.12, 1.1), mat("#8a2a1c", { r: 0.9 }), throne, 0, 0.75, 0);
   const tjLight = mesh(box(1.0, 0.06, 0.06), glow("#ffb547"), throne, 0, 2.5, -0.5, false);
@@ -506,6 +526,7 @@ export function createVault(container, opts = {}) {
   { const t = tex(512, 112, (g, w, h) => { g.fillStyle = "#1e2427"; g.fillRect(0, 0, w, h); g.strokeStyle = "#ffb547"; g.lineWidth = 8; g.strokeRect(4, 4, w - 8, h - 8); g.fillStyle = "#efe6cf"; g.font = "600 52px system-ui"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText("Your desk", w / 2, h / 2 + 2); });
     const s = mesh(new THREE.PlaneGeometry(2.4, 0.52), new THREE.MeshStandardMaterial({ map: t }), world, 21.6, 3.8, 1.5, false); s.rotation.y = -Math.PI / 2; }
   signs("todo", 17.2, 3.8, -0.6);
+  room("throne");
 
 
   /* ---------- crash-test dummies: every move lands on one, and each breaks its own way (TJ, 2026-10-24) ---------- */
@@ -567,6 +588,7 @@ export function createVault(container, opts = {}) {
       case "ash": { tint(d, "#1b1714", null, 0.5); after(0.6, () => { for (let i = 0; i < 50; i++) emit(P.clone().add(new THREE.Vector3((rnd() - 0.5) * 0.5, rnd() * 1.8, (rnd() - 0.5) * 0.5)), new THREE.Vector3((rnd() - 0.5) * 1.2, 0.3 + rnd() * 1.5, (rnd() - 0.5) * 1.2), rnd() < 0.3 ? "#ff7a1a" : "#2a2420", 1.8, 1.2, -1);
         effect(0.8, (q) => d.g.scale.set(1 - q * 0.3, Math.max(0.02, 1 - q), 1 - q * 0.3), () => world.remove(d.g)); }); break; } // Jogo: burnt to ash where it stood
     }
+    after(style === "halves" ? 0.8 : 0.5, () => dropAt(id, P));
     respawn(id, style === "dust" || style === "ash" ? 4 : 3.4);
   };
   const stepDebris = (dt) => {
@@ -589,7 +611,7 @@ export function createVault(container, opts = {}) {
     const env = grp(g, 0, 0.32, 0); env.visible = false;
     mesh(box(0.62, 0.05, 0.42), envM, env); const flap = mesh(cone(0.38, 0.2, 4), mat("#e3dac4"), env, 0, 0.03, -0.06, false); flap.rotation.set(Math.PI / 2, Math.PI / 4, 0); flap.scale.set(1.1, 1, 0.12);
     const ok = mesh(ball(0.06, 0), glow("#7cff9c"), env, 0.22, 0.06, 0.14, false); ok.visible = false;
-    return { g, body, tag, screen, env, ok, line: 0, x: BACK[0][0] + 1, stage: 0, wait: 0, gone: false, hot: false };
+    return { g, body, tag, screen, env, ok, stage: 0, wait: 0, gone: false, hot: false };
   };
 
   /* ---------- moves: a tiny timeline per fighter ---------- */
@@ -653,10 +675,9 @@ export function createVault(container, opts = {}) {
         R.root.position.x = R.base.x + (go - back) * -1.6; R.root.position.z = R.base.z + (go - back) * 1.6;
         R.armR.rotation.x = -1.4 * bump(u, 0.35, 0.45) + 1.4 * bump(u, 0.55, 0.7); R.torso.rotation.y = -0.4 * (go - back);
         R.legL.rotation.x = Math.sin(u * 40) * 0.6 * (go - back > 0 && go - back < 1 ? 1 : 0); R.legR.rotation.x = -R.legL.rotation.x;
-        if (u > 0.12 && u < 0.35 && ghosts.length < 4 && rnd() < 0.5) { const gh = R.root.clone(true); gh.traverse((o) => { if (o.isMesh) { o.material = glow("#9fb3c8", { op: 0.25 }); o.castShadow = false; } }); scene.add(gh); ghosts.push(gh);
+        if (u > 0.12 && u < 0.35 && ghosts.length < 4 && rnd() < 0.5 && !phone) { const gh = R.root.clone(true); gh.traverse((o) => { if (o.isMesh) { o.material = glow("#9fb3c8", { op: 0.25 }); o.castShadow = false; } }); scene.add(gh); ghosts.push(gh);
           effect(0.6, (k) => gh.traverse((o) => o.isMesh && (o.material.opacity = 0.25 * (1 - k))), () => scene.remove(gh)); }
         if (u > 0.4 && !R._k) { R._k = true; kill("toji", "pin"); }
-        if (u > 0.45 && !c.g.visible) { c.g.visible = true; burst(new THREE.Vector3(c.x, 0.9, -1.6), 14, ["#cfc6b5", "#ffffff"], 3, { life: 0.5 }); }
       }, (R) => (R._k = false));
       log("toji", "Picked a shop off the cold list", "pick: 1 shop");
     },
@@ -718,9 +739,10 @@ export function createVault(container, opts = {}) {
         if (u > 0.42 && !R._c) { R._c = true; const p = worldOf(R.armR.hand); const ring = mesh(new THREE.RingGeometry(0.2, 0.32, 24), glow("#ffffff", { side: THREE.DoubleSide }), scene, p.x, p.y, p.z, false);
           effect(0.4, (q) => { ring.scale.setScalar(1 + q * 6); ring.material.opacity = 1 - q; ring.lookAt(camera.position); }, () => scene.remove(ring));
           const a = c.g.position.clone(); burst(a.clone().setY(0.8), 18, ["#ffffff", "#9fd6ff"], 3, { life: 0.4 });
-          kill("todo", "swap"); c.line = 1; c.x = FRONT[0][0] - 0.2; c.g.position.set(c.x, 0.62, FRONT[0][1]); burst(c.g.position.clone().setY(0.8), 18, ["#ffffff", "#9fd6ff"], 3, { life: 0.4 }); flash = 0.25; } }, (R) => (R._c = false));
+          const gd = dummies.gojo; if (gd && gd.alive) { gd.g.position.set(TABLE.throne.x - 0.8, 0, TABLE.throne.z + 0.9); kill("gojo", "swap"); }
+          place(c, "gojo"); burst(c.g.position.clone().setY(0.8), 18, ["#ffffff", "#9fd6ff"], 3, { life: 0.4 }); flash = 0.25; } }, (R) => (R._c = false));
       tjLight.material.color.set("#ffffff"); setTimeout(() => tjLight.material.color.set("#ffb547"), 500);
-      log("todo", "Swapped your approved card onto the send line", "handoff: ok");
+      log("todo", "Swapped your approved card into Gojo's room", "handoff: ok");
     },
     send(batch) { // Gojo: Domain Expansion. The void opens round him, the batch rises up the tube, the void closes
       const f = F.gojo; focus("gojo", 5.2, { pri: 2, r: 13, el: 0.3, ty: 1.6 }); title("Domain Expansion", "Unlimited Void: Gojo sent " + batch.length + (batch.length === 1 ? " email" : " emails"));
@@ -778,78 +800,108 @@ export function createVault(container, opts = {}) {
     },
   };
 
-  /* ---------- the line: crates move, stop at each station, the station plays its move ---------- */
-  const STOPS0 = [{ id: "yuji", x: -10.5 }, { id: "hanami", x: -3.5 }, { id: "yuta", x: 3.5 }, { id: "mahoraga", x: 10.5 }, { id: "throne", x: 18.4 }];
-  const STOPS1 = [{ id: "gojo", x: 11 }, { id: "hakari", x: 4 }];
-  const busy = (id) => F[id]?.act;
-  let mode = "demo", demoOn = true, queue = [], gojoHold = [];
+  /* ---------- rooms and hand-offs: the dummy drops the job, the fighter walks it to the next room ---------- */
+  const TABLE = {};
+  for (const id in ROOMX) { const b = BACKROW.has(id); TABLE[id] = new THREE.Vector3(ROOMX[id] + 3.3, 0.73, b ? -4.4 : 3.2); }
+  TABLE.throne = new THREE.Vector3(20.2, 0.73, -4.6);
+  for (const id in TABLE) { const t = TABLE[id]; mesh(box(1.2, 0.06, 0.8), mat(id === "throne" ? "#5a3a24" : "#5c4a36"), world, t.x, 0.7, t.z); for (const [dx, dz] of [[-0.5, -0.3], [0.5, -0.3], [-0.5, 0.3], [0.5, 0.3]]) mesh(box(0.06, 0.7, 0.06), mat("#3a3230"), world, t.x + dx, 0.35, t.z + dz); }
+  const ST = {}; for (const id in ROOMX) ST[id] = { queue: [], phase: "idle", item: null, credits: 0, wait: 0 };
+  let mode = "demo", demoOn = true, queue = [];
   const live = { rows: [], seen: new Set() };
-
-  const spawn = () => { const c = makeCrate(); c.g.visible = false; c.x = BACK[0][0] + 2.2; c.g.position.set(c.x, 0.62, BACK[0][1]); crates.push(c); MOVES.pick(c); return c; };
-  const stepLine = (dt) => {
-    const speed = 1.6;
-    for (const c of crates) {
-      if (c.gone || c.line === 2) continue;
-      const stops = c.line === 0 ? STOPS0 : STOPS1, dir = c.line === 0 ? 1 : -1;
-      const nx = stops[c.stage]; const ahead = crates.some((o) => o !== c && !o.gone && o.line === c.line && (o.x - c.x) * dir > 0 && (o.x - c.x) * dir < 0.95);
-      if (c.wait > 0) { c.wait -= dt; continue; }
-      if (nx && Math.abs(nx.x - c.x) < 0.05) {
-        if (busy(nx.id) && nx.id !== "throne") continue;
-        if (!c.done?.[c.line + nx.id]) { (c.done ||= {})[c.line + nx.id] = 1; c.wait = arrive(c, nx.id); if (c.wait == null) c.wait = 0; continue; }
-        c.stage++; continue;
-      }
-      if (ahead || !c.g.visible) continue;
-      const tx = nx ? nx.x : (c.line === 0 ? BACK[1][0] : FRONT[1][0]);
-      c.x += Math.sign(tx - c.x) * Math.min(speed * dt, Math.abs(tx - c.x));
-      c.g.position.x = c.x;
-      if (!nx && Math.abs(tx - c.x) < 0.05 && c.line === 1) { c.gone = true; }
+  const busy = (id) => F[id]?.act;
+  const restack = (id) => ST[id].queue.forEach((c, i) => { if (!c.carried) c.g.position.set(TABLE[id].x + (i % 2) * 0.3 - 0.15, TABLE[id].y, TABLE[id].z + Math.floor(i / 2) * 0.05 - (i % 2) * 0.1); });
+  const place = (c, id, fx = true) => { // put a job on a room's table (Todo's swap, or live rows catching up)
+    for (const k in ST) { const q = ST[k].queue, i = q.indexOf(c); if (i >= 0) q.splice(i, 1); }
+    world.attach(c.g); c.g.scale.setScalar(0.62); c.g.rotation.set(0, 0, 0); c.g.visible = true; c.at = id; ST[id].queue.push(c); restack(id);
+    if (fx) burst(c.g.position.clone().setY(1.0), 14, ["#ffffff", "#9fd6ff"], 2.5, { life: 0.4 });
+  };
+  const newItem = (id, hidden) => { const c = makeCrate(); c.g.scale.setScalar(0.62); c.g.visible = !hidden; items.push(c); c.at = id; ST[id].queue.push(c); restack(id); return c; };
+  const items = [];
+  const dropAt = (id, P) => { // the job falls out of the broken dummy, already worked on
+    const st = ST[id]; if (st.phase !== "work" || !st.item) return; const c = st.item;
+    world.attach(c.g); c.g.visible = true; c.g.scale.setScalar(0.62); c.g.position.set(P.x, 0.02, P.z); c.g.rotation.y = rnd() * TAU;
+    burst(new THREE.Vector3(P.x, 0.4, P.z), 12, ["#ffd34a", "#ffffff"], 2.5, { life: 0.5 }); st.phase = "pick";
+  };
+  const walkTo = (f, pts, done) => { f.walk = { pts: pts.map((p) => new THREE.Vector3(p[0], 0, p[1])), i: 0, done, t: 0 }; };
+  const route = (from, to, end) => { // out of one room, along the corridor, into the next; lanes keep walkers apart
+    const lane = DOORX(to) > DOORX(from) ? -1.2 : 0.2;
+    return [[DOORX(from), INNERZ(from)], [DOORX(from), lane], [DOORX(to), lane], [DOORX(to), INNERZ(to)], end];
+  };
+  const carry = (f, c) => { f.carry = c; c.carried = true; f.torso.attach(c.g); c.g.position.set(0, 0.3, 0.42); c.g.rotation.set(0, 0, 0); c.g.scale.setScalar(0.62 / f.root.scale.x); };
+  const handOver = (f, to) => { const c = f.carry; f.carry = null; c.carried = false; place(c, to, false);
+    if (c.ticket && to === "throne") { holoPulse = 1.4; effect(0.8, (q) => c.g.scale.setScalar(0.62 * (1 - q)), () => { c.gone = true; const i = ST.throne.queue.indexOf(c); if (i >= 0) ST.throne.queue.splice(i, 1); }); } };
+  const credit = (id) => mode === "demo" || ST[id].credits > 0;
+  const startWork = (id) => { // a fighter takes the top job off their table and goes at the dummy
+    const st = ST[id], f = F[id], c = st.queue.shift(); st.item = c; st.phase = "work"; if (mode === "live") st.credits--;
+    if (!c.carried) c.g.visible = false;
+    const fail = (why, who) => { st.phase = "idle"; st.item = null; c.gone = true; if (why) after(1.4, () => MOVES.fail(why)); };
+    switch (id) {
+      case "toji": MOVES.pick(c); break;
+      case "yuji": if (mode === "demo" && rnd() < 0.1) { MOVES.flawMiss(); fail(); } else { MOVES.flaw(c); } break;
+      case "hanami": MOVES.mockup(c); break;
+      case "yuta": MOVES.draft(c); break;
+      case "mahoraga": { const ok = mode === "live" || rnd() > 0.1; MOVES.check(c, ok); if (!ok) fail("Checker stopped a draft with a claim it couldn't prove"); break; }
+      case "nanami": MOVES.receptionist(c); break;
     }
-    for (let i = crates.length - 1; i >= 0; i--) if (crates[i].gone) { world.remove(crates[i].g); crates.splice(i, 1); }
   };
-  const arrive = (c, id) => { // demo outcomes; in live mode the crates only carry what the log says
-    if (mode === "live") return 0;
-    if (id === "yuji") { if (rnd() < 0.12) { MOVES.flawMiss(); setTimeout(() => (c.gone = true), 1200); return 99; } MOVES.flaw(c); return 2.4; }
-    if (id === "hanami") { MOVES.mockup(c); return 3.3; }
-    if (id === "yuta") { MOVES.draft(c); return 3.3; }
-    if (id === "mahoraga") { const ok = rnd() > 0.12; MOVES.check(c, ok); if (!ok) { setTimeout(() => { MOVES.fail("Checker stopped a draft with a claim it couldn't prove"); }, 1500); setTimeout(() => (c.gone = true), 1500); return 99; } return 1.9; }
-    if (id === "throne") { holoPulse = 1.2; setTimeout(() => MOVES.approve(c), 1500); return 99; }
-    if (id === "gojo") { gojoHold.push(c); if (gojoHold.length >= 2 && !busy("gojo")) { const b = gojoHold.splice(0); setTimeout(() => MOVES.send(b), 400); } return 99; }
-    return 0;
+  const stepRooms = (dt) => {
+    for (const id of ["toji", "yuji", "hanami", "yuta", "mahoraga", "nanami"]) {
+      const st = ST[id], f = F[id], d = dummies[id];
+      if (st.phase === "idle" && st.queue.length && credit(id) && !f.act && !f.walk && d && d.alive && d.g.position.y > -0.05) startWork(id);
+      else if (st.phase === "work" && !f.act && !st.item?.g.visible) { st.wait += dt; if (st.wait > 2.5) { st.wait = 0; dropAt(id, (d?.home || f.base).clone()); } } // the move missed its dummy: drop where it stood
+      else if (st.phase === "pick" && !f.act && !f.walk) {
+        st.phase = "carry"; const c = st.item, to = NEXT[id], T = TABLE[to];
+        walkTo(f, [[c.g.position.x - 0.5, c.g.position.z + 0.3]], () => { play(id, 0.45, (u, R) => { const k = Math.sin(u * Math.PI); R.hips.position.y = 0.95 - 0.3 * k; R.torso.rotation.x = 0.5 * k; R.armL.rotation.x = R.armR.rotation.x = -1.2 * k; }, () => {
+          carry(f, c); log(id, `Carrying it to ${to === "throne" ? "your desk" : CASTBY[to].name}`, `→ ${to === "throne" ? "desk" : CASTBY[to].name}`);
+          walkTo(f, route(id, to, [T.x - 0.9, T.z]), () => { handOver(f, to); st.item = null; st.phase = "return";
+            walkTo(f, route(to, id, [f.base.x, f.base.z]).concat([[f.base.x, f.base.z]]), () => { st.phase = "idle"; resetPose(f); }); }); }); });
+      }
+    }
+    // your desk: approvals wait for you (the demo approves after a beat), then Todo's clap swaps the card into Gojo's room
+    const tq = ST.throne.queue.filter((c) => !c.ticket && !c.gone);
+    if (tq.length && !busy("todo") && (mode === "demo" ? (ST.throne.wait += dt) > 3 : ST.throne.credits > 0)) { ST.throne.wait = 0; if (mode === "live") ST.throne.credits--; holoPulse = 1.2; MOVES.approve(tq[0]); }
+    // Gojo sends once two are waiting, or one has waited a while
+    const gq = ST.gojo.queue; if (gq.length) ST.gojo.wait += dt;
+    if (gq.length && !busy("gojo") && (mode === "demo" ? gq.length >= 2 || ST.gojo.wait > 12 : ST.gojo.credits > 0)) { ST.gojo.wait = 0; if (mode === "live") ST.gojo.credits--; MOVES.send(gq.splice(0)); }
+    for (let i = items.length - 1; i >= 0; i--) if (items[i].gone) { const c = items[i]; c.g.parent?.remove(c.g); for (const k in ST) { const q = ST[k].queue, j = q.indexOf(c); if (j >= 0) q.splice(j, 1); } items.splice(i, 1); }
   };
-  let holoPulse = 0;
+  const walkStep = (f, dt) => {
+    const w = f.walk, tgt = w.pts[w.i], p = f.root.position, d = tgt.clone().sub(p).setY(0), L = d.length();
+    if (L < 0.06) { w.i++; if (w.i >= w.pts.length) { f.walk = null; f.walkYaw = null; w.done && w.done(); } return; }
+    const sp = (f.root.scale.x > 1.3 ? 2.0 : 2.5) * dt; p.addScaledVector(d.normalize(), Math.min(sp, L)); f.walkYaw = Math.atan2(d.x, d.z);
+    w.t += dt; const sw = Math.sin(w.t * 9) * 0.6;
+    f.legL.rotation.x = sw; f.legR.rotation.x = -sw; f.hips.position.y = 0.95 + Math.abs(Math.cos(w.t * 9)) * 0.04;
+    if (f.carry) { f.armL.rotation.set(-1.15, 0, 0.25); f.armR.rotation.set(-1.15, 0, -0.25); } else { f.armL.rotation.x = -sw * 0.7; f.armR.rotation.x = sw * 0.7; }
+  };
 
-  // demo director: keeps the line full and drops the rarer moments in at believable gaps
-  let tSpawn = 1, tCall = 14, tPay = 40, tReply = 22;
+  // demo: leads keep arriving at Toji's table; calls, replies and payments drop in at believable gaps
+  let tSpawn = 1, tCall = 14, tPay = 45, tReply = 24;
   const demoTick = (dt) => {
     tSpawn -= dt; tCall -= dt; tPay -= dt; tReply -= dt;
-    if (tSpawn <= 0 && !busy("toji") && crates.filter((c) => c.line === 0).length < 5) { spawn(); tSpawn = 6 + rnd() * 3; }
-    if (tCall <= 0 && !busy("nanami")) { MOVES.receptionist(); tCall = 28 + rnd() * 20; }
-    if (tReply <= 0 && !busy("hakari")) { MOVES.followup(rnd() < 0.3); tReply = 18 + rnd() * 12; }
+    if (tSpawn <= 0 && ST.toji.queue.length < 1 && items.length < 9) { newItem("toji", true); tSpawn = 7 + rnd() * 4; }
+    if (tCall <= 0 && ST.nanami.queue.length < 1) { const c = newItem("nanami", true); c.ticket = true; c.body.visible = false; c.env.visible = true; tCall = 30 + rnd() * 20; }
+    if (tReply <= 0 && !busy("hakari")) { MOVES.followup(rnd() < 0.3); tReply = 20 + rnd() * 12; }
     if (tPay <= 0 && !busy("sukuna")) { MOVES.paid(); tPay = 80 + rnd() * 40; }
-    if (gojoHold.length && !busy("gojo") && gojoHold.every((c) => c.x <= 11.05)) { if (gojoHold._t === undefined) gojoHold._t = 9; gojoHold._t -= dt; if (gojoHold._t < 0) { const b = gojoHold.splice(0); gojoHold._t = undefined; MOVES.send(b); } }
   };
 
-  /* live mode: each new event row plays its move (rows come from the agency's events table via the host) */
-  const STEP_MOVE = { flaw: "flaw", mockup: "mockup", draft: "draft", approve: "approve", send: "send", inbox: "inbox", receptionist: "receptionist", call_review: "receptionist", stripe: "paid", client: "paid", golive: "paid" };
+  /* live mode: each new event row runs its station once; the job is put on that room's table if it isn't there yet */
+  const itemFor = (r, id) => { let c = items.find((x) => x.pid && x.pid === r.prospect_id && !x.gone); if (!c) { c = newItem(id, id === "toji"); c.pid = r.prospect_id; } else if (c.at !== id && !c.carried) place(c, id); return c; };
   const playRow = (r) => {
     if (!r.ok) return MOVES.fail(`${r.step} failed${r.reason ? ": " + r.reason : ""}`);
-    const c = crates.find((x) => x.pid === r.prospect_id) || null;
-    const need = (line = 0) => { const n = c || makeCrate(); if (!c) { n.pid = r.prospect_id; n.line = line; n.x = line ? FRONT[0][0] : BACK[0][0] + 2.2; n.g.position.set(n.x, 0.62, line ? FRONT[0][1] : BACK[0][1]); crates.push(n); } n.g.visible = true; return n; };
     switch (r.step) {
-      case "flaw": { const n = need(); if (!c) MOVES.pick(n); setTimeout(() => MOVES.flaw(n), 1800); break; }
-      case "mockup": MOVES.mockup(need()); break;
-      case "draft": { const n = need(); MOVES.draft(n); setTimeout(() => MOVES.check(n, true), 3400); break; }
-      case "approve": MOVES.approve(need()); break;
-      case "send": if (r.detail?.followup || r.detail?.kind === "followup") MOVES.followup(false); else MOVES.send([need(1)]); break;
+      case "flaw": { const fresh = !items.some((x) => x.pid === r.prospect_id); itemFor(r, fresh ? "toji" : "yuji"); if (fresh) ST.toji.credits++; ST.yuji.credits++; break; }
+      case "mockup": itemFor(r, "hanami"); ST.hanami.credits++; break;
+      case "draft": itemFor(r, "yuta"); ST.yuta.credits++; ST.mahoraga.credits++; break;
+      case "approve": itemFor(r, "throne"); ST.throne.credits++; break;
+      case "send": if (r.detail?.followup || r.detail?.kind === "followup") MOVES.followup(false); else { itemFor(r, "gojo"); ST.gojo.credits++; } break;
       case "inbox": MOVES.followup(/repl/i.test(JSON.stringify(r.detail || r.reason || ""))); break;
-      case "receptionist": case "call_review": MOVES.receptionist(); break;
+      case "receptionist": case "call_review": { const c = newItem("nanami", true); c.ticket = true; c.body.visible = false; c.env.visible = true; ST.nanami.credits++; break; }
       case "stripe": case "client": case "golive": MOVES.paid(); break;
     }
   };
-  const liveTick = (dt) => {
-    if (busyAny() || !queue.length) return; playRow(queue.shift());
-  };
+  const liveTick = () => { if (busyAny() || !queue.length) return; playRow(queue.shift()); };
   const busyAny = () => Object.values(F).some((f) => f.act && f.act.dur > 2.5);
+  let holoPulse = 0;
 
   /* ---------- idle life: everyone fidgets in character ---------- */
   const idle = (f, t) => {
@@ -933,12 +985,13 @@ export function createVault(container, opts = {}) {
     now += dt; tick(dt); render();
   };
   const tick = (dt) => {
-    if (mode === "demo") { if (demoOn) demoTick(dt); } else liveTick(dt);
-    stepLine(dt);
+    if (mode === "demo") { if (demoOn) demoTick(dt); } else liveTick();
+    stepRooms(dt);
     for (const b of belts) b.t.offset.x -= (dt * 1.6 * b.dir) / 1.0;
     for (const f of Object.values(F)) {
-      const d = dummies[f.id], want = f.act && d && d.g.parent && f.id !== "gojo" ? Math.atan2(d.home.x - f.base.x, d.home.z - f.base.z) : f.ry;
+      const d = dummies[f.id], want = f.walkYaw != null ? f.walkYaw : f.walk ? f.root.rotation.y : !f.act && (f.root.position.distanceTo(f.base) > 0.2) ? f.root.rotation.y : f.act && d && d.g.parent && f.id !== "gojo" ? Math.atan2(d.home.x - f.base.x, d.home.z - f.base.z) : f.ry;
       let da = ((want - f.root.rotation.y + Math.PI) % TAU + TAU) % TAU - Math.PI; f.root.rotation.y += da * Math.min(1, dt * 9);
+      if (f.walk && !f.act) { walkStep(f, dt); continue; }
       if (f.act) { f.act.t += dt; const u = Math.min(1, f.act.t / f.act.dur); f.act.fn(u, f); if (u >= 1) { const e = f.act.end; f.act = null; e && e(f); resetPose(f); } }
       else idle(f, now);
     }
@@ -969,10 +1022,8 @@ export function createVault(container, opts = {}) {
   const resetPose = (R) => { for (const k of ["armL", "armR", "legL", "legR", "torso", "head"]) R[k].rotation.set(0, 0, 0); R.armL.fore.rotation.set(0, 0, 0); R.armR.fore.rotation.set(0, 0, 0); R.legL.shin.rotation.set(0, 0, 0); R.legR.shin.rotation.set(0, 0, 0); R.root.position.copy(R.base); R.hips.position.y = 0.95; };
   const render = () => { if (phone) renderer.render(scene, camera); else composer.render(); };
   raf = requestAnimationFrame(frame);
-  // warm start: a few crates already on the line so the floor is never empty
-  { const c1 = makeCrate(); c1.x = -6; c1.stage = 1; c1.tag.visible = true; c1.g.position.set(c1.x, 0.62, BACK[0][1]); crates.push(c1);
-    const c2 = makeCrate(); c2.x = 7.5; c2.stage = 3; c2.tag.visible = true; c2.screen.visible = true; c2.body.visible = false; c2.env.visible = true; c2.g.position.set(c2.x, 0.62, BACK[0][1]); crates.push(c2);
-    const c3 = makeCrate(); c3.line = 1; c3.x = 13.5; c3.body.visible = false; c3.env.visible = true; c3.ok.visible = true; c3.g.position.set(c3.x, 0.62, FRONT[0][1]); crates.push(c3); }
+  // warm start: jobs already waiting in a few rooms so the floor is never empty
+  { const a = newItem("yuji"); const b = newItem("yuta"); b.tag.visible = true; b.screen.visible = true; const c = newItem("gojo"); c.body.visible = false; c.env.visible = true; c.ok.visible = true; }
 
   return {
     CAST, moves: MOVES, scene, camera,
@@ -981,9 +1032,9 @@ export function createVault(container, opts = {}) {
     focus(id) { userUntil = 0; focus(id, 1e9, { r: 6, el: 0.22, ty: 1.2, az: 0.55, pri: 3 }); },
     profile, portrait,
     // rows from the events table, newest last; once any arrive the demo stops and only real events play
-    feed(rows) { const fresh = rows.filter((r) => !live.seen.has(r.id)); fresh.forEach((r) => live.seen.add(r.id)); if (!rows.length) return; if (mode === "demo") { mode = "live"; crates.forEach((c) => (c.gone = true)); return; } queue.push(...fresh); },
+    feed(rows) { const fresh = rows.filter((r) => !live.seen.has(r.id)); fresh.forEach((r) => live.seen.add(r.id)); if (!rows.length) return; if (mode === "demo") { mode = "live"; items.forEach((c) => (c.gone = true)); return; } queue.push(...fresh); },
     get mode() { return mode; },
-    demo(on) { demoOn = on; if (!on) crates.forEach((c) => (c.gone = true)); },
+    demo(on) { demoOn = on; },
     pause() { running = false; }, resume() { running = true; last = performance.now(); },
     dispose() { cancelAnimationFrame(raf); renderer.dispose(); canvas.remove(); Object.values(tags).forEach((t) => t.remove()); },
     _jump(t) { for (let i = 0; i < t * 30; i++) tick(1 / 30); }, // tests and screenshots: fast-forward the sim

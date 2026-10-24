@@ -1,4 +1,6 @@
-# Handoff: tax savings tracking (paused 2026-10-24 at TJ's usage limit)
+# Handoff: tax savings tracking (paused 2026-10-24, finished 2026-10-24 evening)
+
+All steps below are done except 5 (Gym-security price change, waits on TJ's push OK).
 
 TJ approved (2026-10-24): a separate free savings account just for taxes; each Stripe payout, move all sales tax + 25% of profit the day it lands; Jarvis tracks the pot vs what's due and warns when short; Approve opens IRS Direct Pay / ATAP (bank ACH).
 

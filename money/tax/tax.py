@@ -6,7 +6,9 @@ Estimates only: a CPA checks the method once before the first quarterly payment.
 
   python3 money/tax/tax.py status [--date YYYY-MM-DD] [--json]
   python3 money/tax/tax.py setaside ITEM AMOUNT      how much of one payment goes to the tax account
-  python3 money/tax/tax.py lint                      exit 1 = income.csv or paid.csv is broken
+  python3 money/tax/tax.py import FILE.json          add the agency API's GET /payments rows to income.csv (skips ones already in)
+  python3 money/tax/tax.py moved AMOUNT [--date D]   log money TJ moved into tax savings (pot.csv; negative = took out)
+  python3 money/tax/tax.py lint                      exit 1 = income.csv, paid.csv or pot.csv is broken
 """
 import csv
 import json
@@ -28,6 +30,40 @@ def load(config=HERE / "tax.json", income=HERE / "income.csv", paid=HERE / "paid
     cfg = json.loads(Path(config).read_text(encoding="utf-8"))
     read = lambda p: list(csv.DictReader(open(p, newline="", encoding="utf-8"))) if Path(p).exists() else []
     return cfg, read(income), read(paid), read(ledger)
+
+
+def load_pot(pot=HERE / "pot.csv"):
+    """Money moved into the tax savings account (positive) or taken out for anything but a filing (negative)."""
+    return list(csv.DictReader(open(pot, newline="", encoding="utf-8"))) if Path(pot).exists() else []
+
+
+def import_payments(cfg, income, items):
+    """New income rows from GET /payments: one per invoice line, deduped on invoice id + item. Blank cost = the item's usual cost."""
+    have = {(r.get("note"), r["item"]) for r in income}
+    new = []
+    for p in items:
+        if (p["note"], p["item"]) in have or p["item"] not in cfg["items"]:
+            continue
+        cost = p.get("cost")
+        if cost in (None, ""):
+            cost = cfg["items"][p["item"]].get("cost", 0)
+        new.append({"date": p["date"], "client": p.get("client", ""), "item": p["item"], "amount": f"{float(p['amount']):.2f}",
+                    "cost": f"{float(cost):.2f}", "sales_tax": f"{float(p.get('sales_tax') or 0):.2f}", "note": p["note"]})
+        have.add((p["note"], p["item"]))
+    return new
+
+
+def pot_status(cfg, rows, paid, pot, filings, pct, today):
+    """The tax savings account: what should be in it, what is, and whether it covers what's due in the next 45 days."""
+    moved = round(sum(float(r["amount"]) for r in pot), 2)
+    paid_out = round(sum(float(r["amount"]) for r in paid), 2)
+    # income share at today's rate, plus the sales tax each row actually carried
+    expected = round(sum(setaside(cfg, r["item"], float(r["amount"]), pct)["income_setaside"] + sales_tax(cfg, r) for r in rows), 2)
+    due = round(sum(max(f["amount"] - f["paid"], 0) for f in filings
+                    if date.fromisoformat(f["due"]) - today <= timedelta(days=45)), 2)
+    balance = round(moved - paid_out, 2)
+    return {"moved": moved, "balance": balance, "expected": expected, "to_move": round(max(expected - moved, 0), 2),
+            "extra": round(max(moved - expected, 0), 2), "due_45": due, "short": round(max(due - balance, 0), 2)}
 
 
 def lint(cfg, income, paid):
@@ -135,7 +171,7 @@ def months(start, end):
         d = nxt
 
 
-def status(cfg, income, paid, ledger, today):
+def status(cfg, income, paid, ledger, today, pot=()):
     """Everything the Tax sheet shows. Filings are only built once there's income (or a sales tax permit)."""
     st_cfg = cfg["sales_tax"]
     paid_by = {}
@@ -269,7 +305,13 @@ def status(cfg, income, paid, ledger, today):
         alerts.append("Tell Jarvis about how much J Street pays you a year, so the federal number counts your bracket right.")
     for f in late:
         alerts.append(f"{f['title']} was due {f['due']}. Pay it now; late interest grows daily.")
+    tp = pot_status(cfg, rows, paid, pot, open_, pct, today)
+    if tp["short"] > 0:
+        alerts.insert(0, f"Tax savings has {m(tp['balance'])} but {m(tp['due_45'])} is due in the next 45 days. Move {m(tp['short'])} in now.")
+    elif tp["to_move"] >= 1:
+        alerts.insert(0, f"Move {m(tp['to_move'])} into tax savings to catch up with what's come in.")
     return {
+        "pot": tp,
         "as_of": today.isoformat(), "year": year, "profit_ytd": ytd, "setaside_pct": pct,
         "owed_ytd": round(t["federal"] + t["arkansas"] + tax_collected, 2),
         "income_tax_ytd": t, "sales_tax_ytd": tax_collected, "income_tax_paid": round(income_paid, 2),
@@ -287,15 +329,33 @@ def main(argv):
     if "--date" in args:
         i = args.index("--date"); today = date.fromisoformat(args[i + 1]); del args[i:i + 2]
     cfg, income, paid, ledger = load()
+    pot = load_pot()
     cmd = args[0] if args else "status"
     problems = lint(cfg, income, paid)
+    for i, r in enumerate(pot, start=2):
+        try:
+            date.fromisoformat(r["date"]); float(r["amount"])
+        except (ValueError, TypeError, KeyError):
+            problems.append(f"pot.csv line {i}: needs date YYYY-MM-DD and a number amount")
     if cmd == "lint":
         print("\n".join(problems) or "Tax files OK")
         return 1 if problems else 0
     if problems:
         print("Tax files are broken, fix them first:\n" + "\n".join(problems))
         return 1
-    st = status(cfg, income, paid, ledger, today)
+    if cmd == "import":
+        new = import_payments(cfg, income, json.loads(Path(args[1]).read_text(encoding="utf-8"))["items"])
+        if new:
+            with open(HERE / "income.csv", "a", newline="", encoding="utf-8") as f:
+                csv.DictWriter(f, fieldnames=list(new[0])).writerows(new)
+        print(f"Added {len(new)} income rows")
+        return 0
+    if cmd == "moved":
+        amount = float(args[1])
+        with open(HERE / "pot.csv", "a", newline="", encoding="utf-8") as f:
+            csv.writer(f).writerow([today.isoformat(), f"{amount:.2f}", " ".join(args[2:]) or "moved to tax savings"])
+        pot = load_pot()
+    st = status(cfg, income, paid, ledger, today, pot)
     if cmd == "setaside":
         s = setaside(cfg, args[1], float(args[2]), st["setaside_pct"])
         print(f"Charge {m(s['charge'])} ({m(s['price'])} + {m(s['sales_tax'])} sales tax). "
@@ -304,6 +364,8 @@ def main(argv):
     if "--json" in args:
         print(json.dumps(st, indent=1))
         return 0
+    tp = st["pot"]
+    print(f"Tax savings {m(tp['balance'])} | should have moved {m(tp['expected'])}, moved {m(tp['moved'])} | due in 45 days {m(tp['due_45'])}")
     print(f"Profit {st['year']} so far {m(st['profit_ytd'])} | set aside {st['setaside_pct']}% of profit + all sales tax | owed so far {m(st['owed_ytd'])}")
     for f in st["filings"]:
         print(f"  due {f['due']}  {f['title']}  {m(f['amount'])}" + ("  (soon)" if f["id"] in st["soon"] else ""))

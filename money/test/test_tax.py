@@ -76,6 +76,26 @@ cfg["llc_formed"] = "2026-11-15"
 st = t.status(cfg, rows, paid, [], D("2027-04-25"))
 assert any(f["id"] == "franchise-2027" and f["due"] == "2027-05-03" for f in st["filings"])  # May 1 2027 is a Saturday
 
+# tax savings: what should be in it vs what is, and a warning when it can't cover what's due soon
+c3 = copy.deepcopy(CFG); c3["sales_tax"]["permit_from"] = "2027-01-01"
+r3 = [inc("2027-01-10", "monitoring", 200, 10), inc("2027-01-10", "setup", 299)]
+st = t.status(c3, r3, [], [], D("2027-02-10"))
+tp = st["pot"]
+assert tp["expected"] == 19 + 47.5 + 74.75 and tp["to_move"] == tp["expected"] and tp["balance"] == 0, tp
+assert st["alerts"][0].startswith("Tax savings has $0.00 but $19.00 is due"), st["alerts"]
+assert tp["due_45"] == 19.0, tp  # January sales tax, due Feb 22
+pot = [{"date": "2027-01-11", "amount": "141.25", "note": ""}]
+st = t.status(c3, r3, [], [], D("2027-02-10"), pot)
+assert st["pot"]["to_move"] == 0 and st["pot"]["short"] == 0 and not any("tax savings" in a for a in st["alerts"]), st
+paid = [{"date": "2027-02-15", "filing": "sales-2027-01", "amount": "19", "note": ""}]
+assert t.status(c3, r3, paid, [], D("2027-02-16"), pot)["pot"]["balance"] == 122.25
+# importing /payments rows: deduped, usual cost filled in
+pay = [{"date": "2027-03-01", "client": "A", "item": "receptionist", "amount": 149, "sales_tax": 0, "note": "in_1"},
+       {"date": "2027-03-01", "client": "A", "item": "setup", "amount": 299, "sales_tax": 0, "note": "in_1"}]
+new = t.import_payments(CFG, [], pay)
+assert len(new) == 2 and new[0]["cost"] == "60.00" and t.lint(CFG, new, []) == []
+assert t.import_payments(CFG, new, pay) == []
+
 # the real files
 cfg, income, paid, ledger = t.load()
 assert t.lint(cfg, income, paid) == [], t.lint(cfg, income, paid)

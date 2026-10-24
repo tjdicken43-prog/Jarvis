@@ -16,6 +16,7 @@ const tax = { as_of: "2099-01-01", year: 2099, profit_ytd: 1200, setaside_pct: 2
   income_tax_paid: 0, examples: [{ item: "monitoring", price: 200, sales_tax: 19, charge: 219, income_setaside: 47.5, move: 66.5 }],
   items: [{ item: "monitoring", label: "Gym security", taxable: true, why: "GR-9.12" }], rate: 0.095, rate_where: "Bentonville",
   filings: [filing("fed-2099-Q1", "Federal estimate 2099 Q1", 180, "2099-04-15"), filing("ar-2099-Q1", "Arkansas estimate 2099 Q1", 40, "2099-04-15")],
+  pot: { moved: 0, balance: 50, expected: 280, to_move: 230, extra: 0, due_45: 220, short: 170 },
   soon: ["fed-2099-Q1"], alerts: ["Have a CPA check these numbers once before the first quarterly payment."], cpa_checked: false, income_rows: 3 };
 const fake = () => {
   const docs = (window.__docs = JSON.parse(sessionStorage.getItem("fakeDocs") || "{}"));
@@ -50,6 +51,11 @@ await page.click("#budgetBtn");
 await page.waitForTimeout(200);
 await page.click("#taxBtn");
 await page.waitForTimeout(300);
+const potAsk = await page.locator(".bAsk:has(#potMoved) b").textContent();
+await page.click("#potMoved");
+await page.waitForTimeout(300);
+const pot = await page.evaluate(() => Object.entries(window.__docs).filter(([k]) => k.startsWith("taxpot/")).map(([, d]) => d));
+const potGone = await page.locator("#potMoved").count() === 0;
 const n = await page.locator(".tFile").count();
 const soon = await page.locator(".tFile.soon").count();
 const nums = await page.locator(".tFile").first().locator(".tNums li").count();
@@ -67,6 +73,9 @@ await browser.close();
 
 const checks = [
   ["wallet lit for a filing due soon", lit],
+  ["tax savings asks for the catch-up amount", potAsk === "$230"],
+  ["I moved it writes taxpot", pot.length === 1 && pot[0].amount === 230 && pot[0].filed === false],
+  ["moved amount clears the ask", potGone],
   ["two filings listed, one marked soon", n === 2 && soon === 1],
   ["numbers shown", nums === 1],
   ["Approve writes approved", a1.d?.status === "approved" && a1.d?.amount === 180],

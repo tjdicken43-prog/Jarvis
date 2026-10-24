@@ -13,6 +13,7 @@ import urllib.parse
 import urllib.request
 
 import config
+import events
 import mailer
 
 # Prices (TJ, 2026-10-23). Annual = 2 months free (pay 10, get 12).
@@ -55,13 +56,16 @@ def form(data, prefix=""):
     return out
 
 
-def stripe(path, data):
-    """POST to Stripe. Refuses unless the key is a test key (or live is explicitly allowed)."""
+def stripe(path, data, idempotency_key=None):
+    """POST to Stripe. Refuses unless the key is a test key (or live is explicitly allowed).
+    With an idempotency key, a retry of the same call can never charge twice (Stripe returns the first result)."""
     if config.stripe_mode() not in ("test", "live"):
         raise StripeError("Stripe is " + config.stripe_mode())
+    headers = {"Authorization": "Bearer " + config.STRIPE_SECRET_KEY, "Content-Type": "application/x-www-form-urlencoded"}
+    if idempotency_key:
+        headers["Idempotency-Key"] = idempotency_key
     req = urllib.request.Request(API + path, data=urllib.parse.urlencode(form(data)).encode(), method="POST",
-                                 headers={"Authorization": "Bearer " + config.STRIPE_SECRET_KEY,
-                                          "Content-Type": "application/x-www-form-urlencoded"})
+                                 headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=20) as r:
             return json.loads(r.read())
@@ -114,7 +118,7 @@ def verify(payload: bytes, header: str, secret: str, now=None):
     if abs((now or time.time()) - int(ts)) > TOLERANCE:
         raise ValueError("signature too old")
     want = hmac.new(secret.encode(), ts.encode() + b"." + payload, hashlib.sha256).hexdigest()
-    if not any(hmac.compare_digest(want, s) for s in sigs):
+    if not any(hmac.compare_digest(want.encode(), s.encode()) for s in sigs):
         raise ValueError("signature mismatch")
     return json.loads(payload)
 
@@ -177,7 +181,14 @@ def handle_event(conn, event):
     elif kind == "customer.subscription.deleted":
         conn.execute("UPDATE clients SET status = 'cancelled', cancelled_at = now() WHERE id = %s", (client["id"],))
         out["status"] = "cancelled"
+        import receptionist  # a cancelled shop's receptionist stops answering, so its calls stop costing us
+        try:
+            out["receptionist"] = receptionist.turn_off(conn, client)
+        except receptionist.VapiError as e:
+            out["receptionist"] = f"still on, turn it off in Vapi: {e}"
+            events.log("receptionist", False, f"couldn't turn off after cancel: {e}", client_id=client["id"])
     conn.commit()
+    events.log("stripe", True, kind, client_id=client["id"], detail={"status": out.get("status")})
     return out
 
 
@@ -223,26 +234,44 @@ def bill_overage(conn, month):
             continue
         line = {"client_id": c["id"], "business_name": c["business_name"], "minutes": minutes, "over_minutes": over,
                 "amount_cents": cents}
-        if conn.execute("SELECT 1 FROM overage_charges WHERE client_id = %s AND month = %s", (c["id"], label)).fetchone():
+        done = conn.execute("SELECT stripe_invoice_item_id FROM overage_charges WHERE client_id = %s AND month = %s",
+                            (c["id"], label)).fetchone()
+        if done and done["stripe_invoice_item_id"]:
             out["skipped"].append(dict(line, reason="already charged"))
             continue
         if not live or not c["stripe_customer_id"]:
             out["skipped"].append(dict(line, reason="dry run: Stripe off" if not live else "no Stripe customer"))
             continue
+        # Claim the month first (UNIQUE client+month is the lock), then charge with a fixed idempotency key, so a
+        # crash, a retry or two runs at once can never bill the same minutes twice.
+        conn.execute("""INSERT INTO overage_charges (client_id, month, minutes, over_minutes, amount_cents)
+                        VALUES (%s,%s,%s,%s,%s) ON CONFLICT (client_id, month) DO NOTHING""",
+                     (c["id"], label, minutes, over, cents))
+        conn.commit()
+        claim = conn.execute("""SELECT minutes, over_minutes, amount_cents FROM overage_charges
+                                WHERE client_id = %s AND month = %s FOR UPDATE SKIP LOCKED""", (c["id"], label)).fetchone()
+        if not claim:
+            out["skipped"].append(dict(line, reason="another run is billing this"))
+            continue
+        over, cents = claim["over_minutes"], claim["amount_cents"]  # bill what was claimed, even on a retry
         try:
             item = stripe("invoiceitems", {
                 "customer": c["stripe_customer_id"], "amount": cents, "currency": "usd",
-                "description": f"Receptionist {label}: {over} min over {c['included_minutes']} at $0.25"})
+                "description": f"Receptionist {label}: {over} min over {c['included_minutes']} at $0.25"},
+                idempotency_key=f"overage-{c['id']}-{label}")
             invoice = None
             if c["billing"] == "annual":  # yearly invoices are months away, so bill this one now
                 invoice = stripe("invoices", {"customer": c["stripe_customer_id"], "auto_advance": True,
-                                              "pending_invoice_items_behavior": "include"})["id"]
+                                              "pending_invoice_items_behavior": "include"},
+                                 idempotency_key=f"overage-invoice-{c['id']}-{label}")["id"]
         except StripeError as e:
+            conn.rollback()
             out["skipped"].append(dict(line, reason=str(e)))
-            break  # stop on the first Stripe error
-        conn.execute("""INSERT INTO overage_charges (client_id, month, minutes, over_minutes, amount_cents,
-                        stripe_invoice_item_id, stripe_invoice_id) VALUES (%s,%s,%s,%s,%s,%s,%s)""",
-                     (c["id"], label, minutes, over, cents, item["id"], invoice))
+            events.log("overage", False, f"Stripe: {e}", client_id=c["id"])
+            break  # stop on the first Stripe error; the claimed row stays, and a rerun reuses the same keys
+        conn.execute("""UPDATE overage_charges SET stripe_invoice_item_id = %s, stripe_invoice_id = %s
+                        WHERE client_id = %s AND month = %s""", (item["id"], invoice, c["id"], label))
         conn.commit()
+        events.log("overage", True, f"billed {over} min", client_id=c["id"], detail={"cents": cents, "month": label})
         out["charged"].append(line)
     return out

@@ -264,5 +264,8 @@ def find_and_save(conn, prospect_id, inspect=None):
            WHERE id = %s""",
         (flaw, evidence, state, json.dumps(facts), prospect_id))
     conn.commit()
+    import events
+    events.log("flaw", True, flaw or ("blocked us; kept the scout's flaw" if state is None else "no clear flaw"),
+               prospect_id=prospect_id, detail={"state": state, "mode": signals.get("mode")})
     return {"prospect_id": prospect_id, "name": p["name"], "flaw": flaw, "site_state": state, "evidence": evidence,
             "mode": signals.get("mode")}

@@ -48,6 +48,11 @@ with psycopg.connect(URL, autocommit=True) as c:
         c.execute("""INSERT INTO prospects (id, name, trade, city, email, website, rating, site_state, flaw, mockup_url, status)
                      VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""", r)
     c.execute("INSERT INTO suppressions (domain, reason) VALUES ('goneair.com', 'asked to stop')")
+    # Handoff contract: a draft needs a fresh flaw check and a saved preview, not just the scout's guess
+    c.execute("""UPDATE prospects SET facts = jsonb_build_object('checked_at', to_char(now() AT TIME ZONE 'UTC',
+                 'YYYY-MM-DD"T"HH24:MI:SS+00:00'), 'check_mode', 'http'), mockup_slug = replace(id, '/', '-'),
+                 mockup_url = coalesce(mockup_url, 'https://' || replace(id, '/', '-') || '.preview.example.test')""")
+    c.execute("INSERT INTO settings (key, value) VALUES ('warmup_started', '\"2026-09-01\"')")  # long warmed up
 
 api = TestClient(main.app)
 H = {"Authorization": "Bearer test-token"}
@@ -87,7 +92,8 @@ assert any("words" in x for x in outreach.preflight("Hi", "word " * 90, {}))
 eid, aid = e["email"]["id"], a["email"]["id"]
 ok(api.patch(f"/emails/{eid}", json={"body": "Hi {first_name}, your site is down."}, headers=H))
 ok(api.post(f"/emails/{eid}/approve", headers=H), 400)
-r = api.patch(f"/emails/{eid}", json={"body": "Hi,\n\nYour site didn't load for me today. Want a free preview of a fixed one?"}, headers=H)
+r = api.patch(f"/emails/{eid}", json={"body": "Hi,\n\nYour site didn't load for me today. Here is a fixed one: "
+                                              "https://overture-e.preview.example.test\n\nWorth a look?"}, headers=H)
 ok(r); assert r.json()["email"]["edited"] is True
 r = api.post(f"/emails/{aid}/approve", headers=H); ok(r)
 assert r.json()["queued"] and "Stub mailer" in r.json()["detail"], r.json()
@@ -130,7 +136,8 @@ config.MAILER = "stub"
 # Unsubscribe link (GET and one-click POST) adds to the list forever and stops pending mail
 with db.connect() as c:
     token_a = c.execute("SELECT unsub_token FROM emails WHERE id=%s", (aid,)).fetchone()["unsub_token"]
-r = api.get(f"/u/{token_a}"); ok(r); assert "won't get any more emails" in r.text
+r = api.get(f"/u/{token_a}"); ok(r); assert "<form method=\"post\">" in r.text  # a button: link scanners can't opt anyone out
+r = api.post(f"/u/{token_a}"); ok(r); assert "won't get any more emails" in r.text
 ok(api.post(f"/u/{token_a}"))  # twice is fine
 ok(api.get("/u/nope"), 404)
 r = api.post("/suppressions", json={"domain": "https://www.ridgeroof.com/contact", "reason": "called and said stop"}, headers=H); ok(r)
@@ -221,8 +228,9 @@ assert r.json()["built"] and "/m/fine-site-plumbing-" in r.json()["mockup_url"]
 ok(api.post("/prospects/overture/zz/mockup", headers=H), 404)
 # A mockup that fails the site bar is not saved, so no email can link to it
 with db.connect() as c:
-    c.execute("INSERT INTO prospects (id, name, trade, city, phone, website, status) VALUES "
-              "('overture/j', 'Lorem Roofing', 'roofing', 'Rogers', '479-273-0103', 'lorem.com', 'checked')")
+    c.execute("INSERT INTO prospects (id, name, trade, city, phone, website, status, facts) VALUES "
+              "('overture/j', 'Lorem Roofing', 'roofing', 'Rogers', '479-273-0103', 'lorem.com', 'checked', "
+              "'{\"checked_at\": \"2026-10-24T00:00:00+00:00\"}')")
     c.commit()
     res = mockup.build_and_save(c, "overture/j")
     assert not res["built"] and any("lorem" in x for x in res["problems"]), res
@@ -388,6 +396,10 @@ import receptionist  # noqa: E402
 
 r = api.post("/clients", json={"business_name": "Hog Valley HVAC", "email": "office@hogvalley.com", "trade": "hvac"}, headers=H); ok(r)
 rc = r.json()
+ok(api.post(f"/clients/{rc['id']}/receptionist", json={}, headers=H), 409)  # not paying yet: no receptionist
+with db.connect() as c:
+    c.execute("UPDATE clients SET status = 'active' WHERE id = %s", (rc["id"],))
+    c.commit()
 ok(api.post(f"/clients/{rc['id']}/receptionist", json={"open_hour": 17, "close_hour": 8}, headers=H), 400)
 ok(api.post(f"/clients/{rc['id']}/receptionist", json={"receptionist_number": "555"}, headers=H), 400)
 ok(api.post("/clients/9999/receptionist", json={}, headers=H), 404)
@@ -443,7 +455,10 @@ ok(api.post("/vapi/webhook", json=report("v1", now, 30), headers={"X-Vapi-Secret
 assert api.post("/vapi/webhook", json={"message": {"type": "status-update"}}, headers=vh).json()["ignored"] == "status-update"
 assert "ignored" in api.post("/vapi/webhook", json=report("v0", now, 30, aid="asst_other", caller=None), headers=vh).json()
 
-# A missed call from a pending client: saved, but no text (not paying yet)
+# A missed call from a client who stopped paying: saved, but no text
+with db.connect() as c:
+    c.execute("UPDATE clients SET status = 'pending' WHERE id = %s", (rc["id"],))
+    c.commit()
 r = api.post("/vapi/webhook", json=report("v1", now - dt.timedelta(minutes=1), 8), headers=vh).json()
 assert r["outcome"] == "hung_up" and r["textback"] == "skipped: not an active client", r
 with db.connect() as c:
@@ -500,6 +515,9 @@ with db.connect() as c:
       ('fu/k', 'Kings Plumbing', 'plumbing', 'Rogers', 'kim@kingsplumb.com', 'kingsplumb.com', 4.4, 'no tap-to-call', 'https://api.example.test/m/kings', 'built'),
       ('fu/l', 'Lake Air', 'hvac', 'Lowell', 'lee@lakeair.com', 'lakeair.com', 4.2, 'no https', NULL, 'checked'),
       ('fu/m', 'Mesa Roofing', 'roofing', 'Bentonville', 'max@mesaroof.com', 'mesaroof.com', 4.0, '© 2019', NULL, 'checked')""")
+    c.execute("""UPDATE prospects SET facts = '{"checked_at": "2026-10-24T00:00:00+00:00", "check_mode": "http"}',
+                 mockup_slug = replace(id, '/', '-'), mockup_url = coalesce(mockup_url, 'https://api.example.test/m/' || replace(id, '/', '-'))
+                 WHERE id LIKE 'fu/%'""")
     c.commit()
     out = outreach.draft_first_emails(c, 10, ["fu/k", "fu/l", "fu/m"], drafter=outreach.template_draft); made = out["created"]
 assert len(made) == 3, out
@@ -542,7 +560,7 @@ mid = next(f for f in fus if f["prospect_id"] == "fu/m" and f["kind"] == "follow
 with db.connect() as c:
     m2 = c.execute("SELECT id FROM emails WHERE prospect_id = 'fu/m' AND kind = 'follow_up_2'").fetchone()["id"]
 ok(api.post(f"/emails/{m2}/unapprove", headers=H))
-ok(api.patch(f"/emails/{m2}", json={"body": "Hi,\n\nShort and plain. Worth a call this week?"}, headers=H))
+ok(api.patch(f"/emails/{m2}", json={"body": "Hi,\n\nShort and plain: https://api.example.test/m/fu-m\n\nWorth a call this week?"}, headers=H))
 r = api.post(f"/emails/{m2}/approve", headers=H); ok(r)
 assert dt.datetime.fromisoformat(r.json()["item"]["email"]["send_after"]) >= mid["send_after"], r.json()
 with db.connect() as c:

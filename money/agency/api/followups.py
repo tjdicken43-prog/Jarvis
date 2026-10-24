@@ -15,6 +15,7 @@ import secrets
 from email.utils import parseaddr
 
 import config
+import events
 import mailer
 import outreach
 
@@ -85,6 +86,7 @@ def stop(conn, prospect_id, status, reason, email_status="replied"):
                            ORDER BY sent_at DESC, id DESC LIMIT 1""", (prospect_id,)).fetchone()
     if last:
         conn.execute("UPDATE emails SET status = %s WHERE id = %s", (email_status, last["id"]))
+    events.log("inbox", True, f"{status}: {reason}", prospect_id=prospect_id, detail={"cancelled": n})
     return {"prospect_id": prospect_id, "status": status, "cancelled": n, "reason": reason}
 
 
@@ -121,14 +123,39 @@ def text_of(msg):
         return ""
 
 
+QUOTE_START = re.compile(r"^(>|On .+ wrote:$|-{2,}\s*Original Message\s*-{2,}$|_{8,}$|From:\s.+|Sent from my )", re.I)
+STOP_MAX_WORDS = 25  # a longer reply that happens to say "no thanks" goes to TJ as a reply, not straight to the list
+
+
 def new_part(text):
-    """The reply itself, above the quoted email."""
+    """The reply itself, above the quoted email (Gmail "On .. wrote:", Outlook "From:" headers or rules, phones)."""
     out = []
     for line in text.splitlines():
-        if line.startswith(">") or re.match(r"^On .+ wrote:$", line.strip()) or line.strip() == "-----Original Message-----":
+        if QUOTE_START.match(line.strip()) or "One click and you won't hear from me again" in line:
             break
         out.append(line)
     return "\n".join(out)
+
+
+def is_bounce(msg, sender):
+    """A real hard bounce: a delivery report that says failed, or a mailer-daemon note that says the address is bad.
+    Delay warnings and read receipts are not bounces."""
+    body = msg.as_string()
+    if msg.get_content_type() == "multipart/report":
+        if (msg.get_param("report-type") or "").lower() != "delivery-status":
+            return False
+        return bool(re.search(r"^Action:\s*failed", body, re.I | re.M) or re.search(r"^Status:\s*5\.", body, re.I | re.M))
+    if BOUNCER.match(sender):
+        return bool(re.search(r"address not found|does not exist|user unknown|no such user|permanent(ly)? fail|"
+                              r"undeliverable|rejected|couldn.?t be found|wasn.?t delivered|could not be delivered|unable to receive|\b5\.\d\.\d+\b", body, re.I))
+    return False
+
+
+def kind_of_reply(text):
+    part = new_part(text)
+    if ASKED_STOP.search(part) and len(part.split()) <= STOP_MAX_WORDS:
+        return "stop"
+    return "replied"
 
 
 def read(conn, raw):
@@ -144,6 +171,8 @@ def read(conn, raw):
     by_email = {r["email"]: r["id"] for r in sent}
     live = {r["id"] for r in sent}
     if BOUNCER.match(sender) or msg.get_content_type() == "multipart/report":
+        if not is_bounce(msg, sender):
+            return None
         body = msg.as_string()
         hit = next((pid for pid in (ids.get(r) for r in re.findall(r"<[^>]+>", body)) if pid in live), None)
         hit = hit or next((pid for addr, pid in by_email.items() if addr and addr in body.lower()), None)
@@ -155,17 +184,17 @@ def read(conn, raw):
         return None
     if auto:
         return {"prospect_id": hit, "kind": "auto"}
-    return {"prospect_id": hit, "kind": "stop" if ASKED_STOP.search(new_part(text_of(msg))) else "replied"}
+    return {"prospect_id": hit, "kind": kind_of_reply(text_of(msg))}
 
 
 def imap_fetch(since):
     """Raw messages from the Workspace inbox since a date. Read only (BODY.PEEK), so TJ still sees them as new."""
     out = []
-    with imaplib.IMAP4_SSL(config.IMAP_HOST) as m:
+    with imaplib.IMAP4_SSL(config.IMAP_HOST, timeout=30) as m:
         m.login(config.SMTP_USER, config.SMTP_PASSWORD)
         m.select("INBOX", readonly=True)
         _, data = m.search(None, "SINCE", since.strftime("%d-%b-%Y"))
-        for num in (data[0] or b"").split()[-500:]:
+        for num in (data[0] or b"").split()[-200:]:
             _, parts = m.fetch(num, "(BODY.PEEK[])")
             out += [p[1] for p in parts if isinstance(p, tuple)]
     return out
@@ -179,7 +208,14 @@ def check_inbox(conn, now=None, fetch=None):
     fetch = fetch or imap_fetch
     res = {"replied": [], "bounced": [], "stopped": []}
     for raw in fetch(now - dt.timedelta(days=21)):
-        r = read(conn, raw)
+        try:
+            r = read(conn, raw)
+        except Exception as e:  # one odd message never blinds us to the rest
+            conn.rollback()
+            events.log("inbox", False, f"couldn't read one message: {type(e).__name__}"[:300])
+            res.setdefault("unreadable", 0)
+            res["unreadable"] = res["unreadable"] + 1
+            continue
         if not r or r["kind"] == "auto":
             continue
         pid = r["prospect_id"]
@@ -208,6 +244,8 @@ def blocked(conn, row):
     p = conn.execute("SELECT status FROM prospects WHERE id = %s", (row["prospect_id"],)).fetchone()
     if p["status"] in STOP_STATUSES:
         return ("stop", f"shop is {p['status']}")
+    if conn.execute("SELECT 1 FROM clients WHERE prospect_id = %s", (row["prospect_id"],)).fetchone():
+        return ("stop", "they said yes and are on Clients")
     prior = {r["kind"]: r["status"] for r in conn.execute(
         "SELECT kind, status FROM emails WHERE prospect_id = %s", (row["prospect_id"],))}
     if prior.get("first") != "sent":

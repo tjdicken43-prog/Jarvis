@@ -14,18 +14,21 @@ import re
 import secrets
 from email.utils import parseaddr
 
+import billing
 import config
 import events
 import mailer
 import outreach
 
+FOUNDING = billing.FOUNDING_SLOTS
 STEPS = [("follow_up_1", 3), ("follow_up_2", 7), ("follow_up_3", 14)]  # days after the first email went out
 DAYS = dict(STEPS)
 STOP_STATUSES = {"replied", "won", "lost", "unsubscribed"}
 
 
-def write(kind, p, first_subject):
-    """(subject, body) for one follow-up. Same thread, so the subject is the first one's with Re:."""
+def write(kind, p, first_subject, founding=False):
+    """(subject, body) for one follow-up. Same thread, so the subject is the first one's with Re:.
+    founding: founding spots are still open, so the day-7 one mentions the locked price."""
     name, city = p["name"], p.get("city") or "your area"
     link = p.get("mockup_url")
     subject = first_subject if first_subject.lower().startswith("re:") else f"Re: {first_subject}"
@@ -37,17 +40,19 @@ def write(kind, p, first_subject):
     elif kind == "follow_up_2":
         made = (f"The preview is already built from what's on your current site, so there's very little for you to do:\n{link}\n\n"
                 if link else "I'd build it from what's on your current site, so there's very little for you to do. ")
-        body = f"Hi,\n\nIf a new site sounds like a lot of work, it isn't on your end. {made}Is a 10-minute call this week worth it?"
+        lock = (f"You'd also be one of our first {FOUNDING} shops, so your price stays locked for as long as you're with us. "
+                if founding else "")
+        body = f"Hi,\n\nIf a new site sounds like a lot of work, it isn't on your end. {made}{lock}Is a 10-minute call this week worth it?"
     else:
         body = ("Hi,\n\nI haven't heard back, so I'll take it that now isn't the right time and stop writing about this. "
                 "If you want the site or the after-hours answering later, just reply here. Thanks for your time.")
     return subject, body
 
 
-def preview(p, first_subject):
+def preview(p, first_subject, founding=False):
     """What the follow-ups will say, shown on the first email's card before TJ approves it."""
     return [{"kind": k, "day": d, "subject": s, "body": b}
-            for k, d in STEPS for s, b in [write(k, p, first_subject)]]
+            for k, d in STEPS for s, b in [write(k, p, first_subject, founding)]]
 
 
 def due(sent_at, kind):
@@ -61,8 +66,9 @@ def schedule(conn, prospect_id, first_sent_at):
     if not p or not first or p["trade"] not in outreach.TRADE_WORD:
         return []
     made = []
+    founding = billing.founding_left(conn) > 0
     for kind, _ in STEPS:
-        subject, body = write(kind, p, first["subject"])
+        subject, body = write(kind, p, first["subject"], founding)
         problems = outreach.preflight(subject, body, p, kind)
         if problems:
             raise RuntimeError(f"{kind} failed pre-flight: " + "; ".join(problems))

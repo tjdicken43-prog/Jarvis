@@ -21,7 +21,7 @@ const client = (id, name, trade, plan, billing, status, used) => {
     included_minutes: inc, minutes_used: used, calls: Math.round(used / 3), over_minutes: over, overage_cents: over * 25, price_cents: price,
     monthly_value_cents: billing === "annual" ? Math.round(price / 12) : price, checkout_url: null, started_at: status === "pending" ? null : "2026-10-02T15:00:00Z", has_stripe: status !== "pending",
     after_hours_calls: Math.round(used / 4), missed_calls: Math.round(used / 30), has_receptionist: id === 1, receptionist_number: id === 1 ? "(479) 555-0142" : null,
-    open_hour: 7, close_hour: 17, open_saturday: false, textback_enabled: false };
+    open_hour: 7, close_hour: 17, open_saturday: false, textback_enabled: false, founding_no: status === "pending" ? null : id };
 };
 const clients = [
   client(1, "Ozark Pipe Co", "plumbing", "front_desk", "monthly", "active", 212),
@@ -35,6 +35,18 @@ const leads = [
 ];
 const item = (e) => ({ email: { ...e, prospect_id: undefined }, prospect: prospects.find((p) => p.id === e.prospect_id), footer: FOOTER });
 
+const costs = (paying) => {
+  const host = Math.round(2100 / paying.length);
+  const lines = paying.map((c) => {
+    const rev = c.monthly_value_cents + c.overage_cents, rec = Math.round(c.minutes_used * 11.5), fee = Math.round(c.monthly_value_cents * 0.029 + 30);
+    const cost = rec + host + fee;
+    return { client_id: c.id, business_name: c.business_name, founding_no: c.founding_no, minutes: c.minutes_used, revenue_cents: rev, receptionist_cents: rec,
+      hosting_cents: host, claude_cents: 0, stripe_cents: fee, cost_cents: cost, margin_cents: rev - cost, margin_pct: Math.round((100 * (rev - cost)) / rev), estimated: false };
+  });
+  const rev = lines.reduce((a, l) => a + l.revenue_cents, 0), cost = lines.reduce((a, l) => a + l.cost_cents, 0);
+  return { month: now().slice(0, 7), lines, totals: { revenue_cents: rev, cost_cents: cost, margin_cents: rev - cost, margin_pct: Math.round((100 * (rev - cost)) / rev) },
+    hosting_cents_month: 2100, outreach: { claude_calls: 64, claude_cents: 2.4, per_call_cents: 0.038 } };
+};
 const send = (res, code, obj) => { res.writeHead(code, { "content-type": "application/json" }); res.end(JSON.stringify(obj)); };
 http.createServer(async (req, res) => {
   const u = new URL(req.url, "http://x");
@@ -47,7 +59,8 @@ http.createServer(async (req, res) => {
     const paying = clients.filter((c) => c.status === "active" || c.status === "past_due");
     return send(res, 200, { month: now().slice(0, 7), stripe: "test", items: clients, plans: PLANS, setup_cents: 29900, overage_cents_per_min: 25,
       summary: { active: clients.filter((c) => c.status === "active").length, past_due: clients.filter((c) => c.status === "past_due").length, pending: clients.filter((c) => c.status === "pending").length,
-        mrr_cents: paying.reduce((a, c) => a + c.monthly_value_cents, 0), overage_cents: paying.reduce((a, c) => a + c.overage_cents, 0) } });
+        mrr_cents: paying.reduce((a, c) => a + c.monthly_value_cents, 0), overage_cents: paying.reduce((a, c) => a + c.overage_cents, 0),
+        founding_left: 5 - paying.length, founding_slots: 5 }, costs: costs(paying) });
   }
   if (m === "POST" && p === "/clients") { const c = client(clients.length + 1, body.business_name || "New Shop", body.trade || "plumbing", body.plan || "front_desk", body.billing || "monthly", "pending", 0); clients.push(c); return send(res, 200, c); }
   if (m === "POST" && (r = p.match(/^\/clients\/(\d+)\/checkout$/))) { const c = clients.find((x) => x.id === +r[1]); c.checkout_url = `https://checkout.stripe.com/c/pay/cs_test_mock${c.id}`; return send(res, 200, { url: c.checkout_url, mode: "test", client: c }); }

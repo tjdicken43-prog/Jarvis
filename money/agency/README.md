@@ -167,6 +167,19 @@ Details and what's left: `ACCURACY.md`. Plan: https://claude.ai/artifact/HLXwNiW
 - **Go-live** (client page): paid, receptionist built, a real test call landed, forwarding works after hours, the shop
   OK'd the hours. Then up to 3 calls a week to listen to in the first month.
 
+## Founding clients and what each client costs (2026-10-24)
+
+- **Founding offer (TJ):** the first 5 shops to pay keep today's prices ($299 setup, $149 / $249 a month, $0.25/min
+  over) for as long as they stay. The spot is claimed when Stripe says they paid (`billing.claim_founding`, numbered
+  1 to 5). A later price rise never reaches them; a cut does. Preview owner panels and the day-7 follow-up mention it
+  only while spots are open; old previews drop the line once all 5 are taken.
+- **Cost tracker:** Clients page, "What each client costs": revenue, receptionist (Vapi's own cost per call, or
+  `VAPI_EST_CENTS_PER_MIN` when it sent none), a share of the Render bill (`HOSTING_CENTS_MONTH`), Claude calls tied to
+  the client, Stripe's fee, and the margin. `GET /costs?month=YYYY-MM` gives the same. Every Claude call we pay for is
+  a row in `ai_usage`. Check the two estimates against the real Render and Vapi bills once a month.
+- **Cost trim:** a shop whose email domain can't take mail is now held before the Chromium visit and mockup build
+  (same outcome as before, minus the wasted run). Full audit: project file `cost-trim/2026-10-24-cost-audit.md`.
+
 ## Tuesday checklist (in order; keys go on Render, never here)
 
 1. **Cold domain** (~$12/yr), not TJ's main one. **Google Workspace Business Starter** on it, one inbox for TJ.

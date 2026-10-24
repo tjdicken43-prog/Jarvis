@@ -9,6 +9,7 @@ import re
 import secrets
 
 import config
+import costs
 import db
 import events
 import flaws
@@ -143,6 +144,7 @@ def claude_draft(p, examples=()):
             "\n\nEmails TJ rewrote himself, for tone only. Never reuse their facts, names or links:\n"
             + "\n---\n".join(examples) if examples else "")}],
     )
+    costs.log_ai("draft", config.DRAFT_MODEL, getattr(resp, "usage", None), prospect_id=p.get("id"))
     if resp.stop_reason != "end_turn":
         raise RuntimeError(f"Claude stopped early ({resp.stop_reason})")
     text = next(b.text for b in resp.content if b.type == "text")
@@ -265,6 +267,14 @@ def prepare(conn, limit=5, prospect_ids=None, drafter=None, inspect=None):
             conn.execute("UPDATE prospects SET status = 'unsubscribed', updated_at = now() WHERE id = %s", (p["id"],))
             conn.commit()
             held.append({"prospect_id": p["id"], "name": p["name"], "reason": "on the do-not-email list"})
+            continue
+        # Cost trim (2026-10-24): an address that can't take mail would be skipped at the draft step anyway, so find
+        # out before paying for the Chromium visit and the mockup build. Same outcome, cheaper.
+        if quality.mail_domain_ok(p["email"]) is False:
+            conn.execute("UPDATE prospects SET status = 'no-email', updated_at = now() WHERE id = %s", (p["id"],))
+            conn.commit()
+            held.append({"prospect_id": p["id"], "name": p["name"], "reason": f"{p['email'].split('@')[-1]} doesn't take email"})
+            events.log("draft", True, f"{p['email'].split('@')[-1]} doesn't take email", prospect_id=p["id"])
             continue
         if not (p.get("facts") or {}).get("checked_at"):
             try:

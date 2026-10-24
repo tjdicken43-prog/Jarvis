@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { api, errMsg } from "@/lib/api";
 import { PLAN_NAME, usd } from "@/lib/format";
-import type { Client, Clients } from "@/lib/types";
+import type { Client, Clients, Costs } from "@/lib/types";
 import { AddClientForm, CheckoutLink, ReceptionistSetup } from "@/components/ClientControls";
 
 export const dynamic = "force-dynamic";
@@ -38,6 +38,46 @@ function Minutes({ c }: { c: Client }) {
   );
 }
 
+function pct(n: number | null) {
+  return n == null ? "" : `${n}%`;
+}
+
+function CostTable({ costs }: { costs: Costs }) {
+  const t = costs.totals;
+  return (
+    <section className="panel tablewrap">
+      <table className="stack">
+        <thead>
+          <tr><th>Business</th><th>Brings in</th><th>Receptionist</th><th>Hosting</th><th>Claude</th><th>Stripe</th><th>Margin</th></tr>
+        </thead>
+        <tbody>
+          {costs.lines.map((l) => (
+            <tr key={l.client_id}>
+              <td>{l.business_name}<div className="muted small num">{l.minutes} min{l.estimated ? ", some estimated" : ""}</div></td>
+              <td data-label="Brings in" className="num">{usd(l.revenue_cents)}</td>
+              <td data-label="Receptionist" className="num">{usd(l.receptionist_cents)}</td>
+              <td data-label="Hosting" className="num">{usd(l.hosting_cents)}</td>
+              <td data-label="Claude" className="num">{usd(l.claude_cents)}</td>
+              <td data-label="Stripe" className="num">{usd(l.stripe_cents)}</td>
+              <td data-label="Margin" className={l.margin_cents < 0 ? "num warn" : "num"}>
+                {usd(l.margin_cents)} <span className="muted">{pct(l.margin_pct)}</span>
+              </td>
+            </tr>
+          ))}
+          <tr className="total">
+            <td>All clients</td>
+            <td data-label="Brings in" className="num">{usd(t.revenue_cents)}</td>
+            <td colSpan={4} data-label="Costs" className="num">{usd(t.cost_cents)} in costs</td>
+            <td data-label="Margin" className={t.margin_cents < 0 ? "num warn" : "num"}>
+              {usd(t.margin_cents)} <span className="muted">{pct(t.margin_pct)}</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  );
+}
+
 export default async function ClientsPage() {
   let data: Clients | null = null;
   let error = "";
@@ -60,6 +100,8 @@ export default async function ClientsPage() {
               <div><dt>Active</dt><dd className="num">{data.summary.active}</dd></div>
               <div><dt>Monthly revenue</dt><dd className="num">{usd(data.summary.mrr_cents)}</dd></div>
               <div><dt>Overage so far</dt><dd className="num">{usd(data.summary.overage_cents)}</dd></div>
+              <div><dt>Margin this month</dt><dd className={data.costs.totals.margin_cents < 0 ? "num warn" : "num"}>{data.costs.lines.length ? `${usd(data.costs.totals.margin_cents)} (${pct(data.costs.totals.margin_pct)})` : "None yet"}</dd></div>
+              <div><dt>Founding spots left</dt><dd className="num">{data.summary.founding_left} of {data.summary.founding_slots}</dd></div>
               <div><dt>Past due</dt><dd className={data.summary.past_due ? "num warn" : "num"}>{data.summary.past_due}</dd></div>
               <div><dt>Waiting on payment</dt><dd className="num">{data.summary.pending}</dd></div>
               <div><dt>Stripe</dt><dd className={data.stripe === "test" ? "" : "warn"}>{STRIPE[data.stripe]}</dd></div>
@@ -80,6 +122,7 @@ export default async function ClientsPage() {
                     <tr key={c.id}>
                       <td>
                         <Link href={`/clients/${c.id}`}>{c.business_name}</Link>
+                        {c.founding_no && <span className="tag" title="Price locked for as long as they stay">Founding #{c.founding_no}</span>}
                         <div className="muted small">{c.trade}{c.started_at ? `, since ${c.started_at.slice(0, 10)}` : ""}</div>
                       </td>
                       <td data-label="Plan">{PLAN_NAME[c.plan]}</td>
@@ -100,6 +143,18 @@ export default async function ClientsPage() {
               </table>
             </section>
           )}
+
+          <h2 className="section">What each client costs <span className="muted small">{data.costs.month}, so far</span></h2>
+          {data.costs.lines.length === 0 ? (
+            <p className="muted">Costs show here once a client is paying. Render alone is {usd(data.costs.hosting_cents_month)} a month.</p>
+          ) : (
+            <CostTable costs={data.costs} />
+          )}
+          <p className="muted small note">
+            Cold-email drafts this month: {data.costs.outreach.claude_calls} Claude calls, {usd(Math.round(data.costs.outreach.claude_cents))}
+            {data.costs.outreach.per_call_cents != null && ` (${data.costs.outreach.per_call_cents.toFixed(2)}¢ each)`}.
+            Receptionist uses Vapi&apos;s own cost per call, or an estimate when it sent none. Hosting is the Render bill split across paying clients.
+          </p>
 
           {paying.some((c) => c.status !== "cancelled") && (
             <>
@@ -131,7 +186,8 @@ export default async function ClientsPage() {
             <p className="muted small note">
               Setup {usd(data.setup_cents)}.{" "}
               {Object.values(data.plans).map((p) => `${p.name} ${usd(p.monthly_cents)}/mo (${p.minutes} min)`).join(", ")},{" "}
-              {usd(data.overage_cents_per_min)}/min over. Annual pays 10 months for 12.
+              {usd(data.overage_cents_per_min)}/min over. Annual pays 10 months for 12. Founding offer: the first{" "}
+              {data.summary.founding_slots} to pay keep these prices for as long as they stay ({data.summary.founding_left} left).
             </p>
           </section>
         </>

@@ -1,4 +1,5 @@
 const BRAIN = window.BRAIN || { notes: [], stats: {} };
+const FACTORY_NOTES = /^(Sites by TJ|Jarvis)$/; // these notes open the factory (hud/factory.js)
 const RUNNER = "trig_01RRHsSJ2oBQTDWENSivmbgA"; // the Claude Code scheduled task that works the job queue
 const $ = (id) => document.getElementById(id);
 const store = {
@@ -16,7 +17,7 @@ const mcpPromise = use("mcp");
 function tick() {
   const d = new Date(), tz = { timeZone: "America/Chicago" };
   $("time").textContent = d.toLocaleTimeString("en-US", { ...tz, hour: "numeric", minute: "2-digit" });
-  $("date").textContent = d.toLocaleDateString("en-US", { ...tz, weekday: "short", month: "short", day: "numeric" }) + " · CENTRAL";
+  $("date").textContent = d.toLocaleDateString("en-US", { ...tz, weekday: "short", month: "short", day: "numeric" });
 }
 tick(); setInterval(tick, 10000);
 
@@ -32,7 +33,7 @@ function renderBrain(memories) {
     $("stats").append(el);
   }
   let waiting = 0; try { waiting = lessons.filter((l) => !l.filed).length; } catch {} // lessons isn't set up on the first call
-  $("growth").textContent = waiting ? `${waiting} lesson${waiting > 1 ? "s" : ""} orbiting, waiting to be learned. Tap LEARN NOW or I file them on my next run.` : "Everything I've learned is filed in the notes.";
+  $("growth").textContent = waiting ? `${waiting} lesson${waiting > 1 ? "s" : ""} orbiting, waiting to be learned. Tap Learn now or I file them on my next run.` : "Everything I've learned is filed in the notes.";
 }
 renderBrain(0);
 (function renderNow() {
@@ -42,7 +43,7 @@ renderBrain(0);
   for (const t of items.slice(0, 8)) { const li = document.createElement("li"); li.textContent = t; $("now").append(li); }
   if (!items.length) $("now").innerHTML = "<li>Nothing urgent.</li>";
   const week = BRAIN.notes.map((n) => n.name).filter((n) => /^\d{4} Week \d+$/.test(n)).sort().pop();
-  $("weekName").textContent = week ? week.toUpperCase() : "";
+  $("weekName").textContent = week ? week.replace(/^\d{4} /, "") : "";
 })();
 
 /* ---------- Tabs (phone) ---------- */
@@ -59,7 +60,7 @@ let mode = "idle", level = 0;
 function setMode(m) {
   mode = m;
   $("status").dataset.mode = m;
-  $("status").textContent = { idle: "standing by", listening: "listening", thinking: "thinking", speaking: "speaking" }[m];
+  $("status").textContent = { idle: "Standing by", listening: "Listening", thinking: "Thinking", speaking: "Speaking" }[m];
   $("mic").classList.toggle("on", m === "listening");
 }
 

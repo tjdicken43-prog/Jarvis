@@ -57,7 +57,7 @@ function uiRects() {
 }
 function drawLabels(R, ox, oy) {
   const phone = W < 700, max = phone ? 6 : 12, fs = phone ? 12 : 12.5;
-  cx.font = `600 ${fs}px 'Chakra Petch', sans-serif`; cx.textAlign = "center"; cx.textBaseline = "middle";
+  cx.font = `500 ${fs}px system-ui, -apple-system, Roboto, sans-serif`; cx.textAlign = "center"; cx.textBaseline = "middle";
   const order = [...nodes].sort((a, b) => score(b) - score(a));
   function score(n) { return (n === focus ? 1e4 : 0) + n.hot * 400 + (n.isNew ? 300 : 0) + (touches?.counts?.[n.name] || 0) * 5 + n.deg * 6 - n.sz * 120; }
   const fixed = [[ox - R * 1.25, oy - R * 1.25, ox + R * 1.25, oy + R * 1.25], [ox - 150, oy - R * 2.32 - 10, ox + 150, oy - R * 2.32 + 4], ...uiRects(), ...(capBox ? [capBox] : [])];
@@ -124,11 +124,13 @@ function draw() {
   view = camera(ox, oy, S);
   cx.clearRect(0, 0, W, H);
 
-  // grid with a touch of parallax as you orbit
+  // grid with a touch of parallax as you orbit (Show off only: the everyday look stays clean)
+  if (SHOW()) {
   cx.strokeStyle = `rgba(${ARC},.035)`; cx.lineWidth = 1;
   const gx = (ox + cam.yaw * 60) % 44, gy = (oy + cam.pitch * 60) % 44;
   for (let x = gx; x < W; x += 44) { cx.beginPath(); cx.moveTo(x, 0); cx.lineTo(x, H); cx.stroke(); }
   for (let y = gy; y < H; y += 44) { cx.beginPath(); cx.moveTo(0, y); cx.lineTo(W, y); cx.stroke(); }
+  }
   if (SHOW() && !reduce) warp(ox, oy);
 
   // project everything
@@ -183,7 +185,7 @@ function draw() {
 
   // glow
   const g = cx.createRadialGradient(ox, oy, 0, ox, oy, R * 2.4);
-  const dimCore = THEME === "spy" || THEME === "agency"; // these cores have detail in the middle, so less bloom
+  const dimCore = !SHOW(); // a soft light, not a flare; Show off keeps the full bloom
   g.addColorStop(0, dimCore ? "rgba(255,250,235,.35)" : "rgba(235,252,255,.9)"); g.addColorStop(0.12, C(dimCore ? 0.22 : 0.7));
   g.addColorStop(0.35, C(0.14 + level * 0.2)); g.addColorStop(1, C(0));
   cx.fillStyle = g; cx.beginPath(); cx.arc(ox, oy, R * 2.4, 0, Math.PI * 2); cx.fill();
@@ -220,7 +222,7 @@ function draw() {
     cx.fillStyle = sg; cx.beginPath(); cx.moveTo(0, 0); cx.arc(0, 0, R * 2, a, a + 0.5); cx.closePath(); cx.fill();
   }
   // rotating text ring and ticks
-  cx.fillStyle = C(0.75); cx.font = `600 ${Math.max(8, R * 0.12) | 0}px 'Chakra Petch', sans-serif`;
+  cx.fillStyle = C(SHOW() ? 0.75 : 0.4); cx.font = `500 ${Math.max(8, R * 0.11) | 0}px 'IBM Plex Mono', monospace`;
   const txt = RING_TEXT.repeat(2), tr = R * 1.97;
   for (let i = 0; i < txt.length; i++) {
     const a = i / txt.length * Math.PI * 2 - spin * 0.3;
@@ -256,7 +258,8 @@ function draw() {
   drawLabels(R, ox, oy);
   if (SHOW()) caption(ox, oy, R);
 
-  // dimension readout over the core, on its own dark strip
+  // dimension readout over the core, on its own dark strip (Show off only)
+  if (!SHOW()) { requestAnimationFrame(draw); return; }
   const deg = (v) => String(Math.round(((v % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2) * 180 / Math.PI)).padStart(3, "0");
   cx.font = "500 9px 'IBM Plex Mono', monospace"; cx.textAlign = "center";
   const ry = oy - R * 2.32, rw = Math.min(W - 24, 300);
@@ -267,7 +270,7 @@ function draw() {
   }); cx.fillRect(ox - rw / 2, ry - 10, rw, 14);
   cx.fillStyle = `rgba(${ARC},.6)`;
   cx.fillText(SHOW() ? `5D · XV ${deg(t * 0.23)}° · YW ${deg(t * 0.17)}° · WV ${deg(t * 0.29)}° · ${nodes.length} NOTES · ZOOM ${cam.zoom.toFixed(1)}×`
-    : `4D · XW ${deg(t * 0.31)}° · YW ${deg(t * 0.19)}° · ZW ${deg(t * 0.13)}° · ZOOM ${cam.zoom.toFixed(1)}×`, ox, oy - R * 2.32);
+    : "", ox, oy - R * 2.32);
   requestAnimationFrame(draw);
 }
 requestAnimationFrame(draw);
@@ -344,7 +347,7 @@ function openNote(n) {
   light([n.name]); cardNote = n.name; touch(n.name); focus = n;
   try { navigator.vibrate?.(8); } catch {}
   cam.go = [Math.atan2(n.x, -n.z), Math.max(-1.2, Math.min(1.2, Math.atan2(-n.y, Math.hypot(n.x, n.z))))];
-  $("cardTitle").textContent = n.name.toUpperCase() + (n.isNew ? "  · NEW" : "");
+  $("cardTitle").textContent = n.name + (n.isNew ? " · new" : "");
   $("cardBody").innerHTML = noteHtml(n.text);
   $("cardFactory").hidden = !FACTORY_NOTES.test(n.name);
   $("card").classList.add("show");

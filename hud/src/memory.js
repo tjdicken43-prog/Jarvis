@@ -84,7 +84,7 @@ async function checkNew(db) {
   }
   $("newBox").hidden = $("debrief").hidden = !fresh.length;
   if (fresh.length) {
-    say("note", `The brain grew ${fresh.length} new section${fresh.length > 1 ? "s" : ""}: ${fresh.map((n) => n.name).join(", ")}. Tap DEBRIEF ME in BRAIN.`);
+    say("note", `The brain grew ${fresh.length} new section${fresh.length > 1 ? "s" : ""}: ${fresh.map((n) => n.name).join(", ")}. Tap Debrief me under Brain.`);
     $("badge").textContent = "●";
   }
 }

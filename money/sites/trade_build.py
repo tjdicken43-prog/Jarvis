@@ -216,6 +216,7 @@ def tool_html(trade, tel, phone, cta):
 # Front Desk: the after-hours AI receptionist sold with every site (Tj, 2026-10-23). Mirrors money/agency/api/billing.py
 # and receptionist.py; test_trade_build.py checks the prices match billing.
 PLANS = {"setup": 299, "front_desk": (149, 300), "plus": (249, 800), "over": "0.25"}
+FOUNDING = 5  # first 5 clients lock these prices (TJ, 2026-10-24); the API drops the line once the spots are gone
 # What the assistant tells callers in danger: the same rules receptionist.py gives it, in customer words
 CALLER_SAFETY = {
     "plumbing": "<b>Water pouring in?</b> Shut off the main water valve first. <b>Smell gas?</b> Leave the house and "
@@ -274,7 +275,8 @@ def owner_html(trade, name, short, city):
 <p class="ofine">An example we wrote to show how it works. Not a real call. It never quotes prices, diagnoses or promises a time.</p></div>
 <div><h3>Two plans</h3><table class="oplans"><thead><tr><td></td><th scope="col">Front Desk</th><th scope="col">Front Desk Plus</th></tr></thead>
 <tbody><tr class="oprice"><th scope="row">A month</th><td>${fd[0]}</td><td>${plus[0]}</td></tr>{body}</tbody></table>
-<p class="ofine">${PLANS['setup']} setup, once. Over your minutes: ${PLANS['over']} a minute. Pay for the year and get 12 months for the price of 10. Questions? Reply to the email this came with.</p></div></div>
+<p class="ofine">${PLANS['setup']} setup, once. Over your minutes: ${PLANS['over']} a minute. Pay for the year and get 12 months for the price of 10. Questions? Reply to the email this came with.</p>
+<p class="ofine ofound"><b>Founding offer:</b> the first {FOUNDING} shops to sign up keep these prices for as long as they stay with us.</p></div></div>
 </div></section>"""
 
 

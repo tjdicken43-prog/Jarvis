@@ -106,7 +106,7 @@ def assistant(c):
         "name": f"{name} front desk"[:40],
         "firstMessage": f"Thanks for calling {name}. This is the after-hours assistant, and this call may be "
                         "recorded. I can take a message and have someone call you back. What's going on?",
-        "model": dict({"provider": "anthropic", "model": config.RECEPTIONIST_MODEL, "temperature": 0.3,
+        "model": dict({"provider": "anthropic", "model": config.RECEPTIONIST_MODEL,  # no temperature: the API refuses it since 2026-10-21
                        "messages": [{"role": "system", "content": prompt(c)}]},
                       **({"tools": booking.tools()} if booking.enabled(c) else {})),
         "voice": {"provider": "vapi", "voiceId": "Elliot"},

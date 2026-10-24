@@ -25,6 +25,11 @@ PLANS = {
     "front_desk_plus": {"name": "Front Desk Plus", "monthly_cents": 24900, "minutes": 800},
 }
 BILLING = ("monthly", "annual")
+# Founding clients (TJ, 2026-10-24): the first 5 shops to pay keep these prices for as long as they stay.
+# A later price rise never reaches them; a later price cut does (they always pay the lower of the two).
+FOUNDING_SLOTS = 5
+FOUNDING_LOCK = {"setup_cents": 29900, "overage_cents_per_min": 25,
+                 "monthly_cents": {"front_desk": 14900, "front_desk_plus": 24900}}
 API = "https://api.stripe.com/v1/"
 TOLERANCE = 300  # seconds a signed webhook stays valid
 
@@ -33,14 +38,46 @@ class StripeError(Exception):
     pass
 
 
-def price_cents(plan, billing):
+def monthly_cents(plan, founding=False):
     m = PLANS[plan]["monthly_cents"]
+    return min(m, FOUNDING_LOCK["monthly_cents"][plan]) if founding else m
+
+
+def setup_cents(founding=False):
+    return min(SETUP_CENTS, FOUNDING_LOCK["setup_cents"]) if founding else SETUP_CENTS
+
+
+def overage_rate(founding=False):
+    return min(OVERAGE_CENTS_PER_MIN, FOUNDING_LOCK["overage_cents_per_min"]) if founding else OVERAGE_CENTS_PER_MIN
+
+
+def price_cents(plan, billing, founding=False):
+    m = monthly_cents(plan, founding)
     return m * ANNUAL_MONTHS if billing == "annual" else m
 
 
-def monthly_value_cents(plan, billing):
+def monthly_value_cents(plan, billing, founding=False):
     """What a client is worth per month (annual spread over 12)."""
-    return round(price_cents(plan, billing) / 12) if billing == "annual" else price_cents(plan, billing)
+    p = price_cents(plan, billing, founding)
+    return round(p / 12) if billing == "annual" else p
+
+
+def founding_left(conn):
+    return max(0, FOUNDING_SLOTS - conn.execute("SELECT count(*) AS n FROM clients WHERE founding_no IS NOT NULL").fetchone()["n"])
+
+
+def claim_founding(conn, client_id):
+    """Give a paying client the next founding spot, if one is left. Returns the spot number or None.
+    The advisory lock makes two webhooks at once take different spots; the unique index backs it up."""
+    conn.execute("SELECT pg_advisory_xact_lock(4205)")
+    row = conn.execute("""UPDATE clients SET founding_no = (SELECT coalesce(max(founding_no), 0) + 1 FROM clients)
+                          WHERE id = %s AND founding_no IS NULL
+                            AND (SELECT count(*) FROM clients WHERE founding_no IS NOT NULL) < %s
+                          RETURNING founding_no""", (client_id, FOUNDING_SLOTS)).fetchone()
+    if row:
+        return row["founding_no"]
+    row = conn.execute("SELECT founding_no FROM clients WHERE id = %s", (client_id,)).fetchone()
+    return row and row["founding_no"]
 
 
 def form(data, prefix=""):
@@ -82,6 +119,7 @@ def stripe(path, data, idempotency_key=None):
 def checkout_session(client):
     """Subscription checkout: the plan (monthly or yearly) plus the one-time $299 setup on the first invoice."""
     plan, billing = PLANS[client["plan"]], client["billing"]
+    founding = bool(client.get("founding_no"))
     meta = {"client_id": client["id"], "plan": client["plan"], "billing": billing}
     data = {
         "mode": "subscription",
@@ -90,10 +128,10 @@ def checkout_session(client):
         "cancel_url": config.CHECKOUT_CANCEL_URL,
         "line_items": [
             {"quantity": 1, "price_data": {
-                "currency": "usd", "unit_amount": price_cents(client["plan"], billing),
+                "currency": "usd", "unit_amount": price_cents(client["plan"], billing, founding),
                 "recurring": {"interval": "year" if billing == "annual" else "month"},
                 "product_data": {"name": f"{plan['name']} ({plan['minutes']} min a month, $0.25/min over)"}}},
-            {"quantity": 1, "price_data": {"currency": "usd", "unit_amount": SETUP_CENTS,
+            {"quantity": 1, "price_data": {"currency": "usd", "unit_amount": setup_cents(founding),
                                            "product_data": {"name": "Setup: site rebuild and receptionist"}}},
         ],
         "metadata": meta,
@@ -163,11 +201,14 @@ def handle_event(conn, event):
         meta = obj.get("metadata") or {}
         plan = meta.get("plan") if meta.get("plan") in PLANS else client["plan"]
         billing = meta.get("billing") if meta.get("billing") in BILLING else client["billing"]
+        founding = claim_founding(conn, client["id"])
+        if founding:
+            out["founding_no"] = founding
         conn.execute("""UPDATE clients SET status = 'active', plan = %s, billing = %s, monthly_cents = %s,
                         included_minutes = %s, stripe_customer_id = coalesce(%s, stripe_customer_id),
                         stripe_subscription_id = coalesce(%s, stripe_subscription_id),
                         started_at = coalesce(started_at, now()), cancelled_at = NULL WHERE id = %s""",
-                     (plan, billing, PLANS[plan]["monthly_cents"], PLANS[plan]["minutes"], obj.get("customer"),
+                     (plan, billing, monthly_cents(plan, bool(founding)), PLANS[plan]["minutes"], obj.get("customer"),
                       obj.get("subscription"), client["id"]))
         if client["prospect_id"]:
             conn.execute("UPDATE prospects SET status = 'won', updated_at = now() WHERE id = %s", (client["prospect_id"],))
@@ -216,9 +257,9 @@ def usage(conn, start, end):
     return {r["id"]: r for r in conn.execute(USAGE, (start, end))}
 
 
-def overage(minutes, included):
+def overage(minutes, included, founding=False):
     over = max(0, minutes - included)
-    return over, over * OVERAGE_CENTS_PER_MIN
+    return over, over * overage_rate(founding)
 
 
 def bill_overage(conn, month):
@@ -229,7 +270,7 @@ def bill_overage(conn, month):
     out = {"month": label, "stripe": config.stripe_mode(), "charged": [], "skipped": []}
     for c in conn.execute("SELECT * FROM clients WHERE status IN ('active','past_due') ORDER BY id").fetchall():
         minutes = used.get(c["id"], {}).get("minutes", 0)
-        over, cents = overage(minutes, c["included_minutes"])
+        over, cents = overage(minutes, c["included_minutes"], bool(c.get("founding_no")))
         if not cents:
             continue
         line = {"client_id": c["id"], "business_name": c["business_name"], "minutes": minutes, "over_minutes": over,
@@ -257,7 +298,8 @@ def bill_overage(conn, month):
         try:
             item = stripe("invoiceitems", {
                 "customer": c["stripe_customer_id"], "amount": cents, "currency": "usd",
-                "description": f"Receptionist {label}: {over} min over {c['included_minutes']} at $0.25"},
+                "description": f"Receptionist {label}: {over} min over {c['included_minutes']} at "
+                               f"${overage_rate(bool(c.get('founding_no'))) / 100:.2f}"},
                 idempotency_key=f"overage-{c['id']}-{label}")
             invoice = None
             if c["billing"] == "annual":  # yearly invoices are months away, so bill this one now

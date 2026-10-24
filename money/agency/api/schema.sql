@@ -324,3 +324,21 @@ CREATE INDEX IF NOT EXISTS shots_prospect ON shots (prospect_id);
 CREATE UNIQUE INDEX IF NOT EXISTS clients_vapi_assistant ON clients (vapi_assistant_id) WHERE vapi_assistant_id IS NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS clients_receptionist_number ON clients (right(regexp_replace(receptionist_number, '\D', '', 'g'), 10))
   WHERE receptionist_number IS NOT NULL;  -- one shop per receptionist number, so calls can't land on the wrong client
+
+-- Founding clients (TJ, 2026-10-24): the first 5 shops to pay keep today's prices for as long as they stay
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS founding_no smallint CHECK (founding_no BETWEEN 1 AND 5);
+CREATE UNIQUE INDEX IF NOT EXISTS clients_founding_no ON clients (founding_no) WHERE founding_no IS NOT NULL;
+
+-- Cost tracker (2026-10-24): every Claude call we pay for, so margin per client is measured, not guessed
+CREATE TABLE IF NOT EXISTS ai_usage (
+  id            serial PRIMARY KEY,
+  at            timestamptz NOT NULL DEFAULT now(),
+  step          text NOT NULL,            -- draft, ...
+  model         text NOT NULL,
+  input_tokens  int NOT NULL DEFAULT 0,
+  output_tokens int NOT NULL DEFAULT 0,
+  cost_cents    numeric(10,4) NOT NULL DEFAULT 0,
+  prospect_id   text,
+  client_id     int REFERENCES clients(id)
+);
+CREATE INDEX IF NOT EXISTS ai_usage_at ON ai_usage (at);

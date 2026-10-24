@@ -98,6 +98,7 @@ export type Client = {
   phone: string | null;
   trade: string;
   plan: "front_desk" | "front_desk_plus";
+  founding_no: number | null;
   billing: "monthly" | "annual";
   status: "pending" | "active" | "past_due" | "cancelled";
   included_minutes: number;
@@ -165,10 +166,36 @@ export type Clients = {
   month: string;
   stripe: "off" | "test" | "live" | "blocked";
   items: Client[];
-  summary: { active: number; past_due: number; pending: number; mrr_cents: number; overage_cents: number };
+  summary: {
+    active: number; past_due: number; pending: number; mrr_cents: number; overage_cents: number;
+    founding_left: number; founding_slots: number;
+  };
+  costs: Costs;
   plans: Record<string, Plan>;
   setup_cents: number;
   overage_cents_per_min: number;
+};
+export type CostLine = {
+  client_id: number;
+  business_name: string;
+  founding_no: number | null;
+  minutes: number;
+  revenue_cents: number;
+  receptionist_cents: number;
+  hosting_cents: number;
+  claude_cents: number;
+  stripe_cents: number;
+  cost_cents: number;
+  margin_cents: number;
+  margin_pct: number | null;
+  estimated: boolean;
+};
+export type Costs = {
+  month: string;
+  lines: CostLine[];
+  totals: { revenue_cents: number; cost_cents: number; margin_cents: number; margin_pct: number | null };
+  hosting_cents_month: number;
+  outreach: { claude_calls: number; claude_cents: number; per_call_cents: number | null };
 };
 export type Lead = {
   id: number;

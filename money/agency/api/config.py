@@ -75,3 +75,9 @@ def notifier():
 
 def receptionist():
     return "vapi" if VAPI_API_KEY else "stub"
+
+# Cost tracker (2026-10-24). Estimates until real bills come in: check them against Render and Vapi once a month.
+HOSTING_CENTS_MONTH = int(env("HOSTING_CENTS_MONTH", "2100"))      # Render: Postgres $6 + two starter services $7 + cron $1 (check)
+VAPI_EST_CENTS_PER_MIN = float(env("VAPI_EST_CENTS_PER_MIN", "13"))  # only for calls Vapi sent no cost for (check)
+STRIPE_FEE_PCT = float(env("STRIPE_FEE_PCT", "2.9"))               # Stripe card fee: 2.9% + 30 cents a charge (check)
+STRIPE_FEE_CENTS = int(env("STRIPE_FEE_CENTS", "30"))

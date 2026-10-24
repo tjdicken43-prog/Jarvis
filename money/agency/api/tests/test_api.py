@@ -343,6 +343,7 @@ with db.connect() as c:
     row = c.execute("SELECT * FROM clients WHERE id = %s", (cl["id"],)).fetchone()
     assert row["status"] == "active" and row["stripe_subscription_id"] == "sub_1" and row["included_minutes"] == 800, row
     assert row["billing"] == "annual" and row["started_at"] is not None, row
+    assert row["founding_no"] == 1 and row["monthly_cents"] == 24900, row  # first to pay: founding spot 1
     assert c.execute("SELECT status FROM prospects WHERE id='overture/a'").fetchone()["status"] == "won"
 ok(api.post(f"/clients/{cl['id']}/checkout", json={}, headers=H), 409)  # already paying
 
@@ -366,6 +367,14 @@ out = api.get("/clients", headers=H).json()
 mine = out["items"][0]
 assert mine["minutes_used"] == 812 and mine["over_minutes"] == 12 and mine["overage_cents"] == 300 and mine["calls"] == 2, mine
 assert out["summary"]["active"] == 1 and out["summary"]["mrr_cents"] == round(249000 / 12), out["summary"]
+assert out["summary"]["founding_left"] == 4 and mine["founding_no"] == 1, out["summary"]
+line = out["costs"]["lines"][0]  # 812 min with no Vapi cost = estimate; hosting all on the one client; fee spread over 12
+assert line["receptionist_cents"] == round(812 * config.VAPI_EST_CENTS_PER_MIN) and line["estimated"], line
+assert line["hosting_cents"] == config.HOSTING_CENTS_MONTH and line["revenue_cents"] == round(249000 / 12) + 300, line
+assert line["stripe_cents"] == round((249000 * 0.029 + 30) / 12) + round(300 * 0.029), line
+assert line["margin_cents"] == line["revenue_cents"] - line["cost_cents"] and out["costs"]["totals"]["cost_cents"] == line["cost_cents"]
+ok(api.get("/costs?month=2026-13", headers=H), 400)
+assert api.get("/costs?month=2026-01", headers=H).json()["lines"][0]["minutes"] == 0
 this_month = billing.month_bounds()[0]
 n = len(sent)
 r = api.post("/billing/overage", json={"month": this_month}, headers=H).json()
@@ -642,5 +651,53 @@ config.MAILER = "stub"
 assert "by hand" in api.post("/outreach/inbox", headers=H).json()["detail"]
 h = api.get("/health").json()
 assert h["inbox"] == "stub" and h["follow_up_days"] == [3, 7, 14], h
+
+# Founding clients: spots 2-5 go to the next four to pay, the sixth pays list price and gets no spot
+import costs  # noqa: E402
+import followups  # noqa: E402
+with db.connect() as c:
+    ids = [c.execute("""INSERT INTO clients (business_name, email, trade) VALUES (%s, %s, 'plumbing') RETURNING id""",
+                     (f"Founding {i}", f"f{i}@found{i}.com")).fetchone()["id"] for i in range(5)]
+    c.commit()
+config.STRIPE_WEBHOOK_SECRET = "whsec_test"
+for i, cid in enumerate(ids):
+    e = json.dumps({"id": f"evt_found{i}", "type": "checkout.session.completed", "livemode": False, "data": {"object": {
+        "object": "checkout.session", "client_reference_id": str(cid), "payment_status": "paid",
+        "metadata": {"client_id": str(cid), "plan": "front_desk", "billing": "monthly"}}}}).encode()
+    r = hook(e, billing.sign(e, "whsec_test")).json()
+    assert r.get("founding_no") == (i + 2 if i < 4 else None), r
+with db.connect() as c:
+    assert billing.founding_left(c) == 0
+    nums = [r["founding_no"] for r in c.execute("SELECT founding_no FROM clients WHERE founding_no IS NOT NULL ORDER BY 1")]
+    assert nums == [1, 2, 3, 4, 5], nums
+    assert billing.claim_founding(c, ids[-1]) is None and billing.claim_founding(c, ids[0]) == 2  # no sixth; keeps its own
+# A later price rise never reaches a founding client; a cut does
+old = dict(billing.PLANS["front_desk"])
+billing.PLANS["front_desk"]["monthly_cents"] = 19900
+assert billing.price_cents("front_desk", "monthly", founding=True) == 14900 and billing.price_cents("front_desk", "monthly") == 19900
+billing.PLANS["front_desk"]["monthly_cents"] = 9900
+assert billing.price_cents("front_desk", "monthly", founding=True) == 9900
+billing.PLANS["front_desk"].update(old)
+# Copy: day-7 follow-up offers the lock only while spots are open; previews drop the line once they're gone
+P = {"name": "Ozark Pipe Co", "city": "Rogers", "trade": "plumbing", "mockup_url": "https://x.test/m/a"}
+assert "first 5 shops" in followups.write("follow_up_2", P, "Your site", founding=True)[1]
+assert "first 5" not in followups.write("follow_up_2", P, "Your site")[1]
+assert not outreach.preflight(*followups.write("follow_up_2", P, "Your site", founding=True), P, "follow_up_2")
+page = 'x<p class="ofine">$299 setup</p>\n<p class="ofine ofound"><b>Founding offer:</b> the first 5 shops</p></div>'
+assert main.FOUNDING_LINE.sub("", page) == 'x<p class="ofine">$299 setup</p></div>'
+assert costs.ai_cents("claude-haiku-5-5", 2_000_000, 1_000_000) == 70  # $0.10 + $0.50 per million, in cents
+
+# Cost trim: an address that can't take mail is held before the Chromium visit, not after the mockup
+with db.connect() as c:
+    c.execute("""INSERT INTO prospects (id, name, trade, city, email, website, status) VALUES
+                 ('trim/a', 'Dead Mail Roofing', 'roofing', 'Rogers', 'a@deadmail.test', 'deadmail.test', 'new')""")
+    c.commit()
+    was, quality.mail_domain_ok = quality.mail_domain_ok, lambda e: False
+    out = outreach.prepare(c, 5, ["trim/a"], inspect=lambda u: sys.exit("should not open a browser"))
+    quality.mail_domain_ok = was
+    assert out["skipped"][0]["reason"] == "deadmail.test doesn't take email" and not out["checked"], out
+    assert c.execute("SELECT status FROM prospects WHERE id = 'trim/a'").fetchone()["status"] == "no-email"
+
+print("founding and costs ok")
 
 print("agency api ok")

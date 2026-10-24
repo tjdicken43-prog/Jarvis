@@ -6,6 +6,7 @@ Every route except /health, the public links (/u/, /m/, /shots/, /paid) and the 
 import datetime as dt
 import html
 import json
+import re
 import secrets
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, UploadFile
@@ -15,6 +16,7 @@ from pydantic import BaseModel, Field
 import billing
 import booking
 import config
+import costs
 import db
 import events
 import flaws
@@ -49,12 +51,12 @@ FROM emails e JOIN prospects p ON p.id = e.prospect_id
 """
 
 
-def item(row):
+def item(row, founding=False):
     email = dict(row["email"])
     token = email.pop("unsub_token")
     out = {"email": email, "prospect": row["prospect"], "footer": mailer.footer(token)}
     if email["kind"] == "first" and email["status"] in {"draft", "approved"}:
-        out["follow_ups"] = followups.preview(row["prospect"], email["subject"])  # approved together with this one
+        out["follow_ups"] = followups.preview(row["prospect"], email["subject"], founding)  # approved together with this one
     return out
 
 
@@ -62,7 +64,7 @@ def get_item(conn, email_id):
     row = conn.execute(ITEM + " WHERE e.id = %s", (email_id,)).fetchone()
     if not row:
         raise HTTPException(404, "no such email")
-    return item(row)
+    return item(row, billing.founding_left(conn) > 0)
 
 
 @app.get("/health")
@@ -105,7 +107,8 @@ def queue(status: str = "draft", conn=Conn):
         raise HTTPException(400, "unknown status")
     order = "e.created_at, e.id" if status in {"draft", "approved"} else "coalesce(e.sent_at, e.created_at) DESC, e.id DESC"
     rows = conn.execute(ITEM + f" WHERE e.status = %s ORDER BY {order} LIMIT 200", (status,)).fetchall()
-    return {"items": [item(r) for r in rows]}
+    founding = billing.founding_left(conn) > 0
+    return {"items": [item(r, founding) for r in rows]}
 
 
 @app.get("/emails/{email_id}", dependencies=op)
@@ -304,6 +307,7 @@ def build_mockup(prospect_id: str, conn=Conn):
     return out
 
 
+FOUNDING_LINE = re.compile(r'\n?<p class="ofine ofound">.*?</p>', re.S)
 NOINDEX = {"X-Robots-Tag": "noindex, nofollow", "Cache-Control": "public, max-age=300"}
 
 
@@ -318,7 +322,10 @@ def mockup_page(slug: str, conn=Conn):  # public: the link in the email
                           AND p.status NOT IN ('unsubscribed', 'skip', 'lost', 'no-email')""", (slug,)).fetchone()
     if not row:  # also gone once they opt out or we skip them
         raise HTTPException(404, "no such preview")
-    return HTMLResponse(row["html"], headers=NOINDEX)
+    page = row["html"]
+    if billing.founding_left(conn) == 0:  # previews built while spots were open stop offering them once they're gone
+        page = FOUNDING_LINE.sub("", page)
+    return HTMLResponse(page, headers=NOINDEX)
 
 
 @app.get("/shots/{token}.png")
@@ -492,13 +499,14 @@ CLIENT_COLS = """id, prospect_id, business_name, contact_name, email, phone, tra
   monthly_cents, included_minutes, status, site_url, receptionist_number, checkout_url, started_at, cancelled_at,
   created_at, stripe_customer_id IS NOT NULL AS has_stripe, open_hour, close_hour, open_saturday, textback_enabled,
   vapi_assistant_id IS NOT NULL AS has_receptionist, notify_email, summary_hour, booking, calendar_token, review_url,
-  test_call_at, forwarding_confirmed_at, hours_confirmed_at, live_at"""
+  test_call_at, forwarding_confirmed_at, hours_confirmed_at, live_at, founding_no"""
 
 
 def client_view(c, used):
     u = used.get(c["id"], {})
     minutes = u.get("minutes", 0)
-    over, cents = billing.overage(minutes, c["included_minutes"])
+    founding = bool(c["founding_no"])
+    over, cents = billing.overage(minutes, c["included_minutes"], founding)
     c = dict(c)
     token = c.pop("calendar_token", None)
     golive = {"paying": c["status"] in ("active", "past_due"), "receptionist_built": c["has_receptionist"],
@@ -508,8 +516,8 @@ def client_view(c, used):
                 golive_missing=[k for k, v in golive.items() if not v], minutes_used=minutes, calls=u.get("calls", 0),
                 after_hours_calls=u.get("after_hours", 0),
                 missed_calls=u.get("missed", 0), over_minutes=over, overage_cents=cents,
-                price_cents=billing.price_cents(c["plan"], c["billing"]),
-                monthly_value_cents=billing.monthly_value_cents(c["plan"], c["billing"]))
+                price_cents=billing.price_cents(c["plan"], c["billing"], founding),
+                monthly_value_cents=billing.monthly_value_cents(c["plan"], c["billing"], founding))
 
 
 def get_client(conn, client_id):
@@ -532,9 +540,19 @@ def clients(conn=Conn):
                         "past_due": sum(c["status"] == "past_due" for c in items),
                         "pending": sum(c["status"] == "pending" for c in items),
                         "mrr_cents": sum(c["monthly_value_cents"] for c in paying),
-                        "overage_cents": sum(c["overage_cents"] for c in paying)},
+                        "overage_cents": sum(c["overage_cents"] for c in paying),
+                        "founding_left": billing.founding_left(conn), "founding_slots": billing.FOUNDING_SLOTS},
+            "costs": costs.month(conn, label),
             "plans": billing.PLANS, "setup_cents": billing.SETUP_CENTS,
             "overage_cents_per_min": billing.OVERAGE_CENTS_PER_MIN}
+
+
+@app.get("/costs", dependencies=op)
+def month_costs(month: str | None = None, conn=Conn):
+    """Real cost and margin per paying client for a month (YYYY-MM, default this month)."""
+    if month and not re.fullmatch(r"\d{4}-(0[1-9]|1[0-2])", month):
+        raise HTTPException(400, "month must be YYYY-MM")
+    return costs.month(conn, month)
 
 
 class NewClient(BaseModel):

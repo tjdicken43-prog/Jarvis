@@ -24,8 +24,10 @@ export type Prospect = {
   flaw: string | null;
   flaw_evidence: string | null;
   mockup_url: string | null;
+  status?: string;
 };
-export type Item = { email: Email; prospect: Prospect; footer: string };
+export type FollowUp = { kind: string; day: number; subject: string; body: string };
+export type Item = { email: Email; prospect: Prospect; footer: string; follow_ups?: FollowUp[] };
 export type Health = {
   ok: boolean;
   db: boolean;
@@ -37,6 +39,7 @@ export type Health = {
   paused: boolean;
   send_window: string;
   in_window: boolean;
+  inbox?: string;
 };
 export type Stats = {
   prospects: Record<string, number>;

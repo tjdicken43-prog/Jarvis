@@ -96,3 +96,6 @@ td.num, td .num { white-space: nowrap; }
   .stack td:first-child { display: block; margin-bottom: 4px; }
   .stack .meter-cell { flex: 1; }
 }
+.fups { margin-top: 8px; }
+.fups summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+.fups .mail { margin-top: 8px; }

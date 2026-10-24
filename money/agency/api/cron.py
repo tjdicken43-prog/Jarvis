@@ -1,6 +1,7 @@
 """Render cron: python3 money/agency/api/cron.py send
 
-Calls the API's /send, which only sends approved emails inside the weekday window, under the cap, when not paused.
+Calls the API's /send, which reads the inbox for replies and bounces (stopping their follow-ups), then sends approved
+emails inside the weekday window, under the cap, when not paused.
 Needs API_URL and OPERATOR_TOKEN. Standard library only, so the cron needs no install.
 """
 import json

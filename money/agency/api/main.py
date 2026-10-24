@@ -15,6 +15,7 @@ import billing
 import config
 import db
 import flaws
+import followups
 import mailer
 import mockup
 import outreach
@@ -44,7 +45,10 @@ FROM emails e JOIN prospects p ON p.id = e.prospect_id
 def item(row):
     email = dict(row["email"])
     token = email.pop("unsub_token")
-    return {"email": email, "prospect": row["prospect"], "footer": mailer.footer(token)}
+    out = {"email": email, "prospect": row["prospect"], "footer": mailer.footer(token)}
+    if email["kind"] == "first" and email["status"] in {"draft", "approved"}:
+        out["follow_ups"] = followups.preview(row["prospect"], email["subject"])  # approved together with this one
+    return out
 
 
 def get_item(conn, email_id):
@@ -65,6 +69,7 @@ def health(conn=Conn):
         "send_window": "Weekdays %d-%dam Central" % config.SEND_WINDOW, "stripe": config.stripe_mode(),
         "receptionist": config.receptionist(), "vapi_webhook_secret_set": bool(config.VAPI_WEBHOOK_SECRET),
         "textback": config.TEXTBACK, "browser": flaws.browser_status(),
+        "inbox": "imap" if config.mailer() == "smtp" else "stub", "follow_up_days": [d for _, d in followups.STEPS],
     }
 
 
@@ -119,14 +124,21 @@ def approve(email_id: int, conn=Conn):
         conn.execute("UPDATE prospects SET status = 'unsubscribed', updated_at = now() WHERE id = %s", (p["id"],))
         conn.commit()
         raise HTTPException(409, "this shop is on the do-not-email list; draft cancelled")
-    problems = outreach.preflight(cur["email"]["subject"], cur["email"]["body"], p)
+    kind = cur["email"]["kind"]
+    problems = outreach.preflight(cur["email"]["subject"], cur["email"]["body"], p, kind)
     if problems:
         raise HTTPException(400, "fix before approving: " + "; ".join(problems))
     now = dt.datetime.now(dt.timezone.utc)
     send_after = mailer.next_window(now)
+    if kind != "first":  # a follow-up put back to draft and edited still waits for its day
+        first = conn.execute("SELECT sent_at FROM emails WHERE prospect_id = %s AND kind = 'first'", (p["id"],)).fetchone()
+        if not first or not first["sent_at"]:
+            raise HTTPException(409, "the first email hasn't gone out yet")
+        send_after = max(send_after, followups.due(first["sent_at"], kind))
     conn.execute("UPDATE emails SET status = 'approved', approved_at = %s, send_after = %s WHERE id = %s",
                  (now, send_after, email_id))
-    conn.execute("UPDATE prospects SET status = 'approved', updated_at = now() WHERE id = %s", (p["id"],))
+    if kind == "first":
+        conn.execute("UPDATE prospects SET status = 'approved', updated_at = now() WHERE id = %s", (p["id"],))
     conn.commit()
     when = send_after.astimezone(mailer.CENTRAL).strftime("%a %b %-d, %-I:%M%p Central")
     note = "" if config.mailer() == "smtp" else " Stub mailer is on, so it won't really send."
@@ -220,7 +232,35 @@ def shot(token: str, conn=Conn):  # unguessable link to a screenshot of their ow
 
 @app.post("/send", dependencies=op)
 def send(conn=Conn):
-    return mailer.send_due(conn)
+    """Read the inbox first, so a reply or bounce stops its follow-ups before anything goes out."""
+    try:
+        inbox = followups.check_inbox(conn)
+    except Exception as e:  # can't tell who replied: hold the follow-ups, first emails can still go
+        conn.rollback()
+        inbox = {"error": f"inbox check failed: {type(e).__name__}"}
+    out = mailer.send_due(conn, hold_follow_ups=bool(inbox.get("error")))
+    return dict(out, inbox=inbox)
+
+
+@app.post("/outreach/inbox", dependencies=op)
+def inbox(conn=Conn):
+    return followups.check_inbox(conn)
+
+
+@app.post("/prospects/{prospect_id:path}/replied", dependencies=op)
+def replied(prospect_id: str, conn=Conn):
+    """TJ saw a reply: no more follow-ups to this shop. He answers it himself."""
+    if not conn.execute("SELECT 1 FROM prospects WHERE id = %s", (prospect_id,)).fetchone():
+        raise HTTPException(404, "no such prospect")
+    return followups.mark_replied(conn, prospect_id)
+
+
+@app.post("/prospects/{prospect_id:path}/bounced", dependencies=op)
+def bounced(prospect_id: str, conn=Conn):
+    """The address bounced: never email it again."""
+    if not conn.execute("SELECT 1 FROM prospects WHERE id = %s", (prospect_id,)).fetchone():
+        raise HTTPException(404, "no such prospect")
+    return followups.mark_bounced(conn, prospect_id, "bounced (marked by TJ)")
 
 
 class Pause(BaseModel):

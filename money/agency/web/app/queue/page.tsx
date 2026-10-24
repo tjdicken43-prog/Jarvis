@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { api, errMsg } from "@/lib/api";
 import type { Health, Item } from "@/lib/types";
-import { CardActions, DraftButton, PauseToggle, SendButton, UndoButton } from "@/components/QueueControls";
+import { CardActions, DraftButton, PauseToggle, SendButton, SentActions, UndoButton } from "@/components/QueueControls";
 
 export const dynamic = "force-dynamic";
 
@@ -9,12 +9,15 @@ const TABS = [
   ["draft", "Draft"],
   ["approved", "Approved"],
   ["sent", "Sent"],
+  ["replied", "Replied"],
   ["cancelled", "Skipped"],
 ] as const;
 
 function when(s: string | null) {
   return s ? s.replace("T", " ").slice(0, 16) : "";
 }
+
+const KIND: Record<string, string> = { follow_up_1: "follow-up, day 3", follow_up_2: "follow-up, day 7", follow_up_3: "follow-up, day 14" };
 
 function safeUrl(u: string | null) {
   return u && /^https?:\/\//i.test(u) ? u : null;
@@ -44,6 +47,7 @@ export default async function QueuePage({ searchParams }: { searchParams: Promis
             <div><dt>Mailer</dt><dd>{health.mailer}</dd></div>
             <div><dt>Sent today</dt><dd className="num">{health.sent_today}/{health.daily_cap}</dd></div>
             <div><dt>Window</dt><dd>{health.send_window}{health.in_window ? " (open)" : " (closed)"}</dd></div>
+            {health.inbox && <div><dt>Replies</dt><dd>{health.inbox === "imap" ? "read from inbox" : "mark by hand"}</dd></div>}
             {!health.db && <div><dt>Database</dt><dd className="warn">down</dd></div>}
           </dl>
         ) : (
@@ -71,7 +75,7 @@ export default async function QueuePage({ searchParams }: { searchParams: Promis
       {error && <p className="err">{error}</p>}
       {!error && items.length === 0 && <p className="muted">Nothing here.</p>}
 
-      {items.map(({ email, prospect: p, footer }) => {
+      {items.map(({ email, prospect: p, footer, follow_ups }) => {
         const site = safeUrl(p.website);
         const evid = safeUrl(p.flaw_evidence);
         const mock = safeUrl(p.mockup_url);
@@ -101,16 +105,36 @@ export default async function QueuePage({ searchParams }: { searchParams: Promis
               </a>
             )}
             <div className="mail">
-              <p className="subj">{email.subject}{email.edited && <span className="tag">edited</span>}</p>
+              <p className="subj">
+                {email.subject}
+                {KIND[email.kind] && <span className="tag">{KIND[email.kind]}</span>}
+                {email.edited && <span className="tag">edited</span>}
+              </p>
               <p className="body">{email.body}</p>
               <p className="footer">{footer}</p>
             </div>
+            {follow_ups && follow_ups.length > 0 && (
+              <details className="fups">
+                <summary>{follow_ups.length} follow-ups go with this one (days {follow_ups.map((f) => f.day).join(", ")}), stopped by any reply, bounce or opt-out</summary>
+                {follow_ups.map((f) => (
+                  <div key={f.kind} className="mail">
+                    <p className="subj">Day {f.day}: {f.subject}</p>
+                    <p className="body">{f.body}</p>
+                  </div>
+                ))}
+              </details>
+            )}
             {status === "draft" ? (
               <CardActions id={email.id} />
             ) : status === "approved" ? (
               <div className="row">
                 <UndoButton id={email.id} />
-                <span className="muted small">queued {when(email.approved_at)}</span>
+                <span className="muted small">{email.send_after ? `sends after ${when(email.send_after)} UTC` : `queued ${when(email.approved_at)}`}</span>
+              </div>
+            ) : status === "sent" ? (
+              <div>
+                <p className="muted small">sent {when(email.sent_at)}</p>
+                {p.status === "emailed" && <SentActions prospectId={p.id} />}
               </div>
             ) : (
               <p className="muted small">

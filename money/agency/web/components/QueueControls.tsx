@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { approve, draftNew, saveEmail, sendApproved, setPaused, skip, unapprove } from "@/lib/actions";
+import { approve, draftNew, markBounced, markReplied, saveEmail, sendApproved, setPaused, skip, unapprove } from "@/lib/actions";
 import type { DraftResult, SendResult } from "@/lib/types";
 import Link from "next/link";
 
@@ -211,6 +211,24 @@ export function UndoButton({ id }: { id: string | number }) {
       >
         Undo
       </button>
+      {err && <span className="err">{err}</span>}
+    </div>
+  );
+}
+
+export function SentActions({ prospectId }: { prospectId: string | number }) {
+  const [pending, start] = useTransition();
+  const [err, setErr] = useState("");
+  const act = (fn: typeof markReplied) =>
+    start(async () => {
+      setErr("");
+      const r = await fn(prospectId);
+      if (!r.ok) setErr(r.error);
+    });
+  return (
+    <div className="row">
+      <button className="btn" disabled={pending} onClick={() => act(markReplied)}>They replied</button>
+      <button className="btn" disabled={pending} onClick={() => act(markBounced)}>Bounced</button>
       {err && <span className="err">{err}</span>}
     </div>
   );

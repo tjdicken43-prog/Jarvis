@@ -135,7 +135,7 @@ def claude_draft(p):
     return out["subject"].strip(), out["body"].strip()
 
 
-def preflight(subject, body, p):
+def preflight(subject, body, p, kind="first"):
     """Reasons this draft must not reach the queue (empty list = fine)."""
     problems = []
     if not subject.strip() or not body.strip():
@@ -147,7 +147,7 @@ def preflight(subject, body, p):
     for price in re.findall(r"\$\d[\d,]*", body):
         if price not in PRICES:
             problems.append(f"price {price} is not one of ours")
-    if p.get("mockup_url") and p["mockup_url"] not in body:
+    if p.get("mockup_url") and p["mockup_url"] not in body and kind != "follow_up_3":  # the last one just closes out
         problems.append("preview link missing")
     if "!" in subject:
         problems.append("exclamation mark in subject")

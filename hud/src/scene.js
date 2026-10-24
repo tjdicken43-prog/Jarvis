@@ -52,7 +52,7 @@ const RINGS = { arc: " J.A.R.V.I.S. · TJ'S BRAIN · ONLINE · ", station: " J.A
   spy: " J.A.R.V.I.S. · SECRET SERVICE · EYES ONLY · ", hunter: " J.A.R.V.I.S. · HUNTER'S LOG · SALT AND IRON · ",
   showoff: " J.A.R.V.I.S. · ALL SYSTEMS · FIVE DIMENSIONS · ONE BRAIN · " };
 function setTheme(name) {
-  if (!RINGS[name]) name = "arc";
+  if (name !== "showoff") name = "arc"; // two looks now: Workshop (the 3D hologram, src/workshop.js) and Show off
   THEME = name;
   document.documentElement.dataset.theme = name; store.set("theme", name);
   ARC = getComputedStyle(document.documentElement).getPropertyValue("--arc-rgb").trim().replace(/\s/g, "") || "79,216,255";

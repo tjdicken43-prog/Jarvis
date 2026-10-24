@@ -14,6 +14,9 @@ Covers [[SecurityAI]], [[Basis]] and [[Jarvis]]. Done items move to the week's n
 - [ ] [[Sites by TJ]]: TJ sets up Cloudflare (free), Stripe and a business Gmail; walks into the first shop. Jarvis backend builds previews from the Monday prospect list.
 - [ ] Jarvis repo is public, so brain notes (including [[Personal]]) are visible to anyone: TJ to decide on making it private (check).
 
+- [ ] Suspend agency-api, agency-dashboard, agency-send and agency-db on Render (dashboard, bulk Suspend). Next day, check Billing "unbilled usage" stays flat (check whether a suspended database still bills storage).
+- [ ] Tuesday 2026-10-27: make the business card (Privacy.com, steps in money/BUDGET.md), set the Anthropic workspace limit to $20 with auto-reload off, and log the first charges in money/budget/ledger.csv.
+
 ## Setup
 - [ ] Tailscale: turn off key expiry.
 - [ ] Make the spare memory card.

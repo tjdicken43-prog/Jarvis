@@ -1,0 +1,44 @@
+{
+  "_doc": "Rules live in money/BUDGET.md. Agents may edit recurring/caps only after TJ says so in chat.",
+  "refill": {
+    "amount": 150,
+    "every_days": 14,
+    "first": "2026-10-27"
+  },
+  "floor": 25,
+  "warn_at_cap": 0.8,
+  "caps_30d": {
+    "anthropic-api": 20,
+    "render": 10,
+    "google-workspace": 9,
+    "domains": 15
+  },
+  "recurring": [
+    {
+      "service": "google-workspace",
+      "amount": 8.4,
+      "monthly_from": "2026-10-27",
+      "note": "Business Starter, 1 user, flexible plan (check price at signup)"
+    },
+    {
+      "service": "anthropic-api",
+      "amount": 20.0,
+      "monthly_from": "2026-10-27",
+      "note": "prepaid credits, auto-reload OFF, workspace limit $20"
+    },
+    {
+      "service": "render",
+      "amount": 7.25,
+      "monthly_from": "2026-11-01",
+      "note": "Gym-security Starter $7 + 1 GB disk; only if this card goes on Render (check). Agency stack suspended 2026-10-24, +$25/mo if resumed"
+    }
+  ],
+  "planned": [
+    {
+      "service": "domains",
+      "amount": 12.0,
+      "date": "2026-10-27",
+      "note": "outreach domain, 1 year (check price before buying)"
+    }
+  ]
+}

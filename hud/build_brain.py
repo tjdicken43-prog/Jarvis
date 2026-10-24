@@ -6,9 +6,12 @@ Re-run after the notes change.
 python3 hud/build_brain.py --artifact OUT.html also writes a one-file copy
 with the notes inlined, ready to publish as a private claude.ai artifact.
 """
+import importlib.util
 import json
 import re
 import sys
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -40,10 +43,23 @@ def main():
         "checks": sum(n["text"].count("(check)") for n in notes),
     }
     out = ROOT / "hud" / "brain.js"
-    out.write_text("window.BRAIN = " + json.dumps({"notes": notes, "stats": stats}, indent=1) + ";\n", encoding="utf-8")
+    brain = {"notes": notes, "stats": stats, "budget": budget_snapshot()}
+    out.write_text("window.BRAIN = " + json.dumps(brain, indent=1) + ";\n", encoding="utf-8")
     print(f"Packed {stats['notes']} notes into {out.relative_to(ROOT)}")
     if "--artifact" in sys.argv:
         write_artifact(Path(sys.argv[sys.argv.index("--artifact") + 1]), out.read_text(encoding="utf-8"))
+
+
+def budget_snapshot():
+    """The Budget sheet's numbers, from money/budget (ledger + rules). The page recounts the days itself."""
+    spec = importlib.util.spec_from_file_location("budget", ROOT / "money" / "budget" / "budget.py")
+    b = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(b)
+    cfg, rows = b.load()
+    problems = b.lint(cfg, rows)
+    snap = b.status(cfg, rows, datetime.now(ZoneInfo("America/Chicago")).date())
+    snap["alerts"] = ["The ledger has a problem: " + p for p in problems] + snap["alerts"]
+    return snap
 
 
 PART = re.compile(r'<script src="(src/[\w-]+\.js)"></script>\n?')

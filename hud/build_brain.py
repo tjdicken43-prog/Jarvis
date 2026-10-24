@@ -108,12 +108,20 @@ def write_artifact(dest, brain_js):
     tag = '<script type="module" src="src/workshop.js"></script>'
     assert tag in html, "index.html lost the workshop.js module tag"
     html = html.replace(tag, '<script type="module">\n' + workshop + "</script>")
-    vault = (ROOT / "hud" / "src" / "vault.js").read_text(encoding="utf-8").replace("export const CAST", "const CAST").replace("export function createVault", "function createVault")
-    ui = (ROOT / "hud" / "src" / "vault-ui.js").read_text(encoding="utf-8").replace('import { createVault } from "./vault.js";\n', "").replace("export function openVault", "function openVault")
-    assert "</script" not in vault + ui and "export " not in ui, "vault files need fixing before inlining"
+    # the Vault is five modules (round 9); inline them as one: keep each outside import once, drop the local ones and the exports
+    parts, seen = [], []
+    for name in ("vault-kit.js", "vault-wings.js", "vault-wing.js", "vault.js", "vault-ui.js"):
+        for line in (ROOT / "hud" / "src" / name).read_text(encoding="utf-8").splitlines(keepends=True):
+            if line.startswith("import "):
+                if '"./' not in line and line not in seen:
+                    seen.append(line)
+                continue
+            parts.append(re.sub(r"^export (const|function) ", r"\1 ", line))
+    vault_js = "".join(seen) + "".join(parts)
+    assert "</script" not in vault_js and not re.search(r"^export ", vault_js, re.M), "vault files need fixing before inlining"
     tag = '<script type="module" src="src/vault-ui.js"></script>'
     assert tag in html, "index.html lost the vault-ui.js module tag"
-    html = html.replace(tag, '<script type="module">\n' + vault + ui + "</script>")
+    html = html.replace(tag, '<script type="module">\n' + vault_js + "</script>")
     dest.write_text(html.strip() + "\n", encoding="utf-8")
     print(f"Wrote artifact copy to {dest}")
 

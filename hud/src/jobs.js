@@ -17,7 +17,7 @@ function watchJobs(db) {
       const el = document.createElement("article"); el.className = "job" + (fresh ? " fresh" : "");
       el.innerHTML = `<div class="row"><span class="chip"></span><time></time></div><div class="ask"></div>`;
       el.querySelector(".chip").className = "chip " + j.status;
-      el.querySelector(".chip").textContent = j.status === "needs-tj" ? "needs you" : j.status;
+      el.querySelector(".chip").textContent = j.status === "needs-tj" ? "Needs you" : j.status[0].toUpperCase() + j.status.slice(1);
       el.querySelector("time").textContent = ago(j.updated || j.created);
       el.querySelector(".ask").textContent = j.ask;
       if (j.answer) { const a = document.createElement("div"); a.className = "answer"; a.textContent = j.answer; el.append(a); }
@@ -32,8 +32,8 @@ function watchJobs(db) {
         if (!$("jobsPanel").classList.contains("active")) $("badge").textContent = "●";
       }
     }
-    $("jobsCount").textContent = open ? `${open} RUNNING` : `${snap.size} TOTAL`;
-    if (snap.empty) list.innerHTML = `<p class="empty">Nothing queued. Tap <b>JOB</b>, or just ask for something big (code, research, a PR) and I'll send it to Claude Code. Answers land here.</p>`;
+    $("jobsCount").textContent = open ? `${open} running` : `${snap.size} total`;
+    if (snap.empty) list.innerHTML = `<p class="empty">Nothing queued. Tap <b>Job</b>, or just ask for something big (code, research, a PR) and I'll send it to Claude Code. Answers land here.</p>`;
   }, () => { $("jobs").innerHTML = `<p class="empty">Jobs need the claude.ai copy of Jarvis.</p>`; });
 }
 async function queueJob(askText) {
@@ -142,13 +142,13 @@ async function setReminder(local, text) {
 /* ---------- Memory panel: what Jarvis knows, and a way to correct it ---------- */
 function memItem(text, meta, note) {
   const row = document.createElement("div"); row.className = "memItem";
-  row.innerHTML = `<span></span><button type="button">WRONG</button>`;
+  row.innerHTML = `<span></span><button type="button">Wrong</button>`;
   row.querySelector("span").textContent = text;
   if (meta) { const m = document.createElement("small"); m.textContent = meta; row.querySelector("span").append(m); }
   row.querySelector("button").addEventListener("click", () => {
     if (row.nextElementSibling?.classList.contains("memFix")) return;
     const fix = document.createElement("form"); fix.className = "memFix";
-    fix.innerHTML = `<input placeholder="What's right? (blank = just remove it)"><button type="submit" class="gear" style="margin:0">SAVE</button>`;
+    fix.innerHTML = `<input placeholder="What's right? (blank = just remove it)"><button type="submit" class="gear">Save</button>`;
     fix.addEventListener("submit", async (e) => {
       e.preventDefault();
       const right = fix.querySelector("input").value.trim();
@@ -158,7 +158,7 @@ function memItem(text, meta, note) {
       try {
         const ref = await db.collection("lessons").add(lesson);
         lessons.push({ id: ref?.id, ...lesson }); renderBrain(lessons.length);
-        fix.replaceWith(Object.assign(document.createElement("p"), { className: "empty", textContent: "Got it. Jarvis backend fixes it on the next run, or tap LEARN NOW." }));
+        fix.replaceWith(Object.assign(document.createElement("p"), { className: "empty", textContent: "Got it. Jarvis backend fixes it on the next run, or tap Learn now." }));
       } catch (err) { fix.querySelector("input").value = ""; fix.querySelector("input").placeholder = "Couldn't save (" + (err?.code || err?.message || err) + ")"; }
     });
     row.after(fix); fix.querySelector("input").focus();
@@ -166,7 +166,6 @@ function memItem(text, meta, note) {
   return row;
 }
 /* ---------- The factory: the Sites by TJ crew floor, any time (hud/factory.js) ---------- */
-const FACTORY_NOTES = /^(Sites by TJ|Jarvis)$/;
 const STATION_URL = "https://claude.ai/artifact/HuVXWvLf2chPTziUg7LgNJ"; // the job cards (TJ's private Jarvis Station page)
 window.JarvisFactory?.setStats(() => { const [l, d] = jobCounts(); return { notes: nodes.length, links: edges.length, lessons: lessons.length, jobsLive: l, jobsDone: d, thinking: mode === "thinking" }; });
 function openFactory() {
@@ -186,11 +185,11 @@ $("memBtn").addEventListener("click", () => {
     const [title, ...rest] = part.split("\n");
     const items = rest.filter((l) => /^- /.test(l) && !/\(ask TJ\)/.test(l)).map((l) => l.slice(2).replace(/\[\[|\]\]/g, ""));
     if (!items.length) continue;
-    head(title.trim().toUpperCase());
+    head(title.trim());
     for (const t of items) list.append(memItem(t, "", "Personal"));
   }
   const recent = lessons.filter((l) => !l.correction).slice(-25).reverse();
-  if (recent.length) head("LEARNED IN CHATS");
+  if (recent.length) head("Learned in chats");
   for (const l of recent) list.append(memItem(l.text, `${(l.at || "").slice(0, 10)} · ${l.filed ? "filed in the notes" : "waiting to be filed"}`, l.note));
   if (!list.children.length) list.innerHTML = `<p class="empty">Nothing yet. Tell me about yourself and I'll remember it.</p>`;
   $("memory").showModal();
@@ -231,7 +230,7 @@ function openChat(id, c) {
 }
 $("newChat").addEventListener("click", () => {
   chatId = new Date().toISOString().replace(/[:.]/g, "-"); turns = []; history.length = 0;
-  $("log").innerHTML = ""; say("note", "New chat. The old ones are under CHATS.");
+  $("log").innerHTML = ""; say("note", "New chat. The old ones are under Chats.");
   $("chats").close();
 });
 $("chatsDone").addEventListener("click", () => $("chats").close());
@@ -243,3 +242,12 @@ $("jobMode").addEventListener("click", () => {
   $("q").focus();
 });
 
+
+/* ---------- Readout under the dial: the same numbers the rings draw ---------- */
+function readout() {
+  const d = mindData();
+  $("rNotes").textContent = nodes.length; $("rLinks").textContent = d.links;
+  $("rJobs").innerHTML = `${d.done}<small> / ${d.done + d.live + d.need}</small>`;
+  $("rLessons").innerHTML = `${d.filed}<small>${d.waiting ? " +" + d.waiting : ""}</small>`;
+}
+readout(); setInterval(readout, 2000);

@@ -20,7 +20,7 @@ function renderReply(el, text) {
   const l = document.createElement("div"); l.className = "line"; l.textContent = line; el.append(l);
   if (detail) {
     const d = document.createElement("details"), sm = document.createElement("summary"), body = document.createElement("div");
-    sm.textContent = "DETAILS"; body.className = "detail"; body.textContent = detail;
+    sm.textContent = "Details"; body.className = "detail"; body.textContent = detail;
     d.open = detail.length < 280; d.append(sm, body); el.append(d);
   }
   el.scrollIntoView({ block: "end" });

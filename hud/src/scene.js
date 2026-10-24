@@ -18,7 +18,7 @@ const edges = [];
 for (const n of nodes) for (const l of n.links) if (nodeBy.has(l) && l !== n.name) edges.push([n, nodeBy.get(l)]);
 for (const n of nodes) n.deg = edges.filter(([a, b]) => a === n || b === n).length;
 edges.forEach((e, i) => { e.seed = (i * 0.618) % 1; });
-const TYPE_COLOR = { hub: "#4fd8ff", rules: "#ff5b4a", log: "#ffb23e", list: "#ffb23e", week: "#9b8cff", personal: "#5cf2a5" };
+const TYPE_COLOR = { hub: "#8fb8d8", rules: "#e07a6b", log: "#d9a85b", list: "#c8b48a", week: "#b7bcc4", personal: "#6cc59a" };
 
 let cinemaK = 0; // 0 = normal layout, 1 = Show off cinema (brain centred and bigger)
 function coreBox() {
@@ -134,6 +134,75 @@ const WHEEL = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23
 const RED = new Set([1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]);
 
 /* ---------- Cores ---------- */
+/* The calm looks' core: an instrument dial drawn from live data, read from the outside in.
+   Outer ring: the notes by kind. Radial bars: one per note, as long as its links (white while a question touches it).
+   Bezel: 60 ticks; a sweep runs round it while thinking. Inner rings: jobs (done, running, needs you), lessons (filed, waiting).
+   Centre: the note count, or a live waveform while Jarvis talks or listens. */
+function mindData() {
+  const kinds = new Map();
+  for (const n of nodes) { const k = TYPE_COLOR[n.type] ? n.type : "note"; kinds.set(k, (kinds.get(k) || 0) + 1); }
+  let js = [], ls = [];
+  try { js = Object.values(jobsSeen || {}); ls = lessons; } catch {} // jobs.js and memory.js may not be loaded on the first frame
+  return { kinds: [...kinds.entries()].sort((a, b) => b[1] - a[1]), links: edges.length,
+    done: js.filter((s) => s === "done").length, live: js.filter((s) => s === "queued" || s === "working").length, need: js.filter((s) => s === "needs-tj").length,
+    filed: ls.filter((l) => l.filed).length, waiting: ls.filter((l) => !l.filed).length };
+}
+function coreMind(R, C, spin) {
+  const d = mindData(), TAU = Math.PI * 2, top = -Math.PI / 2, talk = mode === "speaking" || mode === "listening";
+  const ray = (an, a, b) => { cx.beginPath(); cx.moveTo(Math.cos(an) * a, Math.sin(an) * a); cx.lineTo(Math.cos(an) * b, Math.sin(an) * b); cx.stroke(); };
+  cx.shadowBlur = 0; cx.lineCap = "butt";
+  // face and hairlines
+  cx.fillStyle = BG; cx.globalAlpha *= 0.82; cx.beginPath(); cx.arc(0, 0, R * 2.1, 0, TAU); cx.fill(); cx.globalAlpha /= 0.82;
+  cx.strokeStyle = "rgba(255,255,255,.08)"; cx.lineWidth = 1;
+  for (const r of [0.92, 1.3, 2.1]) { cx.beginPath(); cx.arc(0, 0, R * r, 0, TAU); cx.stroke(); }
+  // outer ring: notes by kind, proportional
+  let a = top; const total = nodes.length || 1;
+  cx.lineWidth = Math.max(2.5, R * 0.065);
+  for (const [k, c] of d.kinds) {
+    const span = c / total * TAU;
+    cx.strokeStyle = TYPE_COLOR[k] || "rgba(255,255,255,.35)";
+    cx.beginPath(); cx.arc(0, 0, R * 1.97, a + 0.02, a + span - 0.02); cx.stroke();
+    a += span;
+  }
+  // radial bars: links per note
+  const maxDeg = Math.max(1, ...nodes.map((n) => n.deg)), r0 = R * 1.42;
+  cx.lineWidth = Math.max(1.5, Math.min(4, TAU * r0 / Math.max(1, nodes.length) * 0.42));
+  nodes.forEach((n, i) => {
+    const an = top + (i + 0.5) / nodes.length * TAU + spin * 0.04, k = n.deg / maxDeg;
+    const len = Math.min(R * 0.44, R * 0.4 * (0.12 + 0.88 * k) * (1 + (talk ? level * 0.8 * Math.abs(Math.sin(i * 1.7 + t * 8)) : 0)));
+    cx.strokeStyle = n.hot > 0.05 ? `rgba(255,255,255,${0.55 + n.hot * 0.45})` : `rgba(${ARC},${0.22 + 0.55 * k})`;
+    ray(an, r0, r0 + len);
+  });
+  // bezel ticks, and a sweep while thinking
+  cx.strokeStyle = "rgba(255,255,255,.14)"; cx.lineWidth = 1;
+  for (let i = 0; i < 60; i++) ray(i / 60 * TAU, R * 1.3, R * (i % 5 ? 1.26 : 1.22));
+  if (mode === "thinking") { cx.strokeStyle = C(0.95); cx.lineWidth = 2; cx.beginPath(); cx.arc(0, 0, R * 1.3, spin * 2, spin * 2 + 0.9); cx.stroke(); }
+  // inner rings: jobs and lessons
+  const ring = (r, parts) => {
+    const sum = parts.reduce((s, [v]) => s + v, 0);
+    cx.lineWidth = Math.max(2.5, R * 0.07); cx.strokeStyle = "rgba(255,255,255,.07)"; cx.beginPath(); cx.arc(0, 0, r, 0, TAU); cx.stroke();
+    let b = top;
+    for (const [v, c] of parts) { if (!v) continue; const s = v / sum * TAU; cx.strokeStyle = c; cx.beginPath(); cx.arc(0, 0, r, b + 0.03, b + s - 0.03); cx.stroke(); b += s; }
+  };
+  ring(R * 1.12, [[d.done, "#6cc59a"], [d.live, "#d9a85b"], [d.need, "#e07a6b"]]);
+  ring(R * 1.0, [[d.filed, C(0.85)], [d.waiting, "#d9a85b"]]);
+  // centre
+  cx.textAlign = "center"; cx.textBaseline = "middle";
+  if (talk) {
+    cx.strokeStyle = mode === "listening" ? "#6cc59a" : C(1); cx.lineWidth = Math.max(2, R * 0.05); cx.lineCap = "round";
+    for (let i = 0; i < 9; i++) {
+      const x = (i - 4) * R * 0.15, h = R * (0.06 + level * 0.55 * Math.abs(Math.sin(i * 1.3 + t * 9) * Math.cos(i * 0.7 - t * 5)));
+      cx.beginPath(); cx.moveTo(x, -h); cx.lineTo(x, h); cx.stroke();
+    }
+    cx.lineCap = "butt";
+  } else {
+    cx.fillStyle = "rgba(236,238,240,.96)"; cx.font = `600 ${R * 0.56 | 0}px system-ui, -apple-system, Roboto, sans-serif`;
+    cx.fillText(String(nodes.length), 0, -R * 0.1);
+    cx.fillStyle = "rgba(149,154,162,.95)"; cx.font = `500 ${Math.max(9, R * 0.15) | 0}px system-ui, -apple-system, Roboto, sans-serif`;
+    cx.fillText(mode === "thinking" ? "thinking" : "notes", 0, R * 0.36);
+  }
+}
+
 function coreArc(R, C, spin) {
   // ten copper-wound coils, each with its winding lines
   cx.strokeStyle = C(0.85); cx.lineWidth = R * 0.16;

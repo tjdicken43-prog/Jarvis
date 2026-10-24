@@ -18,6 +18,7 @@ Tap JOB (or just ask for something big) and the page queues it. The "Jarvis job 
 
 ## Where the code lives
 `hud/index.html` is only the page's markup. Open just the file a change touches:
+- `DESIGN.md` the design rules (colors, type, shapes, sources); read it before any visual change
 - `src/style.css` the look; `src/core.js` start-up, clock, brain panel, tabs
 - `src/scene.js` the 3D brain, camera, 4D layer, cores; `src/showoff.js` Show off and its flight; `src/frame.js` drawing each frame, note reader
 - `src/voice.js` comms log, sounds, voice out and in; `src/memory.js` notes search, saved chats and lessons, NEW notes

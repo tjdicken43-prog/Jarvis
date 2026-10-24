@@ -74,7 +74,7 @@ def tax_snapshot():
     problems = t.lint(cfg, income, paid)
     if problems:
         income, paid = [], []
-    snap = t.status(cfg, income, paid, ledger, datetime.now(ZoneInfo("America/Chicago")).date())
+    snap = t.status(cfg, income, paid, ledger, datetime.now(ZoneInfo("America/Chicago")).date(), t.load_pot())
     snap["alerts"] = ["The tax files have a problem: " + p for p in problems] + snap["alerts"]
     return snap
 

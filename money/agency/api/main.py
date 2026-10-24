@@ -555,6 +555,26 @@ def month_costs(month: str | None = None, conn=Conn):
     return costs.month(conn, month)
 
 
+@app.get("/payments", dependencies=op)
+def payments(since: str | None = None, conn=Conn):
+    """Paid invoices as rows for money/tax/income.csv (python3 money/tax/tax.py import FILE). Dates in Central."""
+    if since and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", since):
+        raise HTTPException(400, "since must be YYYY-MM-DD")
+    rows = conn.execute("""SELECT p.*, (p.paid_at AT TIME ZONE 'America/Chicago')::date AS day, c.business_name
+                           FROM payments p LEFT JOIN clients c ON c.id = p.client_id
+                           WHERE %s::date IS NULL OR (p.paid_at AT TIME ZONE 'America/Chicago')::date >= %s::date
+                           ORDER BY p.paid_at""", (since, since)).fetchall()
+    out = []
+    for r in rows:
+        base = {"date": r["day"].isoformat(), "client": r["business_name"] or str(r["client_id"]), "note": r["stripe_invoice_id"]}
+        monthly = r["amount_cents"] - r["tax_cents"] - r["setup_cents"]
+        if r["setup_cents"]:
+            out.append(dict(base, item="setup", amount=r["setup_cents"] / 100, sales_tax=0))
+        if monthly > 0:
+            out.append(dict(base, item="receptionist", amount=monthly / 100, sales_tax=r["tax_cents"] / 100))
+    return {"items": out}
+
+
 class NewClient(BaseModel):
     prospect_id: str | None = None
     business_name: str | None = Field(default=None, max_length=200)

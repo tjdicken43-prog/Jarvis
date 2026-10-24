@@ -182,6 +182,21 @@ def _client_for(conn, obj):
     return row or None
 
 
+def record_payment(conn, client, inv):
+    """One paid invoice, for the tax set-aside (money/tax/tax.py import). Amounts in cents, as Stripe sends them."""
+    if not inv.get("id"):
+        return
+    lines = ((inv.get("lines") or {}).get("data")) or []
+    setup = sum(int(li.get("amount") or 0) for li in lines if "setup" in (li.get("description") or "").lower())
+    tax = inv.get("tax")
+    if tax is None:
+        tax = sum(int(t.get("amount") or 0) for t in inv.get("total_taxes") or [])
+    paid = inv.get("status_transitions", {}).get("paid_at") or inv.get("created") or time.time()
+    conn.execute("""INSERT INTO payments (stripe_invoice_id, client_id, paid_at, amount_cents, tax_cents, setup_cents)
+                    VALUES (%s, %s, to_timestamp(%s), %s, %s, %s) ON CONFLICT DO NOTHING""",
+                 (inv["id"], client["id"], paid, int(inv.get("amount_paid") or 0), int(tax or 0), setup))
+
+
 def handle_event(conn, event):
     """Apply one verified Stripe event. Each event id is applied once."""
     if bool(event.get("livemode")) != (config.stripe_mode() == "live"):
@@ -213,9 +228,11 @@ def handle_event(conn, event):
         if client["prospect_id"]:
             conn.execute("UPDATE prospects SET status = 'won', updated_at = now() WHERE id = %s", (client["prospect_id"],))
         out["status"] = "active"
-    elif kind == "invoice.paid" and client["status"] == "past_due":
-        conn.execute("UPDATE clients SET status = 'active' WHERE id = %s", (client["id"],))
-        out["status"] = "active"
+    elif kind == "invoice.paid":
+        record_payment(conn, client, obj)
+        if client["status"] == "past_due":
+            conn.execute("UPDATE clients SET status = 'active' WHERE id = %s", (client["id"],))
+            out["status"] = "active"
     elif kind == "invoice.payment_failed" and client["status"] == "active":
         conn.execute("UPDATE clients SET status = 'past_due' WHERE id = %s", (client["id"],))
         out["status"] = "past_due"

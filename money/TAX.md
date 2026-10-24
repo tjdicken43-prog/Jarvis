@@ -10,7 +10,14 @@ Jarvis can't file or pay. `money/tax/tax.py` works out the numbers; the **Taxes*
 2. Same day, move the tax share to a separate **tax savings** account: **all sales tax collected + 25% of profit** (the sheet shows the exact %, it rises if the year's pace puts him in a higher bracket).
 3. Filings are paid from tax savings. **Taxes never go on the business card** (money/BUDGET.md).
 
-`python3 money/tax/tax.py setaside monitoring 200` prints it for one payment: charge $219.00, move $66.50.
+`python3 money/tax/tax.py setaside monitoring 149` prints it for one payment.
+
+**Tracking the tax savings account (TJ approved 2026-10-24):**
+- Every paid Stripe invoice lands in the agency API's `payments` table. Jarvis backend pulls `GET /payments?since=...` (operator token) and runs `python3 money/tax/tax.py import FILE.json` to add them to income.csv. Gym invoices from the Gym-security Stripe go in by hand until that side has the same hook.
+- `money/tax/pot.csv` is the account: money in (positive), money out for anything but a filing (negative). Paid filings come out through paid.csv.
+- The Taxes sheet shows the balance, what should have gone in so far, and what's due in the next 45 days. When it's behind, it shows the amount and an **I moved it** button (writes `taxpot/<id>` in the page store; Jarvis backend appends it to pot.csv with `tax.py moved AMOUNT` and sets `filed: true`). If the account can't cover what's due in 45 days, the sheet says so first and the wallet lights up.
+- TJ's bank rule: **move 25% of every Stripe deposit into Tax savings, automatically.** That covers the receptionist (needs ~15%) and setup (25%). A gym payment needs ~30%, so the sheet asks for the small top-up. Extra saved stays as a cushion for April.
+- Approve on a filing opens IRS Direct Pay or ATAP, both bank debit (ACH) from Tax savings: no card fees.
 
 ## What gets taxed (Arkansas sales tax, 9.5% in Bentonville)
 

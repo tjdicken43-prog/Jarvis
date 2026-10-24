@@ -3,6 +3,7 @@
 // with the numbers above it; "I paid it" closes it. Jarvis backend copies paid ones into money/tax/paid.csv.
 const TAX = BRAIN.tax || null;
 let taxMarks = {};
+let potMoves = []; // "I moved it" taps, as taxpot/<id> { amount, date, filed }; Jarvis backend copies them into money/tax/pot.csv
 
 function renderTax() {
   const box = $("taxBody");
@@ -21,7 +22,26 @@ function renderTax() {
   }
   add("div", "bKey", `Plus every cent of sales tax you collect. Profit ${t.year} so far ${usd(t.profit_ytd)}.`);
 
-  const alerts = [...t.alerts];
+  // tax savings: taps not yet copied into pot.csv count right away
+  const p = t.pot || { balance: 0, to_move: 0, short: 0, due_45: 0, expected: 0 };
+  const fresh = potMoves.filter((m) => !m.filed).reduce((a, m) => a + +m.amount, 0);
+  const bal = p.balance + fresh, move = Math.max(p.short - fresh, p.to_move - fresh, 0);
+  add("h4", null, "Tax savings");
+  const pr = add("div", "bRow"); pr.innerHTML = "<span></span><b></b>";
+  pr.querySelector("span").textContent = "In the account";
+  pr.querySelector("b").textContent = usd(bal);
+  add("small", null, `Due in the next 45 days ${usd(p.due_45)} · should have moved ${usd(p.expected)} so far`, pr.querySelector("span"));
+  if (move >= 1) {
+    const r = add("div", "bAsk tFile soon");
+    const head = add("div", null, null, r); head.innerHTML = "<b></b><span></span><small></small>";
+    head.querySelector("b").textContent = usd(move); head.querySelector("span").textContent = " to move into tax savings";
+    head.querySelector("small").textContent = p.short > fresh ? "Not enough saved for what's due soon." : "Catches up with what clients have paid.";
+    const btns = add("div", "bBtns", null, r);
+    const yes = add("button", "gear primary", "I moved it", btns); yes.type = "button"; yes.id = "potMoved";
+    yes.addEventListener("click", () => markMoved(Math.round(move * 100) / 100));
+  }
+
+  const alerts = [...t.alerts].filter((a) => !(fresh && /tax savings/i.test(a)));
   if (dayGap(t.as_of, today) > 7) alerts.unshift(`These numbers are from ${t.as_of}. Ask Jarvis backend to refresh the page.`);
   if (alerts.length) { const ul = add("ul", "bAlerts"); for (const a of alerts) add("li", null, a, ul); }
 
@@ -65,6 +85,13 @@ function renderTax() {
   add("p", "tFine", "Estimates from money/tax/tax.py. Jarvis prepares the numbers; you file and pay on the official site. A CPA checks the method once before the first quarterly payment.");
 }
 
+async function markMoved(amount) {
+  const db = await dbPromise; if (!db) return;
+  const when = new Date().toISOString();
+  try { await db.doc("taxpot/" + when.replace(/\D/g, "")).set({ amount, date: centralDay(), asked: when, filed: false }); } catch { return; }
+  say("jarvis", `Logged ${usd(amount)} into tax savings. Jarvis backend files it on the next run.`);
+}
+
 async function markTax(f, status) {
   const db = await dbPromise; if (!db) return;
   try { await db.doc("tax/" + f.id).set({ filing: f.id, title: f.title, amount: f.amount, due: f.due, status, decided: new Date().toISOString() }); } catch { return; }
@@ -74,6 +101,10 @@ dbPromise.then((db) => {
   if (!db) return;
   db.collection("tax").limit(50).onSnapshot((snap) => {
     taxMarks = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
+    if ($("tax").open) renderTax();
+  });
+  db.collection("taxpot").limit(50).onSnapshot((snap) => {
+    potMoves = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     if ($("tax").open) renderTax();
   });
 });

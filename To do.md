@@ -22,7 +22,9 @@ Covers [[SecurityAI]], [[Basis]], [[Jarvis]] and [[Sites by TJ]]. Done items mov
 - [ ] Follow the ordered "Tuesday checklist" in money/agency/README.md and money/BUDGET.md, in one sitting: make the business card (Privacy.com), set the Anthropic workspace limit to $20 with auto-reload off, buy the outreach domain + Google Workspace Business Starter, then the DNS records Jarvis gives (SPF, DKIM, DMARC p=none, Postmaster Tools), resume agency-db and agency-api on Render, add OPERATOR_TOKEN in Project settings, sign up at Vapi (free) and add VAPI_API_KEY. Jarvis does every step after the keys are in (warm-up start date, Stripe test, receptionist setup, ledger lines).
 
 ## When a client says yes
-- [ ] Open a free business savings account for taxes. Same day each client pays: move what the Taxes sheet says (all sales tax + 25% of profit). See money/TAX.md.
+- [ ] Open a free business savings account named "Tax savings" (at your bank, or one with percentage auto-transfer rules such as Relay (check)).
+- [ ] In that bank: auto-transfer rule "25% of every deposit from Stripe goes to Tax savings". If the bank only does fixed amounts, skip it and use the Taxes sheet's "I moved it" button instead.
+- [ ] Link Tax savings as the bank account in IRS Direct Pay (nothing to save, you type it each time) and in ATAP (Arkansas: add it as a bank account under your profile).
 - [ ] One CPA visit before the first quarterly payment (likely 2027-01-15), about $150 to $300 (check). Bring money/TAX.md.
 - [ ] Before the first gym invoice or kit sale: Arkansas sales tax permit on ATAP (atap.arkansas.gov), $50 one time. Then tell Jarvis the permit date.
 - [ ] File an Arkansas LLC at sos.arkansas.gov ($45, then $150 franchise tax every May 1; TJ can be his own registered agent). Over $25, so the Approve button.

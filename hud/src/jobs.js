@@ -168,9 +168,16 @@ function memItem(text, meta, note) {
 /* ---------- The factory: the Sites by TJ crew floor, any time (hud/factory.js) ---------- */
 const STATION_URL = "https://claude.ai/artifact/HuVXWvLf2chPTziUg7LgNJ"; // the job cards (TJ's private Jarvis Station page)
 window.JarvisFactory?.setStats(() => { const [l, d] = jobCounts(); return { notes: nodes.length, links: edges.length, lessons: lessons.length, jobsLive: l, jobsDone: d, thinking: mode === "thinking" }; });
+const EVENTS_SQL = "SELECT id, step, ok, reason, prospect_id, detail FROM events ORDER BY id DESC LIMIT 40";
+async function vaultRows() { // the agency's real event log; [] while Render is paused or not connected (the Vault then runs its demo)
+  const mcp = await mcpPromise; if (!mcp) return [];
+  try { return briefRows(await mcp.callTool("Render", "query_render_postgres", { postgresId: AGENCY.db, workspaceId: AGENCY.workspace, sql: EVENTS_SQL })).reverse(); } catch { return []; }
+}
+let vaultOpen = false;
 function openFactory() {
-  const F = window.JarvisFactory; if (!F) return;
   $("card").classList.remove("show"); lastInput = t;
+  if (window.JarvisVault && !vaultOpen) { vaultOpen = true; window.JarvisFactory?.setOpen?.(true); window.JarvisVault.open({ rows: vaultRows, onClose: () => { vaultOpen = false; window.JarvisFactory?.setOpen?.(false); lastInput = t; } }); return; }
+  const F = window.JarvisFactory; if (!F) return;
   F.setAccent(`rgb(${ARC})`);
   F.overlay({ cardsUrl: STATION_URL, cinema: SHOW(), onClose: () => { lastInput = t; },
     onImprove: async () => (await queueJob("Design pass per hud/DESIGN_LOOP.md: screenshot the Jarvis page and the factory at phone size, pick the 3 biggest design wins for both, build them, test, open a PR, merge, republish, and tell me what changed."))

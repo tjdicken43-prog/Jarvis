@@ -15,8 +15,8 @@ All three suites pass (`tests/test_api.py`, `tests/test_quality.py`, `tests/test
   mockups 404 after opt-out + random slugs, overage claimed first with Stripe idempotency keys, GET unsubscribe is a
   button, duplicate shops get one sequence, for-sale pages and bot walls read correctly (found by real-shop evals).
 - Go-live: `/clients/{id}/golive`, `/clients/{id}/live`, `/calls/to-review`, `/calls/{id}/review`.
-- Evals: `evals/cases.json` (hand-made), `evals/real_shops.json` (21 real NWA shops, checked by eye from screenshots,
-  TJ to confirm), `evals/capture.py`, `evals/freeze.py` (TJ's corrections -> `tj.json`).
+- Evals: `evals/cases.json` (hand-made), `evals/real_shops.json` (21 real NWA shops, checked from screenshots,
+  confirmed by TJ 2026-10-24), `evals/capture.py`, `evals/freeze.py` (TJ's corrections -> `tj.json`).
 
 ## Dashboard (done, same PR)
 Queue: warm-up date + today's cap, stopped-step alert with Resume, Bounced / Refused / Stuck tabs, skip-reason picker,
@@ -26,4 +26,4 @@ Client page: go-live checklist and "Listen to these" call checks. Phone nav scro
 
 ## Still open
 - Stripe async payments (bank debits): a client stays pending until a card payment; not handled.
-- TJ to confirm the 21 real-shop flaws in `evals/real_shops.json` (checked by eye, not by him yet).
+- Done 2026-10-24: TJ confirmed the 21 real-shop flaws in `evals/real_shops.json`.

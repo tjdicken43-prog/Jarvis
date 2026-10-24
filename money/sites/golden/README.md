@@ -57,3 +57,6 @@ Tj asked to bring the demos in line with the trades offer (rebuilt site + AI rec
 - **Owner panel** (`#owner`, linked from the concept bar, preview only): a sample after-hours call labeled as an example, the next-morning call log, and the plan table ($299 setup, $149 Front Desk 300 min, $249 Plus 800 min, $0.25/min over, 12 months for 10).
 - **Rules pass:** the leftover 10px corners are now 8px (buttons 4px) and the round step numbers are square, so all three pass `trade_build.audit()` (tested in `money/test/test_trade_build.py`). Checked at 375, 390 and 1280 px: no sideways scroll.
 - Still open (check): calendar booking and review requests (Plus) and the owner's next-morning summary are sold but not built yet; text-back is a stub until an SMS provider.
+
+## Golden-ratio proportions (Tj, 2026-10-24)
+Subtle, nothing visible: hero copy to form card 1.618 : 1 (form stays about 387 px), heading column to body column 1 : 1.618, job photo cropped to a golden rectangle, line height 1.618, section spacing 55 px on phones and 89 px on desktop (55 x 1.618). Same in `trade_build.py`, so every auto mockup gets it. Phones barely change. Audit, trade_build tests and the 91 evals pass.

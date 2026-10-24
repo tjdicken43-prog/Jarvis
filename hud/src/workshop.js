@@ -88,6 +88,19 @@ const floor = add(new THREE.Mesh(new THREE.CircleGeometry(40, 96), new THREE.Sha
     }`,
 })));
 floor.rotation.x = -Math.PI / 2; floor.renderOrder = -1;
+// sacred geometry (TJ, 2026-10-24): a Flower of Life inside Metatron's cube, etched faintly round the projector's foot, turning once every few minutes
+const seal = (() => {
+  const c = document.createElement("canvas"); c.width = c.height = 1024; const g = c.getContext("2d"), r = 80, o = 512;
+  const pts = (rings) => { const p = [[0, 0]]; for (const [d, off] of rings) for (let i = 0; i < 6; i++) { const a = off + (i * Math.PI) / 3; p.push([Math.cos(a) * d * r, Math.sin(a) * d * r]); } return p; };
+  g.strokeStyle = "#a6e4ff"; g.lineWidth = 2.5;
+  pts([[1, 0], [2, 0], [Math.sqrt(3), Math.PI / 6]]).forEach(([x, y]) => { g.beginPath(); g.arc(o + x, o + y, r, 0, Math.PI * 2); g.stroke(); });
+  const m = pts([[2, Math.PI / 6], [4, Math.PI / 6]]); g.globalAlpha = 0.55; g.beginPath();
+  for (let i = 0; i < m.length; i++) for (let j = i + 1; j < m.length; j++) { g.moveTo(o + m[i][0], o + m[i][1]); g.lineTo(o + m[j][0], o + m[j][1]); } g.stroke();
+  g.globalAlpha = 1; for (const k of [3, 5.1]) { g.beginPath(); g.arc(o, o, r * k, 0, Math.PI * 2); g.stroke(); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  const s = add(new THREE.Mesh(new THREE.PlaneGeometry(6.4, 6.4), new THREE.MeshBasicMaterial({ map: t, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false })));
+  s.rotation.x = -Math.PI / 2; s.position.y = 0.005; return s;
+})();
 
 /* ---------- projector base ---------- */
 const base = add(new THREE.Group());
@@ -448,6 +461,7 @@ function render(now) {
   beam.material.uniforms.uOn.value = win(boot, 0.15, 0.45); beam.material.uniforms.uTime.value = t;
   dust.material.uniforms.uOn.value = win(boot, 0.3, 0.6); dust.material.uniforms.uTime.value = t;
   floor.material.uniforms.uOn.value = win(boot, 0.12, 0.5);
+  seal.material.opacity = 0.16 * win(boot, 0.3, 0.7) * (0.85 + 0.15 * Math.sin(t * 0.5)); seal.rotation.z = t * 0.02;
   const g = win(boot, 0.3, 0.62);
   shellLines.forEach((l, i) => { l.visible = g > i / shellLines.length; });
   shell.material.uniforms.uOn.value = g;

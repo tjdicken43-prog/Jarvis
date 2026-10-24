@@ -91,6 +91,12 @@ def write_artifact(dest, brain_js):
     tag = '<script type="module" src="src/workshop.js"></script>'
     assert tag in html, "index.html lost the workshop.js module tag"
     html = html.replace(tag, '<script type="module">\n' + workshop + "</script>")
+    vault = (ROOT / "hud" / "src" / "vault.js").read_text(encoding="utf-8").replace("export const CAST", "const CAST").replace("export function createVault", "function createVault")
+    ui = (ROOT / "hud" / "src" / "vault-ui.js").read_text(encoding="utf-8").replace('import { createVault } from "./vault.js";\n', "").replace("export function openVault", "function openVault")
+    assert "</script" not in vault + ui and "export " not in ui, "vault files need fixing before inlining"
+    tag = '<script type="module" src="src/vault-ui.js"></script>'
+    assert tag in html, "index.html lost the vault-ui.js module tag"
+    html = html.replace(tag, '<script type="module">\n' + vault + ui + "</script>")
     dest.write_text(html.strip() + "\n", encoding="utf-8")
     print(f"Wrote artifact copy to {dest}")
 

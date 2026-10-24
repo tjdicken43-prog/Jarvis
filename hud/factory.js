@@ -6,6 +6,7 @@
    All art is drawn here in code: our own pixels, no outside images. */
 (function () {
   "use strict";
+  let forcedOpen = false;
   const reduce = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
   const WW = 480, WH = 340, CORE = [240, 190];
 
@@ -737,7 +738,8 @@
     setStats(fn) { S.stats = typeof fn === "function" ? fn : () => ({}); },
     setAccent(c) { ACCENT = c || ACCENT; },
     redraw() { drawBase(); },
-    isOpen: () => !!(ov && !ov.el.hidden),
+    isOpen: () => forcedOpen || !!(ov && !ov.el.hidden),
+    setOpen(v) { forcedOpen = !!v; }, // the 3D Vault (hud/src/vault-ui.js) covers the page too
     // For hosts that draw the station themselves (Jarvis's Show off flight): steps the crew once and returns the live picture.
     tick() { warm(); if (!looping && !reduce) step(); drawWorld(); return world; },
     ASPECT: SH / SW,

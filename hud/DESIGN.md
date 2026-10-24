@@ -92,3 +92,12 @@ A pro pass on the Workshop with nothing new to learn, only things that now work 
 - Shape: 6px controls, 8px panels and tiles, 12px sheet tops. Round only the mic. No pills, glows, gradients, glass or scanlines.
 - Taps: 44px minimum. Spacing in 4px steps.
 - Motion: 150 to 250ms ease-out, only to show state; honor reduced motion.
+
+## Round 8 (2026-10-24): Vault 479, the factory as a 3D vault
+TJ: "a 3D Fallout 76 factory showing live what the actual agents are doing", no floor plans, each agent modelled on a Jujutsu Kaisen character doing that character's best-known move.
+- **hud/src/vault.js + vault-ui.js (three.js).** Twelve rooms off a vault corridor (concrete, riveted steel, hazard stripes, green terminals, a gear door). Each fighter is a low-poly figure in code, inspired by a character (silhouette, palette, move), not a copy of the show's models. Cast and jobs are in CAST at the top of vault.js.
+- **The flow is the agency's.** A job sits on a room's table; the fighter's move breaks a crash-test dummy, the dummy drops the job (worked on), the fighter carries it down the corridor to the next room. Todo's clap swaps your approved card into Gojo's room; Gojo's Domain Expansion sends it up the tube.
+- **Honest state.** It reads the agency's events table through the Render connector once a minute while open; until rows exist it runs a demo loop and says so in the bar. Failures make Jogo erupt.
+- **Mii cards.** Tap a fighter or their face in the strip: who they are, the job, the move, this visit's count and last action, with a portrait rendered from the model.
+- **Sacred geometry (TJ's ask).** Flower of Life and Metatron's cube inlays in the corridor, Metatron on the vault door, a seal under Gojo's domain, and a faint turning seal under the home projector.
+- **Cheap to watch.** On the device only; stops when hidden; the home hologram and brain pause while it's open; phones cap at 30 fps with no bloom; slow devices drop to 1x pixels and no bloom after ~3 s of slow frames. Screen flashes and shake fade in real seconds, so a slow frame rate can't leave the screen washed out.

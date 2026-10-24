@@ -104,3 +104,4 @@ export function openVault(o = {}) {
   const close = () => { clearTimeout(pollT); removeEventListener("keydown", onKey); v.dispose(); el.remove(); o.onClose?.(); };
   return { el, vault: v, close, card };
 }
+window.JarvisVault = { open: (o) => (window.JarvisVault.current = openVault(o)) };

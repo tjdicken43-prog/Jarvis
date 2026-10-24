@@ -976,15 +976,17 @@ export function createVault(container, opts = {}) {
   const layout = () => { const w = container.clientWidth, h = container.clientHeight; renderer.setSize(w, h, false); composer.setSize(w, h); bloom.resolution.set(w / 2, h / 2); camera.aspect = w / h; camera.updateProjectionMatrix(); };
   new ResizeObserver(layout).observe(container); layout();
   Object.keys(screens).forEach((id) => drawScreen(id));
-  let last = performance.now(), running = true, raf = 0, acc = 0;
+  let last = performance.now(), running = true, raf = 0, acc = 0, accR = 0, slow = 0, lowPower = false;
   const frame = (ts) => {
     raf = requestAnimationFrame(frame);
     if (!running || document.hidden) { last = ts; return; }
-    let dt = Math.min(0.05, (ts - last) / 1000); last = ts;
-    if (phone) { acc += dt; if (acc < 1 / 31) return; dt = acc; acc = 0; }
-    now += dt; tick(dt); render();
+    let real = Math.min(0.5, (ts - last) / 1000), dt = Math.min(0.05, real); last = ts;
+    // slow device: after ~3 s of slow frames drop to 1x pixels and no bloom (the same guard workshop.js uses)
+    if (real > 0.034 && now > 4) { if (++slow > 90 && !lowPower) { lowPower = true; pr = 1; renderer.setPixelRatio(1); layout(); } } else slow = Math.max(0, slow - 1);
+    if (phone) { acc += dt; accR += real; if (acc < 1 / 31) return; dt = acc; real = accR; acc = accR = 0; }
+    now += dt; tick(dt, real || dt); render();
   };
-  const tick = (dt) => {
+  const tick = (dt, real = dt) => { // dt is sim time (clamped); flashes and shake fade in real time so a slow frame rate can't leave the screen washed out
     if (mode === "demo") { if (demoOn) demoTick(dt); } else liveTick();
     stepRooms(dt);
     for (const b of belts) b.t.offset.x -= (dt * 1.6 * b.dir) / 1.0;
@@ -1013,14 +1015,14 @@ export function createVault(container, opts = {}) {
     for (const key of ["az", "el", "r", "tx", "ty", "tz"]) cam[key] += (goal[key] - cam[key]) * k;
     const target = new THREE.Vector3(cam.tx, cam.ty, cam.tz);
     camera.position.set(target.x + Math.sin(cam.az) * Math.cos(cam.el) * cam.r, target.y + Math.sin(cam.el) * cam.r, target.z + Math.cos(cam.az) * Math.cos(cam.el) * cam.r);
-    if (shake > 0) { camera.position.x += (rnd() - 0.5) * shake; camera.position.y += (rnd() - 0.5) * shake; shake = Math.max(0, shake - dt * 1.6); }
+    if (shake > 0) { camera.position.x += (rnd() - 0.5) * shake; camera.position.y += (rnd() - 0.5) * shake; shake = Math.max(0, shake - real * 1.6); }
     camera.lookAt(target);
-    flashQuad.material.opacity = flash; flash = Math.max(0, flash - dt * 2.5);
+    flashQuad.material.opacity = flash; flash = Math.max(0, flash - real * 2.5);
     const close = cam.r < 20; signList.forEach((g) => (g.visible = !close || g.userData.sid === focusId));
     placeTags();
   };
   const resetPose = (R) => { for (const k of ["armL", "armR", "legL", "legR", "torso", "head"]) R[k].rotation.set(0, 0, 0); R.armL.fore.rotation.set(0, 0, 0); R.armR.fore.rotation.set(0, 0, 0); R.legL.shin.rotation.set(0, 0, 0); R.legR.shin.rotation.set(0, 0, 0); R.root.position.copy(R.base); R.hips.position.y = 0.95; };
-  const render = () => { if (phone) renderer.render(scene, camera); else composer.render(); };
+  const render = () => { if (phone || lowPower) renderer.render(scene, camera); else composer.render(); };
   raf = requestAnimationFrame(frame);
   // warm start: jobs already waiting in a few rooms so the floor is never empty
   { const a = newItem("yuji"); const b = newItem("yuta"); b.tag.visible = true; b.screen.visible = true; const c = newItem("gojo"); c.body.visible = false; c.env.visible = true; c.ok.visible = true; }

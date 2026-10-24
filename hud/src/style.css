@@ -2,19 +2,23 @@
      to the bottom. On a computer, brain notes on the left and jobs on the right; on a phone they fold into Chat / Jobs / Brain.
      Rules (hud/DESIGN.md): neutral greys, one accent, sentence case, 4px spacing steps, 6px controls, 8px panels, 44px taps. */
   :root {
-    --bg: #0e0f11;
-    --surface: #16181b;
-    --surface-2: #1e2125;
-    --ink: #eceef0;
-    --dim: #959aa2;    /* secondary text, 6.4:1 on --bg */
-    --mute: #6f747c;   /* meta and timestamps */
-    --faint: rgba(255, 255, 255, .07);
-    --line: rgba(255, 255, 255, .12);
-    --arc: #8fb8d8;    /* the one accent: steel blue */
-    --arc-rgb: 143, 184, 216;
-    --on-arc: #0b1219;
-    --gold: #d9a85b;
-    --ok: #6cc59a;
+    /* Station: the factory's palette. Warm black, teal for Jarvis himself (the arc reactor, his voice, his state),
+       amber for the things you press. Modeled on Starnet's station (amber light, teal screens). */
+    --bg: #0b0a08;
+    --surface: #14120f;
+    --surface-2: #1d1a16;
+    --ink: #efe9dd;
+    --dim: #a69d8e;    /* secondary text, 6.9:1 on --bg */
+    --mute: #7a7266;   /* meta and timestamps */
+    --faint: rgba(255, 236, 200, .07);
+    --line: rgba(255, 236, 200, .13);
+    --arc: #5fc9c0;    /* Jarvis: teal */
+    --arc-rgb: 95, 201, 192;
+    --on-arc: #062120;
+    --amber: #f5a623;  /* actions */
+    --on-amber: #1a1206;
+    --gold: #e3a94f;
+    --ok: #7fbf8f;
     --red: #e07a6b;
     --glass: var(--surface);
     --body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
@@ -22,6 +26,8 @@
     --r-ctl: 6px; --r-panel: 8px; --r-sheet: 12px;
     color-scheme: dark;
   }
+  :root[data-theme="steel"] { --bg: #0e0f11; --surface: #16181b; --surface-2: #1e2125; --ink: #eceef0; --dim: #959aa2; --mute: #6f747c;
+    --faint: rgba(255, 255, 255, .07); --line: rgba(255, 255, 255, .12); --arc: #8fb8d8; --arc-rgb: 143, 184, 216; --on-arc: #0b1219; --amber: #8fb8d8; --on-amber: #0b1219; --gold: #d9a85b; --ok: #6cc59a; }
   /* Looks, picked in Settings. Each only swaps the accent and the warmth of the greys. */
   :root[data-theme="agency"] { --bg: #0c0c0d; --surface: #151516; --surface-2: #1d1d1f; --arc: #d4d8dc; --arc-rgb: 212, 216, 220; --on-arc: #111; --gold: #b4b9be; }
   :root[data-theme="spy"] { --bg: #0f0e0c; --surface: #181613; --surface-2: #211e1a; --ink: #efebe4; --dim: #a39c90; --mute: #7a7468;
@@ -50,11 +56,13 @@
   /* top bar */
   .top > div:first-child { min-width: 0; }
   .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 48px; }
-  .brand { font: 600 18px/1.2 var(--body); letter-spacing: -.01em; }
+  .brand { display: flex; align-items: center; gap: 8px; font: 600 16px/1.2 var(--mono); letter-spacing: .14em; color: var(--ink); }
+  .brand .dot { width: 7px; height: 7px; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .sub { margin-top: 2px; font: 400 12.5px/1.3 var(--body); color: var(--dim); display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; }
   .sub b { font-weight: 400; font-variant-numeric: tabular-nums; }
   .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--mute); flex: none; }
-  .dot.on { background: var(--ok); }
+  .dot.on { background: var(--arc); box-shadow: 0 0 0 3px rgba(var(--arc-rgb), .15); }
   .tools { display: flex; gap: 2px; }
   .icon { width: 44px; height: 44px; display: grid; place-items: center; background: none; border: 0; border-radius: var(--r-ctl); color: var(--dim); padding: 0; }
   .icon svg { width: 21px; height: 21px; }
@@ -65,12 +73,21 @@
     color: var(--ink); font: 500 14px/1 var(--body); }
   .gear:hover, dialog .row button:hover { border-color: rgba(255, 255, 255, .22); }
   .gear:active, dialog .row button:active { background: var(--faint); }
-  .primary, dialog .row button.primary { background: var(--arc); border-color: var(--arc); color: var(--on-arc); }
+  .primary, dialog .row button.primary { background: var(--amber); border-color: var(--amber); color: var(--on-amber); }
   .ghost { background: none !important; border-color: transparent !important; color: var(--dim) !important; }
 
   /* middle */
   .mid { min-height: 0; display: grid; grid-template-columns: minmax(240px, 300px) 1fr minmax(260px, 340px); gap: 16px; }
-  .center { min-height: 0; display: grid; grid-template-rows: minmax(200px, 1fr) auto auto auto; gap: 8px; }
+  .center { min-height: 0; display: grid; grid-template-rows: minmax(200px, 1fr) auto auto auto auto auto; gap: 8px; }
+  /* the way into the factory: a live window onto the station */
+  .factory { display: grid; grid-template-columns: 112px 1fr 20px; align-items: center; gap: 12px; width: 100%; max-width: 520px; justify-self: center; min-height: 64px;
+    padding: 6px 12px 6px 6px; background: var(--surface); border: 1px solid rgba(245, 166, 35, .22); border-radius: var(--r-panel); color: var(--ink); text-align: left; transition: border-color .15s ease-out; }
+  .factory:hover, .factory:active { border-color: rgba(245, 166, 35, .5); }
+  .factory canvas { width: 112px; height: 52px; border-radius: var(--r-ctl); background: #06070a; display: block; }
+  .factory b { display: block; font: 600 15px/1.25 var(--body); }
+  .factory small { display: block; margin-top: 2px; font: 400 12px/1.3 var(--mono); color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .factory small i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--ok); margin-right: 6px; vertical-align: 1px; }
+  .factory svg { width: 18px; height: 18px; color: var(--amber); }
   /* the dial's legend: the same live numbers the rings draw */
   .readout { margin: 0; display: grid; grid-template-columns: repeat(4, 1fr); max-width: 520px; width: 100%; justify-self: center; border-top: 1px solid var(--faint); border-bottom: 1px solid var(--faint); }
   .readout > div { padding: 8px 4px 9px; text-align: center; }
@@ -124,7 +141,7 @@
   .msg.jarvis summary::-webkit-details-marker { display: none; }
   .msg.jarvis summary::after { content: ""; width: 6px; height: 6px; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg) translate(-2px, -1px); transition: transform .15s; }
   .msg.jarvis details[open] summary::after { transform: rotate(-135deg) translate(-1px, -2px); }
-  .msg.jarvis .detail { font-size: 15px; line-height: 1.55; color: #c6cad0; white-space: pre-wrap; }
+  .msg.jarvis .detail { font-size: 15px; line-height: 1.55; color: #cfc7b8; white-space: pre-wrap; }
   .msg.note { align-self: center; max-width: 92%; font: 400 13px/1.45 var(--body); color: var(--mute); text-align: center; }
   .chips { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .chips button { text-align: left; min-height: 56px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--faint); border-radius: var(--r-panel);
@@ -233,19 +250,20 @@
 
   /* phone: fold the panels into a segmented control, sheets come up from the bottom */
   @media (max-width: 860px) {
-    .mid { grid-template-columns: minmax(0, 1fr); grid-template-rows: 34vh auto auto auto 1fr; gap: 10px; }
+    .mid { grid-template-columns: minmax(0, 1fr); grid-template-rows: 30vh auto auto auto auto 1fr; gap: 10px; }
     .center { display: contents; }
-    #sky { -webkit-mask-image: linear-gradient(#000 calc(34vh + 40px), transparent calc(34vh + 80px)); mask-image: linear-gradient(#000 calc(34vh + 40px), transparent calc(34vh + 80px)); }
+    #sky { -webkit-mask-image: linear-gradient(#000 calc(30vh + 40px), transparent calc(30vh + 80px)); mask-image: linear-gradient(#000 calc(30vh + 40px), transparent calc(30vh + 80px)); }
     body.cinema #sky { -webkit-mask-image: none; mask-image: none; }
     .slot { grid-row: 1; }
     .status { grid-row: 2; }
     .readout { grid-row: 3; }
-    .tabs { grid-row: 4; display: grid; grid-template-columns: repeat(3, 1fr); padding: 3px; background: var(--surface); border: 1px solid var(--faint); border-radius: var(--r-panel); align-self: start; }
+    .factory { grid-row: 4; }
+    .tabs { grid-row: 5; display: grid; grid-template-columns: repeat(3, 1fr); padding: 3px; background: var(--surface); border: 1px solid var(--faint); border-radius: var(--r-panel); align-self: start; }
     .tabs button { height: 36px; background: none; border: 0; border-radius: var(--r-ctl); color: var(--dim); font: 500 14px/1 var(--body); display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
     .tabs button[aria-selected="true"] { background: var(--surface-2); color: var(--ink); box-shadow: 0 1px 0 rgba(255, 255, 255, .04) inset, 0 1px 2px rgba(0, 0, 0, .4); }
     .tabs .badge { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); font-size: 0; }
     .tabs .badge:empty { display: none; }
-    #brainPanel, #jobsPanel, .log { grid-row: 5; }
+    #brainPanel, #jobsPanel, .log { grid-row: 6; }
     .log { max-height: none; }
     [data-tab]:not(.active) { display: none !important; }
     #brainPanel, #jobsPanel { background: none; border: 0; border-radius: 0; }

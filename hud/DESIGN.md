@@ -39,13 +39,20 @@ TJ: "factory isn't premium or up to par"; base it on real professional work "lik
 - **Chrome:** warm black, one amber accent (Starnet's own brand colour family), mono for data, system font for text, 44px icon buttons, bottom-sheet cards, corner brackets like Starnet's cards.
 - **The assistant view** stays modeled on shipped assistants: ChatGPT and Gemini Live for voice in the chat, Linear for the neutral-plus-one-accent theme (sources above).
 
+## The Jarvis home, round 4 (2026-10-24)
+TJ loved the station and asked for the screen that leads into it to use better colours, feel more like Jarvis, and work as one solo product.
+- **One palette across the product:** the Station palette from the factory. Warm black and warm greys, **teal for Jarvis himself** (the dial, his status, the mic; a nod to the arc reactor and the factory's screens), and **amber for actions** (Done, Cards, the factory card). Starnet uses the same two colours: amber light and teal screens. The old steel-blue look is still in Settings as "Steel".
+- **More Jarvis:** a J.A.R.V.I.S. wordmark in mono (as in the films' on-screen titles, from memory), a greeting by name and time of day ("Good evening, TJ"), "At your service" when idle, and the online state as a teal light next to the name.
+- **The factory as a destination:** the small header icon is now a card under the dial with a live window onto the station and its real counts. This follows the home-screen "live tile" pattern (Android widgets, Apple Live Activities; from memory).
+- Fix: the brain's draw loop could start before voice.js loaded, which stopped the dial from drawing at all. It now starts once every script has loaded.
+
 ## Kept, and why
 - The 3D brain and its core: it is the one thing no other assistant has, so it stays as the signature, calmer (no grid, softer bloom, no angle readout, faint ring text).
 - Show off, the flight, factory, night mode, voices and looks all work as before. Show off keeps its full effects; it's opt-in.
 - Nothing was cut.
 
 ## The rules (follow these on every change)
-- Colors: `--bg`, `--surface`, `--surface-2`, `--ink`, `--dim`, `--mute`, hairlines `--faint`/`--line`, one `--arc` accent. Status colors (`--ok`, `--gold`, `--red`) only for state.
+- Colors: `--bg`, `--surface`, `--surface-2`, `--ink`, `--dim`, `--mute`, hairlines `--faint`/`--line`. `--arc` (teal) is Jarvis; `--amber` is for actions. Status colors (`--ok`, `--gold`, `--red`) are only for state.
 - Type: system font; 17px for Jarvis's spoken line, 15px body, 13 to 12.5px meta. Weights 400, 500, 600 only. No caps labels, no letter-spacing.
 - Shape: 6px controls, 8px panels and tiles, 12px sheet tops. Round only the mic. No pills, glows, gradients, glass or scanlines.
 - Taps: 44px minimum. Spacing in 4px steps.

@@ -13,7 +13,6 @@ Covers [[SecurityAI]], [[Basis]], [[Jarvis]] and [[Sites by TJ]]. Done items mov
 - [ ] Finish the custom domain DNS on Namecheap for [[SecurityAI]] (needs TJ's Namecheap login).
 - [ ] Photo of an Ashbourne denied scan.
 - [ ] Score the 3 golden sites (HVAC, roofing, plumbing) and get two other people to score them; each needs 8+ before any outreach, per money/SITE_BAR.md. See [[Sites by TJ]].
-- [ ] Gym price: keep $200/entrance, or $149 + $79 each extra to undercut Kisi and Camio? Numbers in money/TAX.md "Prices after tax". Your call.
 - [ ] Send the Arkansas DFA tax question (draft is in your Gmail Drafts, to Sales.tax@dfa.arkansas.gov). Keep their reply.
 - [ ] Tell Jarvis about how much J Street pays you a year, so the tax estimate counts your bracket right.
 - [ ] Read and say what to change: [[Backend proficiency checklist]], [[J Street pilot pitch]], and the 35-day line in [[Gym service agreement]].

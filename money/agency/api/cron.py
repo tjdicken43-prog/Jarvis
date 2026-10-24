@@ -1,7 +1,8 @@
-"""Render cron: python3 money/agency/api/cron.py send
+"""Render cron: python3 money/agency/api/cron.py send frontdesk
 
-Calls the API's /send, which reads the inbox for replies and bounces (stopping their follow-ups), then sends approved
+send: the API's /send, which reads the inbox for replies and bounces (stopping their follow-ups), then sends approved
 emails inside the weekday window, under the cap, when not paused.
+frontdesk: /frontdesk/run, the clients' morning summaries and review asks that are due (each sends once).
 Needs API_URL and OPERATOR_TOKEN. Standard library only, so the cron needs no install.
 """
 import json
@@ -10,13 +11,13 @@ import sys
 import urllib.error
 import urllib.request
 
-ROUTES = {"send": "/send"}
+ROUTES = {"send": "/send", "frontdesk": "/frontdesk/run"}
 
 
 def main(job):
     base, token = os.environ.get("API_URL", "").rstrip("/"), os.environ.get("OPERATOR_TOKEN", "")
     if job not in ROUTES or not base or not token:
-        sys.exit("usage: cron.py send  (needs API_URL and OPERATOR_TOKEN)")
+        sys.exit("usage: cron.py send|frontdesk ...  (needs API_URL and OPERATOR_TOKEN)")
     req = urllib.request.Request(base + ROUTES[job], data=b"{}", method="POST",
                                  headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
     try:
@@ -30,4 +31,5 @@ def main(job):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "")
+    for j in sys.argv[1:] or [""]:
+        main(j)

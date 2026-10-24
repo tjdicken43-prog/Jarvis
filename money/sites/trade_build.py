@@ -352,6 +352,7 @@ input,select,textarea{font:inherit;font-size:17px;color:var(--ink);background:#f
 input[type=file]{padding:10px;font-size:15px}
 input:focus,select:focus,textarea:focus{border-color:var(--acc);outline:3px solid #0000001f;outline-offset:0}
 .formnote{font-size:14.5px;background:#f3f5f8;border:1px solid var(--line);border-radius:4px;padding:9px 12px;margin:0}
+.hp{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%%);white-space:nowrap}
 .two{display:grid;gap:32px}
 .tool{background:#fff;border:1px solid var(--line);border-radius:8px;padding:22px 20px}
 .tool>p{margin:0 0 12px;color:var(--ink2)}
@@ -424,9 +425,21 @@ for(var k=1;k<=6;k++){var t=new Date(d.getFullYear(),d.getMonth(),d.getDate()+k)
 </script>"""
 
 
+def quote_form_open(c, phone, tel):
+    """Previews: the form says it isn't connected. Live sites (form_action set): it posts to the agency API, which saves
+    the request and emails the owner. A hidden field catches bots."""
+    if c.get("preview", True) or not c.get("form_action"):
+        call = (' Please call ' + esc(phone) + '.') if tel else ''
+        return (f"""<form onsubmit="event.preventDefault();this.querySelector('.formnote').textContent='Preview only: this form is not connected yet.{call}'">
+   <p class="formnote">Preview only. This form is not connected yet.</p>""")
+    return (f'<form method="post" action="{esc(c["form_action"])}" enctype="multipart/form-data">\n'
+            '   <p class="formnote">We call you back, usually the same day.</p>\n'
+            '   <label class="hp" aria-hidden="true">Leave this empty<input name="website" tabindex="-1" autocomplete="off"></label>')
+
+
 def render(c):
     """c: name, trade, city, phone, email, website, rating, review_count, logo_url, colors, open_247, licensed,
-    since, site_text (their own words, for services), towns, font_url, preview (default True),
+    since, site_text (their own words, for services), towns, font_url, preview (default True), form_action (live only),
     front_desk (default True: the after-hours receptionist section, plus the owner panel on previews)."""
     trade = c["trade"]
     if trade not in TRADES:
@@ -567,8 +580,7 @@ def render(c):
 <div class="how" aria-label="What happens next"><div class="wrap"><ol>{''.join(f'<li><div><b>{esc(a)}</b><span>{esc(b)}</span></div></li>' for a, b in t['how'])}</ol></div></div>
 <section class="qband"><div class="wrap qgrid"><div><h2>{esc(cta)}</h2><p class="lede2">Tell us what's going on and we'll call you back.</p>{f'<p class="lede2"><b>Need us now?</b> Call <a href="tel:{tel}">{esc(phone)}</a>.</p>' if tel else ''}</div>
  <div class="quote" id="book">
-  <form onsubmit="event.preventDefault();this.querySelector('.formnote').textContent='Preview only: this form is not connected yet.{(' Please call ' + esc(phone) + '.') if tel else ''}'">
-   <p class="formnote">Preview only. This form is not connected yet.</p>
+  {quote_form_open(c, phone, tel)}
    <label>Name<input name="name" autocomplete="name" required></label>
    <label>Phone<input name="phone" type="tel" autocomplete="tel" required></label>
    <label>What do you need?<select name="job">{jobs}</select></label>
@@ -629,6 +641,8 @@ def audit(page, c=None):
             problems.append("no tap-to-call")
         if c.get("preview", True) and "noindex" not in low:
             problems.append("preview is indexable")
+        if not c.get("preview", True) and "not connected yet" in low:
+            problems.append("live page has a form that isn't connected")
         if c["name"].lower() not in html.unescape(text):
             problems.append("business name missing")
     return problems

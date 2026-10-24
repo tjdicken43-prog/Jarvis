@@ -43,6 +43,8 @@ VAPI_API_KEY = env("VAPI_API_KEY")                # Vapi private key: empty = re
 VAPI_WEBHOOK_SECRET = env("VAPI_WEBHOOK_SECRET")  # Vapi sends it as X-Vapi-Secret; empty = webhook refuses calls
 RECEPTIONIST_MODEL = env("RECEPTIONIST_MODEL", "claude-haiku-5-5")
 TEXTBACK = env("TEXTBACK", "stub")                # stub only: records the text, sends nothing (no SMS provider yet)
+NOTIFY = env("NOTIFY", "stub")                    # stub | smtp: owner emails (emergency heads-up, bookings, summaries)
+NOTIFY_FROM_EMAIL = env("NOTIFY_FROM_EMAIL") or FROM_EMAIL  # client mail; can be a different inbox from cold email
 
 
 def drafter():
@@ -61,6 +63,11 @@ def stripe_mode():
     if k.startswith(("sk_test_", "rk_test_")):
         return "test"
     return "live" if STRIPE_ALLOW_LIVE and k.startswith(("sk_live_", "rk_live_")) else "blocked"
+
+
+def notifier():
+    """Owner emails go out only with NOTIFY=smtp and the Workspace login. They skip the cold-email pause and window."""
+    return "smtp" if NOTIFY == "smtp" and SMTP_USER and SMTP_PASSWORD and NOTIFY_FROM_EMAIL else "stub"
 
 
 def receptionist():

@@ -16,6 +16,7 @@ Prices (2026-10-23): $299 setup + $149/mo Front Desk (300 min) or $249/mo Front 
 | 6. Stripe checkout, webhook, overage (`api/billing.py`), TEST mode only | done, not deployed |
 | 7. AI receptionist (`api/receptionist.py`): Vapi assistant per client, call webhook, missed-call text-back stub | done, dry run until Vapi key |
 | 8. Render: `render.yaml` (Docker API with Chromium, dashboard, Postgres, send cron), `/health`, `/healthz` | done, not deployed |
+| 9. What the demos sell: caller details, urgent alert, morning summary (`api/notices.py`), Plus booking + calendar feed (`api/booking.py`), Plus review asks (`api/reviews.py`), live site + working quote form (`api/sites.py`), client page (`web/app/clients/[id]`) | done, emails stub until `NOTIFY=smtp`, texts stub |
 
 Load the database:
 
@@ -32,7 +33,8 @@ Re-running is safe. Once loaded, Postgres owns lead statuses; opt-outs in suppre
     uvicorn main:app --app-dir money/agency/api      # API on :8000
     cd money/agency/web && npm ci && API_URL=http://localhost:8000 OPERATOR_TOKEN=... npm run dev
 
-Test (wipes the database it is pointed at): `TEST_DATABASE_URL=... python3 money/agency/api/tests/test_api.py`
+Test (wipes the database it is pointed at): `TEST_DATABASE_URL=... python3 money/agency/api/tests/test_api.py`, then
+`tests/test_frontdesk.py` the same way.
 Mockup builder test: `python3 money/test/test_trade_build.py`. Flaw finder needs `CHROMIUM_PATH` if Playwright's own Chromium isn't installed.
 Render image: `docker build -f money/agency/api/Dockerfile -t agency-api .` from the repo root; `/health` shows `"browser": "chromium"`.
 
@@ -110,6 +112,38 @@ Leads (matchmaker) are display only until the Arkansas license question is check
    We only ever answer people who called. Never cold texts or calls (TCPA). Real sending needs an SMS provider with
    A2P 10DLC registration, on TJ's word.
 
+## What Front Desk hands the owner (step 9)
+
+Modeled on running products: answering services (Smith.ai, Ruby) page the on-call person for urgent calls and email call
+notes; field-service tools (Housecall Pro, Jobber) book fixed arrival windows; review tools (Podium, NiceJob) send one
+ask after the job. Open each client from Clients to see all of it.
+
+1. **Caller details**: every call saves name, callback number, town, what's wrong and emergency yes/no (Vapi's
+   structured data), plus the caller id.
+2. **Urgent heads-up**: a caller who says it can't wait emails the owner that minute (not spam, paying clients only).
+3. **Morning summary**: each paying client gets one email a day at its summary hour (default 6am Central): urgent
+   calls, messages to call back, website requests, hang-ups (with text-back status), spam count, today's bookings.
+   A quiet night says "no calls, the line is on". Covers everything since the last summary, so nothing falls between.
+4. **Plus booking** (Clients > client > Booking): the shop picks visit windows (default 8-10, 10-12, 1-3, 3-5 on open
+   days), jobs per window, soonest (default 3 hours out). The assistant gets two tools, `check_openings` and
+   `book_visit` (answered on `/vapi/webhook`), offers at most two openings, never books emergencies, reads the window
+   back, asks if texts are OK. Two callers can't take the last spot (row lock). The owner gets an email per booking and
+   a calendar feed `/cal/<token>.ics` to subscribe to on their phone (Google Calendar or iPhone), no Google sign-in.
+5. **Plus review asks**: marking a visit "Job done" queues one ask with the shop's Google review link, sent 2 hours
+   later between 10am and 7pm Central. Email if we have it, else a text only if they said yes on the call (texts stay
+   stubs). Everyone gets the same ask: no filtering by how happy they are (Google policy, FTC review rule
+   2024-10-21), no rewards, one ask per customer per 6 months, opt-outs and the do-not-email list win.
+6. **Live site** (Clients > client > Website): rebuilds their preview without the preview parts (no concept bar, no
+   owner panel, indexable), passes the same audit, serves at `/s/<slug>` and at their own domain once it points here.
+   The quote form works: name, phone, job, town, day and up to 3 photos (5 MB each) are saved, the owner is emailed at
+   once with photo links (`/p/<token>`), a hidden field drops bots, 20 an hour per site max.
+7. **Cron**: `agency-send` now runs every 15 minutes, `cron.py send frontdesk`. Cold email still only goes out in the
+   weekday 9-11am window; `/frontdesk/run` sends summaries and review asks that are due.
+
+`NOTIFY=stub` saves every owner email and review ask (see them on the client page) and sends nothing. `NOTIFY=smtp`
+sends from the Workspace inbox (`NOTIFY_FROM_EMAIL`, default `FROM_EMAIL`). Vapi tool and structured-data field names
+follow docs.vapi.ai as of 2026-10: check with Tuesday's real test call.
+
 ## Tuesday checklist (in order; keys go on Render, never here)
 
 1. **Cold domain** (~$12/yr), not TJ's main one. **Google Workspace Business Starter** on it, one inbox for TJ.
@@ -130,7 +164,10 @@ Leads (matchmaker) are display only until the Arkansas license question is check
    number only when the first shop pays. Test: set up a receptionist for a test client, call it, check Clients.
 9. **Workspace app password** (2-Step Verification on first): `SMTP_USER`, `SMTP_PASSWORD`, `FROM_EMAIL`. The same
    password reads replies and bounces over IMAP (`imap.gmail.com`; IMAP must be allowed in the Workspace admin (check)).
-10. **After warm-up**: `MAILER=smtp`, then unpause in the dashboard. That last tap is TJ's.
+10. **Owner emails**: once the first shop pays, set `NOTIFY=smtp` on agency-api (client mail, not cold mail, so it
+    doesn't wait for warm-up). For a client's own domain: add it under agency-api > Settings > Custom Domains, the shop
+    adds the CNAME Render shows, then Publish live site with that domain.
+11. **After warm-up**: `MAILER=smtp`, then unpause in the dashboard. That last tap is TJ's.
 
 | Set | Turns on |
 |---|---|
@@ -140,4 +177,5 @@ Leads (matchmaker) are display only until the Arkansas license question is check
 | `PUBLIC_URL` | Working unsubscribe links, Vapi and Stripe webhooks |
 | `STRIPE_SECRET_KEY` (sk_test_), `STRIPE_WEBHOOK_SECRET` | Test checkout links and the webhook; live waits on TJ |
 | `VAPI_API_KEY` | Receptionist set-up creates real Vapi assistants |
+| `NOTIFY=smtp` (+ the Workspace login) | Owner emails (urgent, bookings, website requests, morning summary) and Plus review asks really send |
 | Unpause in the dashboard | The last switch, TJ's tap |

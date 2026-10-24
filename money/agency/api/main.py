@@ -7,19 +7,23 @@ import datetime as dt
 import html
 import secrets
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, Response
 from pydantic import BaseModel, Field
 
 import billing
+import booking
 import config
 import db
 import flaws
 import followups
 import mailer
 import mockup
+import notices
 import outreach
 import receptionist
+import reviews
+import sites
 
 app = FastAPI(title="Trades agency", docs_url=None, redoc_url=None)
 
@@ -68,7 +72,7 @@ def health(conn=Conn):
         "daily_cap": config.DAILY_SEND_CAP, "in_window": mailer.in_window(now),
         "send_window": "Weekdays %d-%dam Central" % config.SEND_WINDOW, "stripe": config.stripe_mode(),
         "receptionist": config.receptionist(), "vapi_webhook_secret_set": bool(config.VAPI_WEBHOOK_SECRET),
-        "textback": config.TEXTBACK, "browser": flaws.browser_status(),
+        "textback": config.TEXTBACK, "notify": config.notifier(), "browser": flaws.browser_status(),
         "inbox": "imap" if config.mailer() == "smtp" else "stub", "follow_up_days": [d for _, d in followups.STEPS],
     }
 
@@ -341,14 +345,16 @@ def unsubscribe_one_click(token: str, conn=Conn):  # RFC 8058: mail apps POST he
 CLIENT_COLS = """id, prospect_id, business_name, contact_name, email, phone, trade, plan, billing, setup_cents,
   monthly_cents, included_minutes, status, site_url, receptionist_number, checkout_url, started_at, cancelled_at,
   created_at, stripe_customer_id IS NOT NULL AS has_stripe, open_hour, close_hour, open_saturday, textback_enabled,
-  vapi_assistant_id IS NOT NULL AS has_receptionist"""
+  vapi_assistant_id IS NOT NULL AS has_receptionist, notify_email, summary_hour, booking, calendar_token, review_url"""
 
 
 def client_view(c, used):
     u = used.get(c["id"], {})
     minutes = u.get("minutes", 0)
     over, cents = billing.overage(minutes, c["included_minutes"])
-    return dict(c, minutes_used=minutes, calls=u.get("calls", 0), after_hours_calls=u.get("after_hours", 0),
+    c = dict(c)
+    token = c.pop("calendar_token", None)
+    return dict(c, calendar_url=booking.calendar_url(token), minutes_used=minutes, calls=u.get("calls", 0), after_hours_calls=u.get("after_hours", 0),
                 missed_calls=u.get("missed", 0), over_minutes=over, overage_cents=cents,
                 price_cents=billing.price_cents(c["plan"], c["billing"]),
                 monthly_value_cents=billing.monthly_value_cents(c["plan"], c["billing"]))
@@ -543,7 +549,8 @@ def set_up_receptionist(client_id: int, ask: ReceptionistAsk, conn=Conn):
 def client_calls(client_id: int, conn=Conn):
     get_client(conn, client_id)
     return {"items": conn.execute("""SELECT r.id, r.started_at, r.seconds, r.after_hours, r.outcome, r.summary,
-        r.ended_reason, t.status AS textback FROM receptionist_calls r LEFT JOIN textbacks t ON t.call_id = r.id
+        r.ended_reason, r.caller_name, r.callback_number, r.caller_number, r.town, r.problem, r.emergency,
+        t.status AS textback FROM receptionist_calls r LEFT JOIN textbacks t ON t.call_id = r.id
         WHERE r.client_id = %s ORDER BY r.started_at DESC LIMIT 100""", (client_id,)).fetchall()}
 
 
@@ -557,7 +564,7 @@ async def vapi_webhook(request: Request, conn=Conn):  # public, but only request
         payload = await request.json()
     except ValueError:
         raise HTTPException(400, "not JSON")
-    return receptionist.record_call(conn, payload if isinstance(payload, dict) else {})
+    return receptionist.handle(conn, payload if isinstance(payload, dict) else {})
 
 
 class OptOut(BaseModel):
@@ -571,3 +578,254 @@ def sms_opt_out(o: OptOut, conn=Conn):
     if not num:
         raise HTTPException(400, "number needs 10 digits")
     return {"number": num, "opted_out": True}
+
+
+# Step 9: what the demos sell. Owner emails (urgent heads-up, bookings, morning summary), Plus booking + calendar feed,
+# Plus review requests, and the live site. Emails are stubs until NOTIFY=smtp; texts stay stubs (no SMS provider).
+def client_row(conn, client_id):
+    c = conn.execute("SELECT * FROM clients WHERE id = %s", (client_id,)).fetchone()
+    if not c:
+        raise HTTPException(404, "no such client")
+    return c
+
+
+class OwnerAsk(BaseModel):
+    notify_email: str | None = Field(default=None, max_length=200)
+    summary_hour: int | None = Field(default=None, ge=4, le=11)
+    review_url: str | None = Field(default=None, max_length=300)
+
+
+@app.post("/clients/{client_id}/owner", dependencies=op)
+def owner_settings(client_id: int, ask: OwnerAsk, conn=Conn):
+    """Where the owner's emails go, when the morning summary lands (Central), and the shop's Google review link."""
+    c = client_row(conn, client_id)
+    email = c["notify_email"] if ask.notify_email is None else (ask.notify_email.strip().lower() or None)
+    if email and "@" not in email:
+        raise HTTPException(400, "that email doesn't look right")
+    url = c["review_url"] if ask.review_url is None else (ask.review_url.strip() or None)
+    if url and not url.startswith("https://"):
+        raise HTTPException(400, "the review link must start with https://")
+    conn.execute("UPDATE clients SET notify_email = %s, summary_hour = %s, review_url = %s WHERE id = %s",
+                 (email, ask.summary_hour if ask.summary_hour is not None else c["summary_hour"], url, client_id))
+    conn.commit()
+    return client_view(get_client(conn, client_id), {})
+
+
+class BookingAsk(BaseModel):
+    enabled: bool = True
+    windows: list[int] | None = None
+    length: int | None = None
+    per_window: int | None = None
+    days_ahead: int | None = None
+    lead_hours: int | None = None
+
+
+@app.post("/clients/{client_id}/booking", dependencies=op)
+def booking_settings(client_id: int, ask: BookingAsk, conn=Conn):
+    """Plus only: turn booking on or off and set the visit windows. Updates the Vapi assistant (dry run without a key)."""
+    c = client_row(conn, client_id)
+    if ask.enabled and c["plan"] != "front_desk_plus":
+        raise HTTPException(409, "calendar booking comes with Front Desk Plus")
+    if ask.enabled:
+        try:
+            b = booking.validate(c, ask.model_dump(exclude={"enabled"}))
+        except booking.BookingError as e:
+            raise HTTPException(400, str(e))
+        token = booking.calendar_token(conn, c)
+    else:
+        b, token = None, c["calendar_token"]
+    conn.execute("UPDATE clients SET booking = %s WHERE id = %s", (db.Json(b) if b else None, client_id))
+    c = client_row(conn, client_id)
+    try:
+        out = receptionist.set_up(conn, c)
+    except receptionist.VapiError as e:
+        conn.rollback()
+        raise HTTPException(502, f"Vapi: {e}")
+    conn.commit()
+    return {"mode": out["mode"], "booking": b, "calendar_url": booking.calendar_url(token),
+            "tools": [t["function"]["name"] for t in out["assistant"]["model"].get("tools", [])]}
+
+
+@app.get("/clients/{client_id}/openings", dependencies=op)
+def client_openings(client_id: int, conn=Conn):
+    c = client_row(conn, client_id)
+    if not booking.enabled(c):
+        return {"items": [], "detail": "booking is off"}
+    return {"items": [{"start": s, "end": e, "label": booking.label(s, e), "id": booking.slot_id(s)}
+                      for s, e in booking.openings(conn, c)]}
+
+
+@app.get("/clients/{client_id}/bookings", dependencies=op)
+def client_bookings(client_id: int, conn=Conn):
+    client_row(conn, client_id)
+    return {"items": conn.execute("""SELECT b.*, r.status AS review FROM bookings b LEFT JOIN review_requests r
+        ON r.booking_id = b.id WHERE b.client_id = %s ORDER BY b.window_start DESC LIMIT 100""", (client_id,)).fetchall()}
+
+
+class BookingStatus(BaseModel):
+    status: str = Field(pattern="^(booked|cancelled|done)$")
+    customer_email: str | None = Field(default=None, max_length=200)
+    ask_for_review: bool = True
+
+
+@app.post("/bookings/{booking_id}", dependencies=op)
+def set_booking(booking_id: int, ask: BookingStatus, conn=Conn):
+    """Mark a visit done (queues the Plus review ask), cancelled, or back to booked."""
+    b = conn.execute("SELECT * FROM bookings WHERE id = %s", (booking_id,)).fetchone()
+    if not b:
+        raise HTTPException(404, "no such booking")
+    email = (ask.customer_email or "").strip().lower() or b["customer_email"]
+    conn.execute("UPDATE bookings SET status = %s, customer_email = %s, updated_at = now() WHERE id = %s",
+                 (ask.status, email, booking_id))
+    review = None
+    if ask.status == "done" and ask.ask_for_review and not conn.execute(
+            "SELECT 1 FROM review_requests WHERE booking_id = %s", (booking_id,)).fetchone():
+        try:
+            r = reviews.queue(conn, client_row(conn, b["client_id"]), b["customer_name"], b["callback_number"], email,
+                              b["ok_to_text"], booking_id)
+            review = {"queued": True, "channel": r["channel"], "send_after": r["send_after"]}
+        except reviews.ReviewError as e:
+            review = {"queued": False, "reason": str(e)}
+    conn.commit()
+    return {"booking": conn.execute("SELECT * FROM bookings WHERE id = %s", (booking_id,)).fetchone(), "review": review}
+
+
+@app.get("/cal/{token}.ics")
+def calendar_feed(token: str, conn=Conn):  # public, unguessable: the owner's phone calendar subscribes to it
+    c = conn.execute("SELECT * FROM clients WHERE calendar_token = %s", (token,)).fetchone()
+    if not c:
+        raise HTTPException(404, "no such calendar")
+    return Response(booking.ics(conn, c), media_type="text/calendar; charset=utf-8",
+                    headers={"Cache-Control": "private, max-age=300", "X-Robots-Tag": "noindex"})
+
+
+@app.get("/clients/{client_id}/notices", dependencies=op)
+def client_notices(client_id: int, conn=Conn):
+    client_row(conn, client_id)
+    return {"mode": config.notifier(), "items": conn.execute("""SELECT id, kind, day, to_email, subject, body, status,
+        error, created_at FROM owner_notices WHERE client_id = %s ORDER BY created_at DESC, id DESC LIMIT 50""",
+                                                             (client_id,)).fetchall()}
+
+
+class ReviewAsk(BaseModel):
+    customer_name: str = Field(min_length=1, max_length=80)
+    email: str | None = Field(default=None, max_length=200)
+    phone: str | None = Field(default=None, max_length=40)
+    ok_to_text: bool = False
+
+
+@app.post("/clients/{client_id}/review-requests", dependencies=op)
+def add_review_request(client_id: int, ask: ReviewAsk, conn=Conn):
+    """By hand, for a job that didn't come through Front Desk. Same rules: one ask, everyone asked, texts only with a yes."""
+    try:
+        r = reviews.queue(conn, client_row(conn, client_id), ask.customer_name, ask.phone, ask.email, ask.ok_to_text)
+    except reviews.ReviewError as e:
+        raise HTTPException(400, str(e))
+    conn.commit()
+    return r
+
+
+@app.get("/clients/{client_id}/review-requests", dependencies=op)
+def list_review_requests(client_id: int, conn=Conn):
+    client_row(conn, client_id)
+    return {"items": conn.execute("""SELECT id, booking_id, customer_name, channel, status, detail, send_after, sent_at,
+        created_at FROM review_requests WHERE client_id = %s ORDER BY created_at DESC, id DESC LIMIT 100""",
+                                  (client_id,)).fetchall()}
+
+
+@app.post("/frontdesk/run", dependencies=op)
+def frontdesk_run(conn=Conn):
+    """The cron's job every 15 minutes: morning summaries that are due, then review asks that are due."""
+    s, r = notices.run_summaries(conn), reviews.send_due(conn)
+    return {"mode": config.notifier(), "summaries": s["summaries"], "reviews": r["done"],
+            "detail": f"{len(s['summaries'])} summaries, {len(r['done'])} review asks ({config.notifier()})"}
+
+
+class SiteAsk(BaseModel):
+    domain: str | None = Field(default=None, max_length=200)
+
+
+@app.post("/clients/{client_id}/site", dependencies=op)
+def publish_site(client_id: int, ask: SiteAsk, conn=Conn):
+    """Publish (or rebuild) the client's live site from their preview facts. Same site bar audit, indexable."""
+    try:
+        domain = sites.domain_of(ask.domain) if ask.domain is not None else None
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    if domain and conn.execute("SELECT 1 FROM client_sites WHERE domain = %s AND client_id <> %s",
+                               (domain, client_id)).fetchone():
+        raise HTTPException(409, "another client has that domain")
+    out = sites.publish(conn, client_row(conn, client_id), domain)
+    if not out["published"]:
+        raise HTTPException(400, "can't publish: " + "; ".join(out["problems"]))
+    return out
+
+
+LIVE = {"Cache-Control": "public, max-age=300"}
+
+
+@app.get("/s/{slug}", response_class=HTMLResponse)
+def live_site(slug: str, conn=Conn):  # public: the client's live site before their own domain points here
+    row = conn.execute("SELECT html FROM client_sites WHERE slug = %s", (slug,)).fetchone()
+    if not row:
+        raise HTTPException(404, "no such site")
+    return HTMLResponse(row["html"], headers=LIVE)
+
+
+THANKS = PAGE.replace("<title>Unsubscribed</title>", "<title>Request sent</title>")
+
+
+@app.post("/s/{slug}/request", response_class=HTMLResponse)
+async def site_request(slug: str, request: Request, conn=Conn):  # public: the live site's quote form
+    site = conn.execute("""SELECT s.domain, s.slug, c.* FROM client_sites s JOIN clients c ON c.id = s.client_id
+                           WHERE s.slug = %s""", (slug,)).fetchone()
+    if not site:
+        raise HTTPException(404, "no such site")
+    back = f"https://{site['domain']}" if site["domain"] else f"{config.PUBLIC_URL}/s/{slug}"
+    link = f' <a href="{html.escape(back)}">Back to {html.escape(site["business_name"])}</a>.'
+    try:
+        form = await request.form(max_files=sites.MAX_PHOTOS + 2, max_part_size=sites.MAX_PHOTO_BYTES + 1024)
+    except Exception:
+        return HTMLResponse(THANKS.format(msg="That didn't go through (photos must be under 5 MB). Please try again or "
+                                              "call us." + link), status_code=400)
+    fields = {k: v for k, v in form.items() if isinstance(v, str)}
+    photos = [(f.content_type or "", await f.read(sites.MAX_PHOTO_BYTES + 1)) for f in form.getlist("photos")
+              if isinstance(f, UploadFile) or hasattr(f, "read")]
+    try:
+        r = sites.save_request(conn, site, fields, photos)
+    except sites.RequestError as e:
+        return HTMLResponse(THANKS.format(msg=html.escape(str(e)) + link), status_code=400)
+    if r:
+        notices.web_request(conn, site, r)
+        conn.commit()
+    return HTMLResponse(THANKS.format(msg=f"Thanks. {html.escape(site['business_name'])} has your request and will call "
+                                          "you back." + link))
+
+
+@app.get("/p/{token}")
+def request_photo(token: str, conn=Conn):  # unguessable link in the owner's email
+    row = conn.execute("SELECT content_type, data FROM site_request_photos WHERE token = %s", (token,)).fetchone()
+    if not row:
+        raise HTTPException(404, "no such photo")
+    return Response(bytes(row["data"]), media_type=row["content_type"],
+                    headers={"Cache-Control": "private, max-age=3600", "X-Robots-Tag": "noindex"})
+
+
+@app.get("/clients/{client_id}/requests", dependencies=op)
+def client_requests(client_id: int, conn=Conn):
+    client_row(conn, client_id)
+    return {"items": conn.execute("""SELECT r.*, count(p.token) AS photos FROM site_requests r LEFT JOIN site_request_photos p
+        ON p.request_id = r.id WHERE r.client_id = %s GROUP BY r.id ORDER BY r.created_at DESC LIMIT 100""",
+                                  (client_id,)).fetchall()}
+
+
+@app.middleware("http")
+async def client_domains(request: Request, call_next):
+    """A client's own domain (pointed here by CNAME) gets their live site at /. Everything else is the API as usual."""
+    host = (request.headers.get("host") or "").split(":")[0].lower().removeprefix("www.")
+    if request.method == "GET" and request.url.path == "/" and host and host != config.PUBLIC_URL.split("//")[-1].split("/")[0]:
+        with db.connect() as conn:
+            row = conn.execute("SELECT html FROM client_sites WHERE domain = %s", (host,)).fetchone()
+        if row:
+            return HTMLResponse(row["html"], headers=LIVE)
+    return await call_next(request)

@@ -5,6 +5,10 @@ to /vapi/webhook; each call becomes a row in receptionist_calls, which the Clien
 A caller who hangs up before leaving details can get ONE text back, only if the shop turned it on. Text-back is a
 stub: it records the text and sends nothing. Never cold texts or calls (TCPA): we only ever answer people who called.
 
+Every call also saves what the caller said (name, callback number, town, problem, emergency). An emergency emails the
+owner right away; everything else goes in the next-morning summary (notices.py). On Plus with booking on, the assistant
+can book a visit window from the shop's openings through two tools (booking.py), like Housecall Pro's arrival windows.
+
 Vapi field names follow their docs as of 2026-10 (check on Tuesday with a real test call).
 """
 import datetime as dt
@@ -14,7 +18,9 @@ import secrets
 import urllib.error
 import urllib.request
 
+import booking
 import config
+import notices
 from mailer import CENTRAL
 
 TRADE = {"plumbing": "plumbing", "hvac": "heating and air", "roofing": "roofing"}
@@ -53,6 +59,8 @@ def is_after_hours(c, when):
 def prompt(c):
     name, trade = c["business_name"], TRADE[c["trade"]]
     when = "any time of day" if c["plan"] == "front_desk_plus" else "when the office is closed"
+    if booking.enabled(c):
+        return booking_prompt(c, name, trade, when)
     return f"""You answer the phone for {name}, a {trade} company in Northwest Arkansas, {when}.
 Office hours: {hours_text(c)}.
 
@@ -70,6 +78,27 @@ Rules:
 - Short sentences, warm and plain. No jargon."""
 
 
+def booking_prompt(c, name, trade, when):
+    return f"""You answer the phone for {name}, a {trade} company in Northwest Arkansas, {when}.
+Office hours: {hours_text(c)}.
+
+Your job: take a clear message, and if it is not an emergency, offer to book a visit window. Get, one question at a time:
+1. Their name. 2. The best callback number (read it back). 3. The address or town. 4. What's wrong, in their words.
+5. Is it an emergency right now, or can it wait for a scheduled visit?
+If it's an emergency: do not book. Say you're marking it urgent and the team will call back as soon as they can.
+If it can wait: use check_openings, offer at most two openings, and when they pick one, use book_visit with the exact
+start the tool gave you. Ask "Is it OK if {name} texts you about this visit?" and pass their answer as ok_to_text.
+Read the window back and say the team will call to confirm before they come. If booking fails, take the message instead.
+
+Rules:
+- If asked, say you are the company's automated assistant. Never claim to be a person.
+- Never quote prices, give estimates, promise an exact arrival time or diagnose the problem. A booking is a window.
+- Only book openings the tool gave you. Never invent a time.
+- {SAFETY[c["trade"]]}
+- If the caller is selling something or it's a robocall, thank them and end the call.
+- Short sentences, warm and plain. No jargon."""
+
+
 def assistant(c):
     """The Vapi assistant for one client. Creating it places no calls."""
     name = c["business_name"]
@@ -77,19 +106,24 @@ def assistant(c):
         "name": f"{name} front desk"[:40],
         "firstMessage": f"Thanks for calling {name}. This is the after-hours assistant, and this call may be "
                         "recorded. I can take a message and have someone call you back. What's going on?",
-        "model": {"provider": "anthropic", "model": config.RECEPTIONIST_MODEL, "temperature": 0.3,
-                  "messages": [{"role": "system", "content": prompt(c)}]},
+        "model": dict({"provider": "anthropic", "model": config.RECEPTIONIST_MODEL, "temperature": 0.3,
+                       "messages": [{"role": "system", "content": prompt(c)}]},
+                      **({"tools": booking.tools()} if booking.enabled(c) else {})),
         "voice": {"provider": "vapi", "voiceId": "Elliot"},
         "transcriber": {"provider": "deepgram", "model": "nova-3", "language": "en"},
         "maxDurationSeconds": 600,          # 10 minutes caps a stuck call's cost
         "silenceTimeoutSeconds": 30,
         "endCallPhrases": ["goodbye", "bye now"],
         "server": {"url": config.PUBLIC_URL + "/vapi/webhook", "secret": config.VAPI_WEBHOOK_SECRET},
-        "serverMessages": ["end-of-call-report"],
+        "serverMessages": ["end-of-call-report"] + (["tool-calls"] if booking.enabled(c) else []),
         "analysisPlan": {"structuredDataSchema": {"type": "object", "properties": {
             "outcome": {"type": "string", "enum": ["message", "spam", "hung_up"],
                         "description": "message if they left details, spam for sales or robocalls, hung_up if they left before giving details"},
-            "emergency": {"type": "boolean"}}}},
+            "caller_name": {"type": "string", "description": "the caller's name, as they said it"},
+            "callback_number": {"type": "string", "description": "the number they asked to be called back on"},
+            "town": {"type": "string", "description": "the address or town of the job"},
+            "problem": {"type": "string", "description": "what's wrong, in one short sentence in their words"},
+            "emergency": {"type": "boolean", "description": "true only if they said it can't wait (water pouring, no heat in freezing weather, gas smell, active leak)"}}}},
         "metadata": {"client_id": c["id"]},
     }
 
@@ -158,6 +192,18 @@ def find_client(conn, m):
     return None
 
 
+def handle(conn, payload, now=None):
+    """Everything Vapi posts: end-of-call reports and, on Plus with booking on, the booking tool calls."""
+    m = payload.get("message") or {}
+    if m.get("type") == "tool-calls":
+        return booking.tool_calls(conn, m, find_client(conn, m), now)
+    return record_call(conn, payload, now)
+
+
+def clean(v, n=200):
+    return re.sub(r"\s+", " ", str(v)).strip()[:n] or None if v not in (None, "") else None
+
+
 def record_call(conn, payload, now=None):
     """Save one end-of-call report (once per Vapi call id), then maybe queue a text-back."""
     m = payload.get("message") or {}
@@ -173,20 +219,31 @@ def record_call(conn, payload, now=None):
     seconds = m.get("durationSeconds")
     seconds = int(round(float(seconds))) if seconds is not None else max(0, int((ended - started).total_seconds())) if ended else 0
     o = outcome(m, seconds)
+    if conn.execute("SELECT 1 FROM bookings WHERE client_id = %s AND vapi_call_id = %s AND status = 'booked'",
+                    (c["id"], call_id)).fetchone():
+        o = "booked"
+    sd = (m.get("analysis") or {}).get("structuredData") or {}
+    caller = (m.get("customer") or call.get("customer") or {}).get("number")
+    emergency = sd.get("emergency") is True and o in ("message", "booked")
     cost = m.get("cost")
     row = conn.execute("""INSERT INTO receptionist_calls (client_id, vapi_call_id, started_at, seconds, after_hours,
-                          outcome, summary, cost_cents, ended_reason) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                          ON CONFLICT (vapi_call_id) DO NOTHING RETURNING id""",
+                          outcome, summary, cost_cents, ended_reason, caller_number, caller_name, callback_number, town,
+                          problem, emergency) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                          ON CONFLICT (vapi_call_id) DO NOTHING RETURNING *""",
                        (c["id"], call_id, started, seconds, is_after_hours(c, started), o,
                         ((m.get("analysis") or {}).get("summary") or m.get("summary") or "")[:1000] or None,
-                        round(float(cost) * 100) if cost is not None else None, m.get("endedReason"))).fetchone()
+                        round(float(cost) * 100) if cost is not None else None, m.get("endedReason"),
+                        digits(caller) or None, clean(sd.get("caller_name"), 80),
+                        digits(sd.get("callback_number")) or digits(caller) or None, clean(sd.get("town"), 120),
+                        clean(sd.get("problem"), 300), emergency)).fetchone()
     if not row:
         conn.commit()
         return {"ok": True, "duplicate": True}
-    caller = (m.get("customer") or call.get("customer") or {}).get("number")
     text = textback(conn, c, row["id"], caller, o, started, now) if o == "hung_up" else None
+    alert = notices.emergency(conn, c, row) if emergency and c["status"] in ("active", "past_due") else None
     conn.commit()
-    return {"ok": True, "call_id": row["id"], "client_id": c["id"], "outcome": o, "textback": text}
+    return {"ok": True, "call_id": row["id"], "client_id": c["id"], "outcome": o, "textback": text,
+            "emergency_alert": alert}
 
 
 def textback_body(c):

@@ -37,6 +37,7 @@ services:
       - key: VAPI_WEBHOOK_SECRET                     # Vapi sends it back as X-Vapi-Secret on every call report
         generateValue: true
       - {key: TEXTBACK, value: stub}                 # missed-call texts are recorded, never sent
+      - {key: NOTIFY, value: stub}                   # owner emails (urgent, bookings, morning summary): smtp to send
   - type: web
     name: agency-dashboard
     runtime: node
@@ -54,9 +55,11 @@ services:
     name: agency-send
     runtime: python
     plan: starter
-    schedule: "*/15 14-17 * * 1-5"      # UTC, covers 9-11am Central in summer and winter; the API enforces the window
+    # Every 15 minutes: cold email only goes out in the weekday 9-11am Central window (the API enforces it); client
+    # morning summaries and review asks go when due. A run is a few seconds, so it stays inside the cron's minimum.
+    schedule: "*/15 * * * *"
     buildCommand: "true"                # standard library only
-    startCommand: python3 money/agency/api/cron.py send
+    startCommand: python3 money/agency/api/cron.py send frontdesk
     buildFilter:
       paths: [money/agency/api/cron.py]
     envVars:

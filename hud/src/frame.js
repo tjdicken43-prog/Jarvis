@@ -277,7 +277,7 @@ function draw() {
     : "", ox, oy - R * 2.32);
   requestAnimationFrame(draw);
 }
-requestAnimationFrame(draw);
+addEventListener("DOMContentLoaded", () => requestAnimationFrame(draw)); // start once every script has loaded
 
 // drag to orbit (two fingers pinch to zoom); tap the core to talk, tap a dot to open that note
 let grab = null, cardNote = null;

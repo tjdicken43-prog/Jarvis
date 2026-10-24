@@ -18,6 +18,8 @@ function tick() {
   const d = new Date(), tz = { timeZone: "America/Chicago" };
   $("time").textContent = d.toLocaleTimeString("en-US", { ...tz, hour: "numeric", minute: "2-digit" });
   $("date").textContent = d.toLocaleDateString("en-US", { ...tz, weekday: "short", month: "short", day: "numeric" });
+  const h = +d.toLocaleString("en-US", { ...tz, hour: "numeric", hour12: false }) % 24;
+  $("greet").textContent = `Good ${h < 5 ? "evening" : h < 12 ? "morning" : h < 17 ? "afternoon" : "evening"}, TJ`;
 }
 tick(); setInterval(tick, 10000);
 
@@ -60,7 +62,7 @@ let mode = "idle", level = 0;
 function setMode(m) {
   mode = m;
   $("status").dataset.mode = m;
-  $("status").textContent = { idle: "Standing by", listening: "Listening", thinking: "Thinking", speaking: "Speaking" }[m];
+  $("status").textContent = { idle: "At your service", listening: "Listening", thinking: "Thinking", speaking: "Speaking" }[m];
   $("mic").classList.toggle("on", m === "listening");
 }
 

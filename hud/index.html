@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0e0f11">
+<meta name="theme-color" content="#0b0a08">
 <title>Jarvis</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,13 +16,12 @@
 <div class="app">
   <header class="top">
     <div>
-      <div class="brand">Jarvis</div>
-      <div class="sub"><i class="dot" id="linkDot"></i><span id="linkText">Notes only</span><span aria-hidden="true">·</span><span id="date"></span><b id="time">--:--</b></div>
+      <div class="brand"><i class="dot" id="linkDot"></i>J.A.R.V.I.S.<span class="sr" id="linkText">Notes only</span></div>
+      <div class="sub"><span id="greet">Good evening, TJ</span><span aria-hidden="true">·</span><span id="date"></span><b id="time">--:--</b></div>
     </div>
     <nav class="tools" aria-label="Tools">
       <button class="icon" id="chatsBtn" type="button" aria-label="Past chats" title="Past chats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4M12 8v4l3 2"/></svg></button>
       <button class="icon" id="memBtn" type="button" aria-label="What I know" title="What I know"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8h6"/></svg></button>
-      <button class="icon" id="factoryBtn" type="button" aria-label="Factory" title="Factory"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20V10l5 3V10l5 3V6h4l1 14z"/><path d="M3 20h18"/></svg></button>
       <button class="icon" id="gear" type="button" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button>
     </nav>
   </header>
@@ -48,13 +47,18 @@
 
     <div class="center">
       <div class="slot" id="slot"></div>
-      <div class="status" id="status" data-mode="idle">Standing by</div>
+      <div class="status" id="status" data-mode="idle">At your service</div>
       <dl class="readout" id="readout" aria-label="Brain at a glance">
         <div><dt><i style="background:var(--arc)"></i>Notes</dt><dd id="rNotes">0</dd></div>
         <div><dt><i style="background:#b7bcc4"></i>Links</dt><dd id="rLinks">0</dd></div>
         <div><dt><i style="background:var(--ok)"></i>Jobs</dt><dd id="rJobs">0</dd></div>
         <div><dt><i style="background:var(--gold)"></i>Lessons</dt><dd id="rLessons">0</dd></div>
       </dl>
+      <button class="factory" id="factoryBtn" type="button" aria-label="Open the factory">
+        <canvas id="factoryMini" width="224" height="104" aria-hidden="true"></canvas>
+        <span><b>Factory</b><small id="factoryLine"><i></i>Sites by TJ crew</small></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
       <nav class="tabs" role="tablist">
         <button type="button" role="tab" data-go="comms" aria-selected="true">Chat</button>
         <button type="button" role="tab" data-go="jobs" aria-selected="false">Jobs <span class="badge" id="badge"></span></button>
@@ -106,7 +110,8 @@
   <p>The five built-in voices work everywhere, even in the Claude app. They're styles, not copies of real actors. Your phone's voices are listed under them if it has any.</p>
   <label for="theme">Look</label>
   <select id="theme">
-    <option value="arc">Steel (default)</option>
+    <option value="arc">Station (default)</option>
+    <option value="steel">Steel</option>
     <option value="agency">Graphite</option>
     <option value="spy">Brass</option>
     <option value="hunter">Amber</option>

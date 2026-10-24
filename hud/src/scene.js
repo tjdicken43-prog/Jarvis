@@ -18,7 +18,7 @@ const edges = [];
 for (const n of nodes) for (const l of n.links) if (nodeBy.has(l) && l !== n.name) edges.push([n, nodeBy.get(l)]);
 for (const n of nodes) n.deg = edges.filter(([a, b]) => a === n || b === n).length;
 edges.forEach((e, i) => { e.seed = (i * 0.618) % 1; });
-const TYPE_COLOR = { hub: "#8fb8d8", rules: "#e07a6b", log: "#d9a85b", list: "#c8b48a", week: "#b7bcc4", personal: "#6cc59a" };
+const TYPE_COLOR = { hub: "#5fc9c0", rules: "#e07a6b", log: "#f5a623", list: "#d8c39a", week: "#b8b0a2", personal: "#7fbf8f" };
 
 let cinemaK = 0; // 0 = normal layout, 1 = Show off cinema (brain centred and bigger)
 function coreBox() {
@@ -48,7 +48,7 @@ for (let i = 0; i < 240; i++) physics(); // settle before the first frame
 
 const MODE_COLOR = { idle: [79, 216, 255], speaking: [120, 230, 255], listening: [92, 242, 165], thinking: [255, 178, 62] };
 let col = [79, 216, 255], t = 0, ARC = "79,216,255", THEME = "arc", BG = "#03070c";
-const RINGS = { arc: " J.A.R.V.I.S. · TJ'S BRAIN · ONLINE · ", agency: " J.A.R.V.I.S. · AGENCY HQ · CLEARANCE GRANTED · ",
+const RINGS = { arc: " J.A.R.V.I.S. · TJ'S BRAIN · ONLINE · ", steel: " J.A.R.V.I.S. · TJ'S BRAIN · ONLINE · ", agency: " J.A.R.V.I.S. · AGENCY HQ · CLEARANCE GRANTED · ",
   spy: " J.A.R.V.I.S. · SECRET SERVICE · EYES ONLY · ", hunter: " J.A.R.V.I.S. · HUNTER'S LOG · SALT AND IRON · ",
   showoff: " J.A.R.V.I.S. · ALL SYSTEMS · FIVE DIMENSIONS · ONE BRAIN · " };
 function setTheme(name) {

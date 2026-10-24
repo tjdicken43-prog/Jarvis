@@ -177,6 +177,20 @@ function openFactory() {
       ? "Queued. Jarvis backend will redesign himself and the factory, then tell you what changed." : "Jobs only work in the claude.ai copy of Jarvis." });
 }
 $("factoryBtn").addEventListener("click", openFactory);
+// The factory card on the home screen: a live window onto the station, cropped round the core, about 12 frames a second
+(function factoryMini() {
+  const F = window.JarvisFactory, cv = $("factoryMini"); if (!F || !cv) return;
+  const g = cv.getContext("2d"); let last = 0;
+  const frame = (ts) => {
+    requestAnimationFrame(frame);
+    if (ts - last < 80 || document.hidden || F.isOpen() || !cv.offsetParent) return; last = ts;
+    const w = F.tick(), cw = 440, ch = cw * cv.height / cv.width; // crop: the core and the rooms round it
+    g.imageSmoothingEnabled = true; g.drawImage(w, 430 - cw / 2, 300 - ch / 2, cw, ch, 0, 0, cv.width, cv.height);
+  };
+  requestAnimationFrame(frame);
+  const line = () => { const s = F.status(); $("factoryLine").innerHTML = `<i></i>${s.working} at work · ${s.rail} on the rail${s.waiting ? ` · ${s.waiting} for you` : ""}`; };
+  line(); setInterval(line, 2000);
+})();
 $("memBtn").addEventListener("click", () => {
   const list = $("memList"); list.innerHTML = "";
   const head = (t) => list.append(Object.assign(document.createElement("h4"), { textContent: t }));

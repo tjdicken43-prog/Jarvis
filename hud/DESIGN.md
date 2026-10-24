@@ -30,6 +30,15 @@ TJ: "better but not best... I want the center to be a premium looking mind, some
 - Centre: the note count, or a live waveform while Jarvis talks or listens.
 - Under it, a four-number readout (notes, links, jobs, lessons) is the legend. The old cores stay in Show off.
 
+## The factory: a Starnet-scale station (round 3, 2026-10-24)
+TJ: "factory isn't premium or up to par"; base it on real professional work "like Starnet", the "large Starnet models, not the small demo".
+- **Reference:** Starnet's full station render ([repo](https://github.com/androoAGI/starnet), image `.github/media/station-iso.png`, branch feat/harness-backend; looked up 2026-10-24). What it does: one big multi-room hull in space, 2:1 isometric, gunmetal walls lit by rows of amber windows, teal screens, small white crew, a hazard-striped landing pad, solar wings, a planet's limb behind. Its rule: "the interface must never assert state the harness cannot prove."
+- **Cutaway:** tall walls at the back, low walls in front so every room stays visible. This is the walls-down view of management sims like The Sims and Two Point Hospital (from memory, not looked up).
+- **What we built (hud/factory.js):** the same crew and simulation, redrawn as an isometric station: Find and build bay, Deals bay, Lab with plant beds, Command (your throne), Hangar with a launch pad, and four rooms round the core (Servers, Briefing, Storage, Lounge). Drawn in vector so it stays sharp at any zoom. All art is ours, drawn in code; Starnet's sprites and name are not licensed, so none are copied.
+- **Honest state (Starnet's rule):** the core's dots are the real notes; jobs, links and lessons come from Jarvis. Degen shows as switched off (it is, since 2026-10-23) and its fake paper-trade bubbles are gone. The footer says plainly that crew motion is a loop.
+- **Chrome:** warm black, one amber accent (Starnet's own brand colour family), mono for data, system font for text, 44px icon buttons, bottom-sheet cards, corner brackets like Starnet's cards.
+- **The assistant view** stays modeled on shipped assistants: ChatGPT and Gemini Live for voice in the chat, Linear for the neutral-plus-one-accent theme (sources above).
+
 ## Kept, and why
 - The 3D brain and its core: it is the one thing no other assistant has, so it stays as the signature, calmer (no grid, softer bloom, no angle readout, faint ring text).
 - Show off, the flight, factory, night mode, voices and looks all work as before. Show off keeps its full effects; it's opt-in.

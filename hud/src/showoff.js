@@ -240,7 +240,7 @@ function lookAt(p, l, fl) {
 // The gate: an octagon portal showing the live factory floor, drawn facing the camera
 function octPath(x, y, hw, hh, cut) { cx.beginPath(); cx.moveTo(x - hw + cut, y - hh); cx.lineTo(x + hw - cut, y - hh); cx.lineTo(x + hw, y - hh + cut); cx.lineTo(x + hw, y + hh - cut); cx.lineTo(x + hw - cut, y + hh); cx.lineTo(x - hw + cut, y + hh); cx.lineTo(x - hw, y + hh - cut); cx.lineTo(x - hw, y - hh + cut); cx.closePath(); }
 function drawGate(q, core) {
-  const [x, y, , s] = q, hw = GATE.r * s, hh = hw * 340 / 480, cut = hw * 0.16, F = window.JarvisFactory;
+  const [x, y, , s] = q, hw = GATE.r * s, F = window.JarvisFactory, hh = hw * (F?.ASPECT || 340 / 480), cut = hw * 0.16;
   if (x + hw < 0 || x - hw > W || y + hh < 0 || y - hh > H) { GATE.rect = null; return; }
   if (core) { // a fat conduit from the core feeds the factory
     cx.strokeStyle = `rgba(${ARC},.25)`; cx.lineWidth = Math.max(1, s * 0.02); cx.beginPath(); cx.moveTo(core[0], core[1]); cx.lineTo(x, y); cx.stroke();
@@ -251,7 +251,7 @@ function drawGate(q, core) {
   cx.fillStyle = halo; cx.fillRect(x - hw * 1.5, y - hw * 1.5, hw * 3, hw * 3);
   cx.save(); octPath(x, y, hw, hh, cut); cx.clip();
   cx.fillStyle = "#020106"; cx.fillRect(x - hw, y - hh, hw * 2, hh * 2);
-  if (F && hw > 30) { cx.imageSmoothingEnabled = hw < 240; cx.drawImage(F.tick(), x - hw, y - hh, hw * 2, hh * 2); cx.imageSmoothingEnabled = true; }
+  if (F && hw > 30) { cx.drawImage(F.tick(), x - hw, y - hh, hw * 2, hh * 2); }
   const sweep = ((t * 0.35) % 1.4 - 0.2) * hh * 2; // a scan line rolls down the portal
   cx.fillStyle = "rgba(159,232,255,.08)"; cx.fillRect(x - hw, y - hh + sweep, hw * 2, hh * 0.12);
   cx.restore();

@@ -15,7 +15,7 @@ For gyms running [[SecurityAI]]. Part of the [[Gym service agreement]]. **Lawyer
 ## Member notice (for the membership terms or front-desk sheet)
 > [Gym name] uses SecurityAI on its entrance camera between [9 PM and 5 AM]. It counts people walking in and compares that with check-ins, so we know when someone follows a member in without scanning.
 > - It does not recognize faces or identify anyone.
-> - No video is stored by SecurityAI. A still photo of a flagged entry is kept 48 hours; confirmed cases are kept [35] days (check), then deleted.
+> - No video is stored by SecurityAI. Still photos of each entry are deleted after 48 hours. Entries the system flags, or that staff mark as a tailgate, are kept 35 days for the monthly report, then deleted. The gym can choose shorter times (photos 24 hours, kept entries 14 days).
 > - Member numbers are scrambled and never leave the box as text.
 > - Staff, not the system, decide what each flag means.
 > - The data is used only to keep the gym members-only. It is never sold.

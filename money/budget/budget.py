@@ -4,9 +4,9 @@ The card limit is the real hard stop; this script is the agents' rulebook check 
 is bought, and the source of the HUD's Budget sheet. No network, no card data.
 
   python3 money/budget/budget.py status [--date YYYY-MM-DD] [--json]
-  python3 money/budget/budget.py check SERVICE AMOUNT [--date YYYY-MM-DD]
-      exit 0 = runs through (an approved recurring line, inside its cap, reserve safe)
-      exit 2 = ask TJ: put it in the tracker for his Approve button (new, or over its cap)
+  python3 money/budget/budget.py check SERVICE AMOUNT [--recurring] [--date YYYY-MM-DD]
+      exit 0 = runs through (a recurring business bill of $25 or less, reserve safe)
+      exit 2 = ask TJ: put it in the tracker for his Approve button (over $25, or a one-off)
       exit 1 = no: before payday or it would dip into the $25 reserve; even TJ's button can't
   python3 money/budget/budget.py lint                                       exit 1 = ledger is broken
 """
@@ -163,11 +163,12 @@ def status(cfg, rows, today):
     }
 
 
-def check(cfg, rows, service, amount, today):
-    """("auto" | "ask" | "no", reasons).
+def check(cfg, rows, service, amount, today, recurring_bill=False):
+    """("auto" | "ask" | "no", reasons). TJ's rule, 2026-10-24.
 
-    auto: a recurring line that keeps the business running, inside its cap, reserve safe. Pay and log approved_by=recurring.
-    ask:  new service, one-off, or over its cap. Goes to TJ's Approve button in the tracker.
+    auto: a recurring business bill of $25 or less (a recurring line in budget.json, or a new one flagged
+          --recurring), the service's 30 days staying inside its cap (never over $25), reserve safe. Pay and log approved_by=recurring.
+    ask:  over $25, or a one-off. Goes to TJ's Approve button in the tracker.
     no:   before payday, or it would take the card under the floor. Nobody overrides that from the page.
     """
     st = status(cfg, rows, today)
@@ -183,15 +184,18 @@ def check(cfg, rows, service, amount, today):
     if left < st["floor"]:
         hard.append(f"That leaves {m(left)} after charges due before "
                     f"{st['next_refill']}, under the {m(st['floor'])} reserve.")
-    recurring = {r["service"] for r in cfg.get("recurring", [])}
-    if service not in cfg["caps_30d"]:
-        soft.append(f"{service} is new (no cap yet). Needs TJ's OK.")
+    limit = cfg.get("ask_over", 25)
+    recurring = recurring_bill or service in {r["service"] for r in cfg.get("recurring", [])}
+    spent = spent_30d(rows, service, today)
+    if not recurring:
+        soft.append(f"{service} isn't a recurring bill, so it's a one-off. Needs TJ's OK.")
+    elif amount > limit:
+        soft.append(f"{m(amount)} is over {m(limit)}. Needs TJ's OK.")
     else:
-        s = next(x for x in st["services"] if x["service"] == service)
-        if s["spent_30d"] + amount > s["cap"]:
-            soft.append(f"{service} would hit {m(s['spent_30d'] + amount)} in 30 days, over its {m(s['cap'])} cap. Needs TJ's OK.")
-        elif service not in recurring:
-            soft.append(f"{service} isn't a recurring line, so it's a one-off. Needs TJ's OK.")
+        # a known line keeps its own 30-day cap (it matches the limit set on the service itself)
+        cap = min(cfg["caps_30d"].get(service, limit), limit)
+        if spent + amount > cap:
+            soft.append(f"{service} would hit {m(spent + amount)} in 30 days, over its {m(cap)} cap. Needs TJ's OK.")
     if hard:
         return "no", hard + soft
     return ("ask", soft) if soft else ("auto", [])
@@ -212,8 +216,10 @@ def main(argv):
         print("Ledger is broken, fix it before anything else:\n" + "\n".join(problems))
         return 1
     if cmd == "check":
-        verdict, why = check(cfg, rows, args[1], float(args[2]), today)
-        head = {"auto": "Runs through (recurring, inside cap, reserve safe)",
+        rec = "--recurring" in args
+        args = [a for a in args if a != "--recurring"]
+        verdict, why = check(cfg, rows, args[1], float(args[2]), today, rec)
+        head = {"auto": "Runs through (recurring, $" + f"{cfg.get('ask_over', 25):g}" + " or less, reserve safe)",
                 "ask": "Ask TJ: add it to the tracker for his Approve button",
                 "no": "Do not buy"}[verdict]
         print(head + "".join("\n- " + w for w in why))

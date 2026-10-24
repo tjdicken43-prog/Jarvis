@@ -44,9 +44,13 @@ v, why = b.check(CFG, rows, "anthropic-api", 5, D("2026-10-29"))
 assert v == "ask" and "over its $20.00 cap" in why[0], why
 assert any("anthropic-api has used" in a for a in st["alerts"]), st["alerts"]
 
-# unknown service needs TJ
+# new rule (TJ, 2026-10-24): a one-off needs TJ, a recurring bill of $25 or less runs, over $25 asks
 v, why = b.check(CFG, rows, "vercel", 1, D("2026-10-29"))
-assert v == "ask" and "is new" in why[0], why
+assert v == "ask" and "one-off" in why[0], why
+assert b.check(CFG, rows, "vercel", 20, D("2026-10-29"), recurring_bill=True) == ("auto", [])
+v, why = b.check(CFG, rows, "vercel", 26, D("2026-10-29"), recurring_bill=True)
+assert v == "ask" and "over $25.00" in why[0], why
+assert b.check(CFG, rows + [row("2026-10-28", "charge", "vercel", 20)], "vercel", 10, D("2026-10-29"), recurring_bill=True)[0] == "ask"
 
 # floor: a buy that would leave under $25 after what's due is refused, even inside caps
 big = dict(CFG, caps_30d=dict(CFG["caps_30d"], other=500))

@@ -14,7 +14,7 @@
 :root{--slate:#18263a;--slate2:#4a5668;--paper:#eef1f4;--card:#ffffff;--line:#d4dae2;--cedar:#106494;--cedar2:#0b4f76;--tan:#9fd3ef}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--paper);color:var(--slate);font:400 17px/1.6 "Libre Franklin",system-ui,sans-serif;padding-bottom:84px}
+body{margin:0;background:var(--paper);color:var(--slate);font:400 17px/1.618 "Libre Franklin",system-ui,sans-serif;padding-bottom:84px}
 ::selection{background:var(--tan);color:var(--slate)}
 a{color:var(--cedar);text-underline-offset:3px}
 :focus-visible{outline:3px solid var(--cedar);outline-offset:3px;border-radius:4px}
@@ -47,7 +47,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--cedar);outline:3px so
 .btn.ghost{background:transparent;color:var(--slate);border:1.5px solid var(--slate)}
 .btn svg{width:20px;height:20px;flex:none}
 .formnote{font-size:14.5px;background:#edf5fa;border:1px solid #b9d5e6;border-radius:8px;padding:9px 12px;margin:0}
-section{padding:56px 0}
+section{padding:55px 0}
 h2{font-size:clamp(32px,8vw,50px);margin-bottom:16px}
 .svc{margin:0;padding:0;list-style:none;border-top:1.5px solid var(--slate)}
 .svc li{padding:18px 0;border-bottom:1px solid var(--line)}
@@ -74,13 +74,14 @@ blockquote footer{font-size:15px;color:var(--slate2)}
 .bar .btn{min-height:54px;font-size:17px}
 .bar .ghost{color:#fff;border-color:#ffffff88}
 @media (min-width:820px){
+ section{padding:89px 0}
  body{padding-bottom:0}.bar{display:none}
  .hcall span{display:inline;margin-left:6px}
  .hcall{border:1.5px solid #ffffff66;border-radius:8px;padding:0 16px}
  .hero{grid-template-columns:1.15fr 1fr;align-items:center;gap:56px;padding:36px 0 110px}
  .rv{grid-template-columns:1.2fr 1fr 1fr;align-items:start}
  .visit{grid-template-columns:1fr 1fr}
- .split{display:grid;grid-template-columns:1fr 1.3fr;gap:56px}
+ .split{display:grid;grid-template-columns:1fr 1.618fr;gap:56px}
 }
 
 .btn.big{min-height:60px;font-size:21px;margin-top:22px}
@@ -245,7 +246,7 @@ body{padding-bottom:84px}
 .trust,.quote,.mini,.tool{border-radius:8px}
 .trust li,.rv blockquote,.svc li,.job img,.towns li{border-radius:6px}
 @media (min-width:820px){
- .hcopy{display:grid;grid-template-columns:1.2fr 380px;gap:48px;align-items:center}
+ .hcopy{display:grid;grid-template-columns:1.618fr 1fr;gap:48px;align-items:center}
  .mini{display:grid;gap:10px;position:relative;z-index:1;background:#fff;color:var(--slate);padding:22px;box-shadow:0 18px 40px -22px #000a}
  .mini>b{font-size:24px;font-weight:800}
  .mini>span{color:var(--slate2);font-size:15px;margin-top:-6px}

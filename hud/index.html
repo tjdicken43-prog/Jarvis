@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0b0a08">
+<meta name="theme-color" content="#04080c">
 <title>Jarvis</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Rajdhani:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="src/style.css">
 </head>
 <body>
@@ -46,7 +46,10 @@
     </section>
 
     <div class="center">
-      <div class="slot" id="slot"></div>
+      <div class="slot" id="slot">
+        <div class="tele l" aria-hidden="true"><span>LAT <b>36.37 N</b></span><span>LON <b>94.21 W</b></span><span>CST <b id="tTime">--:--</b></span></div>
+        <div class="tele r" aria-hidden="true"><span>LINK <b id="tLink">NOTES</b></span><span>MEM <b id="tMem">0</b></span><span>SYS <b>NOMINAL</b></span></div>
+      </div>
       <div class="status" id="status" data-mode="idle">At your service</div>
       <dl class="readout" id="readout" aria-label="Brain at a glance">
         <div><dt><i style="background:var(--arc)"></i>Notes</dt><dd id="rNotes">0</dd></div>
@@ -110,7 +113,8 @@
   <p>The five built-in voices work everywhere, even in the Claude app. They're styles, not copies of real actors. Your phone's voices are listed under them if it has any.</p>
   <label for="theme">Look</label>
   <select id="theme">
-    <option value="arc">Station (default)</option>
+    <option value="arc">Mark (default)</option>
+    <option value="station">Station</option>
     <option value="steel">Steel</option>
     <option value="agency">Graphite</option>
     <option value="spy">Brass</option>

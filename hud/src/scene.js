@@ -18,7 +18,7 @@ const edges = [];
 for (const n of nodes) for (const l of n.links) if (nodeBy.has(l) && l !== n.name) edges.push([n, nodeBy.get(l)]);
 for (const n of nodes) n.deg = edges.filter(([a, b]) => a === n || b === n).length;
 edges.forEach((e, i) => { e.seed = (i * 0.618) % 1; });
-const TYPE_COLOR = { hub: "#5fc9c0", rules: "#e07a6b", log: "#f5a623", list: "#d8c39a", week: "#b8b0a2", personal: "#7fbf8f" };
+const TYPE_COLOR = { hub: "#6fd3ff", rules: "#ff5a4a", log: "#e6b450", list: "#c9d6de", week: "#7f9aab", personal: "#5fd6a4" };
 
 let cinemaK = 0; // 0 = normal layout, 1 = Show off cinema (brain centred and bigger)
 function coreBox() {
@@ -48,7 +48,7 @@ for (let i = 0; i < 240; i++) physics(); // settle before the first frame
 
 const MODE_COLOR = { idle: [79, 216, 255], speaking: [120, 230, 255], listening: [92, 242, 165], thinking: [255, 178, 62] };
 let col = [79, 216, 255], t = 0, ARC = "79,216,255", THEME = "arc", BG = "#03070c";
-const RINGS = { arc: " J.A.R.V.I.S. · TJ'S BRAIN · ONLINE · ", steel: " J.A.R.V.I.S. · TJ'S BRAIN · ONLINE · ", agency: " J.A.R.V.I.S. · AGENCY HQ · CLEARANCE GRANTED · ",
+const RINGS = { arc: " J.A.R.V.I.S. · TJ'S BRAIN · ONLINE · ", station: " J.A.R.V.I.S. · TJ'S BRAIN · ONLINE · ", steel: " J.A.R.V.I.S. · TJ'S BRAIN · ONLINE · ", agency: " J.A.R.V.I.S. · AGENCY HQ · CLEARANCE GRANTED · ",
   spy: " J.A.R.V.I.S. · SECRET SERVICE · EYES ONLY · ", hunter: " J.A.R.V.I.S. · HUNTER'S LOG · SALT AND IRON · ",
   showoff: " J.A.R.V.I.S. · ALL SYSTEMS · FIVE DIMENSIONS · ONE BRAIN · " };
 function setTheme(name) {
@@ -153,8 +153,18 @@ function coreMind(R, C, spin) {
   cx.shadowBlur = 0; cx.lineCap = "butt";
   // face and hairlines
   cx.fillStyle = BG; cx.globalAlpha *= 0.82; cx.beginPath(); cx.arc(0, 0, R * 2.1, 0, TAU); cx.fill(); cx.globalAlpha /= 0.82;
-  cx.strokeStyle = "rgba(255,255,255,.08)"; cx.lineWidth = 1;
+  cx.strokeStyle = C(0.1); cx.lineWidth = 1;
   for (const r of [0.92, 1.3, 2.1]) { cx.beginPath(); cx.arc(0, 0, R * r, 0, TAU); cx.stroke(); }
+  // HUD bezel, after the Iron Man suit HUDs (Cantina Creative): thin segmented arcs that turn slowly, a counter-turning
+  // dashed ring, fine degree ticks and a fixed index mark. Decoration only, so it stays faint.
+  cx.lineWidth = Math.max(1, R * 0.018);
+  for (const [o, len, al] of [[0, 1.1, 0.55], [1.6, 0.5, 0.35], [2.5, 1.4, 0.5], [4.3, 0.7, 0.3], [5.3, 0.4, 0.45]]) {
+    cx.strokeStyle = C(al); cx.beginPath(); cx.arc(0, 0, R * 2.32, o + spin * 0.05, o + len + spin * 0.05); cx.stroke();
+  }
+  cx.setLineDash([R * 0.04, R * 0.07]); cx.strokeStyle = C(0.22); cx.beginPath(); cx.arc(0, 0, R * 1.74, -spin * 0.08, TAU - spin * 0.08); cx.stroke(); cx.setLineDash([]);
+  cx.strokeStyle = C(0.28); cx.lineWidth = 1;
+  for (let i = 0; i < 72; i++) ray(i / 72 * TAU, R * 2.2, R * (i % 6 ? 2.24 : 2.28));
+  cx.fillStyle = C(0.9); cx.beginPath(); cx.moveTo(0, -R * 2.36); cx.lineTo(-R * 0.05, -R * 2.45); cx.lineTo(R * 0.05, -R * 2.45); cx.closePath(); cx.fill();
   // outer ring: notes by kind, proportional
   let a = top; const total = nodes.length || 1;
   cx.lineWidth = Math.max(2.5, R * 0.065);
@@ -184,22 +194,22 @@ function coreMind(R, C, spin) {
     let b = top;
     for (const [v, c] of parts) { if (!v) continue; const s = v / sum * TAU; cx.strokeStyle = c; cx.beginPath(); cx.arc(0, 0, r, b + 0.03, b + s - 0.03); cx.stroke(); b += s; }
   };
-  ring(R * 1.12, [[d.done, "#6cc59a"], [d.live, "#d9a85b"], [d.need, "#e07a6b"]]);
-  ring(R * 1.0, [[d.filed, C(0.85)], [d.waiting, "#d9a85b"]]);
+  ring(R * 1.12, [[d.done, "#5fd6a4"], [d.live, "#e6b450"], [d.need, "#ff5a4a"]]);
+  ring(R * 1.0, [[d.filed, C(0.85)], [d.waiting, "#e6b450"]]);
   // centre
   cx.textAlign = "center"; cx.textBaseline = "middle";
   if (talk) {
-    cx.strokeStyle = mode === "listening" ? "#6cc59a" : C(1); cx.lineWidth = Math.max(2, R * 0.05); cx.lineCap = "round";
+    cx.strokeStyle = mode === "listening" ? "#5fd6a4" : C(1); cx.lineWidth = Math.max(2, R * 0.05); cx.lineCap = "round";
     for (let i = 0; i < 9; i++) {
       const x = (i - 4) * R * 0.15, h = R * (0.06 + level * 0.55 * Math.abs(Math.sin(i * 1.3 + t * 9) * Math.cos(i * 0.7 - t * 5)));
       cx.beginPath(); cx.moveTo(x, -h); cx.lineTo(x, h); cx.stroke();
     }
     cx.lineCap = "butt";
   } else {
-    cx.fillStyle = "rgba(236,238,240,.96)"; cx.font = `600 ${R * 0.56 | 0}px system-ui, -apple-system, Roboto, sans-serif`;
-    cx.fillText(String(nodes.length), 0, -R * 0.1);
-    cx.fillStyle = "rgba(149,154,162,.95)"; cx.font = `500 ${Math.max(9, R * 0.15) | 0}px system-ui, -apple-system, Roboto, sans-serif`;
-    cx.fillText(mode === "thinking" ? "thinking" : "notes", 0, R * 0.36);
+    cx.fillStyle = "rgba(236,246,252,.97)"; cx.font = `600 ${R * 0.62 | 0}px Rajdhani, system-ui, -apple-system, Roboto, sans-serif`;
+    cx.fillText(String(nodes.length), 0, -R * 0.08);
+    cx.fillStyle = C(0.75); cx.font = `600 ${Math.max(9, R * 0.15) | 0}px Rajdhani, system-ui, sans-serif`;
+    cx.fillText(mode === "thinking" ? "thinking" : "notes", 0, R * 0.38);
   }
 }
 

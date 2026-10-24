@@ -90,6 +90,7 @@ function cached(key, make) {
 let frame = 0, lastNow = 0, frameMs = 16, lowPower = false;
 function draw() {
   if (!$("night").hidden) { requestAnimationFrame(draw); return; } // night mode: no brain, no battery drain
+  if (document.hidden || window.JarvisFactory?.isOpen?.()) { requestAnimationFrame(draw); return; } // the factory covers the brain: draw nothing behind it
   frame++;
   // if the phone can't keep up in Show off, drop the glow pass and half the stars instead of stuttering
   const now = performance.now(); if (lastNow) frameMs += (Math.min(100, now - lastNow) - frameMs) * 0.05; lastNow = now;

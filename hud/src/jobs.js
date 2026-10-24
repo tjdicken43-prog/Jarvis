@@ -259,6 +259,7 @@ $("jobMode").addEventListener("click", () => {
 
 /* ---------- Readout under the dial: the same numbers the rings draw ---------- */
 function readout() {
+  if ($("tMem")) $("tMem").textContent = String(nodes.length);
   const d = mindData();
   $("rNotes").textContent = nodes.length; $("rLinks").textContent = d.links;
   $("rJobs").innerHTML = `${d.done}<small> / ${d.done + d.live + d.need}</small>`;

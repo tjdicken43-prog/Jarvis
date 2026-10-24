@@ -258,6 +258,13 @@
   .bRow.svc i { grid-column: 1 / -1; height: 4px; background: var(--faint); border-radius: 2px; overflow: hidden; }
   .bRow.svc u { display: block; height: 100%; background: var(--ok); }
   .bRow.svc.hot u { background: var(--gold); }
+  .bAsk { display: grid; gap: 10px; border: 1px solid var(--gold); border-radius: var(--r-ctl); padding: 12px; margin-top: 8px; font: 400 14.5px/1.4 var(--body); }
+  .bAsk b { font: 600 16px/1.2 var(--mono); }
+  .bAsk small { display: block; font: 400 12.5px/1.45 var(--body); color: var(--dim); margin-top: 4px; }
+  .bBtns { display: flex; gap: 8px; justify-content: flex-end; }
+  .bBtns button:disabled { opacity: .45; }
+  #budgetBtn { position: relative; }
+  #budgetBtn[data-count]:not([data-count=""])::after { content: attr(data-count); position: absolute; top: 2px; right: 2px; min-width: 16px; height: 16px; border-radius: 8px; background: var(--gold); color: var(--on-amber); font: 600 10px/16px var(--body); text-align: center; }
 
   /* night mode */
   #night { position: fixed; inset: 0; z-index: 60; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 32px; color: rgba(var(--arc-rgb), .6); }

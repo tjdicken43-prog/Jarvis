@@ -20,13 +20,16 @@ def row(d, kind, service, amount, by="TJ"):
 st = b.status(CFG, [], D("2026-10-24"))
 assert st["balance"] == 0 and st["frozen"] and "Nothing gets bought" in st["alerts"][0], st
 assert st["days_to_refill"] == 3 and st["next_refill"] == "2026-10-27"
-ok, why = b.check(CFG, [], "domains", 12, D("2026-10-24"))
-assert not ok and "No money" in why[0] and "floor" in why[-1], why
+v, why = b.check(CFG, [], "domains", 12, D("2026-10-24"))
+assert v == "no" and "No money" in why[0] and "reserve" in why[1], why
 
 # payday: refill counts even before TJ logs it; forecast covers the two weeks
 st = b.status(CFG, [], D("2026-10-27"))
 assert st["balance"] == 150 and st["committed"] == 39.25 and st["headroom"] == 85.75, st
-assert b.check(CFG, [], "domains", 12, D("2026-10-27"))[0]  # already forecast, not counted twice
+# recurring inside its cap runs through; a planned one-off still asks TJ (not counted twice either way)
+assert b.check(CFG, [], "anthropic-api", 20, D("2026-10-27")) == ("auto", [])
+v, why = b.check(CFG, [], "domains", 12, D("2026-10-27"))
+assert v == "ask" and "one-off" in why[0], why
 
 # paying a forecast line removes it from the forecast (no double count)
 rows = [row("2026-10-27", "charge", "domains", 12), row("2026-10-27", "charge", "anthropic-api", 20, "recurring")]
@@ -37,19 +40,19 @@ assert st["balance"] == 118 and st["committed"] == 7.25 and st["headroom"] == 85
 assert b.balance(CFG, [row("2026-10-27", "refill", "card", 150)], D("2026-10-28")) == 150
 
 # cap: anthropic already at $20 in 30 days
-ok, why = b.check(CFG, rows, "anthropic-api", 5, D("2026-10-29"))
-assert not ok and "cap" in why[0], why
+v, why = b.check(CFG, rows, "anthropic-api", 5, D("2026-10-29"))
+assert v == "ask" and "over its $20.00 cap" in why[0], why
 assert any("anthropic-api has used" in a for a in st["alerts"]), st["alerts"]
 
 # unknown service needs TJ
-ok, why = b.check(CFG, rows, "vercel", 1, D("2026-10-29"))
-assert not ok and "TJ must approve" in why[0], why
+v, why = b.check(CFG, rows, "vercel", 1, D("2026-10-29"))
+assert v == "ask" and "is new" in why[0], why
 
 # floor: a buy that would leave under $25 after what's due is refused, even inside caps
 big = dict(CFG, caps_30d=dict(CFG["caps_30d"], other=500))
-ok, why = b.check(big, rows, "other", 90, D("2026-10-29"))
-assert not ok and "floor" in why[-1], why
-assert b.check(big, rows, "other", 80, D("2026-10-29"))[0]
+v, why = b.check(big, rows, "other", 90, D("2026-10-29"))
+assert v == "no" and "reserve" in why[0], why  # the reserve beats any approval
+assert b.check(big, rows, "other", 80, D("2026-10-29"))[0] == "ask"
 
 # recurring that would cross the floor warns ahead of time
 heavy = dict(CFG, recurring=CFG["recurring"] + [{"service": "render", "amount": 120, "monthly_from": "2026-11-05"}])
@@ -71,4 +74,6 @@ cfg, real = b.load()
 assert b.lint(cfg, real) == [], b.lint(cfg, real)
 assert b.main(["status", "--date", "2026-10-24", "--json"]) == 0
 assert b.main(["check", "domains", "12", "--date", "2026-10-24"]) == 1
+assert b.main(["check", "anthropic-api", "20", "--date", "2026-10-27"]) == 0
+assert b.main(["check", "vercel", "5", "--date", "2026-10-27"]) == 2
 print("budget: all checks passed")

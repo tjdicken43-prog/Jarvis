@@ -17,9 +17,9 @@ Draft for the owners of [[J Street Gym]]. Numbers in brackets get filled from th
 
 **The safety side.** Someone who follows a member in signed no waiver. If they get hurt, the insurer asks how they got in. SecurityAI gives the gym a record that it checks the door.
 
-**The math.** A sneak-in is worth about $10 here. SecurityAI is $200 a month per entrance, month to month. Catching 20 a month covers it; at [Z] a month that's about $[Z × 10] of lost membership found.
+**The math.** A sneak-in is worth about $10 here. SecurityAI is $149 a month for the first entrance, month to month. Catching 15 a month covers it; at [Z] a month that's about $[Z × 10] of lost membership found.
 
-**The ask.** Keep it running at $200 a month, cancel any time.
+**The ask.** Keep it running at $149 a month, cancel any time.
 
 ## Before it's ready
 - [ ] Hardware in and first nights run. See [[Hardware readiness list]].

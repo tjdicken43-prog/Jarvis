@@ -239,5 +239,9 @@ $("mic").addEventListener("click", listen);
 addEventListener("keydown", (e) => {
   if (e.code === "Space" && document.activeElement === document.body) { e.preventDefault(); listen(); }
   if (e.key === "Escape") { stopVoice(); $("card").classList.remove("show"); }
+  // keyboard first on a computer, like GitHub's "/" and the Ctrl+K command bar in Slack and Linear: jump to Ask from anywhere
+  const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || "") || document.querySelector("dialog[open]");
+  if (!typing && (e.key === "/" || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k"))) { e.preventDefault(); $("q").focus(); }
+  if (!typing && !e.ctrlKey && !e.metaKey && !e.altKey && e.key.toLowerCase() === "f" && innerWidth > 900) $("fsBtn").click();
 });
 

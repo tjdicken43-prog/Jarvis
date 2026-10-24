@@ -184,7 +184,7 @@ $("factoryBtn").addEventListener("click", openFactory);
   const frame = (ts) => {
     requestAnimationFrame(frame);
     if (ts - last < 80 || document.hidden || F.isOpen() || !cv.offsetParent) return; last = ts;
-    const w = F.tick(), cw = 620, ch = cw * cv.height / cv.width; // crop: the core and the rooms round it
+    const w = F.tick(), cw = cv.offsetWidth < 200 ? 380 : 620, ch = cw * cv.height / cv.width; // crop: the core and the rooms round it; a phone thumbnail crops tighter so the crew still read
     g.imageSmoothingEnabled = true; g.drawImage(w, 430 - cw / 2, 300 - ch / 2, cw, ch, 0, 0, cv.width, cv.height);
   };
   requestAnimationFrame(frame);

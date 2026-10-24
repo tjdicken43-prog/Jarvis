@@ -71,6 +71,16 @@ TJ: rounds 1-5 still read as a website. He wanted a real-3D, full-screen look th
 - **Briefs on home.** Under the factory feed: read through the Render connector (read-only), Approve writes `approvals/<id>` and queues a job for Jarvis backend.
 - **Phone.** Hologram on top, then Chat / Jobs / Brain tabs; the feed and briefs lead Chat. The voice-state line sits on a dark plate so the beam can't wash it out.
 
+## Round 7 (2026-10-24 overnight): laptop fit, voice you can see, keyboard first
+A pro pass on the Workshop with nothing new to learn, only things that now work the way shipped products do.
+- **Laptop screens (1280x720, 1366x768, 1440x900).** The Jobs panel was cut in half and four suggestions sat on the projector. Brain now takes the leftover height and Jobs keeps its own; on short screens the header and tiles tighten and only the top two or three suggestions show, so the hologram keeps its room.
+- **Lists fade at the cut edge** instead of slicing a line, and stop fading at the end: the scroll-edge effect in Apple's and Linear's lists (from use).
+- **Voice you can see on the projector.** The lip lights work like the Amazon Echo light ring, which tells you its state by colour and motion (Amazon's Echo help pages; from memory, not looked up tonight): listening breathes green, thinking runs an amber light round the ring, speaking spreads a level meter from the front with the real voice level, and the lens and beam brighten with it. At rest the lights still count the notes.
+- **Keyboard first on a computer.** / or Ctrl+K jumps to Ask (GitHub's "/" search, the Ctrl+K command bar in Slack and Linear), F toggles full screen, Space still talks. A small "/" key in the composer says so, hidden on touch screens.
+- **Battery.** After a minute untouched with Jarvis idle, the hologram draws at 30 frames a second instead of 60; any touch or voice brings full speed back. It still stops when the tab is hidden.
+- **Phone.** The factory card now fills the width, and its thumbnail crops tighter so the crew read at 112px.
+- **Greeting.** 4am to noon says good morning (it said good evening at 4:47am).
+
 ## Kept, and why
 - The 3D brain and its core: it is the one thing no other assistant has, so it stays as the signature, calmer (no grid, softer bloom, no angle readout, faint ring text).
 - Show off, the flight, factory, night mode, voices and looks all work as before. Show off keeps its full effects; it's opt-in.

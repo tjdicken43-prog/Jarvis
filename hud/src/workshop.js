@@ -113,7 +113,8 @@ const leds = new THREE.InstancedMesh(new THREE.BoxGeometry(0.05, 0.016, 0.022), 
   }
 }
 add(leds, base);
-const ledOff = new THREE.Color("#1d2a35"), ledTmp = new THREE.Color();
+const ledOff = new THREE.Color("#1d2a35"), ledTmp = new THREE.Color(), ledVoice = new THREE.Color(), ledAmber = new THREE.Color(), ledHolo = new THREE.Color();
+const GREEN = new THREE.Color("#1fd47a"), voiceMix = { listening: 0, thinking: 0, speaking: 0 };
 
 /* ---------- beam and the dust drifting through it ---------- */
 const beamH = C.y - 0.34;
@@ -396,10 +397,14 @@ addEventListener("keydown", (e) => { if (e.key === "Escape" && document.body.cla
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const t0 = performance.now(), BOOT = reduced ? 0.01 : 3.2;
 let last = t0, slowFrames = 0, hotKey = "";
+let touchedAt = t0;
+for (const ev of ["pointerdown", "pointermove", "keydown", "wheel"]) addEventListener(ev, () => { touchedAt = performance.now(); }, { passive: true });
 const coreTint = new THREE.Color();
 function render(now) {
   requestAnimationFrame(render);
   if (SHOW() || document.hidden || !$("night").hidden || window.JarvisFactory?.isOpen?.()) { last = now; return; }
+  // nobody has touched it for a minute and Jarvis is idle: 30 frames a second is plenty, and saves the battery
+  if (mode === "idle" && !focus && now - touchedAt > 60000 && now - last < 30) return;
   const dt = Math.max(0, Math.min(0.05, (now - last) / 1000)); last = now; // rAF time can trail performance.now() on the first frame
   const t = Math.max(0, (now - t0) / 1000), boot = Math.min(1, t / BOOT);
   // a slow device drops its pixel ratio once rather than stutter
@@ -420,15 +425,26 @@ function render(now) {
   globe.rotation.y = spin.yaw;
 
   // boot: lights, beam, globe, links, rings
+  // the lip lights count the notes at rest, and show Jarvis's voice state the way a smart speaker's light ring does:
+  // listening breathes green, thinking runs an amber light round the ring, speaking spreads a level meter from the front
+  for (const k of ["listening", "thinking", "speaking"]) voiceMix[k] += ((mode === k ? 1 : 0) - voiceMix[k]) * Math.min(1, dt * 8);
+  const head = t * 3.2, breath = 0.55 + 0.45 * Math.sin(t * 3);
   for (let i = 0; i < LEDS; i++) {
     const on = win(boot, i / LEDS * 0.25, i / LEDS * 0.25 + 0.06);
-    leds.setColorAt(i, ledTmp.copy(i < nodes.length ? HOLO : ledOff).multiplyScalar(on * (i < nodes.length ? 1.4 : 1)));
+    ledTmp.copy(i < nodes.length ? HOLO : ledOff).multiplyScalar(on * (i < nodes.length ? 1.4 : 1));
+    const a = i / LEDS * Math.PI * 2, front = Math.abs(Math.atan2(Math.sin(a - Math.PI / 2), Math.cos(a - Math.PI / 2))) / Math.PI; // 0 facing you, 1 at the back
+    const lag = ((head - a) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+    const st = voiceMix.listening * breath * (1.6 - front), th = voiceMix.thinking * 4 * Math.exp(-lag * 1.5), sp = voiceMix.speaking * (front < level * 1.15 ? 2.4 : 0.15);
+    const busy = Math.max(voiceMix.listening, voiceMix.thinking, voiceMix.speaking);
+    if (busy > 0.001) ledTmp.multiplyScalar(1 - 0.8 * busy).add(ledVoice.copy(GREEN).multiplyScalar(st)).add(ledAmber.copy(AMBER).multiplyScalar(th)).add(ledHolo.copy(HOLO).multiplyScalar(sp));
+    leds.setColorAt(i, ledTmp);
   }
   leds.instanceColor.needsUpdate = true;
-  const lamp = win(boot, 0.12, 0.3);
-  lensMat.color.set("#7fc6e8").multiplyScalar(0.1 + 0.45 * lamp);
-  emitterMat.color.set("#d8f3ff").multiplyScalar(2.2 * lamp);
-  lensLight.intensity = 10 * win(boot, 0.12, 0.4);
+  const lamp = win(boot, 0.12, 0.3), talk = voiceMix.speaking * level;
+  lensMat.color.set("#7fc6e8").multiplyScalar(0.1 + 0.45 * lamp * (1 + talk));
+  emitterMat.color.set("#d8f3ff").multiplyScalar(2.2 * lamp * (1 + talk * 0.9));
+  lensLight.intensity = 10 * win(boot, 0.12, 0.4) * (1 + talk * 0.8);
+  bloom.strength = 0.7 + talk * 0.35;
   beam.material.uniforms.uOn.value = win(boot, 0.15, 0.45); beam.material.uniforms.uTime.value = t;
   dust.material.uniforms.uOn.value = win(boot, 0.3, 0.6); dust.material.uniforms.uTime.value = t;
   floor.material.uniforms.uOn.value = win(boot, 0.12, 0.5);

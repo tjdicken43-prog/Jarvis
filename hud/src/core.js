@@ -21,7 +21,7 @@ function tick() {
   const h = +d.toLocaleString("en-US", { ...tz, hour: "numeric", hour12: false }) % 24;
   $("bigTime").textContent = d.toLocaleTimeString("en-US", { ...tz, hour: "numeric", minute: "2-digit" }).replace(/\s?[AP]M$/, "");
   $("bigLine").textContent = d.toLocaleDateString("en-US", { ...tz, weekday: "long", month: "long", day: "numeric" }) + " · Bentonville";
-  $("greet").textContent = `Good ${h < 5 ? "evening" : h < 12 ? "morning" : h < 17 ? "afternoon" : "evening"}, TJ`;
+  $("greet").textContent = `Good ${h < 4 ? "evening" : h < 12 ? "morning" : h < 17 ? "afternoon" : "evening"}, TJ`;
 }
 tick(); setInterval(tick, 10000);
 
@@ -68,3 +68,11 @@ function setMode(m) {
   $("mic").classList.toggle("on", m === "listening");
 }
 
+
+/* ---------- Scroll edges: a list that runs on fades at the bottom, and stops fading once you reach the end ---------- */
+function edge(el) { el.classList.toggle("more", el.scrollHeight - el.scrollTop - el.clientHeight > 4); }
+for (const el of document.querySelectorAll(".panel > .scroll")) {
+  el.addEventListener("scroll", () => edge(el), { passive: true });
+  new ResizeObserver(() => edge(el)).observe(el);
+  new MutationObserver(() => edge(el)).observe(el, { childList: true, subtree: true });
+}

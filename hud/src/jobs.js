@@ -184,7 +184,7 @@ $("factoryBtn").addEventListener("click", openFactory);
   const frame = (ts) => {
     requestAnimationFrame(frame);
     if (ts - last < 80 || document.hidden || F.isOpen() || !cv.offsetParent) return; last = ts;
-    const w = F.tick(), cw = 440, ch = cw * cv.height / cv.width; // crop: the core and the rooms round it
+    const w = F.tick(), cw = 620, ch = cw * cv.height / cv.width; // crop: the core and the rooms round it
     g.imageSmoothingEnabled = true; g.drawImage(w, 430 - cw / 2, 300 - ch / 2, cw, ch, 0, 0, cv.width, cv.height);
   };
   requestAnimationFrame(frame);
@@ -259,7 +259,7 @@ $("jobMode").addEventListener("click", () => {
 
 /* ---------- Readout under the dial: the same numbers the rings draw ---------- */
 function readout() {
-  if ($("tMem")) $("tMem").textContent = String(nodes.length);
+  if (!$("rNotes")) return; // the Workshop look has no readout strip; the Brain panel shows these numbers
   const d = mindData();
   $("rNotes").textContent = nodes.length; $("rLinks").textContent = d.links;
   $("rJobs").innerHTML = `${d.done}<small> / ${d.done + d.live + d.need}</small>`;

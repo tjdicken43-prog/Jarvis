@@ -62,6 +62,15 @@ TJ: "make it look like something Iron Man would use", the factory "more intricat
 
 **Briefs (Station page).** The three job cards now show the golden trade demos (money/sites/golden/) as de-branded screenshots: logos swapped for text wordmarks, real photos hidden, names "Example Heating & Air / Roofing / Plumbing", phone (479) 555-0142. Emails are the three-sentence flaw email ending with the $299 setup + $149/month offer, and each brief explains Front Desk.
 
+## Round 6 (2026-10-24): the Workshop, real 3D
+TJ: rounds 1-5 still read as a website. He wanted a real-3D, full-screen look that "changes the entire look of the computer", researched against creators who post their own Jarvis UIs, shown as screenshots first. Research and mockup: /mnt/project-files/jarvis-hud/workshop-mockup/ (creator-comparison.md, creator-research.md). TJ approved it with three changes: brief approvals under the factory feed on the home page, fewer labels, and no AI-looking fonts.
+
+- **Hologram (hud/src/workshop.js, three.js 0.169 from jsdelivr).** A lit projector, a beam, and a globe of the real notes with links curved inward; drag turns it, tap opens a note, the core follows Jarvis's voice state. Full-screen button gives an ambient mode with the panels hidden. All on the device: no Claude calls, stops when the tab is hidden, the factory or Show off is open, or night mode is on.
+- **System font only.** No mono, no letter-spaced caps, plain "Jarvis" wordmark: those were the AI tells TJ named.
+- **Fewer details.** Brain to-dos show two lines each; the full text lives in the note.
+- **Briefs on home.** Under the factory feed: read through the Render connector (read-only), Approve writes `approvals/<id>` and queues a job for Jarvis backend.
+- **Phone.** Hologram on top, then Chat / Jobs / Brain tabs; the feed and briefs lead Chat. The voice-state line sits on a dark plate so the beam can't wash it out.
+
 ## Kept, and why
 - The 3D brain and its core: it is the one thing no other assistant has, so it stays as the signature, calmer (no grid, softer bloom, no angle readout, faint ring text).
 - Show off, the flight, factory, night mode, voices and looks all work as before. Show off keeps its full effects; it's opt-in.

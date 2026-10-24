@@ -105,6 +105,15 @@ function draw() {
   }
   if (flight.on) { flight.on = false; warpBoost = 0; tour.cap = null; if (demo) { demo = false; stopVoice(); setMode("idle"); } }
   physics();
+  if (!SHOW()) { // Workshop look: src/workshop.js draws the brain in 3D; this loop keeps the physics, the glow decay and the voice level
+    const live = voiceLevel();
+    const want = mode === "speaking" ? (live !== null ? 0.3 + live * 0.7 : 0.45 + 0.4 * Math.abs(Math.sin(t * 11) * Math.sin(t * 4.3)))
+      : mode === "listening" ? 0.3 + 0.15 * Math.abs(Math.sin(t * 5)) : mode === "thinking" ? 0.32 : 0.1 + 0.05 * Math.sin(t * 1.6);
+    level += (want - level) * 0.18;
+    if (cv.dataset.clear !== "1") { cx.clearRect(0, 0, W, H); cv.dataset.clear = "1"; }
+    requestAnimationFrame(draw); return;
+  }
+  cv.dataset.clear = "";
   if (cam.go && !grab) { // glide so the tapped note faces you
     let dy = cam.go[0] - cam.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
     cam.yaw += dy * 0.08; cam.pitch += (cam.go[1] - cam.pitch) * 0.08; cam.vYaw = 0; cam.vPitch = 0;

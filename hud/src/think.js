@@ -181,7 +181,6 @@ samplePromise.then((sample) => {
   $("linkDot").classList.toggle("on", online);
   $("linkText").textContent = sample ? "Online" : online ? "Online · API key" : "Notes only";
   $("linkDot").title = $("linkText").textContent;
-  $("tLink").textContent = sample ? "CLAUDE" : online ? "API" : "NOTES";
   say("note", online ? "Good to see you, boss. Talk, type, or tap Job to hand me something big." : "Running on the notes only. Open the claude.ai copy for the full Jarvis.");
   // quick starts, so an empty screen still has somewhere to go
   if (turns.length) return; // a resumed chat already fills the screen

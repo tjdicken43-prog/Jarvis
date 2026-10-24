@@ -80,4 +80,30 @@ assert b.main(["status", "--date", "2026-10-24", "--json"]) == 0
 assert b.main(["check", "domains", "12", "--date", "2026-10-24"]) == 1
 assert b.main(["check", "anthropic-api", "20", "--date", "2026-10-27"]) == 0
 assert b.main(["check", "vercel", "5", "--date", "2026-10-27"]) == 2
+# lanes (TJ, 2026-10-24): a lane spends only its wallet; 60-day first term, then a losing month shuts it
+LC = dict(CFG, caps_30d=dict(CFG["caps_30d"], etsy=40), lanes={"etsy-digital": {
+    "status": "running", "start": "2026-11-03", "allowance_30d": 40, "first_term_days": 60, "services": ["etsy"]}})
+sale = lambda d, amt: {"date": d, "lane": "etsy-digital", "amount": str(amt), "note": ""}
+r = b.lane_report(LC, [], [], "etsy-digital", D("2026-11-10"))
+assert r["verdict"] == "first term" and r["left"] == 40 and r["period"] == 1, r
+spend = [row("2026-11-04", "charge", "etsy", 30, "recurring")]
+r = b.lane_report(LC, spend, [], "etsy-digital", D("2026-11-20"))
+assert r["verdict"] == "first term" and r["left"] == 10, r  # month 1 loses money but isn't judged on it
+spend.append(row("2026-11-05", "charge", "etsy", 10, "recurring"))
+assert b.lane_report(LC, spend, [], "etsy-digital", D("2026-11-20"))["verdict"] == "shut"  # wallet empty
+m2 = [row("2026-12-05", "charge", "etsy", 20, "recurring")]
+assert b.lane_report(LC, m2, [sale("2026-12-10", 25)], "etsy-digital", D("2027-01-05"))["verdict"] == "keep"
+r = b.lane_report(LC, m2, [sale("2026-12-10", 5)], "etsy-digital", D("2027-01-05"))
+assert r["verdict"] == "shut" and "Month 2" in r["why"], r
+assert b.lane_report(dict(LC, lanes={"etsy-digital": dict(LC["lanes"]["etsy-digital"], status="planned")}),
+                     [], [], "etsy-digital", D("2026-11-10"))["verdict"] == "planned"
+# the wallet is enforced in check(), and a planned or shut lane can't spend at all
+b.load_sales = lambda *a: []
+assert b.check(LC, [], "etsy", 5, D("2026-11-10"), recurring_bill=True) == ("auto", [])
+v, why = b.check(LC, spend[:1], "etsy", 15, D("2026-11-10"), recurring_bill=True)
+assert v == "no" and "left in its wallet" in why[0], why
+v, why = b.check(dict(LC, lanes={"etsy-digital": dict(LC["lanes"]["etsy-digital"], status="shut")}), [], "etsy", 1,
+                 D("2026-11-10"), recurring_bill=True)
+assert v == "no" and "shut" in why[0], why
+assert b.main(["lanes", "--date", "2026-10-24"]) == 0
 print("budget: all checks passed")

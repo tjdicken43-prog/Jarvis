@@ -8,7 +8,11 @@ is bought, and the source of the HUD's Budget sheet. No network, no card data.
       exit 0 = runs through (a recurring business bill of $25 or less, reserve safe)
       exit 2 = ask TJ: put it in the tracker for his Approve button (over $25, or a one-off)
       exit 1 = no: before payday or it would dip into the $25 reserve; even TJ's button can't
+  python3 money/budget/budget.py lanes [--date YYYY-MM-DD]                 each money lane: wallet, sales, keep or shut
   python3 money/budget/budget.py lint                                       exit 1 = ledger is broken
+
+Lanes (TJ, 2026-10-24, money/LANES.md): a lane spends only its own wallet. It shuts when the wallet is empty,
+or when a 30-day period after its first term made less than it spent. Only TJ reopens it (new start date).
 """
 import calendar
 import csv
@@ -30,6 +34,50 @@ def load(config=HERE / "budget.json", ledger=HERE / "ledger.csv"):
     with open(ledger, newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
     return cfg, rows
+
+
+def load_sales(path=HERE.parent / "lanes" / "sales.csv"):
+    """Money a lane brought in: net of marketplace fees and refunds, booked when sold (not when paid out)."""
+    if not Path(path).exists():
+        return []
+    with open(path, newline="", encoding="utf-8") as f:
+        return list(csv.DictReader(f))
+
+
+def lane_of(cfg, service):
+    return next((n for n, l in cfg.get("lanes", {}).items() if service in l.get("services", [])), None)
+
+
+def lane_report(cfg, rows, sales, name, today):
+    """Where a lane stands today and whether the rules shut it. verdict: planned | first term | keep | shut."""
+    l = cfg["lanes"][name]
+    out = {"lane": name, "status": l.get("status", "planned"), "allowance": l["allowance_30d"], "why": ""}
+    if not l.get("start") or out["status"] == "planned":
+        return dict(out, verdict="planned", why="Not started.")
+    start = date.fromisoformat(l["start"])
+    period = max(0, (today - start).days // 30)
+    def money(p):
+        a, b = start + timedelta(days=30 * p), start + timedelta(days=30 * (p + 1))
+        spent = sum(float(r["amount"]) * (1 if r["kind"] == "charge" else -1) for r in rows
+                    if r["service"] in l["services"] and r["kind"] in ("charge", "refund") and a <= date.fromisoformat(r["date"]) < b)
+        made = sum(float(r["amount"]) for r in sales if r["lane"] == name and a <= date.fromisoformat(r["date"]) < b)
+        return round(spent, 2), round(made, 2)
+    spent, made = money(period)
+    out.update(day=(today - start).days + 1, period=period + 1, spent=spent, made=made,
+               left=round(l["allowance_30d"] - spent, 2))
+    if out["status"] == "shut":
+        return dict(out, verdict="shut", why="Shut down. Only TJ reopens it.")
+    if out["left"] <= 0:
+        return dict(out, verdict="shut", why="Wallet is empty.")
+    judged_from = max(0, l.get("first_term_days", 30) // 30 - 1)  # 60-day first term: money rule from month 2
+    for p in range(judged_from, period):
+        s, mde = money(p)
+        if mde < s:
+            return dict(out, verdict="shut", why=f"Month {p + 1} made {m(mde)} on {m(s)} spent.")
+    if (today - start).days < l.get("first_term_days", 30):
+        return dict(out, verdict="first term", why="Judged on views, favorites and first sales until day "
+                    + str(l.get("first_term_days", 30)) + ".")
+    return dict(out, verdict="keep", why="Paid for itself.")
 
 
 def lint(cfg, rows):
@@ -203,6 +251,13 @@ def check(cfg, rows, service, amount, today, recurring_bill=False):
         cap = min(cfg["caps_30d"].get(service, limit), limit)
         if spent + amount > cap:
             soft.append(f"{service} would hit {m(spent + amount)} in 30 days, over its {m(cap)} cap. Needs TJ's OK.")
+    lane = lane_of(cfg, service)
+    if lane:
+        lr = lane_report(cfg, rows, load_sales(), lane, today)
+        if lr["status"] != "running" or lr["verdict"] == "shut":
+            hard.append(f"The {lane} lane is {lr['verdict']}: {lr['why']}")
+        elif amount > lr["left"]:
+            hard.append(f"The {lane} lane has {m(lr['left'])} left in its wallet this month.")
     if hard:
         return "no", hard + soft
     return ("ask", soft) if soft else ("auto", [])
@@ -231,6 +286,13 @@ def main(argv):
                 "no": "Do not buy"}[verdict]
         print(head + "".join("\n- " + w for w in why))
         return {"auto": 0, "no": 1, "ask": 2}[verdict]
+    if cmd == "lanes":
+        sales = load_sales()
+        for n in cfg.get("lanes", {}):
+            r = lane_report(cfg, rows, sales, n, today)
+            money_line = f" | month {r['period']} spent {m(r['spent'])} made {m(r['made'])} left {m(r['left'])}" if "period" in r else ""
+            print(f"{n}: {r['verdict'].upper()}{money_line} | {r['why']}")
+        return 0
     st = status(cfg, rows, today)
     if "--json" in args:
         print(json.dumps(st, indent=1))

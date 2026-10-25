@@ -14,8 +14,10 @@ import json
 import re
 import secrets
 
+import calendars
 import config
 import notices
+import shopcfg
 from mailer import CENTRAL
 
 DEFAULT = {"windows": [8, 10, 13, 15], "length": 2, "per_window": 1, "days_ahead": 7, "lead_hours": 3}
@@ -44,8 +46,9 @@ def validate(c, b):
     w = sorted(set(out["windows"]))
     if not w or len(w) > 8 or any(not isinstance(h, int) for h in w):
         raise BookingError("give 1 to 8 window start hours")
+    days = [d for d in shopcfg.week(c) if d]
     for h in w:
-        if h < c["open_hour"] or h + out["length"] > c["close_hour"]:
+        if not any(o <= h and h + out["length"] <= cl for o, cl in days):
             raise BookingError(f"the {label_hour(h)} window falls outside office hours")
     for a, b2 in zip(w, w[1:]):
         if b2 - a < out["length"]:
@@ -65,7 +68,14 @@ def label(start, end):
 
 
 def open_day(c, d):
-    return d.weekday() < 5 or (d.weekday() == 5 and c["open_saturday"])
+    return shopcfg.day_hours(c, d) is not None
+
+
+def busy(conn, c, start, end):
+    """Busy blocks from the shop's own calendar (two-way sync), so a time the owner blocked is never offered."""
+    return [(r["starts_at"], r["ends_at"]) for r in conn.execute(
+        "SELECT starts_at, ends_at FROM calendar_busy WHERE client_id = %s AND ends_at > %s AND starts_at < %s",
+        (c["id"], start, end)).fetchall()]
 
 
 def openings(conn, c, now=None, day=None):
@@ -78,16 +88,23 @@ def openings(conn, c, now=None, day=None):
     for r in conn.execute("""SELECT window_start, count(*) AS n FROM bookings WHERE client_id = %s AND status = 'booked'
                              AND window_start >= %s GROUP BY window_start""", (c["id"], now)).fetchall():
         taken[r["window_start"]] = r["n"]
+    blocks = busy(conn, c, now, now + dt.timedelta(days=b["days_ahead"] + 1)) if c.get("calendar") else []
     out = []
     for i in range(b["days_ahead"] + 1):
         d = first + dt.timedelta(days=i)
-        if not open_day(c, d) or (day and d != day):
+        hours = shopcfg.day_hours(c, d)
+        if not hours or (day and d != day):
             continue
         for h in b["windows"]:
+            if h < hours[0] or h + b["length"] > hours[1]:
+                continue  # e.g. a 3pm window on a Saturday that closes at noon
             start = dt.datetime.combine(d, dt.time(h), CENTRAL)
+            end = start + dt.timedelta(hours=b["length"])
             if start < earliest or taken.get(start, 0) >= b["per_window"]:
                 continue
-            out.append((start, start + dt.timedelta(hours=b["length"])))
+            if any(s < end and e > start for s, e in blocks):
+                continue
+            out.append((start, end))
     return out
 
 
@@ -95,24 +112,60 @@ def slot_id(start):
     return start.astimezone(CENTRAL).strftime("%Y-%m-%dT%H:%M")
 
 
+WEEKDAYS = {r"mon(day)?": 0, r"tue(s|sday)?": 1, r"wed(nesday)?": 2, r"thu(rs|rsday)?": 3, r"fri(day)?": 4,
+            r"sat(urday)?": 5, r"sun(day)?": 6, "lunes": 0, "martes": 1, "miercoles": 2, "jueves": 3, "viernes": 4,
+            "sabado": 5, "domingo": 6}
+MONTHS = {m: i for i, m in enumerate(["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov",
+                                      "dec"], 1)}
+
+
 def parse_day(text, now):
-    """'today', 'tomorrow', a weekday name, or YYYY-MM-DD. Anything else: no filter."""
-    t = (text or "").strip().lower()
+    """What the model passes as the caller's day: today, tomorrow, (next/this) a weekday, October 27, 10/27, the 27th,
+    YYYY-MM-DD, and the Spanish words for the same. Anything else, or a past date: no filter (soonest openings)."""
+    t = re.sub(r"[^a-z0-9/\- ]", "", (text or "").strip().lower().translate(str.maketrans("áéíóúñ", "aeioun")))
     today = now.astimezone(CENTRAL).date()
-    if not t or t in ("any", "soonest", "first available"):
+    if not t or t in ("any", "soonest", "first available", "asap", "lo antes posible"):
         return None
-    if t == "today":
+    if t in ("today", "hoy"):
         return today
-    if t == "tomorrow":
+    if t in ("tomorrow", "manana"):
         return today + dt.timedelta(days=1)
-    days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
-    for i, name in enumerate(days):
-        if t.startswith(name[:3]):
-            return today + dt.timedelta(days=(i - today.weekday()) % 7 or 7)
+    if t in ("day after tomorrow", "pasado manana"):
+        return today + dt.timedelta(days=2)
     try:
-        return dt.date.fromisoformat(t[:10])
+        d = dt.date.fromisoformat(t[:10])
+        return d if d >= today else None
     except ValueError:
-        return None
+        pass
+    m = re.search(r"\b(\d{1,2})/(\d{1,2})\b", t)  # 10/27
+    month, dom = (int(m.group(1)), int(m.group(2))) if m else (None, None)
+    if not m:
+        mm = re.search(r"\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.? (\d{1,2})(st|nd|rd|th)?\b", t)
+        if mm:
+            month, dom = MONTHS[mm.group(1)], int(mm.group(2))
+        else:
+            mm = re.search(r"\b(?:the )?(\d{1,2})(st|nd|rd|th)\b", t)  # the 27th
+            if mm:
+                dom = int(mm.group(1))
+    if dom:
+        y, mo = today.year, month or today.month
+        try:
+            d = dt.date(y, mo, dom)
+            if d < today and month is None:  # "the 3rd" said on the 27th means next month
+                d = dt.date(y + (mo == 12), mo % 12 + 1, dom)
+            elif d < today:                  # "January 5" said in December means next year
+                d = dt.date(y + 1, mo, dom)
+            return d
+        except ValueError:
+            return None
+    for word, wd in WEEKDAYS.items():
+        if re.search(r"\b" + word + r"\b", t):
+            ahead = (wd - today.weekday()) % 7
+            if "next" in t or "proximo" in t:
+                ahead = ahead or 7  # "next Tuesday" said on a Tuesday is a week out; said on Sunday, two days
+            return today + dt.timedelta(days=ahead or 7) if ahead == 0 and "this" not in t and "este" not in t \
+                else today + dt.timedelta(days=ahead)
+    return None
 
 
 def tools():
@@ -187,6 +240,7 @@ def book(conn, c, args, call_id=None, now=None):
                         (str(args.get("address") or "").strip()[:200] or None),
                         (str(args.get("problem") or "").strip()[:300] or None), args.get("ok_to_text") is True)).fetchone()
     notices.booking(conn, c, row)
+    calendars.mark_pending(conn, row["id"], c)
     return row
 
 

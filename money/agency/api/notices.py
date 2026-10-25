@@ -39,25 +39,69 @@ def mins(s):
     return f"{max(1, round((s or 0) / 60))} min"
 
 
-def save(conn, c, kind, subject, body, day=None, period_end=None, send=None):
-    """Save the notice, then send it if NOTIFY=smtp. A failed send is saved as failed, never retried in a loop."""
+def message(c, to, subject, body):
+    msg = EmailMessage()
+    msg["From"] = formataddr((f"Front Desk for {c['business_name']}"[:70], config.NOTIFY_FROM_EMAIL))
+    msg["To"] = to
+    msg["Subject"] = subject
+    msg["Message-ID"] = make_msgid(domain=(config.NOTIFY_FROM_EMAIL.split("@")[-1] or None))
+    msg.set_content(body)
+    return msg
+
+
+def save(conn, c, kind, subject, body, day=None, period_end=None, send=None, defer=False):
+    """Save the notice, then send it if NOTIFY=smtp. A failed send is saved as failed, never retried in a loop.
+    defer=True (inside a live call): save it as queued and let flush() send it after the response, so a slow mail
+    server never makes a caller wait on the line."""
     to = to_of(c)
     status, error = "stub", None
-    if config.notifier() == "smtp":
-        msg = EmailMessage()
-        msg["From"] = formataddr((f"Front Desk for {c['business_name']}"[:70], config.NOTIFY_FROM_EMAIL))
-        msg["To"] = to
-        msg["Subject"] = subject
-        msg["Message-ID"] = make_msgid(domain=(config.NOTIFY_FROM_EMAIL.split("@")[-1] or None))
-        msg.set_content(body)
+    if config.notifier() == "smtp" and defer:
+        status = "queued"
+    elif config.notifier() == "smtp":
         try:
-            (send or mailer.smtp_send)(msg)
+            (send or mailer.smtp_send)(message(c, to, subject, body))
             status = "sent"
         except Exception as e:
             status, error = "failed", type(e).__name__
     return conn.execute("""INSERT INTO owner_notices (client_id, kind, day, period_end, to_email, subject, body, status,
                            error) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING id, status""",
                         (c["id"], kind, day, period_end, to, subject, body, status, error)).fetchone()
+
+
+def flush(conn, send=None):
+    """Send queued notices once each (claimed first, so two runs never double-send). The webhook calls it right after
+    answering Vapi; the 15-minute cron calls it too, in case the process restarted in between."""
+    rows = conn.execute("""UPDATE owner_notices n SET status = 'failed', error = 'sending' FROM clients c
+                           WHERE n.status = 'queued' AND c.id = n.client_id
+                           RETURNING n.id, n.to_email, n.subject, n.body, c.business_name""").fetchall()
+    conn.commit()
+    out = []
+    for r in rows:
+        try:
+            (send or mailer.smtp_send)(message(r, r["to_email"], r["subject"], r["body"]))
+            status, error = "sent", None
+        except Exception as e:
+            status, error = "failed", type(e).__name__
+        conn.execute("UPDATE owner_notices SET status = %s, error = %s WHERE id = %s", (status, error, r["id"]))
+        conn.commit()
+        out.append({"id": r["id"], "status": status})
+    return out
+
+
+def operator(subject, body, send=None):
+    """An alert to TJ (OPERATOR_EMAIL): a prospect called the demo line, Vapi looks down, a calendar stopped syncing.
+    Not saved per client; events.log keeps the trail. Returns stub, sent or failed."""
+    if config.notifier() != "smtp" or not config.OPERATOR_EMAIL:
+        return "stub"
+    msg = EmailMessage()
+    msg["From"] = formataddr(("Front Desk", config.NOTIFY_FROM_EMAIL))
+    msg["To"], msg["Subject"] = config.OPERATOR_EMAIL, subject
+    msg.set_content(body)
+    try:
+        (send or mailer.smtp_send)(msg)
+        return "sent"
+    except Exception:
+        return "failed"
 
 
 def call_lines(r):
@@ -68,13 +112,15 @@ def call_lines(r):
     return out
 
 
-def emergency(conn, c, r, send=None):
+def emergency(conn, c, r, send=None, defer=True):
     """Right away, one email per urgent call."""
     subject = f"URGENT call for {c['business_name']}: call {r['caller_name'] or 'them'} back"
-    body = "\n".join([f"Someone called {c['business_name']} at {clock(r['started_at'])} and said it can't wait.", ""]
+    why = ("and said it can't wait." if r.get("urgent_by") != "keyword" else
+           "and mentioned something that's usually urgent (they didn't say whether it can wait).")
+    body = "\n".join([f"Someone called {c['business_name']} at {clock(r['started_at'])} {why}", ""]
                      + call_lines(r) + ["", "The caller was told the team will call back as soon as they can.",
                                         "", "Front Desk by " + config.SENDER_BUSINESS])
-    return save(conn, c, "emergency", subject, body, send=send)["status"]
+    return save(conn, c, "emergency", subject, body, send=send, defer=defer)["status"]
 
 
 def booking_line(b):
@@ -87,13 +133,13 @@ def booking_line(b):
     return out
 
 
-def booking(conn, c, b, send=None):
+def booking(conn, c, b, send=None, defer=True):
     from booking import label
     subject = f"New booking for {c['business_name']}: {label(b['window_start'], b['window_end'])}"
     body = "\n".join(["Front Desk booked a visit from a call:", ""] + booking_line(b)
                      + ["", "The caller was told the team will call to confirm before coming. It's in your calendar "
                             "feed too.", "", "Front Desk by " + config.SENDER_BUSINESS])
-    return save(conn, c, "booking", subject, body, send=send)["status"]
+    return save(conn, c, "booking", subject, body, send=send, defer=defer)["status"]
 
 
 def web_request(conn, c, r, send=None):

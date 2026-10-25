@@ -111,6 +111,10 @@ Leads (matchmaker) are display only until the Arkansas license question is check
    (`POST /sms/optouts`), and we haven't texted them in 7 days. It names the shop and says "Reply STOP to opt out".
    We only ever answer people who called. Never cold texts or calls (TCPA). Real sending needs an SMS provider with
    A2P 10DLC registration, on TJ's word.
+5. **Each shop's own assistant** (2026-10-25, [PRO-PASS.md](PRO-PASS.md)): `POST /clients/{id}/profile` sets greeting,
+   tone, services, towns, fees it may say, FAQ, extra questions, Spanish, voice, per-day hours, holidays and transfer;
+   `GET` shows the exact prompt. Owner page (`OWNER_PAGE=on`), Google two-way calendar, the demo line and the Vapi
+   fallback are there too. Tests: `tests/test_pro.py`.
 
 ## What Front Desk hands the owner (step 9)
 

@@ -9,15 +9,17 @@ import json
 import re
 import secrets
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse, Response
+from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from pydantic import BaseModel, Field
 
 import billing
 import booking
+import calendars
 import config
 import costs
 import db
+import demo
 import events
 import flaws
 import followups
@@ -25,9 +27,11 @@ import mailer
 import mockup
 import notices
 import outreach
+import owner
 import quality
 import receptionist
 import reviews
+import shopcfg
 import sites
 import sms
 
@@ -79,6 +83,10 @@ def health(conn=Conn):
         "send_window": "Weekdays %d-%dam Central" % config.SEND_WINDOW, "stripe": config.stripe_mode(),
         "receptionist": config.receptionist(), "vapi_webhook_secret_set": bool(config.VAPI_WEBHOOK_SECRET),
         "textback": config.TEXTBACK, "sms": config.sms(), "transfer_mode": config.TRANSFER_MODE, "notify": config.notifier(), "browser": flaws.browser_status(),
+        "owner_page": config.OWNER_PAGE == "on", "calendar_sync": config.calendar_sync(), "fallback": config.FALLBACK,
+        "demo_number": config.DEMO_NUMBER or None, "demo_assistant": bool(db.setting(conn, "demo_assistant_id")),
+        "operator_email_set": bool(config.OPERATOR_EMAIL), "db_pool": config.DB_POOL,
+        "vapi_watch": db.setting(conn, "vapi_watch"),
         "inbox": "imap" if config.mailer() == "smtp" else "stub", "follow_up_days": [d for _, d in followups.STEPS],
         "cap_today": mailer.daily_cap(conn, now)[0], "cap_reason": mailer.daily_cap(conn, now)[1],
         "warmup_started": db.setting(conn, "warmup_started"), "stopped_steps": events.stopped(conn),
@@ -500,7 +508,8 @@ CLIENT_COLS = """id, prospect_id, business_name, contact_name, email, phone, tra
   monthly_cents, included_minutes, status, site_url, receptionist_number, checkout_url, started_at, cancelled_at,
   created_at, stripe_customer_id IS NOT NULL AS has_stripe, open_hour, close_hour, open_saturday, textback_enabled,
   vapi_assistant_id IS NOT NULL AS has_receptionist, notify_email, owner_cell, summary_hour, booking, calendar_token, review_url,
-  test_call_at, forwarding_confirmed_at, hours_confirmed_at, live_at, founding_no"""
+  test_call_at, forwarding_confirmed_at, hours_confirmed_at, live_at, founding_no, profile,
+  calendar->>'provider' AS calendar_provider, owner_token"""
 
 
 def client_view(c, used):
@@ -510,6 +519,7 @@ def client_view(c, used):
     over, cents = billing.overage(minutes, c["included_minutes"], founding)
     c = dict(c)
     token = c.pop("calendar_token", None)
+    c["owner_url"] = owner.url(c.pop("owner_token", None)) if config.OWNER_PAGE == "on" else None
     golive = {"paying": c["status"] in ("active", "past_due"), "receptionist_built": c["has_receptionist"],
               "test_call": bool(c["test_call_at"]), "forwarding": bool(c["forwarding_confirmed_at"]),
               "hours": bool(c["hours_confirmed_at"])}
@@ -736,6 +746,7 @@ def set_up_receptionist(client_id: int, ask: ReceptionistAsk, conn=Conn):
                                   ''), '\\D', '', 'g'), 10) = %s""", (client_id, receptionist.digits(number))).fetchone():
         raise HTTPException(409, "another client already has that receptionist number")
     conn.execute("""UPDATE clients SET open_hour = %s, close_hour = %s, open_saturday = %s, textback_enabled = %s,
+                    profile = profile - 'hours',  -- the simple hours replace any per-day hours
                     receptionist_number = coalesce(%s, receptionist_number),
                     owner_cell = CASE WHEN %s::boolean THEN %s ELSE owner_cell END WHERE id = %s""",
                  (ask.open_hour, ask.close_hour, ask.open_saturday, ask.textback_enabled, number,
@@ -758,12 +769,24 @@ def client_calls(client_id: int, conn=Conn):
     get_client(conn, client_id)
     return {"items": conn.execute("""SELECT r.id, r.started_at, r.seconds, r.after_hours, r.outcome, r.summary,
         r.ended_reason, r.caller_name, r.callback_number, r.caller_number, r.town, r.problem, r.emergency,
+        r.urgent_by, r.language, r.answers, r.source, r.handled_at,
         r.recording_url, r.transcript, t.status AS textback FROM receptionist_calls r LEFT JOIN textbacks t ON t.call_id = r.id
         WHERE r.client_id = %s ORDER BY r.started_at DESC LIMIT 100""", (client_id,)).fetchall()}
 
 
+def after_call():
+    """Runs after Vapi has its answer: owner emails queued during the call, then calendar pushes. Own connection."""
+    try:
+        with db.connect() as conn:
+            if config.notifier() == "smtp":
+                notices.flush(conn)
+            calendars.sync_all(conn)
+    except Exception as e:  # noqa: BLE001  (the cron retries; a background failure must never surface to Vapi)
+        events.log("after_call", False, str(e)[:300])
+
+
 @app.post("/vapi/webhook")
-async def vapi_webhook(request: Request, conn=Conn):  # public, but only requests carrying our Vapi secret get through
+async def vapi_webhook(request: Request, tasks: BackgroundTasks, conn=Conn):  # public, only with our Vapi secret
     if not config.VAPI_WEBHOOK_SECRET:
         raise HTTPException(503, "receptionist webhook is off: set VAPI_WEBHOOK_SECRET")
     if not receptionist.secret_ok(request.headers.get("x-vapi-secret")):
@@ -772,7 +795,10 @@ async def vapi_webhook(request: Request, conn=Conn):  # public, but only request
         payload = await request.json()
     except ValueError:
         raise HTTPException(400, "not JSON")
-    return receptionist.handle(conn, payload if isinstance(payload, dict) else {})
+    out = receptionist.handle(conn, payload if isinstance(payload, dict) else {})
+    if out.get("emergency_alert") == "queued" or any("Booked" in (r.get("result") or "") for r in out.get("results", [])):
+        tasks.add_task(after_call)
+    return out
 
 
 # Go-live: a receptionist counts as live only after a real test call landed here, TJ called the shop's own line
@@ -1019,9 +1045,13 @@ def list_review_requests(client_id: int, conn=Conn):
 @app.post("/frontdesk/run", dependencies=op)
 def frontdesk_run(conn=Conn):
     """The cron's job every 15 minutes: morning summaries that are due, then review asks that are due."""
+    queued = notices.flush(conn) if config.notifier() == "smtp" else []
     s, r = notices.run_summaries(conn), reviews.send_due(conn)
-    return {"mode": config.notifier(), "summaries": s["summaries"], "reviews": r["done"],
-            "detail": f"{len(s['summaries'])} summaries, {len(r['done'])} review asks ({config.notifier()})"}
+    cal, vapi = calendars.sync_all(conn), receptionist.watch(conn)
+    return {"mode": config.notifier(), "summaries": s["summaries"], "reviews": r["done"], "queued_sent": queued,
+            "calendars": cal, "vapi": vapi,
+            "detail": f"{len(s['summaries'])} summaries, {len(r['done'])} review asks, {len(queued)} queued, "
+                      f"{len(cal)} calendars, vapi {vapi} ({config.notifier()})"}
 
 
 class SiteAsk(BaseModel):
@@ -1100,6 +1130,168 @@ def client_requests(client_id: int, conn=Conn):
     return {"items": conn.execute("""SELECT r.*, count(p.token) AS photos FROM site_requests r LEFT JOIN site_request_photos p
         ON p.request_id = r.id WHERE r.client_id = %s GROUP BY r.id ORDER BY r.created_at DESC LIMIT 100""",
                                   (client_id,)).fetchall()}
+
+
+# Pro pass (2026-10-25): per-client profile, owner page, two-way calendar, demo line.
+
+def rebuild(conn, client_id):
+    """Rebuild the client's Vapi assistant after a settings change (dry run without a key). Rolls back on a Vapi error."""
+    c = client_row(conn, client_id)
+    if c["status"] not in ("active", "past_due") and not c["vapi_assistant_id"]:
+        conn.commit()
+        return {"mode": "saved", "detail": "saved; the assistant is built after they pay"}
+    try:
+        out = receptionist.set_up(conn, c)
+    except receptionist.VapiError as e:
+        conn.rollback()
+        events.log("receptionist", False, f"Vapi: {e}"[:300], client_id=client_id)
+        raise HTTPException(502, f"Vapi: {e}")
+    conn.commit()
+    return {"mode": out["mode"], "fallback": out.get("fallback")}
+
+
+@app.get("/clients/{client_id}/profile", dependencies=op)
+def get_profile(client_id: int, conn=Conn):
+    """The shop's own settings, with the trade defaults it falls back on, and exactly what the assistant is told."""
+    c = client_row(conn, client_id)
+    return {"profile": c["profile"], "effective": shopcfg.merged(c), "hours": shopcfg.hours_text(c),
+            "greeting": receptionist.greeting(c), "prompt": receptionist.prompt(c),
+            "tools": [t["function"]["name"] for t in receptionist.assistant(c)["model"].get("tools", [])]}
+
+
+@app.post("/clients/{client_id}/profile", dependencies=op)
+async def set_profile(client_id: int, request: Request, conn=Conn):
+    """Replace the shop's profile (send {} for trade defaults). Validated; the assistant is rebuilt right away."""
+    c = client_row(conn, client_id)
+    try:
+        body = await request.json()
+        profile = shopcfg.validate(body, c["trade"])
+    except (ValueError, shopcfg.ProfileError) as e:
+        raise HTTPException(400, str(e) if isinstance(e, shopcfg.ProfileError) else "not JSON")
+    if c["booking"] and profile.get("hours"):
+        try:
+            booking.validate(dict(c, profile=profile), c["booking"])
+        except booking.BookingError as e:
+            raise HTTPException(400, f"those hours don't fit the booking windows: {e}")
+    conn.execute("UPDATE clients SET profile = %s, hours_confirmed_at = CASE WHEN %s THEN NULL ELSE hours_confirmed_at "
+                 "END WHERE id = %s", (db.Json(profile), profile.get("hours") != (c["profile"] or {}).get("hours"),
+                                       client_id))
+    out = rebuild(conn, client_id)
+    events.log("profile", True, "saved: " + ", ".join(sorted(profile)) if profile else "reset to defaults",
+               client_id=client_id)
+    return dict(out, profile=profile, prompt=receptionist.prompt(client_row(conn, client_id)))
+
+
+@app.post("/clients/{client_id}/owner-link", dependencies=op)
+def owner_link(client_id: int, rotate: bool = False, conn=Conn):
+    """The owner's page link (made on first ask). rotate=true makes a new one and kills the old (a lost phone)."""
+    t = owner.token(conn, client_row(conn, client_id), rotate)
+    conn.commit()
+    return {"url": owner.url(t), "live": config.OWNER_PAGE == "on"}
+
+
+def owner_client(conn, token):
+    if config.OWNER_PAGE != "on" or len(token) < 20:
+        raise HTTPException(404, "not found")
+    c = conn.execute("SELECT * FROM clients WHERE owner_token = %s AND status <> 'cancelled'", (token,)).fetchone()
+    if not c:
+        raise HTTPException(404, "not found")
+    return c
+
+
+@app.get("/o/{token}", response_class=HTMLResponse)
+def owner_page(token: str, note: str | None = None, conn=Conn):  # public, unguessable: the owner's own page
+    c = owner_client(conn, token)
+    msg = {"saved": "Saved. Your assistant has the changes.", "done": "Marked as called back."}.get(note, None)
+    return HTMLResponse(owner.page(conn, c, token, msg), headers=owner.HEADERS)
+
+
+@app.post("/o/{token}/settings", response_class=HTMLResponse)
+async def owner_save(token: str, request: Request, conn=Conn):
+    c = owner_client(conn, token)
+    form = {k: str(v) for k, v in (await request.form()).items()}
+    try:
+        profile, cols = owner.settings_from_form(c, form)
+        if c["booking"]:
+            booking.validate(dict(c, profile=profile), c["booking"])
+    except (shopcfg.ProfileError, booking.BookingError) as e:
+        return HTMLResponse(owner.page(conn, c, token, f"Not saved: {e}"), status_code=400, headers=owner.HEADERS)
+    conn.execute("""UPDATE clients SET profile = %s, owner_cell = %s, notify_email = %s, summary_hour = %s
+                    WHERE id = %s""", (db.Json(profile), cols["owner_cell"], cols["notify_email"], cols["summary_hour"],
+                                       c["id"]))
+    try:
+        rebuild(conn, c["id"])
+    except HTTPException:
+        return HTMLResponse(owner.page(conn, client_row(conn, c["id"]), token,
+                                       "Not saved: the phone system didn't answer. Try again in a minute."),
+                            status_code=502, headers=owner.HEADERS)
+    events.log("profile", True, "owner saved settings", client_id=c["id"])
+    return RedirectResponse(f"/o/{token}?note=saved", status_code=303)
+
+
+@app.post("/o/{token}/calls/{call_id}/done")
+def owner_call_done(token: str, call_id: int, conn=Conn):
+    c = owner_client(conn, token)
+    conn.execute("UPDATE receptionist_calls SET handled_at = coalesce(handled_at, now()) WHERE id = %s AND client_id = %s",
+                 (call_id, c["id"]))
+    conn.commit()
+    return RedirectResponse(f"/o/{token}?note=done", status_code=303)
+
+
+class CalendarAsk(BaseModel):
+    provider: str = "google"
+
+
+@app.post("/clients/{client_id}/calendar/connect", dependencies=op)
+def calendar_connect(client_id: int, ask: CalendarAsk, conn=Conn):
+    """The link the owner opens to let Front Desk read busy times and add visits to their calendar (Plus)."""
+    c = client_row(conn, client_id)
+    if c["plan"] != "front_desk_plus":
+        raise HTTPException(409, "calendar sync comes with Front Desk Plus")
+    try:
+        return {"url": calendars.provider(ask.provider).connect_url(client_id), "provider": ask.provider}
+    except calendars.CalendarError as e:
+        raise HTTPException(409 if isinstance(e, calendars.NotConfigured) else 400, str(e))
+
+
+@app.get("/calendar/google/callback", response_class=HTMLResponse)
+def calendar_callback(state: str = "", code: str = "", error: str = "", conn=Conn):  # public: Google sends the owner here
+    cid = calendars.client_of_state(state)
+    if not cid or error or not code:
+        return HTMLResponse(PAGE.format(msg="That didn't connect. Ask for a new link and try again."), status_code=400)
+    try:
+        secret = calendars.Google.exchange(code)
+        calendars.save_connection(conn, cid, "google", secret)
+        conn.commit()
+    except calendars.CalendarError as e:
+        events.log("calendar", False, f"connect: {e}"[:300], client_id=cid)
+        return HTMLResponse(PAGE.format(msg="That didn't connect. Ask for a new link and try again."), status_code=400)
+    events.log("calendar", True, "connected google", client_id=cid)
+    return HTMLResponse(PAGE.format(msg="Connected. Front Desk will skip your busy times and add new visits to your "
+                                        "calendar. You can close this page."))
+
+
+@app.delete("/clients/{client_id}/calendar", dependencies=op)
+def calendar_disconnect(client_id: int, conn=Conn):
+    client_row(conn, client_id)
+    calendars.disconnect(conn, client_id)
+    conn.commit()
+    return {"calendar": None}
+
+
+@app.post("/demo/receptionist", dependencies=op)
+def demo_set_up(conn=Conn):
+    """Create or update the demo-line assistant (dry run without VAPI_API_KEY). Attach the demo number to it on Vapi."""
+    try:
+        out = demo.set_up(conn)
+    except receptionist.VapiError as e:
+        raise HTTPException(502, f"Vapi: {e}")
+    return {"mode": out["mode"], "assistant_id": out["assistant_id"], "demo_number": config.DEMO_NUMBER or None}
+
+
+@app.get("/demo/calls", dependencies=op)
+def demo_calls(conn=Conn):
+    return {"items": conn.execute("SELECT * FROM demo_calls ORDER BY at DESC LIMIT 100").fetchall()}
 
 
 @app.middleware("http")

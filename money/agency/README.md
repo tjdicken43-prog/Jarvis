@@ -186,28 +186,38 @@ Details and what's left: `ACCURACY.md`. Plan: https://claude.ai/artifact/HLXwNiW
 
 ## Tuesday checklist (in order; keys go on Render, never here)
 
-1. **Cold domain** (~$12/yr), not TJ's main one. **Google Workspace Business Starter** on it, one inbox for TJ.
-2. **DNS** on the cold domain (Workspace admin shows each value): MX for Workspace; SPF TXT
+Checked 2026-10-25: the four agency services already exist on Render (made from this blueprint 2026-10-24) and are
+suspended. Resume them; don't make a new Blueprint. Tj's own copy with links and ticks is the Launch List page.
+
+1. **Card first** (money/BUDGET.md "TJ's card setup"): Privacy.com cards per service (Render $35, Anthropic $20,
+   Workspace $9, a single-use one for the domain), Anthropic workspace limit $20 with auto-reload off.
+2. **Cold domain** (~$12/yr), not TJ's main one. **Google Workspace Business Starter** on it, one inbox for TJ.
+3. **DNS** on the cold domain (Workspace admin shows each value): MX for Workspace; SPF TXT
    `v=spf1 include:_spf.google.com ~all`; DKIM (Admin > Apps > Gmail > Authenticate email, add the
    `google._domainkey` TXT, then press Start authentication); DMARC TXT on `_dmarc`: `v=DMARC1; p=none; rua=mailto:<that inbox>`.
-3. **Warm-up starts now**, 2-3 weeks: TJ sends a few real emails a day from that inbox and gets replies. `MAILER` stays
-   `stub` until it's done.
+   Google Postmaster Tools. **Warm-up starts now**, 2-3 weeks of real emails by hand; `MAILER` stays `stub`.
 4. **Mailing address**: PO box or virtual mailbox, for the CAN-SPAM footer.
-5. **Render**: New > Blueprint > this repo, Blueprint path `money/agency/render.yaml`. Type in when asked:
-   `DASHBOARD_PASSWORD`, `MAILING_ADDRESS`, `ANTHROPIC_API_KEY` (console.anthropic.com, set a monthly limit), leave the
-   rest empty. After the first deploy, set `PUBLIC_URL` (agency-api's https address) on agency-api and `API_URL` (the
-   same address) on agency-dashboard and agency-send. Open `<PUBLIC_URL>/health`: `db: true`, `browser: chromium`.
-6. **Load the shops**: the two commands under "Load the database" above, with Render's external database URL.
-7. **Stripe (test)**: `STRIPE_SECRET_KEY` = sk_test_ key on agency-api. Add endpoint `<PUBLIC_URL>/stripe/webhook`
-   with the four events listed above, paste its signing secret into `STRIPE_WEBHOOK_SECRET`.
-8. **Vapi**: sign up, put the private key in `VAPI_API_KEY` on agency-api (`VAPI_WEBHOOK_SECRET` is generated). Buy a
-   number only when the first shop pays. Test: set up a receptionist for a test client, call it, check Clients.
-9. **Workspace app password** (2-Step Verification on first): `SMTP_USER`, `SMTP_PASSWORD`, `FROM_EMAIL`. The same
+5. **Render: resume** agency-db first, then agency-api, agency-dashboard, agency-send. The deploy runs `migrate.py`
+   (tested 2026-10-25 on a fresh database and on an upgrade from the 10-24 schema). Open
+   `https://agency-api-kmkw.onrender.com/health`: `db: true`, `browser: chromium`, `public_url_ok: true`. If the Queue
+   is empty, load the shops with the two commands under "Load the database" (Render's external database URL).
+6. **agency-api environment**: `MAILING_ADDRESS`, `OPERATOR_EMAIL` (Tj's alerts), check `PUBLIC_URL` =
+   `https://agency-api-kmkw.onrender.com` and `API_URL` (same address) on agency-dashboard and agency-send. Leave
+   `MAILER`, `NOTIFY`, `TEXTBACK` on stub and `OWNER_PAGE` off. New `DASHBOARD_PASSWORD` on agency-dashboard.
+7. **OPERATOR_TOKEN** from agency-api into Project settings > Environment, so phone Jarvis can approve drafts.
+8. **Workspace app password** (2-Step Verification on first): `SMTP_USER`, `SMTP_PASSWORD`, `FROM_EMAIL`. The same
    password reads replies and bounces over IMAP (`imap.gmail.com`; IMAP must be allowed in the Workspace admin (check)).
-10. **Owner emails**: once the first shop pays, set `NOTIFY=smtp` on agency-api (client mail, not cold mail, so it
-    doesn't wait for warm-up). For a client's own domain: add it under agency-api > Settings > Custom Domains, the shop
-    adds the CNAME Render shows, then Publish live site with that domain.
-11. **After warm-up**: `MAILER=smtp`, then unpause in the dashboard. That last tap is TJ's.
+9. **Warm-up date** on the Queue (`/settings/warmup`): cold email starts day 8 at 3 a day.
+10. **Vapi**: `/health` says `receptionist: vapi` (`VAPI_API_KEY` was added 2026-10-24, unverified). Prepaid credit only.
+    Set up a test client and make the 10 test calls in GAP-REVIEW.md (noise, mumbled address, Spanish, wrong number,
+    salesperson, emergency with the owner cell set, answered once and left to ring out once).
+11. **Stripe (test)**: `STRIPE_SECRET_KEY` = sk_test_ key on agency-api. Add endpoint `<PUBLIC_URL>/stripe/webhook`
+    with the four events listed above, paste its signing secret into `STRIPE_WEBHOOK_SECRET`.
+12. **After the test calls** (Tj's calls): Spanish yes or no, demo number (then Jarvis runs `POST /demo/receptionist`),
+    Google calendar OAuth app or wait for Jobber, Twilio 10DLC, OK the owner page mockup (`OWNER_PAGE=on`).
+13. **First shop pays**: `NOTIFY=smtp`. For a client's own domain: add it under agency-api > Settings > Custom Domains,
+    the shop adds the CNAME Render shows, then Publish live site with that domain.
+14. **After warm-up**: `MAILER=smtp`, then unpause in the dashboard. That last tap is TJ's.
 
 | Set | Turns on |
 |---|---|
@@ -218,4 +228,9 @@ Details and what's left: `ACCURACY.md`. Plan: https://claude.ai/artifact/HLXwNiW
 | `STRIPE_SECRET_KEY` (sk_test_), `STRIPE_WEBHOOK_SECRET` | Test checkout links and the webhook; live waits on TJ |
 | `VAPI_API_KEY` | Receptionist set-up creates real Vapi assistants |
 | `NOTIFY=smtp` (+ the Workspace login) | Owner emails (urgent, bookings, website requests, morning summary) and Plus review asks really send |
+| `OPERATOR_EMAIL` | Tj's alerts: demo-line callers, Vapi down, calendar sync failures |
+| `OWNER_PAGE=on` | Owners' own page at `/o/{token}` (after Tj OKs the mockup) |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `CALENDAR_KEY` | Two-way Google Calendar for Plus shops |
+| `DEMO_NUMBER` | Shows the demo line on /health (the number itself is attached on Vapi) |
+| `TEXTBACK=twilio` + `TWILIO_*` | Real missed-call texts, only after 10DLC |
 | Unpause in the dashboard | The last switch, TJ's tap |

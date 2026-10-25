@@ -27,6 +27,10 @@ Scope: our Front Desk ($149) and Plus ($249) against Smith.ai, Rosie, Goodcall, 
 | 8 | Billing and support | Month-to-month, clear cancel, response promise | Stripe, cancel turns the line off | **Open:** write the support promise and cancel terms on the offer page (wording is Tj's) |
 | 9 | Proof | Case studies, reviews, a demo line | Demo pages | **Open:** a demo number a prospect can call (Vapi number, small cost, Tj) |
 
+## Update 2026-10-25 (pro pass)
+
+Spanish, the owner page, two-way calendar (Google; Jobber/Housecall Pro stubbed), the Vapi-down fallback and the demo line are built behind switches. Per-client profiles and the speed and accuracy fixes are in [PRO-PASS.md](PRO-PASS.md).
+
 ## Pro tips worth copying (mostly from memory, marked where not looked up)
 
 1. **Answer inside two rings, greet in one sentence, say it is recorded.** Done in the greeting.

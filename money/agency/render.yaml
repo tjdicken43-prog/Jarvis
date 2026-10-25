@@ -38,6 +38,16 @@ services:
         generateValue: true
       - {key: TEXTBACK, value: stub}                 # missed-call texts are recorded, never sent
       - {key: NOTIFY, value: stub}                   # owner emails (urgent, bookings, morning summary): smtp to send
+      - {key: TWILIO_ACCOUNT_SID, sync: false}       # texts: only after 10DLC is approved, then TEXTBACK=twilio
+      - {key: TWILIO_AUTH_TOKEN, sync: false}
+      - {key: TWILIO_FROM, sync: false}
+      - {key: OPERATOR_EMAIL, sync: false}           # TJ's alerts: demo-line callers, Vapi down, calendar sync failures
+      - {key: OWNER_PAGE, value: "off"}              # on = owners get their /o/ page (after TJ OKs the mockup)
+      - {key: FALLBACK, value: owner}                # Vapi forwards to the owner's cell if the assistant can't answer
+      - {key: GOOGLE_CLIENT_ID, sync: false}         # two-way Google Calendar (Plus): TJ's Google Cloud OAuth app
+      - {key: GOOGLE_CLIENT_SECRET, sync: false}
+      - {key: CALENDAR_KEY, sync: false}             # Fernet key; encrypts each shop's calendar token at rest
+      - {key: DEMO_NUMBER, sync: false}              # the Vapi number prospects call for the demo
   - type: web
     name: agency-dashboard
     runtime: node

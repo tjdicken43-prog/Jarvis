@@ -49,9 +49,22 @@ TEXTBACK = env("TEXTBACK", "stub")                # stub | twilio. twilio sends 
 TWILIO_ACCOUNT_SID = env("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = env("TWILIO_AUTH_TOKEN")      # also checks the signature on inbound texts (STOP, HELP)
 TWILIO_FROM = env("TWILIO_FROM")                  # the 10DLC-registered number, E.164
+VOICE = env("VOICE", "Elliot")                    # Vapi voice id for every assistant; a client's profile can override it
+VOICE_ES = env("VOICE_ES", "Elliot")              # voice when the client has Spanish on (check it speaks Spanish on a test call)
 TRANSFER_MODE = env("TRANSFER_MODE", "warm-transfer-experimental")  # Vapi transferPlan.mode; check on the first live test call
 NOTIFY = env("NOTIFY", "stub")                    # stub | smtp: owner emails (emergency heads-up, bookings, summaries)
 NOTIFY_FROM_EMAIL = env("NOTIFY_FROM_EMAIL") or FROM_EMAIL  # client mail; can be a different inbox from cold email
+OPERATOR_EMAIL = env("OPERATOR_EMAIL")            # TJ's alerts: demo-line callers, Vapi down, a calendar that stopped syncing
+
+# Pro pass (2026-10-25). Each is off until its account exists; nothing here costs money while off.
+OWNER_PAGE = env("OWNER_PAGE", "off")             # on = /o/{token} serves the owner's page (after TJ OKs the mockup)
+GOOGLE_CLIENT_ID = env("GOOGLE_CLIENT_ID")        # Google Cloud OAuth app (TJ creates it; free) for two-way calendar sync
+GOOGLE_CLIENT_SECRET = env("GOOGLE_CLIENT_SECRET")
+CALENDAR_KEY = env("CALENDAR_KEY")                # Fernet key that encrypts each shop's calendar refresh token at rest
+DEMO_NUMBER = env("DEMO_NUMBER")                  # the Vapi number prospects call to hear Front Desk (TJ buys it)
+DEMO_BUSINESS = env("DEMO_BUSINESS", "Ozark Ridge Plumbing")  # made-up shop the demo answers for
+FALLBACK = env("FALLBACK", "owner")               # owner = Vapi forwards to the owner's cell if the assistant can't answer; off
+DB_POOL = int(env("DB_POOL", "5"))                # pooled Postgres connections; 0 = one new connection per request
 
 
 def drafter():
@@ -84,6 +97,11 @@ def sms():
 
 def receptionist():
     return "vapi" if VAPI_API_KEY else "stub"
+
+
+def calendar_sync():
+    """google when the OAuth app and the encryption key are set; otherwise booking uses the read-only feed."""
+    return "google" if GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET and CALENDAR_KEY else "off"
 
 # Cost tracker (2026-10-24). Estimates until real bills come in: check them against Render and Vapi once a month.
 HOSTING_CENTS_MONTH = int(env("HOSTING_CENTS_MONTH", "2100"))      # Render: Postgres $6 + two starter services $7 + cron $1 (check)

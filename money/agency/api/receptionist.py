@@ -20,9 +20,12 @@ import urllib.request
 
 import booking
 import config
+import db
+import demo
 import notices
+import shopcfg
 import sms
-from mailer import CENTRAL
+from db import Json
 
 TRADE = {"plumbing": "plumbing", "hvac": "heating and air", "roofing": "roofing"}
 OUTCOMES = ("booked", "message", "spam", "hung_up")
@@ -41,7 +44,7 @@ SAFETY = {
 
 
 def transfer_on(c):
-    return bool(digits(c.get("owner_cell")))
+    return bool(digits(c.get("owner_cell"))) and shopcfg.merged(c)["transfer"] != "never"
 
 
 def transfer_tool(c):
@@ -68,49 +71,62 @@ class VapiError(Exception):
 
 
 def hours_text(c):
-    days = "Monday to Saturday" if c["open_saturday"] else "Monday to Friday"
-    h = lambda x: dt.time(x % 24).strftime("%-I%p").lower() if x < 24 else "midnight"
-    return f"{days}, {h(c['open_hour'])} to {h(c['close_hour'])} Central"
+    return shopcfg.hours_text(c)
 
 
 def is_after_hours(c, when):
-    """True outside the shop's hours (Central). Plus clients get 24/7 answering, but this still tags the call."""
-    local = when.astimezone(CENTRAL)
-    open_day = local.weekday() < 5 or (local.weekday() == 5 and c["open_saturday"])
-    return not (open_day and c["open_hour"] <= local.hour < c["close_hour"])
+    """True outside the shop's hours (Central), holidays included. Plus answers 24/7, but this still tags the call."""
+    return shopcfg.is_after_hours(c, when)
+
+
+def shop_facts(c):
+    """What this shop told us, as prompt lines. The assistant may say these and nothing else about the business."""
+    p, out = shopcfg.merged(c), []
+    out.append("Services: " + "; ".join(p["services"]) + ".")
+    if p["not_services"]:
+        out.append("They do NOT do: " + "; ".join(p["not_services"]) + ". If asked, say so kindly, and offer to take a "
+                   "message anyway in case they can point the caller to someone.")
+    if p["service_area"]:
+        out.append("Towns they serve: " + ", ".join(p["service_area"]) + ". If the caller is somewhere else, still take "
+                   "the message and say the team will confirm whether they can come out.")
+    if p["fees"]:
+        out.append("Fees you may say, exactly as written and only if asked: " + "; ".join(
+            f"{f['name']}: {f['amount']}" for f in p["fees"]) + ". Never say any other price or estimate.")
+    if p["faq"]:
+        out.append("Answers you may give, word for word, only to these questions:")
+        out += [f'  Q: {f["q"]} A: {f["a"]}' for f in p["faq"]]
+    return "\n".join(out)
+
+
+def intake(c, booking_on):
+    p = shopcfg.merged(c)
+    steps = ["Their name.", "The best callback number (read it back in groups: 3, 3, then 4 digits).",
+             "The address or town.", "What's wrong, in their words.",
+             f"Is it an emergency right now, or can it wait for {'a scheduled visit' if booking_on else 'business hours'}?"]
+    steps += p["questions"]
+    return " ".join(f"{i}. {t}" for i, t in enumerate(steps, 1))
+
+
+def language_rule(c):
+    if "es" not in shopcfg.merged(c)["languages"]:
+        return ""
+    return ("\n- If the caller speaks Spanish, answer only in Spanish for the rest of the call, same rules. Write the "
+            "message details in English.")
 
 
 def prompt(c):
+    """The system prompt. Same rules for every shop; only the shop's own facts, tone and extra questions differ."""
     name, trade = c["business_name"], TRADE[c["trade"]]
+    p = shopcfg.merged(c)
     when = "any time of day" if c["plan"] == "front_desk_plus" else "when the office is closed"
-    if booking.enabled(c):
-        return booking_prompt(c, name, trade, when)
-    return f"""You answer the phone for {name}, a {trade} company in Northwest Arkansas, {when}.
+    on = booking.enabled(c)
+    head = f"""You answer the phone for {name}, a {trade} company in Northwest Arkansas, {when}.
 Office hours: {hours_text(c)}.
-
-Your job: take a clear message so the team can call back. Get, one question at a time:
-1. Their name. 2. The best callback number (read it back). 3. The address or town. 4. What's wrong, in their words.
-5. Is it an emergency right now, or can it wait for business hours?
-Then say someone from {name} will call them back, and end the call politely.
-
-Rules:
-- If asked, say you are the company's automated after-hours assistant. Never claim to be a person.
-- Never quote prices, give estimates, promise an arrival time or diagnose the problem.
-- Never book a time slot. You take messages only.
-- {SAFETY[c["trade"]]}{transfer_rule(c)}
-- If you are not sure what they said, ask them to say it again. If you don't know an answer, say you will pass the
-  question on. Never guess a name, number or address.
-- If the caller is selling something or it's a robocall, thank them and end the call.
-- Short sentences, warm and plain. No jargon."""
-
-
-def booking_prompt(c, name, trade, when):
-    return f"""You answer the phone for {name}, a {trade} company in Northwest Arkansas, {when}.
-Office hours: {hours_text(c)}.
-
-Your job: take a clear message, and if it is not an emergency, offer to book a visit window. Get, one question at a time:
-1. Their name. 2. The best callback number (read it back). 3. The address or town. 4. What's wrong, in their words.
-5. Is it an emergency right now, or can it wait for a scheduled visit?
+{shop_facts(c)}
+"""
+    if on:
+        job = f"""Your job: take a clear message, and if it is not an emergency, offer to book a visit window. Get, one question at a time:
+{intake(c, True)}
 If it's an emergency: do not book. Say you're marking it urgent and the team will call back as soon as they can.
 If it can wait: use check_openings, offer at most two openings, and when they pick one, use book_visit with the exact
 start the tool gave you. Ask "Is it OK if {name} texts you about this visit?" and pass their answer as ok_to_text.
@@ -118,41 +134,87 @@ Read the window back and say the team will call to confirm before they come. If 
 
 Rules:
 - If asked, say you are the company's automated assistant. Never claim to be a person.
-- Never quote prices, give estimates, promise an exact arrival time or diagnose the problem. A booking is a window.
-- Only book openings the tool gave you. Never invent a time.
+- Never give estimates, promise an exact arrival time or diagnose the problem. A booking is a window.
+- Only book openings the tool gave you. Never invent a time."""
+    else:
+        job = f"""Your job: take a clear message so the team can call back. Get, one question at a time:
+{intake(c, False)}
+Then say someone from {name} will call them back, and end the call politely.
+
+Rules:
+- If asked, say you are the company's automated after-hours assistant. Never claim to be a person.
+- Never give estimates, promise an arrival time or diagnose the problem.
+- Never book a time slot. You take messages only."""
+    money = "" if p["fees"] else "\n- Never quote prices or say any amount of money."
+    return head + "\n" + job + money + f"""
 - {SAFETY[c["trade"]]}{transfer_rule(c)}
 - If you are not sure what they said, ask them to say it again. If you don't know an answer, say you will pass the
   question on. Never guess a name, number or address.
-- If the caller is selling something or it's a robocall, thank them and end the call.
-- Short sentences, warm and plain. No jargon."""
+- If the caller is selling something or it's a robocall, thank them and end the call.{language_rule(c)}
+- {shopcfg.TONES[p["tone"]]} Short sentences, no jargon."""
+
+
+def greeting(c):
+    """The shop's own greeting if it has one, always with the recording and automated-assistant notices."""
+    p, name = shopcfg.merged(c), c["business_name"]
+    g = p.get("greeting") or (f"Thanks for calling {name}. This is the automated "
+                              f"{'' if c['plan'] == 'front_desk_plus' else 'after-hours '}assistant, and this call may "
+                              "be recorded. I can take a message and have someone call you back. What's going on?")
+    if not re.search(r"automated|virtual|assistant", g, re.I):
+        g += " I'm the automated assistant."
+    if "record" not in g.lower():
+        g += " This call may be recorded."
+    if "es" in p["languages"]:
+        g += " Para español, hable en español."
+    return g
+
+
+# How fast the assistant answers after the caller stops talking. Callers pause while reading a phone number or an
+# address, so numbers wait longer before the assistant jumps in; everything else answers quickly. Vapi field names
+# as of 2026-10 (check on the first test call).
+SPEAKING = {"waitSeconds": 0.4, "smartEndpointingPlan": {"provider": "livekit"},
+            "transcriptionEndpointingPlan": {"onPunctuationSeconds": 0.1, "onNoPunctuationSeconds": 1.2,
+                                             "onNumberSeconds": 0.8}}
+
+
+def schema(c):
+    props = {
+        "outcome": {"type": "string", "enum": ["message", "spam", "hung_up"],
+                    "description": "message if they left details, spam for sales or robocalls, hung_up if they left before giving details"},
+        "caller_name": {"type": "string", "description": "the caller's name, as they said it"},
+        "callback_number": {"type": "string", "description": "the number they asked to be called back on, digits only"},
+        "town": {"type": "string", "description": "the address or town of the job"},
+        "problem": {"type": "string", "description": "what's wrong, one short sentence in English, in their words"},
+        "emergency": {"type": "boolean", "description": "true only if they said it can't wait (water pouring, no heat in freezing weather, gas smell, active leak)"},
+        "language": {"type": "string", "enum": ["en", "es"], "description": "the language the caller mostly spoke"}}
+    qs = shopcfg.merged(c)["questions"]
+    if qs:
+        props["answers"] = {"type": "object", "description": "the caller's answer to each extra question, in English",
+                            "properties": {f"q{i}": {"type": "string", "description": q} for i, q in enumerate(qs, 1)}}
+    return {"type": "object", "properties": props}
 
 
 def assistant(c):
     """The Vapi assistant for one client. Creating it places no calls."""
-    name = c["business_name"]
+    name, p = c["business_name"], shopcfg.merged(c)
+    tools = (booking.tools() if booking.enabled(c) else []) + ([transfer_tool(c)] if transfer_on(c) else [])
+    spanish = "es" in p["languages"]
     return {
         "name": f"{name} front desk"[:40],
-        "firstMessage": f"Thanks for calling {name}. This is the automated after-hours assistant, and this call may be "
-                        "recorded. I can take a message and have someone call you back. What's going on?",
+        "firstMessage": greeting(c),
         "model": dict({"provider": "anthropic", "model": config.RECEPTIONIST_MODEL,  # no temperature: the API refuses it since 2026-10-21
-                       "messages": [{"role": "system", "content": prompt(c)}]},
-                      **({"tools": (booking.tools() if booking.enabled(c) else []) + ([transfer_tool(c)] if transfer_on(c) else [])}
-                         if booking.enabled(c) or transfer_on(c) else {})),
-        "voice": {"provider": "vapi", "voiceId": "Elliot"},
-        "transcriber": {"provider": "deepgram", "model": "nova-3", "language": "en"},
+                       "messages": [{"role": "system", "content": prompt(c)}]}, **({"tools": tools} if tools else {})),
+        "voice": {"provider": "vapi", "voiceId": p.get("voice") or (config.VOICE_ES if spanish else config.VOICE)},
+        # multi = Deepgram's English+Spanish model; keyterm steers it to the shop's name and NWA towns
+        "transcriber": {"provider": "deepgram", "model": "nova-3", "language": "multi" if spanish else "en",
+                        "keyterm": shopcfg.keyterms(c)},
+        "startSpeakingPlan": SPEAKING,
         "maxDurationSeconds": 600,          # 10 minutes caps a stuck call's cost
         "silenceTimeoutSeconds": 30,
-        "endCallPhrases": ["goodbye", "bye now"],
+        "endCallPhrases": ["goodbye", "bye now"] + (["adiós"] if spanish else []),
         "server": {"url": config.PUBLIC_URL + "/vapi/webhook", "secret": config.VAPI_WEBHOOK_SECRET},
         "serverMessages": ["end-of-call-report"] + (["tool-calls"] if booking.enabled(c) else []),
-        "analysisPlan": {"structuredDataSchema": {"type": "object", "properties": {
-            "outcome": {"type": "string", "enum": ["message", "spam", "hung_up"],
-                        "description": "message if they left details, spam for sales or robocalls, hung_up if they left before giving details"},
-            "caller_name": {"type": "string", "description": "the caller's name, as they said it"},
-            "callback_number": {"type": "string", "description": "the number they asked to be called back on"},
-            "town": {"type": "string", "description": "the address or town of the job"},
-            "problem": {"type": "string", "description": "what's wrong, in one short sentence in their words"},
-            "emergency": {"type": "boolean", "description": "true only if they said it can't wait (water pouring, no heat in freezing weather, gas smell, active leak)"}}}},
+        "analysisPlan": {"structuredDataSchema": schema(c)},
         "metadata": {"client_id": c["id"]},
     }
 
@@ -181,7 +243,67 @@ def set_up(conn, c):
     aid = c["vapi_assistant_id"]
     out = vapi("PATCH", f"/assistant/{aid}", a) if aid else vapi("POST", "/assistant", a)
     conn.execute("UPDATE clients SET vapi_assistant_id = %s WHERE id = %s", (out["id"], c["id"]))
-    return {"mode": "vapi", "assistant_id": out["id"], "assistant": a}
+    return {"mode": "vapi", "assistant_id": out["id"], "assistant": a, "fallback": set_fallback(conn, c, out["id"])}
+
+
+def fallback_destination(c):
+    """Where Vapi sends a call it can't hand to the assistant (our webhook down, assistant error): the owner's cell.
+    None without a cell, or with FALLBACK=off. The shop's own line is never used: it forwards to us, so it would loop."""
+    if config.FALLBACK != "owner" or not digits(c.get("owner_cell")):
+        return None
+    return {"type": "number", "number": "+1" + digits(c["owner_cell"]),
+            "message": f"Connecting you to {c['business_name']} now."}
+
+
+def set_fallback(conn, c, assistant_id):
+    """Attach the assistant and the fallback to the client's Vapi phone number. Never fails the set-up: the
+    assistant works without it, and the result says what happened."""
+    num = digits(c.get("receptionist_number"))
+    if not num:
+        return "no receptionist number yet"
+    if not fallback_destination(c) and not c.get("vapi_phone_id"):
+        return "none (no owner cell)"
+    try:
+        pid = c.get("vapi_phone_id")
+        if not pid:
+            found = vapi("GET", "/phone-number")
+            found = found.get("results", []) if isinstance(found, dict) else found or []
+            pid = next((n.get("id") for n in found if isinstance(n, dict) and digits(n.get("number")) == num), None)
+            if not pid:
+                return "number not found on Vapi"
+            conn.execute("UPDATE clients SET vapi_phone_id = %s WHERE id = %s", (pid, c["id"]))
+        vapi("PATCH", f"/phone-number/{pid}", {"assistantId": assistant_id, "fallbackDestination": fallback_destination(c)})
+        return "owner cell" if fallback_destination(c) else "none (no owner cell)"
+    except VapiError as e:
+        return f"not set: {str(e)[:120]}"
+
+
+def watch(conn, now=None, ping=None):
+    """Every cron run: is Vapi answering? Two failed checks in a row email TJ once; the first good check after says
+    so. Front Desk can't answer calls while Vapi is down, so TJ can tell owners to turn forwarding off."""
+    if config.receptionist() == "stub":
+        return "off"
+    try:
+        (ping or (lambda: vapi("GET", "/assistant?limit=1")))()
+        ok = True
+    except VapiError:
+        ok = False
+    state = db.setting(conn, "vapi_watch", {"fails": 0, "alerted": False})
+    fails = 0 if ok else state.get("fails", 0) + 1
+    alerted = state.get("alerted", False)
+    if fails >= 2 and not alerted:
+        notices.operator("Vapi looks down: Front Desk isn't answering",
+                         "Two checks in a row couldn't reach Vapi. Calls forwarded to Front Desk may ring out. Shops "
+                         "with an owner cell fall back to it if Vapi is up but our side fails. If this lasts, tell the "
+                         "shops to turn off call forwarding until it's back.")
+        alerted = True
+    elif ok and alerted:
+        notices.operator("Vapi is back: Front Desk is answering again", "The last check reached Vapi.")
+        alerted = False
+    conn.execute("""INSERT INTO settings (key, value) VALUES ('vapi_watch', %s) ON CONFLICT (key) DO UPDATE
+                    SET value = excluded.value, updated_at = now()""", (Json({"fails": fails, "alerted": alerted}),))
+    conn.commit()
+    return "up" if ok else f"down ({fails})"
 
 
 def turn_off(conn, c):
@@ -236,6 +358,8 @@ def find_client(conn, m):
 def handle(conn, payload, now=None):
     """Everything Vapi posts: end-of-call reports and, on Plus with booking on, the booking tool calls."""
     m = payload.get("message") or {}
+    if demo.is_demo(conn, m):
+        return demo.handle(conn, m, now)
     if m.get("type") == "tool-calls":
         return booking.tool_calls(conn, m, find_client(conn, m), now)
     return record_call(conn, payload, now)
@@ -247,6 +371,25 @@ def link(v):
 
 def clean(v, n=200):
     return re.sub(r"\s+", " ", str(v)).strip()[:n] or None if v not in (None, "") else None
+
+
+def callback(said, caller_id):
+    """The number to call back. A 7-digit local number borrows the caller ID's area code (479 if there is none):
+    callers in NWA often say just seven digits, and dropping it for caller ID loses the number they asked for."""
+    d = re.sub(r"\D", "", str(said or ""))
+    if len(d) == 7:
+        d = (digits(caller_id)[:3] or "479") + d
+    return digits(d) or digits(caller_id) or None
+
+
+def urgency(c, sd, summary):
+    """caller: the call analysis says it can't wait. keyword: the analysis left it out but the problem or summary
+    has one of the shop's emergency words. An analysis that says false is trusted (they said it can wait)."""
+    if sd.get("emergency") is True:
+        return "caller"
+    if sd.get("emergency") is None and shopcfg.urgent_words_hit(c, sd.get("problem"), summary):
+        return "keyword"
+    return None
 
 
 def record_call(conn, payload, now=None):
@@ -269,26 +412,31 @@ def record_call(conn, payload, now=None):
         o = "booked"
     sd = (m.get("analysis") or {}).get("structuredData") or {}
     caller = (m.get("customer") or call.get("customer") or {}).get("number")
-    emergency = sd.get("emergency") is True and o in ("message", "booked")
+    summary = ((m.get("analysis") or {}).get("summary") or m.get("summary") or "")[:1000] or None
+    urgent_by = urgency(c, sd, summary) if o in ("message", "booked") else None
     cost = m.get("cost")
     art = m.get("artifact") or {}
+    answers = {k: clean(v, 200) for k, v in (sd.get("answers") or {}).items() if clean(v, 200)} \
+        if isinstance(sd.get("answers"), dict) else {}
     row = conn.execute("""INSERT INTO receptionist_calls (client_id, vapi_call_id, started_at, seconds, after_hours,
                           outcome, summary, cost_cents, ended_reason, caller_number, caller_name, callback_number, town,
-                          problem, emergency, recording_url, transcript) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                          problem, emergency, recording_url, transcript, language, answers, urgent_by)
+                          VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                           ON CONFLICT (vapi_call_id) DO NOTHING RETURNING *""",
-                       (c["id"], call_id, started, seconds, is_after_hours(c, started), o,
-                        ((m.get("analysis") or {}).get("summary") or m.get("summary") or "")[:1000] or None,
+                       (c["id"], call_id, started, seconds, is_after_hours(c, started), o, summary,
                         round(float(cost) * 100) if cost is not None else None, m.get("endedReason"),
                         digits(caller) or None, clean(sd.get("caller_name"), 80),
-                        digits(sd.get("callback_number")) or digits(caller) or None, clean(sd.get("town"), 120),
-                        clean(sd.get("problem"), 300), emergency, link(art.get("recordingUrl") or m.get("recordingUrl")),
-                        str(art.get("transcript") or m.get("transcript") or "")[:20000] or None)).fetchone()
+                        callback(sd.get("callback_number"), caller), clean(sd.get("town"), 120),
+                        clean(sd.get("problem"), 300), bool(urgent_by), link(art.get("recordingUrl") or m.get("recordingUrl")),
+                        str(art.get("transcript") or m.get("transcript") or "")[:20000] or None,
+                        sd.get("language") if sd.get("language") in ("en", "es") else None,
+                        Json(answers) if answers else None, urgent_by)).fetchone()
     if not row:
         conn.commit()
         return {"ok": True, "duplicate": True}
     conn.execute("UPDATE clients SET test_call_at = coalesce(test_call_at, now()) WHERE id = %s", (c["id"],))  # go-live tick
     text = textback(conn, c, row["id"], caller, o, started, now) if o == "hung_up" else None
-    alert = notices.emergency(conn, c, row) if emergency and c["status"] in ("active", "past_due") else None
+    alert = notices.emergency(conn, c, row) if urgent_by and c["status"] in ("active", "past_due") else None
     conn.commit()
     return {"ok": True, "call_id": row["id"], "client_id": c["id"], "outcome": o, "textback": text,
             "emergency_alert": alert}

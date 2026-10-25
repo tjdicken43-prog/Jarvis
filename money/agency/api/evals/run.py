@@ -3,7 +3,8 @@
   python3 money/agency/api/evals/run.py          # code-graded cases, free, no database; exit 1 on any miss
   python3 money/agency/api/evals/run.py --live   # also has Claude draft each "draft" case and grades it (costs cents)
 
-cases.json holds hand-checked cases; real_shops.json holds real NWA shops captured by capture.py; tj.json holds
+cases.json holds hand-checked cases; calls.json holds the receptionist's (dates callers say, callback numbers,
+urgency, and the prompt contract every shop's assistant must keep, whatever its profile); real_shops.json holds real NWA shops captured by capture.py; tj.json holds
 TJ's own corrections, frozen by freeze.py. A miss prints the case and what came back. Never edit a case to make it
 pass: fix the code, or ask TJ if the case itself is wrong.
 """
@@ -16,14 +17,21 @@ import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
+import booking  # noqa: E402
 import flaws  # noqa: E402
 import followups  # noqa: E402
 import outreach  # noqa: E402
+import receptionist  # noqa: E402
+import shopcfg  # noqa: E402
+from mailer import CENTRAL  # noqa: E402
+
+SHOP = {"id": 1, "business_name": "Test Plumbing", "trade": "plumbing", "plan": "front_desk", "status": "active",
+        "open_hour": 7, "close_hour": 17, "open_saturday": False, "owner_cell": None, "booking": None, "profile": {}}
 
 
 def load():
     cases = {}
-    for f in ("cases.json", "real_shops.json", "tj.json"):
+    for f in ("cases.json", "calls.json", "real_shops.json", "tj.json"):
         p = HERE / f
         if p.exists():
             for group, items in json.loads(p.read_text()).items():
@@ -64,7 +72,35 @@ def bounce_case(c):
     return got == c["expect"], got
 
 
-RUN = {"flaw": flaw_case, "email": email_case, "draft": draft_case, "reply": reply_case, "bounce": bounce_case}
+def callday_case(c):
+    got = booking.parse_day(c["said"], dt.datetime.fromisoformat(c["now"]).replace(tzinfo=CENTRAL))
+    got = got.isoformat() if got else None
+    return got == c["expect"], got
+
+
+def callback_case(c):
+    got = receptionist.callback(c["said"], c["caller"])
+    return got == c["expect"], got
+
+
+def urgency_case(c):
+    shop = dict(SHOP, trade=c["trade"], profile=shopcfg.validate(c.get("profile", {})))
+    got = receptionist.urgency(shop, c["sd"], c.get("summary"))
+    return got == c["expect"], got
+
+
+def prompt_case(c):
+    shop = dict(SHOP, **{k: v for k, v in c["client"].items() if k != "profile"})
+    shop["profile"] = shopcfg.validate(c["client"].get("profile", {}), shop["trade"])
+    a = receptionist.assistant(shop)
+    text = "\n".join([a["firstMessage"], a["model"]["messages"][0]["content"]]
+                     + [t["function"]["name"] for t in a["model"].get("tools", [])])
+    missing = [w for w in c.get("must", []) if w not in text] + [f"NOT {w}" for w in c.get("must_not", []) if w in text]
+    return not missing, missing
+
+
+RUN = {"callday": callday_case, "callback": callback_case, "urgency": urgency_case, "prompt": prompt_case,
+       "flaw": flaw_case, "email": email_case, "draft": draft_case, "reply": reply_case, "bounce": bounce_case}
 
 
 def main(live=False):

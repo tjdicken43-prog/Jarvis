@@ -360,3 +360,42 @@ ALTER TABLE textbacks ADD COLUMN IF NOT EXISTS provider_id text;
 ALTER TABLE textbacks ADD COLUMN IF NOT EXISTS error text;
 ALTER TABLE receptionist_calls ADD COLUMN IF NOT EXISTS recording_url text;  -- Vapi-hosted audio, for TJ's go-live listening and the owner
 ALTER TABLE receptionist_calls ADD COLUMN IF NOT EXISTS transcript text;
+
+-- Pro pass (2026-10-25): per-client profile, owner page, calendar sync, demo line, Vapi-down fallback, speed.
+-- profile: everything that makes one shop's assistant its own (greeting, tone, services, fees it may say, FAQ, extra
+-- questions, languages, voice, per-day hours, holidays, routing). Validated by shopcfg.py; {} = trade defaults.
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS profile jsonb NOT NULL DEFAULT '{}';
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS owner_token text UNIQUE;       -- /o/{token}: the owner's own page (OWNER_PAGE=on)
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS calendar jsonb;                -- two-way sync: {"provider": "google", "calendar_id": ...}; null = feed only
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS calendar_secret text;          -- provider refresh token, encrypted (calendars.py); never returned
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS vapi_phone_id text;            -- Vapi phone-number id, for the fallback destination
+CREATE INDEX IF NOT EXISTS clients_vapi_assistant ON clients (vapi_assistant_id) WHERE vapi_assistant_id IS NOT NULL;
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS external_id text;            -- the event id in the shop's own calendar
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS sync_status text;            -- null (feed only), pending, synced, failed, removed
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS sync_error text;
+CREATE INDEX IF NOT EXISTS bookings_sync ON bookings (sync_status) WHERE sync_status IN ('pending', 'failed');
+CREATE TABLE IF NOT EXISTS calendar_busy (     -- busy blocks read from the shop's own calendar, so we never offer them
+  client_id  int NOT NULL REFERENCES clients(id),
+  starts_at  timestamptz NOT NULL,
+  ends_at    timestamptz NOT NULL
+);
+CREATE INDEX IF NOT EXISTS calendar_busy_client ON calendar_busy (client_id, starts_at);
+ALTER TABLE receptionist_calls ADD COLUMN IF NOT EXISTS language text;       -- en or es, what the caller spoke
+ALTER TABLE receptionist_calls ADD COLUMN IF NOT EXISTS answers jsonb;       -- the shop's own extra questions, answered
+ALTER TABLE receptionist_calls ADD COLUMN IF NOT EXISTS source text NOT NULL DEFAULT 'vapi';  -- vapi | fallback (voicemail when Vapi was down)
+ALTER TABLE receptionist_calls ADD COLUMN IF NOT EXISTS urgent_by text;      -- why it was marked urgent: caller | keyword
+ALTER TABLE owner_notices DROP CONSTRAINT IF EXISTS owner_notices_kind_check;
+ALTER TABLE owner_notices ADD CONSTRAINT owner_notices_kind_check CHECK (kind IN
+  ('emergency','booking','web_request','summary','fallback','calendar'));
+ALTER TABLE owner_notices DROP CONSTRAINT IF EXISTS owner_notices_status_check;
+ALTER TABLE owner_notices ADD CONSTRAINT owner_notices_status_check CHECK (status IN ('stub','queued','sent','failed'));
+CREATE INDEX IF NOT EXISTS owner_notices_queued ON owner_notices (id) WHERE status = 'queued';
+CREATE TABLE IF NOT EXISTS demo_calls (         -- a prospect called the demo line: a warm lead for TJ, never billed
+  id           serial PRIMARY KEY,
+  vapi_call_id text UNIQUE,
+  caller_number text,
+  seconds      int,
+  summary      text,
+  at           timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE receptionist_calls ADD COLUMN IF NOT EXISTS handled_at timestamptz;  -- the owner marked it called back

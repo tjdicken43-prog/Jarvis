@@ -50,10 +50,10 @@ Run `python3 money/budget/budget.py lint` after editing. Then refresh the Jarvis
 
 1. Optional, but it gives the card a real hard limit: open a free second checking account that's only for business. Set an automatic transfer every payday ($175 the first time, then $100) and turn overdraft coverage off. That account's balance is the true hard stop.
 2. Privacy.com: sign up (free plan, up to 12 new cards a month) and link that account as the funding source.
-3. Make one merchant-locked card per service, each with a monthly limit equal to its cap: Anthropic $20, Google Workspace $9, Render $10. For the domain, make a single-use card for the exact price.
+3. Make one merchant-locked card per service, each with a monthly limit equal to its cap: Anthropic $20, Google Workspace $9, Render $35 (gym + the four agency services, TJ 2026-10-24). For the domain, make a single-use card for the exact price.
 4. Type each card into that merchant's own checkout yourself. Don't paste it to Claude.
 5. Anthropic Console: Settings, Limits. Set a $20 monthly limit on the workspace the agency key uses (the Default workspace can't take its own limit, so use a named one), and turn auto-reload off.
-6. Render: Billing. Make sure only fixed-price plans are running and the agency stack is suspended.
+6. Render: Billing. Make sure only fixed-price plans are running. The agency stack is resumed in the Tuesday list (money/agency/README.md), after this card is on Render.
 7. Tell Jarvis backend "card is live". It logs the first charges and refreshes the Budget sheet.
 
 ## Where these rules come from

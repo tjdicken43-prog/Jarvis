@@ -61,6 +61,12 @@ Market: percentage-of-spend is 10 to 20%, retainers $1,500+ for agencies. We sit
 9. **Taxes:** fees follow money/TAX.md like other income. Ad spend is paid by the client directly, so it is not our revenue.
 10. **Exit rule:** if a package has fewer than 2 paying clients after 60 days, it is dropped from the menu (same shutdown rule as money/LANES.md).
 
+## Price check (2026-10-25, web search; no Bentonville or NWA agency prices were published, so these are national benchmarks)
+- Google Ads management for small local businesses: about $500 to $1,500 a month in less competitive markets, $1,000 to $2,500 as a common small-business range, and more in big metros ([ClicksGeek guides](https://clicksgeek.com/?p=22409), an agency blog). NWA is a smaller market, so the low end fits. Our Lead Boost tiers ($350 / $500 / 15%) sit under that band, which is a reason to start at $500 for Standard rather than discount further.
+- Local SEO for home-service businesses: about $750 to $3,000 a month as agency retainers. Our lead pages at $99 to $199 are cheap by comparison; fine for a foundation, and a reason not to promise rankings.
+- Review tools and receptionists, for the whole ladder: AI receptionists cost about $30 to $300 a month; Wakeman lists After Hours $149, Front Desk $349, Dispatch $829 ([vendor guide](https://www.open.cx/blog/ai-for-plumbers-2026)); human answering services start around $132 and run $550 to $1,500. Our $149 and $249 sit in the middle of the AI range. No change recommended.
+- To get real NWA numbers: ask for a quote from two Bentonville or Fayetteville agencies by phone (needs a human voice, not a cold AI call), or ask the first shops who reply what they pay now.
+
 ## Waiting on TJ (after payday 2026-10-27, per BUDGET.md)
 - Say yes or change the proposed prices (ADDONS.md ladder plus the Lead Boost tiers above).
 - Nothing to buy now. First spend would be a call-tracking number or tool; Jarvis checks `budget.py` first and sends over-$25 or one-off buys to the Approve button.

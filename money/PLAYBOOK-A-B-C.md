@@ -41,6 +41,9 @@ What I found and changed:
 - **Weekly posts.** Sell them as "keeps the profile active and current", not as a ranking trick; I found no solid evidence that posts move rankings.
 - **Tracking.** Count drafts created, approved within 48 hours, and edited. Under 60% approved means drafts are not good enough or the approval step is too hard; fix that before selling more.
 
+## OpenStreetMap coverage test (2026-10-25): could not run here
+The cloud environment's network policy resets connections to overpass-api.de (curl: connection reset by peer; the proxy status shows a limited allowlist). Root cause is the environment, not Overpass being slow. I stopped after the diagnosis instead of retrying. To run it, TJ adds `overpass-api.de` under Allowed domains in the project's cloud environment ([Project settings](#project-settings/environment)), or the first test happens on Apify itself once the free account exists. The script is ready: run `find_businesses` for NWA, Tulsa and Kansas City boxes and count rows with a phone and a website. Until then, B's honest position stays "unknown coverage, do not claim lead quality".
+
 ## Order of work (no money before payday 2026-10-27)
 1. Today to Tuesday (free): trademark search for Tradesheet; Bentonville OSM coverage test for B; keep drafting.
 2. Tuesday: TJ approves domain ($12), Cloudflare, Apify free account. Overpass server choice for B waits until the actor has real users.

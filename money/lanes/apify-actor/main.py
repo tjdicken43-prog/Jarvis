@@ -7,11 +7,13 @@ phone, website, address. No people, no emails scraped from pages, no social prof
 import argparse
 import json
 import re
+import os
 import time
 import urllib.parse
 import urllib.request
 
-OVERPASS = "https://overpass-api.de/api/interpreter"
+# The free public server asks commercial users to run their own or pay (OSM wiki, checked 2026-10-25): set OVERPASS_URL then.
+OVERPASS = os.environ.get("OVERPASS_URL", "https://overpass-api.de/api/interpreter")
 UA = "TradeFinder-apify-actor/1.0 (public OpenStreetMap data)"
 ATTRIBUTION = "Data (c) OpenStreetMap contributors, ODbL 1.0, https://www.openstreetmap.org/copyright"
 TRADES = {"plumber": ("craft", "plumber"), "hvac": ("craft", "hvac"), "roofer": ("craft", "roofer"),

@@ -1,0 +1,47 @@
+# Playbook: lanes A, B and C, the way a professional would run them
+
+Written 2026-10-25 for TJ. Same treatment as money/agency/PLAYBOOK-D-E.md. Facts come from web search on 2026-10-25 (sources named); many are vendor blogs, so figures are directional. Where I could not confirm something it says so. Nothing here spends money or changes billing.
+
+## Cross-cutting fixes (all three)
+1. **Sell to the agency's own prospects first.** The cheapest buyers we have are the trades already in the cold list. A free estimate maker (A) and a review-reply pilot (C) are warm gifts inside the reply to a shop that wrote back, not just things to hope Google finds. This beats waiting on SEO.
+2. **Measure or it did not happen.** Each lane needs one number checked weekly in the week note: A impressions and Front Desk clicks, B runs by other users, C drafts approved by owners.
+3. **60 days is a leading-indicator window, not a verdict**, for anything that depends on search or a marketplace. Judge on indexing, impressions, runs and approvals first; money after.
+4. **One lawyer glance** (already on the pro-moves list) should also cover the Tradesheet terms and the add-on terms.
+
+## A. Tradesheet (free tools site)
+What a professional does:
+- **Trademark and name check before buying the domain**: USPTO search plus domain search. The domain is the only spend, so do this first (still not done).
+- **Accuracy and liability.** Material quantities and HVAC sizing can cost a user real money. Each tool page already says rough; add: waste-factor assumptions in plain words, "confirm with your supplier", and a terms line limiting liability. Have the math reviewed against two published sources per formula and cite them on the page. This also builds the trust Google wants.
+- **Measurement.** The lane installed no analytics, so after launch we could not tell whether anyone used a tool or clicked Front Desk. Recommend Cloudflare Web Analytics (free, no cookies, no personal data; it runs on the same host) plus Search Console. If TJ prefers none, Search Console only, and accept that tool uses are invisible. TJ's call.
+- **Search reality.** Calculators do attract organic traffic, but I found no ranking data for roofing or HVAC calculators and no independent measurement of how much; those results are mostly vendor blogs. New sites commonly take months to rank, so expect little in the first 60 days. Do not read slow traffic as failure; read indexing and impressions.
+- **Lead capture (the missing piece).** One published case (a Florida contractor, vendor-published, not independently verified) got 75 organic leads in 60 days from a cost calculator that sent results into a CRM. Ours captures nothing by design. Add one optional step: "Email me this estimate" (email only, plain consent line, CAN-SPAM compliant footer). That gives a list to offer Front Desk to. Needs TJ's OK since it adds data collection and a privacy line.
+- **Structured data and speed.** WebApplication schema on each tool, canonical, sitemap, fast static pages (already), proper titles. Free and standard.
+- **Links.** A new site needs links. Cheap, honest ways: a supplier or trade association resource page, local chamber directory, trade subreddit or forum only where self-links are allowed (read the rules first; no spam), and our own agency sites linking "Free tools" in the footer.
+- **Paid tier.** Do not build until at least 200 monthly users and 20 return visits show demand. The $9 price is unvalidated: Jobber and Housecall Pro already bundle quotes in $50 to $200+ plans, so a $9 tool must stay clearly simpler.
+- **Risk:** low spend (about $12). Main risk is time, not money.
+
+## B. Apify actor (Local Trade Business Finder)
+What I found and changed:
+- **Price was wrong.** Similar Google Maps actors on Apify list at about $1 to $6 per 1,000 results ([Apify store listings](https://apify.com/solidcode/google-maps-scraper-2-5-per-1-000-results/api)). The old $0.01 to $0.02 per row would be 2 to 10 times market. New start: $3 per 1,000 rows. LANE.md updated.
+- **Model.** Apify keeps 20% ([Apify monetization docs](https://docs.apify.com/platform/actors/publishing/monetize/pay-per-event)); profit = 0.8 × revenue minus platform costs. Rental actors were retired 2026-10-01, and only pay-per-event actors are eligible for AI-agent users. Use pay-per-event with one "result" event. Billing details must be completed before setting a price; payouts monthly on the 11th (per Apify help). Minimum payout: not found, check in the console.
+- **Public server rule (real issue).** The OSM wiki says commercial use should use a self-hosted or paid Overpass server, and the public one asks users to stay under about 10,000 queries a day ([Overpass wiki](https://wiki.openstreetmap.org/wiki/Overpass_API)). A paid actor running on Apify's shared IPs is commercial use. Done: `main.py` now reads `OVERPASS_URL` so a paid or self-hosted server can be set. Before the first paid run: pick one (a small self-hosted instance or a paid provider; both cost money, so it goes through money/BUDGET.md and the Approve button), or limit the actor to free trial use until it earns.
+- **License.** OSM data is ODbL. Distributing extracted rows means keeping the license notice and attribution, which every row has, and if a derived database is made public it must be offered under ODbL too (summary sources; I did not read the full license text, so the lawyer glance should cover it). Say in the store listing: "data under ODbL, results free to reuse under the same license."
+- **Honest value.** OSM phone and website coverage for small US trades is patchy. Before publishing, run the actor on Bentonville and two other metros and record the share of rows with a phone and a website. If under about 40% have a phone, rename the actor ("trade map finder") and position it for market sizing, not cold calling. Do not claim lead quality.
+- **Store basics a pro does:** clear name, 5-line description, sample output, input examples, a README with limits, a changelog, a quick reply to every issue, and a "last updated" habit. Reviews drive ranking more than anything.
+- **Privacy / compliance:** OSM lists businesses, not people; still no emails, no scraping of other sites, and a note that users must follow TCPA and CAN-SPAM when contacting anyone. This also keeps us out of the "tool for spammers" lane.
+- **Odds:** most actors earn near zero (no published median was found). It costs nothing more once built. Keep it as a free side bet; 60 days then kill per LANES.md.
+
+## C. Agency add-ons (review replies and posts)
+- **Price check.** Review tools for small business are not cheap: NiceJob lists about $75 a month plus a $199 setup fee; Birdeye and Podium are roughly $300 to $600 a month with annual contracts (third-party estimates, [Capterra](https://www.capterra.com/p/164285/Podium/pricing/)). Our $49 to $79 is far under, and Plus already includes review requests. Keep the prices; they are fair for drafts the owner approves.
+- **Sell one package, not three.** Three prices for two small tasks is clutter. Offer "Reputation" at $79 (replies + weekly post). Keep the single prices only if a shop asks.
+- **Approval friction decides success.** Owners will not log into a dashboard. Make approval a text reply: Front Desk texts the owner the draft, "Reply YES to post, or send changes". That stays inside the TCPA line because the owner is the client and opted in at signup (put it in the signup terms). Posting stays manual until Google approves API access; I could not find the approval requirements in this search, so assume an application and a wait.
+- **AI reply rules.** Industry write-ups say Google and readers dislike generic, repetitive replies, and advise AI as a starting point, not the final reply (vendor blogs; I did not find Google's own policy text). Our drafts must vary wording, mention something specific from the review, and always go through the owner. Never post without the owner's OK.
+- **Negative and risky reviews.** Add an escalation rule: threats, discrimination, fake or off-topic reviews go to the owner and a flag-to-Google step instead of a public reply. Never confirm a customer's private details in a public reply.
+- **Get more reviews, legally.** Replies do little without volume. Reviews.py already blocks gating and incentives (FTC consumer review rule in force since 2024-10-21). Keep: ask every customer, same wording, no rewards.
+- **Weekly posts.** Sell them as "keeps the profile active and current", not as a ranking trick; I found no solid evidence that posts move rankings.
+- **Tracking.** Count drafts created, approved within 48 hours, and edited. Under 60% approved means drafts are not good enough or the approval step is too hard; fix that before selling more.
+
+## Order of work (no money before payday 2026-10-27)
+1. Today to Tuesday (free): trademark search for Tradesheet; Bentonville OSM coverage test for B; keep drafting.
+2. Tuesday: TJ approves domain ($12), Cloudflare, Apify free account. Overpass server choice for B waits until the actor has real users.
+3. Week 1 to 2: A live with Search Console; add Cloudflare Web Analytics and the optional email step if TJ agrees; B published free with the new price; C pilot offered to the first replying shop as a free month with a text-approval flow built by hand.

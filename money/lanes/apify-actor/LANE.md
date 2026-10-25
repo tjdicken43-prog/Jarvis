@@ -13,7 +13,7 @@ TJ picked this as lane B on 2026-10-25 (research: https://claude.ai/artifact/8hx
 1. An Apify account on the **free plan** (apify.com, TJ's email and login).
 2. An Apify API token, set as `APIFY_TOKEN` in the cloud environment (never in a note), so Jarvis can push with `apify push` and set the pay-per-result price.
 3. The Store publish step in the Apify console (the first publish asks for a profile and a payout method). TJ's hands, bank info.
-Suggested price: pay per result, about $0.01 to $0.02 a row (check what similar lead-list actors charge before setting it). A paid Apify plan is a wallet service (`apify`) only if the actor earns.
+Price (checked 2026-10-25, replaces the old $0.01 to $0.02 guess): similar Google Maps lead actors charge about $1 to $6 per 1,000 results, so $0.01 a row ($10 per 1,000) would be 2 to 10 times the market. Start at $3 per 1,000 rows. Use pay-per-event, not rental (rental actors were retired 2026-10-01) so the actor can also be found by AI agents. See money/PLAYBOOK-A-B-C.md. A paid Apify plan is a wallet service (`apify`) only if the actor earns.
 
 ## Judged on
 Days 1 to 60: runs by other users, store views. From month 2: Apify payouts booked in `money/lanes/sales.csv` (lane `apify`, net of Apify's 20%) must cover wallet use, which starts at $0.

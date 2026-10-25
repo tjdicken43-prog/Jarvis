@@ -30,6 +30,7 @@ Websites for local shops in Bentonville and NWA. Started 2026-10-22. See [[Decis
 - Business: $999, up to 5 pages + Google Business Profile tune-up.
 - Care: $49/month: hosting, security, up to 30 min of changes, monthly site health report.
 - Care Plus: $89/month: Care + weekly Google post + review reply drafts.
+- Optional packages (2026-10-25, prices PROPOSED, not billed): Quote Assistant $49 to $79/mo, local lead pages $99 to $199/mo, Lead Boost ad management $400 to $600/mo (client pays Google). Details and when to offer each: money/agency/ADDONS.md.
 - No money down: $99/month for 12 months, care included.
 - Why: local agencies start around $2,500 (CodeWCG Bentonville page); DIY Squarespace is $12–25/month and Wix $17–39/month and the owner does the work.
 

@@ -22,7 +22,7 @@ Covers [[SecurityAI]], [[Basis]], [[Jarvis]] and [[Sites by TJ]]. Done items mov
 
 - [ ] Open the Etsy shop for the digital downloads lane: etsy.com/sell, your name, ID, bank and tax info, turn on two-factor sign-in, then approve the setup fee on the Approve button (service etsy-setup). The agents pick the products from the trend scout's data; you only review the finished ones before they list. See money/LANES.md.
 
-- [ ] Income lanes A and B, after payday (money/lanes/trade-tools/LANE.md, money/lanes/apify-actor/LANE.md): approve the Tradesheet domain (about $12, service trade-tools-setup) on the Approve button, say yes to the Cloudflare Pages project; make a free Apify account and put its token in the cloud environment as APIFY_TOKEN, then do the Store publish step in the Apify console (profile and payout need your login and bank info). Say yes or change the add-on prices in money/agency/ADDONS.md ($49 replies, $39 posts, $79 both).
+- [ ] Income lanes A and B, after payday (money/lanes/trade-tools/LANE.md, money/lanes/apify-actor/LANE.md): approve the Tradesheet domain (about $12, service trade-tools-setup) on the Approve button, say yes to the Cloudflare Pages project; make a free Apify account and put its token in the cloud environment as APIFY_TOKEN, then do the Store publish step in the Apify console (profile and payout need your login and bank info). Say yes or change the add-on prices in money/agency/ADDONS.md ($49 replies, $39 posts, $79 both; proposed ladder also Quote Assistant $49 to $79, lead pages $99 to $199, Lead Boost ads $400 to $600).
 
 ## When a client says yes
 - [ ] Open a free business savings account named "Tax savings" (at your bank, or one with percentage auto-transfer rules such as Relay (check)).

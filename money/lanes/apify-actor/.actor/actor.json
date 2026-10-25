@@ -1,0 +1,9 @@
+{
+  "actorSpecification": 1,
+  "name": "local-trade-business-finder",
+  "title": "Local Trade Business Finder (plumbers, HVAC, roofers)",
+  "description": "Lists plumbers, HVAC and roofing businesses in an area from OpenStreetMap, with an option to keep only the ones with no website listed.",
+  "version": "0.1",
+  "input": "./input_schema.json",
+  "dockerfile": "../Dockerfile"
+}

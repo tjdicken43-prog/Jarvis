@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roofing material calculator: squares, bundles and rolls</title>
+<meta name="description" content="Work out roofing squares, shingle bundles, underlayment, starter, ridge cap and drip edge from your footprint and pitch. Shows the math. Free, no sign-up.">
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23a8431c'/%3E%3Cpath d='M6 22h20M6 22V10h8v12M14 16h12v6' stroke='%23fff' stroke-width='2.4' fill='none'/%3E%3C/svg%3E">
+</head>
+<body>
+<header class="top"><div class="wrap">
+<a class="mark" href="../">Trade<span>sheet</span></a>
+<nav class="tools" aria-label="Tools"><a href="../roofing-material-calculator/" aria-current="page">Roofing materials</a><a href="../hvac-size-check/">HVAC size check</a><a href="../estimate-maker/">Estimate maker</a></nav>
+</div></header>
+<main><div class="wrap">
+<h1>Roofing material calculator</h1>
+<p class="lede">Footprint and pitch in, squares and a shopping list out.</p>
+<div class="tool">
+<form class="panel inputs" id="f" novalidate>
+<h2>The roof</h2>
+<label for="mode">What do you know?</label>
+<select id="mode"><option value="footprint">Building length and width</option><option value="roof">Total roof area already</option></select>
+<div id="fp">
+<div class="row"><div><label for="len">Length <small>ft</small></label><input id="len" type="number" inputmode="decimal" min="1" value="40"></div>
+<div><label for="wid">Width <small>ft</small></label><input id="wid" type="number" inputmode="decimal" min="1" value="30"></div></div>
+<label for="pitch">Pitch <small>inches of rise per 12 of run</small></label>
+<select id="pitch"></select>
+</div>
+<div id="ra" hidden><label for="area">Roof area <small>sq ft</small></label><input id="area" type="number" inputmode="decimal" min="1" value="2500"></div>
+<label for="cx">How cut up is it?</label>
+<select id="cx"><option value="simple">Plain gable, few penetrations (10% waste)</option><option value="moderate" selected>Hips, a valley or two (15% waste)</option><option value="cut_up">Many valleys, dormers, small planes (20% waste)</option></select>
+<label for="bps">Bundles per square <small>check your wrapper</small></label>
+<select id="bps"><option value="3" selected>3</option><option value="4">4</option></select>
+<details><summary>Coverage per package</summary>
+<label for="ridgecov">Ridge cap <small>ft per bundle</small></label><input id="ridgecov" type="number" min="1" value="30">
+<label for="startcov">Starter <small>ft per bundle</small></label><input id="startcov" type="number" min="1" value="105">
+<label for="ulcov">Underlayment <small>squares per roll</small></label><input id="ulcov" type="number" min="1" value="10">
+</details>
+<p class="err" id="err" role="alert"></p>
+</form>
+<section class="panel result" aria-live="polite">
+<h2>You need</h2>
+<p class="big" id="bundles">&ndash;</p>
+<table><tbody id="rows"></tbody></table>
+<p class="note" id="math"></p>
+</section>
+</div>
+<h2>How the math works</h2>
+<p>A roof is longer than the building under it. For a pitch of <i>p</i> inches of rise per 12 inches of run, the roof surface is the footprint times the square root of 1 + (<i>p</i>/12)&sup2;. At 6/12 that is 1.118, at 12/12 it is 1.414.</p>
+<p>One roofing square is 100 square feet. Waste covers cuts at hips, valleys and edges, plus the odd damaged bundle. The percentages here (10, 15, 20) are common rules of thumb. If your supplier uses a different number, trust theirs.</p>
+<p>Starter and drip edge are figured from the eave and rake length. With a length and width we assume 2 &times; (length + width), which is right for a simple gable or hip roof with no overhang changes. Ridge cap uses the longer side as the ridge. On anything more complicated, measure the real runs from the ground or a drone shot and type your own numbers into a roof area calculation.</p>
+<h3>Worked example</h3>
+<p>A 40 by 30 foot house at 6/12, a hip and a valley. Footprint 1,200 sq ft &times; 1.118 = 1,342 sq ft, or 13.4 squares. Add 15% waste: 15.4 squares. At 3 bundles a square, that is 47 bundles. Underlayment: 2 rolls at 10 squares each.</p>
+<h2>Questions</h2>
+<dl class="faq">
+<dt>How do I measure pitch?</dt><dd>Hold a level flat against the rafter or deck edge, 12 inches out, and measure straight up to the roof. That number is the rise. From a ladder, a phone level app gets you within a step.</dd>
+<dt>How many bundles are in a square?</dt><dd>Most architectural and three-tab shingles ship 3 bundles to the square. Some heavier lines use 4. The wrapper says.</dd>
+<dt>Does this include a tear-off?</dt><dd>No. It lists new material only. Tear-off, disposal, decking repair, flashing and vents change the price, so add them as lines in the <a href="../estimate-maker/">estimate maker</a>.</dd>
+<dt>Is it accurate enough to order from?</dt><dd>It is accurate enough to price a job and to check a supplier's list. Order from a measured takeoff on complex roofs.</dd>
+</dl>
+<aside class="pitch" aria-labelledby="fd">
+<h2 id="fd">On a roof, in a crawlspace, or asleep when the phone rings?</h2>
+<p>Front Desk answers your calls after hours, takes the name, number, address and the problem, and texts you a summary. It tells callers it is an automated assistant if they ask. $299 to set up, then $149 a month.</p>
+<p><a class="btn" href="../front-desk/">See how Front Desk works</a></p>
+</aside>
+</div></main>
+<footer><div class="wrap">
+<p>Tradesheet is free. Your numbers stay in your browser: nothing you type here is sent anywhere. These tools give planning numbers, not engineering or code advice. Your supplier, your manufacturer's instructions and your local code win over anything on this page.</p>
+<p>Built for plumbers, HVAC techs and roofers. Questions: see <a href="../front-desk/">Front Desk</a>.</p>
+</div></footer>
+<script src="../assets/calc.js"></script>
+<script src="../assets/config.js"></script>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  for (let p = 1; p <= 18; p++) { const o = document.createElement("option"); o.value = p; o.textContent = p + "/12"; if (p === 6) o.selected = true; $("pitch").appendChild(o); }
+  const f = $("f");
+  function run() {
+    $("err").textContent = "";
+    const roofMode = $("mode").value === "roof";
+    $("fp").hidden = roofMode; $("ra").hidden = !roofMode;
+    try {
+      const r = Tradesheet.roofing({
+        area_mode: $("mode").value, length: +$("len").value, width: +$("wid").value, pitch: +$("pitch").value,
+        roof_area: +$("area").value, complexity: $("cx").value, bundles_per_square: +$("bps").value,
+        ridge_lf_per_bundle: +$("ridgecov").value, starter_lf_per_bundle: +$("startcov").value, underlayment_squares_per_roll: +$("ulcov").value });
+      $("bundles").innerHTML = r.shingle_bundles + " <small>shingle bundles</small>";
+      const rows = [["Roof area", r.roof_area_sqft.toLocaleString() + " sq ft"], ["Squares", r.squares], ["Squares with " + r.waste_pct + "% waste", r.squares_with_waste],
+        ["Underlayment rolls", r.underlayment_rolls], ["Starter bundles", r.eave_rake_lf ? r.starter_bundles : "needs eave length"],
+        ["Ridge cap bundles", r.ridge_hip_lf ? r.ridge_cap_bundles : "needs ridge length"], ["Drip edge, 10 ft pieces", r.eave_rake_lf ? r.drip_edge_pieces : "needs eave length"]];
+      $("rows").innerHTML = rows.map(x => "<tr><th scope='row'>" + x[0] + "</th><td class='n'>" + x[1] + "</td></tr>").join("");
+      $("math").textContent = r.pitch_factor ? "Footprint x " + r.pitch_factor + " pitch factor = roof area." : "Using the roof area you entered.";
+    } catch (e) { $("err").textContent = e.message; }
+  }
+  f.addEventListener("input", run); f.addEventListener("change", run); run();
+})();
+</script>
+</body>
+</html>

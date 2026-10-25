@@ -1,0 +1,35 @@
+{
+  "title": "Local Trade Business Finder",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "boundingBox": {
+      "title": "Area (south, west, north, east)",
+      "type": "array",
+      "description": "Four numbers in degrees: south, west, north, east. Under 4 square degrees. Example: Bentonville to Fayetteville, Arkansas is [36.03, -94.32, 36.50, -94.05].",
+      "editor": "json",
+      "prefill": [36.03, -94.32, 36.5, -94.05]
+    },
+    "trades": {
+      "title": "Trades",
+      "type": "array",
+      "description": "Any of: plumber, hvac, roofer, electrician, painter, carpenter, landscaper.",
+      "editor": "stringList",
+      "prefill": ["plumber", "hvac", "roofer"]
+    },
+    "onlyWithoutWebsite": {
+      "title": "Only businesses with no website listed",
+      "type": "boolean",
+      "description": "Keeps businesses that list no website or only a social page. OpenStreetMap is incomplete, so check before you rely on it.",
+      "default": false
+    },
+    "maxResults": {
+      "title": "Maximum results",
+      "type": "integer",
+      "default": 200,
+      "minimum": 1,
+      "maximum": 1000
+    }
+  },
+  "required": ["boundingBox"]
+}

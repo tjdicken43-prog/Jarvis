@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HVAC size check: a rough tonnage range for a house</title>
+<meta name="description" content="A rough cooling size range in BTU and tons from square footage, ceiling height, insulation, windows and sun. Not a Manual J. Free, nothing is sent anywhere.">
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23a8431c'/%3E%3Cpath d='M6 22h20M6 22V10h8v12M14 16h12v6' stroke='%23fff' stroke-width='2.4' fill='none'/%3E%3C/svg%3E">
+</head>
+<body>
+<header class="top"><div class="wrap">
+<a class="mark" href="../">Trade<span>sheet</span></a>
+<nav class="tools" aria-label="Tools"><a href="../roofing-material-calculator/">Roofing materials</a><a href="../hvac-size-check/" aria-current="page">HVAC size check</a><a href="../estimate-maker/">Estimate maker</a></nav>
+</div></header>
+<main><div class="wrap">
+<h1>HVAC size check</h1>
+<p class="lede">A rough range to sanity-check a quote or plan the walkthrough. It is not a load calculation.</p>
+<div class="tool">
+<form class="panel inputs" id="f" novalidate>
+<h2>The house</h2>
+<label for="sq">Conditioned area <small>sq ft</small></label><input id="sq" type="number" inputmode="numeric" value="2000">
+<label for="ch">Ceiling height <small>ft</small></label><input id="ch" type="number" inputmode="decimal" value="8">
+<label for="ins">Insulation and air sealing</label>
+<select id="ins"><option value="poor">Older, thin attic insulation, drafty</option><option value="average" selected>Average</option><option value="good">Newer, well sealed</option></select>
+<label for="win">Windows</label>
+<select id="win"><option value="few">Few, small</option><option value="average" selected>Average</option><option value="many">Lots of glass</option></select>
+<label for="sun">Sun on the house</label>
+<select id="sun"><option value="shaded">Mostly shaded</option><option value="mixed" selected>Mixed</option><option value="sunny">Open lot, west or south glass</option></select>
+<label for="ppl">People living there</label><input id="ppl" type="number" min="1" value="2">
+<p class="err" id="err" role="alert"></p>
+</form>
+<section class="panel result" aria-live="polite">
+<h2>Rough cooling size</h2>
+<p class="big" id="tons">&ndash;</p>
+<table><tbody id="rows"></tbody></table>
+<p class="note warn" id="flag"></p>
+</section>
+</div>
+<h2>What this is, and what it is not</h2>
+<p>The real answer is a Manual J load calculation (the ACCA method), which uses the actual walls, windows, ducts and local design temperatures. This page does a quick version: 25 BTU per square foot as a starting point for a mixed-humid climate like Arkansas, scaled by ceiling height, insulation, windows and sun, plus 400 BTU for each person past two. It then shows a range of 12% either way. That base figure is a rule of thumb we chose, not a standard, so treat the result as a ballpark.</p>
+<p>One ton of cooling is 12,000 BTU per hour. The nominal sizes most equipment comes in are 1.5, 2, 2.5, 3, 3.5, 4 and 5 tons; the page shows the nearest.</p>
+<h2>Why not just size up?</h2>
+<p>An oversized air conditioner cools the air fast, shuts off, and never runs long enough to pull humidity out. The house feels clammy, the system starts and stops more, and comfort suffers. Right-sized and a little under is usually better than a size too big. Duct condition matters as much as tonnage.</p>
+<h3>Worked example</h3>
+<p>2,000 sq ft, 8 ft ceilings, average insulation, windows and sun, two people: 2,000 &times; 25 = 50,000 BTU, which is 4.2 tons. The range is 3.7 to 4.7 tons and the nearest nominal size is 4 tons. A Manual J on a tight, shaded house could land a full ton lower.</p>
+<h2>Questions</h2>
+<dl class="faq">
+<dt>Can I replace a unit with the same tonnage as the old one?</dt><dd>Often, but not safely assumed. Many older systems were sized by rule of thumb and may be oversized. If the house was air sealed or re-insulated since, the load is lower.</dd>
+<dt>Does this cover heating?</dt><dd>No. In much of the South cooling sets the size; in colder areas the heating load can. Run the heating side separately.</dd>
+<dt>Is this good enough to quote from?</dt><dd>It is good enough to see whether a bid is far off. Quote from a measured load calculation.</dd>
+</dl>
+<aside class="pitch" aria-labelledby="fd">
+<h2 id="fd">On a roof, in a crawlspace, or asleep when the phone rings?</h2>
+<p>Front Desk answers your calls after hours, takes the name, number, address and the problem, and texts you a summary. It tells callers it is an automated assistant if they ask. $299 to set up, then $149 a month.</p>
+<p><a class="btn" href="../front-desk/">See how Front Desk works</a></p>
+</aside>
+</div></main>
+<footer><div class="wrap">
+<p>Tradesheet is free. Your numbers stay in your browser: nothing you type here is sent anywhere. These tools give planning numbers, not engineering or code advice. Your supplier, your manufacturer's instructions and your local code win over anything on this page.</p>
+<p>Built for plumbers, HVAC techs and roofers. Questions: see <a href="../front-desk/">Front Desk</a>.</p>
+</div></footer>
+<script src="../assets/calc.js"></script>
+<script src="../assets/config.js"></script>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  function run() {
+    $("err").textContent = ""; $("flag").textContent = "";
+    try {
+      const r = Tradesheet.hvac({ sqft: +$("sq").value, ceiling_ft: +$("ch").value, insulation: $("ins").value, windows: $("win").value, sun: $("sun").value, people: +$("ppl").value });
+      $("tons").innerHTML = r.tons_low + " to " + r.tons_high + " <small>tons</small>";
+      $("rows").innerHTML = [["Middle estimate", r.btu_mid.toLocaleString() + " BTU/hr (" + r.tons_mid + " tons)"], ["Range", r.btu_low.toLocaleString() + " to " + r.btu_high.toLocaleString() + " BTU/hr"],
+        ["Nearest nominal size", r.nominal_tons + " tons"], ["Square feet per ton", r.sqft_per_ton.toLocaleString()]]
+        .map(x => "<tr><th scope='row'>" + x[0] + "</th><td class='n'>" + x[1] + "</td></tr>").join("");
+      if (r.over_max) $("flag").textContent = "This is past one 5 ton unit. Plan two systems or zones and get a real load calculation.";
+      else if (r.sqft_per_ton < 400) $("flag").textContent = "Under 400 sq ft per ton is a heavy load for a house. Check the inputs, then get a real load calculation.";
+    } catch (e) { $("err").textContent = e.message; }
+  }
+  const f = $("f"); f.addEventListener("input", run); f.addEventListener("change", run); run();
+})();
+</script>
+</body>
+</html>

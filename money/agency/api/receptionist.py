@@ -21,6 +21,7 @@ import urllib.request
 import booking
 import config
 import notices
+import sms
 from mailer import CENTRAL
 
 TRADE = {"plumbing": "plumbing", "hvac": "heating and air", "roofing": "roofing"}
@@ -37,6 +38,29 @@ SAFETY = {
     "roofing": "If water is coming through a ceiling, tell them to move belongings and stay out from under any "
                "sagging ceiling. Never tell anyone to get on a roof.",
 }
+
+
+def transfer_on(c):
+    return bool(digits(c.get("owner_cell")))
+
+
+def transfer_tool(c):
+    """Warm-transfer an emergency to the owner's cell. Vapi calls the owner first and only then connects the caller;
+    on no answer the assistant is told the transfer failed and goes back to taking the message (the urgent email
+    still goes out). Mode comes from TRANSFER_MODE so it can change without a deploy if Vapi renames it."""
+    return {"type": "transferCall", "function": {"name": "transfer_call"}, "destinations": [{
+        "type": "number", "number": "+1" + digits(c["owner_cell"]),
+        "description": "The owner. Only for an emergency the caller says cannot wait.",
+        "message": f"I'm trying to reach someone at {c['business_name']} right now. Please stay on the line.",
+        "transferPlan": {"mode": config.TRANSFER_MODE}}]}
+
+
+def transfer_rule(c):
+    if not transfer_on(c):
+        return ""
+    return (f"\n- EMERGENCY (they say it can't wait): after the safety step, say you will try to reach the owner now, then use "
+            f"transfer_call. If it does not connect, say the owner has been alerted and will call right back, and "
+            f"finish taking their name, number and address. Never transfer anything that isn't an emergency.")
 
 
 class VapiError(Exception):
@@ -73,7 +97,9 @@ Rules:
 - If asked, say you are the company's automated after-hours assistant. Never claim to be a person.
 - Never quote prices, give estimates, promise an arrival time or diagnose the problem.
 - Never book a time slot. You take messages only.
-- {SAFETY[c["trade"]]}
+- {SAFETY[c["trade"]]}{transfer_rule(c)}
+- If you are not sure what they said, ask them to say it again. If you don't know an answer, say you will pass the
+  question on. Never guess a name, number or address.
 - If the caller is selling something or it's a robocall, thank them and end the call.
 - Short sentences, warm and plain. No jargon."""
 
@@ -94,7 +120,9 @@ Rules:
 - If asked, say you are the company's automated assistant. Never claim to be a person.
 - Never quote prices, give estimates, promise an exact arrival time or diagnose the problem. A booking is a window.
 - Only book openings the tool gave you. Never invent a time.
-- {SAFETY[c["trade"]]}
+- {SAFETY[c["trade"]]}{transfer_rule(c)}
+- If you are not sure what they said, ask them to say it again. If you don't know an answer, say you will pass the
+  question on. Never guess a name, number or address.
 - If the caller is selling something or it's a robocall, thank them and end the call.
 - Short sentences, warm and plain. No jargon."""
 
@@ -108,7 +136,8 @@ def assistant(c):
                         "recorded. I can take a message and have someone call you back. What's going on?",
         "model": dict({"provider": "anthropic", "model": config.RECEPTIONIST_MODEL,  # no temperature: the API refuses it since 2026-10-21
                        "messages": [{"role": "system", "content": prompt(c)}]},
-                      **({"tools": booking.tools()} if booking.enabled(c) else {})),
+                      **({"tools": (booking.tools() if booking.enabled(c) else []) + ([transfer_tool(c)] if transfer_on(c) else [])}
+                         if booking.enabled(c) or transfer_on(c) else {})),
         "voice": {"provider": "vapi", "voiceId": "Elliot"},
         "transcriber": {"provider": "deepgram", "model": "nova-3", "language": "en"},
         "maxDurationSeconds": 600,          # 10 minutes caps a stuck call's cost
@@ -212,6 +241,10 @@ def handle(conn, payload, now=None):
     return record_call(conn, payload, now)
 
 
+def link(v):
+    return v if isinstance(v, str) and v.startswith("https://") and len(v) < 500 else None
+
+
 def clean(v, n=200):
     return re.sub(r"\s+", " ", str(v)).strip()[:n] or None if v not in (None, "") else None
 
@@ -238,16 +271,18 @@ def record_call(conn, payload, now=None):
     caller = (m.get("customer") or call.get("customer") or {}).get("number")
     emergency = sd.get("emergency") is True and o in ("message", "booked")
     cost = m.get("cost")
+    art = m.get("artifact") or {}
     row = conn.execute("""INSERT INTO receptionist_calls (client_id, vapi_call_id, started_at, seconds, after_hours,
                           outcome, summary, cost_cents, ended_reason, caller_number, caller_name, callback_number, town,
-                          problem, emergency) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                          problem, emergency, recording_url, transcript) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                           ON CONFLICT (vapi_call_id) DO NOTHING RETURNING *""",
                        (c["id"], call_id, started, seconds, is_after_hours(c, started), o,
                         ((m.get("analysis") or {}).get("summary") or m.get("summary") or "")[:1000] or None,
                         round(float(cost) * 100) if cost is not None else None, m.get("endedReason"),
                         digits(caller) or None, clean(sd.get("caller_name"), 80),
                         digits(sd.get("callback_number")) or digits(caller) or None, clean(sd.get("town"), 120),
-                        clean(sd.get("problem"), 300), emergency)).fetchone()
+                        clean(sd.get("problem"), 300), emergency, link(art.get("recordingUrl") or m.get("recordingUrl")),
+                        str(art.get("transcript") or m.get("transcript") or "")[:20000] or None)).fetchone()
     if not row:
         conn.commit()
         return {"ok": True, "duplicate": True}
@@ -281,9 +316,18 @@ def textback(conn, c, call_id, caller, o, started, now=None):
     if conn.execute("SELECT 1 FROM textbacks WHERE client_id = %s AND to_number = %s AND created_at > %s",
                     (c["id"], num, now - TEXTBACK_GAP)).fetchone():
         return "skipped: texted this week"
-    conn.execute("INSERT INTO textbacks (client_id, call_id, to_number, body, status) VALUES (%s,%s,%s,%s,'stub')",
-                 (c["id"], call_id, num, textback_body(c)))
-    return "stub"  # TEXTBACK is stub only: a real SMS provider (10DLC registered) comes later, on TJ's word
+    body = textback_body(c)
+    if config.sms() != "twilio":
+        conn.execute("INSERT INTO textbacks (client_id, call_id, to_number, body, status) VALUES (%s,%s,%s,%s,'stub')",
+                     (c["id"], call_id, num, body))
+        return "stub"  # real texts need TEXTBACK=twilio + Twilio keys, set only after 10DLC is approved, on TJ's word
+    try:
+        sid, err = sms.send(num, body), None
+    except sms.SmsError as e:
+        sid, err = None, str(e)[:300]  # one try only: a double text is worse than a missed one
+    conn.execute("INSERT INTO textbacks (client_id, call_id, to_number, body, status, provider_id, error) "
+                 "VALUES (%s,%s,%s,%s,%s,%s,%s)", (c["id"], call_id, num, body, "sent" if sid else "failed", sid, err))
+    return "sent" if sid else "failed"
 
 
 def opt_out(conn, number):

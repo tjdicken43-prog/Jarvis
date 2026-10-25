@@ -29,6 +29,7 @@ import quality
 import receptionist
 import reviews
 import sites
+import sms
 
 app = FastAPI(title="Trades agency", docs_url=None, redoc_url=None)
 
@@ -77,7 +78,7 @@ def health(conn=Conn):
         "daily_cap": config.DAILY_SEND_CAP, "in_window": mailer.in_window(now),
         "send_window": "Weekdays %d-%dam Central" % config.SEND_WINDOW, "stripe": config.stripe_mode(),
         "receptionist": config.receptionist(), "vapi_webhook_secret_set": bool(config.VAPI_WEBHOOK_SECRET),
-        "textback": config.TEXTBACK, "notify": config.notifier(), "browser": flaws.browser_status(),
+        "textback": config.TEXTBACK, "sms": config.sms(), "transfer_mode": config.TRANSFER_MODE, "notify": config.notifier(), "browser": flaws.browser_status(),
         "inbox": "imap" if config.mailer() == "smtp" else "stub", "follow_up_days": [d for _, d in followups.STEPS],
         "cap_today": mailer.daily_cap(conn, now)[0], "cap_reason": mailer.daily_cap(conn, now)[1],
         "warmup_started": db.setting(conn, "warmup_started"), "stopped_steps": events.stopped(conn),
@@ -498,7 +499,7 @@ def unsubscribe_one_click(token: str, conn=Conn):  # RFC 8058: mail apps POST he
 CLIENT_COLS = """id, prospect_id, business_name, contact_name, email, phone, trade, plan, billing, setup_cents,
   monthly_cents, included_minutes, status, site_url, receptionist_number, checkout_url, started_at, cancelled_at,
   created_at, stripe_customer_id IS NOT NULL AS has_stripe, open_hour, close_hour, open_saturday, textback_enabled,
-  vapi_assistant_id IS NOT NULL AS has_receptionist, notify_email, summary_hour, booking, calendar_token, review_url,
+  vapi_assistant_id IS NOT NULL AS has_receptionist, notify_email, owner_cell, summary_hour, booking, calendar_token, review_url,
   test_call_at, forwarding_confirmed_at, hours_confirmed_at, live_at, founding_no"""
 
 
@@ -715,6 +716,7 @@ class ReceptionistAsk(BaseModel):
     open_saturday: bool = False
     textback_enabled: bool = False
     receptionist_number: str | None = Field(default=None, max_length=40)
+    owner_cell: str | None = Field(default=None, max_length=40)   # "" clears it; set = emergencies get a live transfer
 
 
 @app.post("/clients/{client_id}/receptionist", dependencies=op)
@@ -725,14 +727,19 @@ def set_up_receptionist(client_id: int, ask: ReceptionistAsk, conn=Conn):
     number = (ask.receptionist_number or "").strip() or None
     if number and not receptionist.digits(number):
         raise HTTPException(400, "receptionist number needs 10 digits")
+    cell = None if ask.owner_cell is None else receptionist.digits(ask.owner_cell)
+    if ask.owner_cell and not cell:
+        raise HTTPException(400, "owner cell needs 10 digits")
     if get_client(conn, client_id)["status"] not in ("active", "past_due"):
         raise HTTPException(409, "set up the receptionist after they pay (client is not active)")
     if number and conn.execute("""SELECT 1 FROM clients WHERE id <> %s AND right(regexp_replace(coalesce(receptionist_number,
                                   ''), '\\D', '', 'g'), 10) = %s""", (client_id, receptionist.digits(number))).fetchone():
         raise HTTPException(409, "another client already has that receptionist number")
     conn.execute("""UPDATE clients SET open_hour = %s, close_hour = %s, open_saturday = %s, textback_enabled = %s,
-                    receptionist_number = coalesce(%s, receptionist_number) WHERE id = %s""",
-                 (ask.open_hour, ask.close_hour, ask.open_saturday, ask.textback_enabled, number, client_id))
+                    receptionist_number = coalesce(%s, receptionist_number),
+                    owner_cell = CASE WHEN %s::boolean THEN %s ELSE owner_cell END WHERE id = %s""",
+                 (ask.open_hour, ask.close_hour, ask.open_saturday, ask.textback_enabled, number,
+                  cell is not None, cell or None, client_id))
     c = conn.execute("SELECT * FROM clients WHERE id = %s", (client_id,)).fetchone()
     try:
         out = receptionist.set_up(conn, c)
@@ -751,7 +758,7 @@ def client_calls(client_id: int, conn=Conn):
     get_client(conn, client_id)
     return {"items": conn.execute("""SELECT r.id, r.started_at, r.seconds, r.after_hours, r.outcome, r.summary,
         r.ended_reason, r.caller_name, r.callback_number, r.caller_number, r.town, r.problem, r.emergency,
-        t.status AS textback FROM receptionist_calls r LEFT JOIN textbacks t ON t.call_id = r.id
+        r.recording_url, r.transcript, t.status AS textback FROM receptionist_calls r LEFT JOIN textbacks t ON t.call_id = r.id
         WHERE r.client_id = %s ORDER BY r.started_at DESC LIMIT 100""", (client_id,)).fetchall()}
 
 
@@ -843,6 +850,17 @@ def sms_opt_out(o: OptOut, conn=Conn):
     if not num:
         raise HTTPException(400, "number needs 10 digits")
     return {"number": num, "opted_out": True}
+
+
+@app.post("/sms/inbound")
+async def sms_inbound(request: Request, conn=Conn):  # public: Twilio posts STOP/START/HELP here, signed with our auth token
+    form = {k: str(v) for k, v in (await request.form()).items()}
+    url = config.PUBLIC_URL + "/sms/inbound"
+    if not config.TWILIO_AUTH_TOKEN:
+        raise HTTPException(503, "inbound texts are off: set TWILIO_AUTH_TOKEN")
+    if not sms.signature_ok(url, form, request.headers.get("x-twilio-signature")):
+        raise HTTPException(401, "bad signature")
+    return Response(sms.inbound(conn, form, receptionist), media_type="application/xml")
 
 
 # Step 9: what the demos sell. Owner emails (urgent heads-up, bookings, morning summary), Plus booking + calendar feed,

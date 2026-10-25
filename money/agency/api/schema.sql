@@ -353,3 +353,10 @@ CREATE TABLE IF NOT EXISTS payments (
   setup_cents       int NOT NULL DEFAULT 0    -- the one-time setup line, if this invoice had it
 );
 CREATE INDEX IF NOT EXISTS payments_paid_at ON payments (paid_at);
+
+-- Gap review (2026-10-25): warm transfer of emergencies to the owner's cell, and a real SMS provider behind TEXTBACK=twilio.
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS owner_cell text;   -- 10 digits; set = emergencies are offered a live transfer here
+ALTER TABLE textbacks ADD COLUMN IF NOT EXISTS provider_id text;
+ALTER TABLE textbacks ADD COLUMN IF NOT EXISTS error text;
+ALTER TABLE receptionist_calls ADD COLUMN IF NOT EXISTS recording_url text;  -- Vapi-hosted audio, for TJ's go-live listening and the owner
+ALTER TABLE receptionist_calls ADD COLUMN IF NOT EXISTS transcript text;

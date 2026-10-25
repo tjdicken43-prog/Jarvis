@@ -1,6 +1,6 @@
 const BRAIN = window.BRAIN || { notes: [], stats: {} };
 const FACTORY_NOTES = /^(Sites by TJ|Jarvis)$/; // these notes open the factory (hud/factory.js)
-const RUNNER = "trig_01RRHsSJ2oBQTDWENSivmbgA"; // the Claude Code scheduled task that works the job queue
+const RUNNER = "trig_018dWp58ssWVgPRB7eHuMeva"; // the Claude Code scheduled task that works the job queue
 const $ = (id) => document.getElementById(id);
 const store = {
   get(k, d) { try { return localStorage.getItem("jarvis." + k) ?? d; } catch { return d; } },

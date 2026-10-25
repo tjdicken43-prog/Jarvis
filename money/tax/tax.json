@@ -136,6 +136,14 @@
       "taxable": true,
       "why": "Goods are taxed. Buy the kit tax-free for resale (form ST391 with the permit number), charge the gym 9.5%."
     },
+    "etsy": {
+      "label": "Etsy digital downloads (net of Etsy fees)",
+      "price": 0,
+      "cost": 0,
+      "taxable": false,
+      "marketplace": true,
+      "why": "Etsy is the marketplace facilitator and collects and remits Arkansas sales tax on these orders (since 2019-07-01, per Etsy's seller handbook). We add none and report none, or it would be paid twice. Income and self-employment tax still count in full."
+    },
     "install": {
       "label": "Install labor, billed on its own",
       "price": 0,

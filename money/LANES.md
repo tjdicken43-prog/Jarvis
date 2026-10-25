@@ -26,6 +26,15 @@ Every lane agent reads this file at the start of every run. These rules sit unde
 |---|---|---|---|---|
 | etsy-digital | planned (starts about 2026-11-03) | $40 / 30 days | not yet | money/lanes/etsy-digital/LANE.md |
 
+## Surplus goes to the main card (TJ, 2026-10-25)
+The lane's wallet stays at its allowance ($40 for Etsy). When a lane's month makes more than that, the extra tops up the main card:
+
+1. Vegeta closes the month: made (net of Etsy fees and refunds) minus the lane's card charges = profit.
+2. Tax comes out first, at the tax module's set-aside rate (25% floor), and `tax.py etsy-import` has put the sales into income.csv. Etsy collects the sales tax itself ([[TAX]]).
+3. The allowance ($40) stays with the lane so next month's wallet is covered.
+4. What's left is the surplus: `python3 money/budget/budget.py surplus` shows it per closed month.
+5. Moving it is a real money move (the virtual card pulls from a bank account), so Vegeta writes `spend/topup-<lane>-<month>` to the page store and TJ taps Approve. After he does, and the tax savings are caught up, `budget.py topup LANE MONTH --approved-by TJ` logs a `topup` ledger row (a credit the Budget sheet shows). The code refuses while taxes are short or the month is already credited.
+
 ## Where this comes from
 
 TJ, 2026-10-24: "give them a certain amount of money to do these things month and if they deplete the account to 0 or we do not make money back that month ... shut them down." He chose the 60-day first term on 2026-10-24. Enforced in code (budget.py `check` and `lanes`, tested in money/test/test_budget.py), not only by agent promise, because OWASP LLM06 puts the hard stop outside the model.

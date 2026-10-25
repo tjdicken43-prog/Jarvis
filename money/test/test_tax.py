@@ -96,6 +96,25 @@ new = t.import_payments(CFG, [], pay)
 assert len(new) == 2 and new[0]["cost"] == "60.00" and t.lint(CFG, new, []) == []
 assert t.import_payments(CFG, new, pay) == []
 
+# Etsy (TJ, 2026-10-25): Etsy collects and remits Arkansas sales tax, so we add none and report none; income tax still counts
+assert t.sales_tax(CFG, inc("2027-01-05", "etsy", 20)) == 0
+assert CFG["items"]["etsy"]["marketplace"] and not CFG["items"]["etsy"]["taxable"]
+sales = [{"date": "2027-02-03", "lane": "etsy-digital", "amount": "40.00", "note": "a"}, {"date": "2027-02-03", "lane": "etsy-digital", "amount": "40.00", "note": "a"},
+         {"date": "2027-02-04", "lane": "other", "amount": "9.00", "note": ""}]
+new = t.import_etsy([], sales)
+assert [r["note"] for r in new] == ["sales.csv:2027-02-03|40.00|a#1", "sales.csv:2027-02-03|40.00|a#2"], new  # two identical sales both land
+assert t.import_etsy(new, sales) == []  # run twice, nothing doubles
+assert t.lint(CFG, new + [inc("2027-02-05", "etsy", -5)], []) == []  # a refund month can net negative
+# Etsy sales are profit for the income estimates but stay off the Arkansas sales tax return
+w = copy.deepcopy(CFG); w["sales_tax"]["permit_from"] = "2027-01-01"
+rows = [inc("2027-01-10", "etsy", 4000), inc("2027-01-12", "monitoring", 200)]
+st = t.status(w, rows, [], [], D("2027-02-25"))
+sale_f = next(f for f in st["filings"] if f["id"] == "sales-2027-01")
+assert sale_f["amount"] == 19.0 and "Gross receipts: $200.00" in sale_f["numbers"][0], sale_f
+assert any("Etsy marketplace sales $4,000.00" in n for n in sale_f["numbers"])
+assert st["profit_ytd"] == 4200 and st["income_tax_ytd"]["se"] > 500, st["income_tax_ytd"]
+assert st["sales_tax_ytd"] == 19.0  # nothing collected on the Etsy rows
+
 # the real files
 cfg, income, paid, ledger = t.load()
 assert t.lint(cfg, income, paid) == [], t.lint(cfg, income, paid)

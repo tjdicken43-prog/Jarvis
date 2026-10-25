@@ -34,6 +34,14 @@ State 6.5% + Benton County 1% + Bentonville 2% = 9.5%. Charged on top of the pri
 
 **Before the first gym invoice or kit sale:** sales tax permit on ATAP, $50 one time. Returns due the 20th of the next month (next workday if a weekend); file even at $0. Timely-filing discount about 2% (check).
 
+## Etsy sales (TJ, 2026-10-25: same tax setup as everything else)
+- **Sales tax: Etsy handles it.** Etsy is a marketplace facilitator. Etsy's seller handbook lists Arkansas among the states where it collects and remits on its orders (from 2019-07-01; Etsy's page blocks this cloud's fetcher with a 403, so that date comes from a search summary of it, checked 2026-10-25). Arkansas law puts the duty on the facilitator ([DFA remote sellers and marketplace facilitators](https://www.dfa.arkansas.gov/office/taxes/excise-tax-administration/sales-use-tax/remote-sellers/)). So: add no sales tax to Etsy prices, and never put Etsy orders on our ET-1 as ours, or it gets paid twice.
+- **Permit:** a Sales Tax Institute summary of a DFA letter opinion says a seller that only sells through a marketplace needs no gross receipts permit and files no returns (secondary source, about six years old). We get the permit anyway for the gym, and the sheet leaves Etsy sales off the return and says so on it.
+- **Digital items:** Arkansas taxes "specified digital products" (digital audio, audio-visual, digital books, digital codes; [DFA notice on Act 141 of 2017](https://www.dfa.arkansas.gov/wp-content/uploads/CandySoftDrinkDigitalProducts.pdf)). Planners, trackers and fillable forms aren't "works generally recognized as books", so likely not taxed, but it doesn't matter while Etsy collects. It would matter for anything sold on our own site.
+- **Income and self-employment tax: full, same as the agency.** Etsy income is business profit on Schedule C. `tax.py etsy-import` copies the Etsy lane's `money/lanes/sales.csv` (booked net of Etsy fees and refunds) into income.csv as item `etsy`; the lane's card charges are already costs in the ledger. The federal and Arkansas estimates, the 25% floor set-aside and the Approve filings (quarterly, April) then include it with no extra steps. Net earnings of $400 or more owe SE tax even if Etsy never sends a form.
+- **1099-K:** Etsy Payments reports to the IRS only above $20,000 and more than 200 transactions for 2026 (restored by the 2025 budget law; secondary sources, not IRS text, checked 2026-10-25). Under that, the income still counts.
+- **Tax before surplus:** money for the card's top-up is only what's left after the tax set-aside. See money/LANES.md.
+
 ## Income tax (single-member LLC = Schedule C on TJ's own return)
 
 - **Self-employment tax** 15.3% on 92.35% of profit (Social Security part stops at $184,500 for 2026).

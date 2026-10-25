@@ -106,4 +106,18 @@ v, why = b.check(dict(LC, lanes={"etsy-digital": dict(LC["lanes"]["etsy-digital"
                  D("2026-11-10"), recurring_bill=True)
 assert v == "no" and "shut" in why[0], why
 assert b.main(["lanes", "--date", "2026-10-24"]) == 0
+# surplus (TJ, 2026-10-25): wallet stays $40; profit - tax - $40 goes to the card, taxes first
+s1 = b.lane_surplus(LC, [row("2026-11-04", "charge", "etsy", 20, "recurring")], [sale("2026-11-10", 220)], "etsy-digital", 1, 25)
+assert (s1["profit"], s1["tax"], s1["surplus"], s1["to_card"]) == (200, 50, 110, 110), s1  # 200 - 50 tax - 40 kept
+assert b.lane_surplus(LC, [], [sale("2026-11-10", 50)], "etsy-digital", 1, 25)["surplus"] == 0  # 50 - 12.5 tax < 40 kept
+assert b.lane_surplus(LC, [], [sale("2026-12-10", 300)], "etsy-digital", 1, 25)["made"] == 0  # month 2 sale isn't month 1
+done = [row("2026-12-04", "topup", "etsy-digital", 100, "TJ")]; done[0]["note"] = "etsy-digital month 1 surplus"
+s2 = b.lane_surplus(LC, done, [sale("2026-11-10", 220)], "etsy-digital", 1, 25)
+assert s2["credited"] == 100 and s2["to_card"] == round(s2["surplus"] - 100, 2), s2
+# only closed months, only running lanes
+assert b.lane_surpluses(LC, [], [sale("2026-11-10", 220)], D("2026-11-20"), 25) == []
+assert len(b.lane_surpluses(LC, [], [sale("2026-11-10", 220)], D("2026-12-04"), 25)) == 1
+# a top-up credit raises the card balance and passes lint
+assert b.balance(CFG, [row("2026-10-28", "topup", "etsy-digital", 50, "TJ")], D("2026-10-28")) == b.balance(CFG, [], D("2026-10-28")) + 50
+assert any("approved_by" in w for w in b.lint(CFG, [row("2026-10-28", "topup", "etsy-digital", 50, "")]))
 print("budget: all checks passed")

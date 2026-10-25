@@ -7,6 +7,7 @@ Estimates only: a CPA checks the method once before the first quarterly payment.
   python3 money/tax/tax.py status [--date YYYY-MM-DD] [--json]
   python3 money/tax/tax.py setaside ITEM AMOUNT      how much of one payment goes to the tax account
   python3 money/tax/tax.py import FILE.json          add the agency API's GET /payments rows to income.csv (skips ones already in)
+  python3 money/tax/tax.py etsy-import               add the Etsy lane's money/lanes/sales.csv rows (net of Etsy fees and refunds) to income.csv
   python3 money/tax/tax.py moved AMOUNT [--date D]   log money TJ moved into tax savings (pot.csv; negative = took out)
   python3 money/tax/tax.py lint                      exit 1 = income.csv, paid.csv or pot.csv is broken
 """
@@ -30,6 +31,24 @@ def load(config=HERE / "tax.json", income=HERE / "income.csv", paid=HERE / "paid
     cfg = json.loads(Path(config).read_text(encoding="utf-8"))
     read = lambda p: list(csv.DictReader(open(p, newline="", encoding="utf-8"))) if Path(p).exists() else []
     return cfg, read(income), read(paid), read(ledger)
+
+
+def import_etsy(income, sales, lane="etsy-digital"):
+    """New income rows from the Etsy lane's sales.csv (booked net of Etsy fees and refunds, so cost stays 0). Deduped on
+    date + amount + note + which repeat of that line it is; Etsy already collected any sales tax, so sales_tax is 0."""
+    have = {r.get("note") for r in income}
+    seen, new = {}, []
+    for r in sales:
+        if r["lane"] != lane:
+            continue
+        key = f"sales.csv:{r['date']}|{float(r['amount']):.2f}|{r.get('note', '')}"
+        seen[key] = seen.get(key, 0) + 1
+        note = f"{key}#{seen[key]}"
+        if note in have:
+            continue
+        new.append({"date": r["date"], "client": "Etsy", "item": "etsy", "amount": f"{float(r['amount']):.2f}", "cost": "0.00",
+                    "sales_tax": "0.00", "note": note})
+    return new
 
 
 def load_pot(pot=HERE / "pot.csv"):
@@ -77,7 +96,7 @@ def lint(cfg, income, paid):
             bad.append(f"income.csv line {i}: item must be one of {sorted(cfg['items'])}")
         for k in ("amount", "cost"):
             try:
-                if float(r.get(k) or 0) < 0:
+                if float(r.get(k) or 0) < 0 and not (k == "amount" and r.get("item") == "etsy"):  # a refund month can net below 0
                     bad.append(f"income.csv line {i}: {k} can't be negative")
             except ValueError:
                 bad.append(f"income.csv line {i}: {k} is not a number")
@@ -235,10 +254,12 @@ def status(cfg, income, paid, ledger, today, pot=()):
             if pe < pfrom:
                 continue
             due = workday(date(pe.year + (pe.month == 12), pe.month % 12 + 1, st_cfg["due_day"]))
-            gross = round(sum(float(r["amount"]) for r in rows if ms <= date.fromisoformat(r["date"]) <= pe), 2)
-            taxable = round(sum(float(r["amount"]) for r in rows if ms <= date.fromisoformat(r["date"]) <= pe
-                                and cfg["items"][r["item"]]["taxable"]), 2)
-            owe = round(sum(sales_tax(cfg, r) for r in rows if ms <= date.fromisoformat(r["date"]) <= pe), 2)
+            own = [r for r in rows if ms <= date.fromisoformat(r["date"]) <= pe and not cfg["items"][r["item"]].get("marketplace")]
+            market = round(sum(float(r["amount"]) for r in rows if ms <= date.fromisoformat(r["date"]) <= pe
+                               and cfg["items"][r["item"]].get("marketplace")), 2)
+            gross = round(sum(float(r["amount"]) for r in own), 2)
+            taxable = round(sum(float(r["amount"]) for r in own if cfg["items"][r["item"]]["taxable"]), 2)
+            owe = round(sum(sales_tax(cfg, r) for r in own), 2)
             fid = f"sales-{ms.isoformat()[:7]}"
             filings.append({
                 "id": fid, "kind": "sales", "title": f"Arkansas sales tax {ms.strftime('%b %Y')}" + (" quarter" if step == 3 else ""),
@@ -246,6 +267,7 @@ def status(cfg, income, paid, ledger, today, pot=()):
                 "amount": owe, "paid": paid_by.get(fid, 0.0), "pay_url": st_cfg["pay_url"], "how": st_cfg["how"],
                 "numbers": [f"Gross receipts: {m(gross)}", f"Taxable sales: {m(taxable)}", f"Exempt (not taxable in Arkansas): {m(gross - taxable)}",
                             f"Tax at {st_cfg['combined'] * 100:g}% ({st_cfg['where']}): {m(owe)}",
+                            *([f"Etsy marketplace sales {m(market)}: Etsy collects and remits the tax, so they are not on this return."] if market else []),
                             "File even if it's $0, or the state charges a late fee."],
                 "zero_return": True,
             })
@@ -301,6 +323,9 @@ def status(cfg, income, paid, ledger, today, pot=()):
         alerts.append("A taxable sale is logged but there's no Arkansas sales tax permit yet. Register on ATAP before the next invoice.")
     elif not st_cfg.get("permit_from"):
         alerts.append("Before the first gym invoice or hardware sale: register for an Arkansas sales tax permit on ATAP ($50, one time).")
+    if any(r["item"] == "etsy" for r in rows):
+        e = round(sum(float(r["amount"]) for r in rows if r["item"] == "etsy" and r["date"][:4] == str(year)), 2)
+        alerts.append(f"Etsy income {year} so far: {m(e)} net of Etsy fees. It's in the profit above, so it's in your income and self-employment estimates.")
     if cfg.get("w2_wages") is None:
         alerts.append("Tell Jarvis about how much J Street pays you a year, so the federal number counts your bracket right.")
     for f in late:
@@ -349,6 +374,15 @@ def main(argv):
             with open(HERE / "income.csv", "a", newline="", encoding="utf-8") as f:
                 csv.DictWriter(f, fieldnames=list(new[0])).writerows(new)
         print(f"Added {len(new)} income rows")
+        return 0
+    if cmd == "etsy-import":
+        sp = ROOT / "money" / "lanes" / "sales.csv"
+        sales = list(csv.DictReader(open(sp, newline="", encoding="utf-8"))) if sp.exists() else []
+        new = import_etsy(income, sales)
+        if new:
+            with open(HERE / "income.csv", "a", newline="", encoding="utf-8") as f:
+                csv.DictWriter(f, fieldnames=list(new[0])).writerows(new)
+        print(f"Added {len(new)} Etsy income rows")
         return 0
     if cmd == "moved":
         amount = float(args[1])

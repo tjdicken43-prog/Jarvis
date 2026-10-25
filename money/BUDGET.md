@@ -42,6 +42,7 @@ Planned first two weeks, about $48 of the $175. Taxes never go on this card: the
 - `refill`: TJ raised the card limit on payday ($175 the first time, then $100) (counted automatically on refill dates, so logging it is optional).
 - `charge`: money out. `approved_by` = `TJ` (with a chat yes) or `recurring` (a line from budget.json).
 - `refund`: money back.
+- `topup`: a lane's surplus credited to the card (TJ's Approve, taxes set aside first; needs `approved_by`). Not income or an expense, just a transfer. See money/LANES.md.
 
 Run `python3 money/budget/budget.py lint` after editing. Then refresh the Jarvis page so the Budget sheet updates (`python3 hud/build_brain.py --artifact ...`).
 

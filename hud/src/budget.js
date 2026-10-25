@@ -66,7 +66,7 @@ function renderBudget() {
     r.querySelector("u").style.width = Math.min(used * 100, 100) + "%"; if (used >= 0.8) r.classList.add("hot");
   }
   add("p", null, `Next two weeks need ${usd(b.next_period_need)} of the ${usd(b.refill)} refill.`);
-  list("Recent charges", b.recent, (r) => [r.service, (r.kind === "refund" ? "+" : "−") + usd(r.amount), `${r.date} · approved by ${r.approved_by || "unknown"}`]);
+  list("Recent charges", b.recent, (r) => [r.service, (r.kind === "charge" ? "−" : "+") + usd(r.amount), `${r.date} · approved by ${r.approved_by || "unknown"}`]);
 }
 
 async function decide(a, status) {

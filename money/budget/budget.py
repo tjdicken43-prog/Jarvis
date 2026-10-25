@@ -9,10 +9,16 @@ is bought, and the source of the HUD's Budget sheet. No network, no card data.
       exit 2 = ask TJ: put it in the tracker for his Approve button (over $25, or a one-off)
       exit 1 = no: before payday or it would dip into the $25 reserve; even TJ's button can't
   python3 money/budget/budget.py lanes [--date YYYY-MM-DD]                 each money lane: wallet, sales, keep or shut
+  python3 money/budget/budget.py surplus [--date YYYY-MM-DD]               each lane's closed months: profit, tax set-aside, what goes to the card
+  python3 money/budget/budget.py topup LANE MONTH --approved-by TJ         log that month's surplus as a credit on the card (after TJ's Approve)
   python3 money/budget/budget.py lint                                       exit 1 = ledger is broken
 
 Lanes (TJ, 2026-10-24, money/LANES.md): a lane spends only its own wallet. It shuts when the wallet is empty,
 or when a 30-day period after its first term made less than it spent. Only TJ reopens it (new start date).
+
+Surplus (TJ, 2026-10-25): the wallet stays at its allowance. When a lane's month makes more than that, the extra tops up
+the main card, but taxes come out first: profit - tax set-aside - the allowance (which stays with the lane for next month).
+A top-up is a "topup" ledger row (a credit), logged only after TJ taps Approve and the tax savings are caught up.
 """
 import calendar
 import csv
@@ -22,7 +28,7 @@ from datetime import date, timedelta
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-KINDS = {"refill", "charge", "refund"}
+KINDS = {"refill", "charge", "refund", "topup"}
 
 
 def m(x):
@@ -80,6 +86,47 @@ def lane_report(cfg, rows, sales, name, today):
     return dict(out, verdict="keep", why="Paid for itself.")
 
 
+def load_tax():
+    """money/tax/tax.py, loaded by path (no package), for the set-aside rate and the tax savings check."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("tax", HERE.parent / "tax" / "tax.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def lane_surplus(cfg, rows, sales, name, period, tax_pct):
+    """One closed 30-day month of a lane. made = sales net of marketplace fees and refunds; spent = its wallet use.
+    profit - tax (at the set-aside rate) - allowance (stays with the lane) = surplus for the main card.
+    credited = top-ups already logged for this month (note "<lane> month N"); to_card = what's still owed to the card."""
+    l = cfg["lanes"][name]
+    start = date.fromisoformat(l["start"])
+    a, b = start + timedelta(days=30 * (period - 1)), start + timedelta(days=30 * period)
+    inside = lambda d: a <= date.fromisoformat(d) < b
+    spent = round(sum(float(r["amount"]) * (1 if r["kind"] == "charge" else -1) for r in rows
+                      if r["service"] in l["services"] and r["kind"] in ("charge", "refund") and inside(r["date"])), 2)
+    made = round(sum(float(r["amount"]) for r in sales if r["lane"] == name and inside(r["date"])), 2)
+    profit = round(made - spent, 2)
+    tax = round(max(profit, 0) * tax_pct / 100, 2)
+    surplus = round(max(profit - tax - l["allowance_30d"], 0), 2)
+    credited = round(sum(float(r["amount"]) for r in rows if r["kind"] == "topup" and r["service"] == name
+                         and (r.get("note") or "").startswith(f"{name} month {period}")), 2)
+    return {"lane": name, "month": period, "from": a.isoformat(), "to": (b - timedelta(days=1)).isoformat(), "made": made,
+            "spent": spent, "profit": profit, "tax": tax, "tax_pct": tax_pct, "keeps": l["allowance_30d"], "surplus": surplus,
+            "credited": credited, "to_card": round(max(surplus - credited, 0), 2)}
+
+
+def lane_surpluses(cfg, rows, sales, today, tax_pct):
+    """Every closed month of every running lane (the open month isn't settled until it ends)."""
+    out = []
+    for n, l in cfg.get("lanes", {}).items():
+        if l.get("status") != "running" or not l.get("start"):
+            continue
+        done = (today - date.fromisoformat(l["start"])).days // 30
+        out += [lane_surplus(cfg, rows, sales, n, p, tax_pct) for p in range(1, done + 1)]
+    return out
+
+
 def lint(cfg, rows):
     """Every problem with the ledger, as plain sentences. Empty list = clean."""
     bad = []
@@ -97,6 +144,8 @@ def lint(cfg, rows):
             bad.append(f"line {i}: amount is not a number")
         if r.get("kind") == "charge" and not (r.get("approved_by") or "").strip():
             bad.append(f"line {i}: every charge needs approved_by (TJ, or the recurring line it matches)")
+        if r.get("kind") == "topup" and not (r.get("approved_by") or "").strip():
+            bad.append(f"line {i}: a top-up needs approved_by (TJ's Approve)")
         if r.get("kind") == "charge" and r.get("service") not in cfg["caps_30d"]:
             bad.append(f"line {i}: {r.get('service')} has no cap in budget.json")
     return bad
@@ -292,6 +341,36 @@ def main(argv):
             r = lane_report(cfg, rows, sales, n, today)
             money_line = f" | month {r['period']} spent {m(r['spent'])} made {m(r['made'])} left {m(r['left'])}" if "period" in r else ""
             print(f"{n}: {r['verdict'].upper()}{money_line} | {r['why']}")
+        return 0
+    if cmd in ("surplus", "topup"):
+        tx = load_tax()
+        tcfg, income, paid, ledger = tx.load()
+        tst = tx.status(tcfg, income, paid, ledger, today, tx.load_pot())
+        sur = lane_surpluses(cfg, rows, load_sales(), today, tst["setaside_pct"])
+        if cmd == "surplus":
+            for r in sur:
+                print(f"{r['lane']} month {r['month']} ({r['from']} to {r['to']}): made {m(r['made'])}, spent {m(r['spent'])}, "
+                      f"profit {m(r['profit'])}, tax {r['tax_pct']}% {m(r['tax'])}, lane keeps {m(r['keeps'])} -> card {m(r['surplus'])}"
+                      + (f" (already credited {m(r['credited'])})" if r["credited"] else ""))
+            if not sur:
+                print("No closed lane month yet.")
+            return 0
+        lane, month = args[1], int(args[2])
+        who = args[args.index("--approved-by") + 1] if "--approved-by" in args else ""
+        hit = next((r for r in sur if r["lane"] == lane and r["month"] == month), None)
+        if not who.strip():
+            print("A top-up needs --approved-by TJ (his Approve tap). Nothing logged.")
+            return 1
+        if not hit or hit["to_card"] <= 0:
+            print("Nothing to top up for that month (not closed yet, no surplus, or already credited). Nothing logged.")
+            return 1
+        tp = tst["pot"]
+        if tp["to_move"] >= 1 or tp["short"] > 0:
+            print(f"Taxes first: move {m(max(tp['to_move'], tp['short']))} into tax savings, then top up. Nothing logged.")
+            return 1
+        with open(HERE / "ledger.csv", "a", newline="", encoding="utf-8") as f:
+            csv.writer(f).writerow([today.isoformat(), "topup", lane, f"{hit['to_card']:.2f}", who, f"{lane} month {month} surplus"])
+        print(f"Credited {m(hit['to_card'])} to the card from {lane} month {month}.")
         return 0
     st = status(cfg, rows, today)
     if "--json" in args:

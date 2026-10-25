@@ -15,7 +15,10 @@
     "google-workspace": 9,
     "domains": 15,
     "etsy": 40,
-    "etsy-setup": 29
+    "etsy-setup": 29,
+    "trade-tools": 40,
+    "trade-tools-setup": 15,
+    "apify": 40
   },
   "recurring": [
     {
@@ -58,6 +61,26 @@
         "etsy"
       ],
       "note": "Etsy digital downloads (TJ go 2026-10-24). Starts about 2026-11-03 once TJ opens the shop. Setup fee is a one-off: TJ's Approve button. Rules: money/LANES.md"
+    },
+    "trade-tools": {
+      "status": "planned",
+      "start": null,
+      "allowance_30d": 40,
+      "first_term_days": 60,
+      "services": [
+        "trade-tools"
+      ],
+      "note": "Tradesheet: free trades tools site + paid tier (TJ go 2026-10-25, lane A). Domain is a one-off (service trade-tools-setup, TJ's Approve button). Starts when TJ buys the domain after payday. Rules: money/LANES.md"
+    },
+    "apify": {
+      "status": "planned",
+      "start": null,
+      "allowance_30d": 40,
+      "first_term_days": 60,
+      "services": [
+        "apify"
+      ],
+      "note": "Apify actor: Local Trade Business Finder (TJ go 2026-10-25, lane B). Starts when TJ makes the Apify account and publishes the actor. Free plan first; wallet only for a paid plan if the actor earns. Rules: money/LANES.md"
     }
   }
 }

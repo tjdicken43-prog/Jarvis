@@ -5,6 +5,8 @@ type: log
 
 Newest first. Covers [[SecurityAI]], [[Basis]] and [[Jarvis]].
 
+- **2026-10-25** Three new income lanes (TJ chose A, B and C from the AI income research): A, Tradesheet, free tools for trades with a paid tier later and Front Desk on every page (money/lanes/trade-tools/LANE.md); B, an Apify actor on public OpenStreetMap data (money/lanes/apify-actor/LANE.md); C, agency add-ons, review replies and weekly Google posts (money/agency/ADDONS.md). A and B each get a $40 wallet and a 60-day first term under [[Jarvis]]'s charter in money/LANES.md; C runs under the agency. No spending or signups before payday 2026-10-27. D (rank and rent) and E (paid skills) explained to TJ, not added. See [[Sites by TJ]].
+
 - **2026-10-24** [[Jarvis]] does everything he can on his own; only items that need TJ's hands, login, money (over $25 or one-off) or decision land on TJ's [[To do]] and "(check)" lists. Jarvis's own pending work sits under "Jarvis is on it". The page counts only TJ's items. Closed the same day: no Anthropic API key for the page (it uses TJ's claude.ai account), no paid voice (free built-in voices, chosen 2026-10-21). Why: TJ asked for the list to shrink and stay boss-only.
 
 - **2026-10-22** Start [[Sites by TJ]] in Bentonville/NWA: $299 launch (first 3), $499 Starter, $999 Business, $49 Care, $89 Care Plus, $99/month no money down. Prospect scout and meme coin paper bot run free on GitHub Actions; real-money trading stays off until paper wins for 30 days and TJ says go. Why: TJ said this is how he'll make money, asked for competitive Bentonville prices and gave standing OK.

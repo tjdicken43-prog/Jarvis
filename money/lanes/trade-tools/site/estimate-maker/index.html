@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Estimate maker: printable job estimate with markup and deposit</title>
+<meta name="description" content="Build a clean job estimate with material markup, sales tax and a deposit. Print it or save it as a PDF. Free, no sign-up, nothing leaves your browser.">
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23a8431c'/%3E%3Cpath d='M6 22h20M6 22V10h8v12M14 16h12v6' stroke='%23fff' stroke-width='2.4' fill='none'/%3E%3C/svg%3E">
+</head>
+<body>
+<header class="top"><div class="wrap">
+<a class="mark" href="../">Trade<span>sheet</span></a>
+<nav class="tools" aria-label="Tools"><a href="../roofing-material-calculator/">Roofing materials</a><a href="../hvac-size-check/">HVAC size check</a><a href="../estimate-maker/" aria-current="page">Estimate maker</a></nav>
+</div></header>
+<main><div class="wrap">
+<h1>Estimate maker</h1>
+<p class="lede">Line items, markup on materials, tax and a deposit, on a clean page you can print or save as a PDF.</p>
+<div class="tool">
+<form class="panel inputs no-print" id="f" novalidate>
+<h2>The job</h2>
+<label for="biz">Your business</label><input id="biz" autocomplete="organization">
+<label for="cust">Customer and address</label><input id="cust">
+<label for="job">Job</label><input id="job" placeholder="Roof replacement, 28 squares">
+<div class="row"><div><label for="mk">Material markup <small>%</small></label><input id="mk" type="number" min="0" value="20"></div>
+<div><label for="tx">Sales tax <small>% on taxable lines</small></label><input id="tx" type="number" min="0" step="0.001" value="0"></div></div>
+<div class="row"><div><label for="dp">Deposit <small>%</small></label><input id="dp" type="number" min="0" max="100" value="50"></div>
+<div><label for="valid">Good for <small>days</small></label><input id="valid" type="number" min="1" value="30"></div></div>
+<h2 style="margin-top:34px">Lines</h2>
+<div id="lines"></div>
+<p><button type="button" class="quiet" id="add">Add a line</button></p>
+<label for="notes">Notes on the sheet</label><textarea id="notes" rows="3"></textarea>
+<p class="note">Check your state's rules on which parts of a job are taxable. In Arkansas that depends on whether the work is a taxable service. Ask your accountant or the state revenue office if unsure.</p>
+<p class="err" id="err" role="alert"></p>
+<p><button type="button" id="print">Print or save as PDF</button> <button type="button" class="quiet" id="save">Save on this device</button> <button type="button" class="quiet" id="clear">Clear</button></p>
+<p class="note" id="saved"></p>
+</form>
+<section class="sheet" id="sheet" aria-live="polite"></section>
+</div>
+<h2>How it works</h2>
+<p>Each line is a quantity times a unit price. Lines marked Material get your markup added. Labor and other lines do not. Tax is figured on the lines you mark taxable, after markup. The deposit is a percentage of the total, and the balance is what is left.</p>
+<p>The sheet is plain on purpose: your business name, the job, the lines, the total and what is due up front. Save as PDF from the print dialog and email it. A saved estimate stays in this browser only. Clearing your browser data deletes it, so keep a PDF of anything you sent.</p>
+<h2>Questions</h2>
+<dl class="faq">
+<dt>Is this a contract?</dt><dd>No. It is an estimate. Put terms, change-order rules and your license information where your state requires them.</dd>
+<dt>Can I add my logo?</dt><dd>Not yet.</dd>
+<dt>Does it keep a list of past estimates?</dt><dd>It keeps the last one you saved on this device.</dd>
+</dl>
+<aside class="pitch" aria-labelledby="fd">
+<h2 id="fd">On a roof, in a crawlspace, or asleep when the phone rings?</h2>
+<p>Front Desk answers your calls after hours, takes the name, number, address and the problem, and texts you a summary. It tells callers it is an automated assistant if they ask. $299 to set up, then $149 a month.</p>
+<p><a class="btn" href="../front-desk/">See how Front Desk works</a></p>
+</aside></div></main>
+<footer><div class="wrap">
+<p>Tradesheet is free. Your numbers stay in your browser: nothing you type here is sent anywhere. These tools give planning numbers, not engineering or code advice. Your supplier, your manufacturer's instructions and your local code win over anything on this page.</p>
+<p>Built for plumbers, HVAC techs and roofers. Questions: see <a href="../front-desk/">Front Desk</a>.</p>
+</div></footer>
+<script src="../assets/calc.js"></script>
+<script src="../assets/config.js"></script>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const KEY = "tradesheet-estimate";
+  const money = n => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  function addLine(l) {
+    l = l || { desc: "", qty: 1, unit: 0, kind: "material", taxable: true };
+    const d = document.createElement("div"); d.className = "panel"; d.style.marginBottom = "13px";
+    d.innerHTML = '<label>What</label><input class="ld" value="' + esc(l.desc) + '">' +
+      '<div class="row"><div><label>Qty</label><input class="lq" type="number" min="0" step="any" value="' + l.qty + '"></div>' +
+      '<div><label>Unit price <small>$</small></label><input class="lu" type="number" min="0" step="any" value="' + l.unit + '"></div></div>' +
+      '<div class="row"><div><label>Type</label><select class="lk"><option value="material"' + (l.kind === "material" ? " selected" : "") + '>Material</option><option value="labor"' + (l.kind === "labor" ? " selected" : "") + '>Labor / other</option></select></div>' +
+      '<div><label>Tax</label><select class="lt"><option value="1"' + (l.taxable ? " selected" : "") + '>Taxable</option><option value="0"' + (l.taxable ? "" : " selected") + '>Not taxable</option></select></div></div>' +
+      '<p><button type="button" class="quiet rm">Remove this line</button></p>';
+    d.querySelector(".rm").onclick = () => { d.remove(); run(); };
+    $("lines").appendChild(d);
+  }
+  function read() {
+    return { markup_pct: +$("mk").value, tax_pct: +$("tx").value, deposit_pct: +$("dp").value,
+      lines: [...$("lines").children].map(d => ({ desc: d.querySelector(".ld").value.trim(), qty: +d.querySelector(".lq").value, unit: +d.querySelector(".lu").value,
+        kind: d.querySelector(".lk").value, taxable: d.querySelector(".lt").value === "1" })) };
+  }
+  function run() {
+    $("err").textContent = "";
+    const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+    try {
+      const i = read(), e = Tradesheet.estimate(i);
+      $("sheet").innerHTML = '<h2 style="margin-top:0">' + esc($("biz").value || "Estimate") + '</h2><p>' + today + ' &middot; good for ' + esc($("valid").value) + ' days</p>' +
+        '<p><b>' + esc($("cust").value) + '</b><br>' + esc($("job").value) + '</p>' +
+        '<table><thead><tr><th>Item</th><th class="n">Qty</th><th class="n">Amount</th></tr></thead><tbody>' +
+        e.lines.map(l => "<tr><td>" + esc(l.desc) + "</td><td class='n'>" + l.qty + "</td><td class='n'>" + money(l.total) + "</td></tr>").join("") +
+        "<tr><td colspan='2' class='n'>Subtotal</td><td class='n'>" + money(e.subtotal) + "</td></tr>" +
+        (e.tax ? "<tr><td colspan='2' class='n'>Sales tax</td><td class='n'>" + money(e.tax) + "</td></tr>" : "") +
+        "<tr><td colspan='2' class='n'><b>Total</b></td><td class='n'><b>" + money(e.total) + "</b></td></tr>" +
+        (e.deposit ? "<tr><td colspan='2' class='n'>Deposit to start (" + i.deposit_pct + "%)</td><td class='n'>" + money(e.deposit) + "</td></tr><tr><td colspan='2' class='n'>Balance at completion</td><td class='n'>" + money(e.balance) + "</td></tr>" : "") +
+        "</tbody></table>" + ($("notes").value ? "<p style='margin-top:21px'>" + esc($("notes").value).replace(/\n/g, "<br>") + "</p>" : "");
+    } catch (e) { $("sheet").innerHTML = "<p class='note'>Add a line with a name and a quantity to see the sheet.</p>"; }
+  }
+  function snapshot() { return { biz: $("biz").value, cust: $("cust").value, job: $("job").value, mk: $("mk").value, tx: $("tx").value, dp: $("dp").value, valid: $("valid").value, notes: $("notes").value, lines: read().lines }; }
+  function restore(s) { for (const k of ["biz", "cust", "job", "mk", "tx", "dp", "valid", "notes"]) if (s[k] !== undefined) $(k).value = s[k]; $("lines").innerHTML = ""; (s.lines || []).forEach(addLine); }
+  $("add").onclick = () => { addLine(); run(); };
+  $("print").onclick = () => window.print();
+  $("save").onclick = () => { try { localStorage.setItem(KEY, JSON.stringify(snapshot())); $("saved").textContent = "Saved on this device."; } catch (e) { $("saved").textContent = "This browser would not let us save. Use Print or save as PDF."; } };
+  $("clear").onclick = () => { try { localStorage.removeItem(KEY); } catch (e) {} restore({ biz: "", cust: "", job: "", notes: "", lines: [{ desc: "", qty: 1, unit: 0, kind: "material", taxable: true }] }); run(); };
+  $("f").addEventListener("input", run); $("f").addEventListener("change", run);
+  let s = null; try { s = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) {}
+  if (s) { restore(s); $("saved").textContent = "Loaded your last saved estimate."; } else { addLine({ desc: "Shingles, 28 squares", qty: 28, unit: 112, kind: "material", taxable: true }); addLine({ desc: "Tear-off and install labor", qty: 28, unit: 185, kind: "labor", taxable: false }); }
+  run();
+})();
+</script>
+</body>
+</html>

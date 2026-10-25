@@ -25,6 +25,10 @@ Every lane agent reads this file at the start of every run. These rules sit unde
 | Lane | Status | Wallet | Started | File |
 |---|---|---|---|---|
 | etsy-digital | planned (starts about 2026-11-03) | $40 / 30 days | not yet | money/lanes/etsy-digital/LANE.md |
+| trade-tools | built, planned (starts when TJ buys the domain after payday 2026-10-27) | $40 / 30 days | not yet | money/lanes/trade-tools/LANE.md |
+| apify | built, planned (starts when TJ makes the Apify account) | $40 / 30 days | not yet | money/lanes/apify-actor/LANE.md |
+
+Agency add-ons (review replies, weekly Google posts) are not a lane: they raise revenue per agency client under the agency's own rules. See money/agency/ADDONS.md.
 
 ## Surplus goes to the main card (TJ, 2026-10-25)
 The lane's wallet stays at its allowance ($40 for Etsy). When a lane's month makes more than that, the extra tops up the main card:

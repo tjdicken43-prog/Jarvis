@@ -20,6 +20,9 @@ jobs:
       - run: python3 money/test/test_audit.py
       - run: python3 money/test/test_budget.py
       - run: python3 money/test/test_tax.py
+      - run: python3 money/test/test_apify_actor.py
+      - run: python3 money/test/test_addons.py
+      - run: node money/test/test_trade_tools.js
       - run: python3 money/sites/build.py
   agency-api:
     runs-on: ubuntu-latest

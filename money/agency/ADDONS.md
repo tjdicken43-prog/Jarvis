@@ -44,6 +44,8 @@ Rules for D and E:
 - E's quote drafts follow the review-reply rules: no invented prices, licenses or guarantees; owner sends.
 - Selling E and D needs no new code today. Build the first piece only when a client says yes (UI mockup first, premium rule: no pill buttons).
 
+How a professional runs and prices these (LSA first, setup checklist, tiers, concierge-first for E): see PLAYBOOK-D-E.md. Its Lead Boost tiers ($350 / $500 / 15% of spend) replace the flat $400 to $600 above if TJ agrees.
+
 ## Still needed for D and E
 1. TJ's yes or changes on the proposed prices.
 2. A competitor price check in Bentonville and NWA before the first quote (Jarvis can do this after payday).

@@ -289,5 +289,101 @@ assert "From your website" in body and "Kim Lee, Bentonville" in body and "1 mes
 r = api.post(f"/clients/{P}/booking", json={"enabled": False}, headers=H).json()
 assert r["booking"] is None and r["tools"] == [] and r["calendar_url"] == cal, r
 assert "Never book a time slot" in receptionist.prompt(client(P))
+iso_now = lambda: dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z")
+# Recording + transcript saved from the end-of-call report (https links only)
+config.VAPI_WEBHOOK_SECRET = "vs"
+rep = {"message": {"type": "end-of-call-report", "call": {"id": "rec1"}, "assistantId": client(P)["vapi_assistant_id"] or "none",
+       "phoneNumber": {"number": client(P)["receptionist_number"] or ""}, "durationSeconds": 40, "startedAt": iso_now(),
+       "artifact": {"recordingUrl": "https://storage.vapi.ai/rec1.wav", "transcript": "AI: hi\nUser: pipe burst"}}}
+r = api.post("/vapi/webhook", json=rep, headers={"X-Vapi-Secret": "vs"}).json()
+assert r.get("call_id"), r
+calls = api.get(f"/clients/{P}/calls", headers=H).json()["items"]
+top = [x for x in calls if x["recording_url"]]
+assert top and top[0]["transcript"].endswith("pipe burst"), calls
+assert receptionist.link("http://x") is None and receptionist.link("https://ok.test/a") == "https://ok.test/a"
+
+# Warm transfer of emergencies: needs the owner's cell; booking tools and transfer tool coexist; bad cell refused
+a = receptionist.assistant(client(P))
+assert "transfer_call" not in a["model"]["messages"][0]["content"] and "tools" not in a["model"], a["model"].keys()
+ok(api.post(f"/clients/{P}/receptionist", json={"owner_cell": "12345"}, headers=H), 400)
+config.VAPI_API_KEY = ""
+r = api.post(f"/clients/{P}/receptionist", json={"owner_cell": "(479) 555-0188"}, headers=H); ok(r)
+a = r.json()["assistant"]
+t = a["model"]["tools"][0]
+assert t["type"] == "transferCall" and t["destinations"][0]["number"] == "+14795550188", t
+assert t["destinations"][0]["transferPlan"]["mode"] == config.TRANSFER_MODE
+assert "transfer_call" in a["model"]["messages"][0]["content"] and "Never guess" in a["model"]["messages"][0]["content"]
+assert client(P)["owner_cell"] == "4795550188"
+r = api.post(f"/clients/{P}/receptionist", json={}, headers=H).json()                 # omitted = unchanged
+assert client(P)["owner_cell"] == "4795550188"
+api.post(f"/clients/{P}/booking", json={"enabled": True}, headers=H)
+names = [x.get("function", {}).get("name") for x in receptionist.assistant(client(P))["model"]["tools"]]
+assert "transfer_call" in names and len(names) == 3, names                              # check_openings, book_visit, transfer
+api.post(f"/clients/{P}/booking", json={"enabled": False}, headers=H)
+api.post(f"/clients/{P}/receptionist", json={"owner_cell": ""}, headers=H)             # "" clears it
+assert client(P)["owner_cell"] is None
+
+# Real SMS (Twilio) behind TEXTBACK=twilio: stub by default, one try, STOP/START/HELP with a checked signature
+import sms  # noqa: E402
+import base64, hashlib, hmac  # noqa: E402
+assert config.sms() == "stub"
+config.TEXTBACK, config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN, config.TWILIO_FROM = "twilio", "ACx", "tok", "+14795550100"
+assert config.sms() == "twilio"
+posted = []
+class FakeResp:
+    def __init__(self, b): self.b = b
+    def read(self): return self.b
+    def __enter__(self): return self
+    def __exit__(self, *a): pass
+def fake_twilio(req, timeout=0):
+    posted.append((req.full_url, req.data.decode(), req.headers.get("Authorization")))
+    if posted and "fail" in posted[-1][1]:
+        raise sms.urllib.error.URLError("down")
+    return FakeResp(b'{"sid": "SM123"}')
+sms.urllib.request.urlopen = fake_twilio
+assert sms.send("479-555-0133", "hi") == "SM123"
+assert posted[0][0].endswith("/Accounts/ACx/Messages.json") and "To=%2B14795550133" in posted[0][1]
+assert posted[0][2].startswith("Basic ")
+c1 = client(P)
+with conn() as c:
+    c.execute("UPDATE clients SET status='active', textback_enabled=true WHERE id=%s", (P,))
+    c.execute("INSERT INTO receptionist_calls (client_id, vapi_call_id, started_at, seconds, outcome) VALUES (%s,'tb1',now(),3,'hung_up')", (P,))
+    cid = c.execute("SELECT id FROM receptionist_calls WHERE vapi_call_id='tb1'").fetchone()["id"]
+    cl = c.execute("SELECT * FROM clients WHERE id=%s", (P,)).fetchone()
+    res = receptionist.textback(c, cl, cid, "+14795550144", "hung_up", dt.datetime.now(dt.timezone.utc))
+    c.commit()
+    row = c.execute("SELECT * FROM textbacks WHERE call_id=%s", (cid,)).fetchone()
+assert res == "sent" and row["status"] == "sent" and row["provider_id"] == "SM123", (res, row)
+# provider down: failed, recorded, not retried
+n = len(posted)
+with conn() as c:
+    c.execute("INSERT INTO receptionist_calls (client_id, vapi_call_id, started_at, seconds, outcome) VALUES (%s,'tb2',now(),3,'hung_up')", (P,))
+    cid2 = c.execute("SELECT id FROM receptionist_calls WHERE vapi_call_id='tb2'").fetchone()["id"]
+    cl = c.execute("SELECT * FROM clients WHERE id=%s", (P,)).fetchone()
+    sms.urllib.request.urlopen = lambda req, timeout=0: (_ for _ in ()).throw(sms.urllib.error.URLError("down"))
+    res = receptionist.textback(c, cl, cid2, "+14795550145", "hung_up", dt.datetime.now(dt.timezone.utc))
+    c.commit()
+    row = c.execute("SELECT * FROM textbacks WHERE call_id=%s", (cid2,)).fetchone()
+assert res == "failed" and row["status"] == "failed" and "down" in row["error"], (res, row)
+
+def signed(params):
+    txt = "https://api.example.test/sms/inbound" + "".join(k + params[k] for k in sorted(params))
+    return base64.b64encode(hmac.new(b"tok", txt.encode(), hashlib.sha1).digest()).decode()
+p1 = {"From": "+14795550166", "Body": "STOP"}
+ok(api.post("/sms/inbound", data=p1), 401)
+ok(api.post("/sms/inbound", data=p1, headers={"X-Twilio-Signature": "nope"}), 401)
+r = api.post("/sms/inbound", data=p1, headers={"X-Twilio-Signature": signed(p1)}); ok(r)
+assert "opted out" in r.text
+with conn() as c:
+    assert c.execute("SELECT 1 FROM sms_optouts WHERE number='4795550166'").fetchone()
+p2 = {"From": "+14795550166", "Body": "start"}
+ok(api.post("/sms/inbound", data=p2, headers={"X-Twilio-Signature": signed(p2)}))
+with conn() as c:
+    assert not c.execute("SELECT 1 FROM sms_optouts WHERE number='4795550166'").fetchone()
+p3 = {"From": "+14795550166", "Body": "when are you open"}
+assert "<Message>" not in api.post("/sms/inbound", data=p3, headers={"X-Twilio-Signature": signed(p3)}).text
+config.TEXTBACK, config.TWILIO_AUTH_TOKEN = "stub", ""
+assert config.sms() == "stub"
+ok(api.post("/sms/inbound", data=p1), 503)
 config.VAPI_WEBHOOK_SECRET = ""
 print("front desk ok")

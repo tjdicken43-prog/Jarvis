@@ -45,7 +45,11 @@ CHECKOUT_CANCEL_URL = env("CHECKOUT_CANCEL_URL", PUBLIC_URL + "/paid?cancelled=1
 VAPI_API_KEY = env("VAPI_API_KEY")                # Vapi private key: empty = receptionist set-up is a dry run
 VAPI_WEBHOOK_SECRET = env("VAPI_WEBHOOK_SECRET")  # Vapi sends it as X-Vapi-Secret; empty = webhook refuses calls
 RECEPTIONIST_MODEL = env("RECEPTIONIST_MODEL", "claude-haiku-5-5")
-TEXTBACK = env("TEXTBACK", "stub")                # stub only: records the text, sends nothing (no SMS provider yet)
+TEXTBACK = env("TEXTBACK", "stub")                # stub | twilio. twilio sends real texts: set only after 10DLC is approved, on TJ's word
+TWILIO_ACCOUNT_SID = env("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN = env("TWILIO_AUTH_TOKEN")      # also checks the signature on inbound texts (STOP, HELP)
+TWILIO_FROM = env("TWILIO_FROM")                  # the 10DLC-registered number, E.164
+TRANSFER_MODE = env("TRANSFER_MODE", "warm-transfer-experimental")  # Vapi transferPlan.mode; check on the first live test call
 NOTIFY = env("NOTIFY", "stub")                    # stub | smtp: owner emails (emergency heads-up, bookings, summaries)
 NOTIFY_FROM_EMAIL = env("NOTIFY_FROM_EMAIL") or FROM_EMAIL  # client mail; can be a different inbox from cold email
 
@@ -71,6 +75,11 @@ def stripe_mode():
 def notifier():
     """Owner emails go out only with NOTIFY=smtp and the Workspace login. They skip the cold-email pause and window."""
     return "smtp" if NOTIFY == "smtp" and SMTP_USER and SMTP_PASSWORD and NOTIFY_FROM_EMAIL else "stub"
+
+
+def sms():
+    """twilio only when TEXTBACK=twilio and all three Twilio settings are present; otherwise texts are recorded, never sent."""
+    return "twilio" if TEXTBACK == "twilio" and TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN and TWILIO_FROM else "stub"
 
 
 def receptionist():

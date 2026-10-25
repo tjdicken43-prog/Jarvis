@@ -5,6 +5,7 @@ type: log
 
 Newest first. Covers [[SecurityAI]], [[Basis]] and [[Jarvis]].
 
+- **2026-10-25** TJ asked for the professional way to run D and E. Playbook in money/agency/PLAYBOOK-D-E.md: sell Local Services Ads before Search ads, client owns every ad account, tiered ad fees, Quote Assistant done by hand for the first three clients, three-step Good/Better/Best ladder. Prices still proposed. See [[Sites by TJ]].
 - **2026-10-25** TJ: offer D (lead gen and ads) and E (AI helpers like quote writers) as optional add-on packages to the trades we pitch, so no prospect lacks a fitting package. Trades already partnering will likely pay for ads once the sites work. Rank-and-rent itself stays skipped; local lead pages cover it. Prices are proposed only (money/agency/ADDONS.md). Existing prices unchanged. See [[Sites by TJ]].
 - **2026-10-25** Three new income lanes (TJ chose A, B and C from the AI income research): A, Tradesheet, free tools for trades with a paid tier later and Front Desk on every page (money/lanes/trade-tools/LANE.md); B, an Apify actor on public OpenStreetMap data (money/lanes/apify-actor/LANE.md); C, agency add-ons, review replies and weekly Google posts (money/agency/ADDONS.md). A and B each get a $40 wallet and a 60-day first term under [[Jarvis]]'s charter in money/LANES.md; C runs under the agency. No spending or signups before payday 2026-10-27. D (rank and rent) and E (paid skills) explained to TJ, not added. See [[Sites by TJ]].
 

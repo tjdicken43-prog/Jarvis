@@ -261,6 +261,14 @@ assert api.get("/", headers={"Host": "www.ridgeroof.com"}).text == page.text
 ok(api.get("/", headers={"Host": "unknown.example"}), 404)
 ok(api.get("/s/nope"), 404)
 assert client(P)["site_url"] == "https://ridgeroof.com"
+# privacy and texting terms (A2P 10DLC): linked from the form, served on /s/<slug>/privacy and their domain's /privacy
+assert 'name="sms_ok"' in page.text and "Reply STOP" in page.text and 'rel="canonical" href="https://ridgeroof.com"' in page.text
+pslug = out["path"].split("/")[-1]
+pv = api.get(f"/s/{pslug}/privacy"); ok(pv)
+assert f'href="https://api.example.test/s/{pslug}/privacy"' in page.text and "do not sell, rent or share" in pv.text
+assert "Back to Ridge Roofing" in pv.text or "ridge roofing" in pv.text.lower()
+assert api.get("/privacy", headers={"Host": "ridgeroof.com"}).text == pv.text
+ok(api.get("/s/nope/privacy"), 404)
 
 # The live quote form works: saved, photos kept behind unguessable links, the owner emailed at once; bots dropped
 slug = out["path"].split("/")[-1]
@@ -275,6 +283,7 @@ ok(api.post("/s/nope/request", data=form), 404)
 ok(api.post(f"/s/{slug}/request", data=dict(form, name="Bot", website="http://spam.example")))
 reqs = api.get(f"/clients/{P}/requests", headers=H).json()["items"]
 assert len(reqs) == 1 and reqs[0]["name"] == "Kim Lee" and reqs[0]["photos"] == 1, reqs
+assert reqs[0]["sms_ok"] is False and reqs[0]["sms_ok_at"] is None  # the box starts unticked
 web = [x for x in api.get(f"/clients/{P}/notices", headers=H).json()["items"] if x["kind"] == "web_request"]
 assert len(web) == 1 and "Kim Lee" in web[0]["subject"] and "(479) 273-0144" in web[0]["body"], web
 photo = web[0]["body"].split("Photo: ")[1].split()[0].replace("https://api.example.test", "")

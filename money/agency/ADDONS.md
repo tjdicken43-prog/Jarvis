@@ -7,6 +7,7 @@ TJ picked this on 2026-10-25. It is not a separate wallet lane: it adds revenue 
 | Review replies | $49/mo | A drafted reply to every new Google review within a day, for the owner's OK |
 | Weekly Google post | $39/mo | One drafted Business Profile post a week: a seasonal tip and a call to action |
 | Both | $79/mo | Same as the two together, $9 less (Care Plus on the Sites by TJ sheet was $89 with a site care plan; this is separate) |
+| Site Care | $39/mo | Their site checked once a month (speed, search and AI-search answers, accessibility, facts against their Google listing). One approval request a month; approved fixes done that month. How it runs: `money/sites/care/README.md` |
 
 **Prices are proposed, not live.** TJ says them in chat before billing.py or Stripe change. Nothing in `addons.py` charges anyone.
 
@@ -32,6 +33,7 @@ TJ: offer lead gen and AI helpers as optional packages so no prospect lacks a fi
 | Front Desk | $149/mo (live) | Site, receptionist, 300 min | First pitch |
 | Front Desk Plus | $249/mo (live) | 24/7, 800 min, booking | First pitch |
 | Review replies / Weekly post / Both (lane C) | $49 / $39 / $79 | Drafts for the owner's OK | After month 1 |
+| Site Care | $39/mo | Monthly site check + approved fixes | At go-live, or to any client who asks for site changes |
 | **Quote Assistant (E)** | $49 to $79/mo | Owner types job details, gets a clear written estimate or quote draft in their own words and prices. Owner reviews every one. No auto-send | Month 2, or to any shop that says quoting eats their evenings |
 | **Local lead pages (D, lite)** | $99 to $199/mo | One real page per service and town the shop actually serves, with call tracking. Not city-clone spam (Google scaled-content policy), not true rank-and-rent | Month 3, once Google Business Profile is in order |
 | **Lead Boost (D, ads)** | $400 to $600/mo management | Google Ads for the shop. Client pays Google directly, budget $500/mo or more, tracked calls feed Front Desk. Report each month | After 4+ weeks of call data show what works |

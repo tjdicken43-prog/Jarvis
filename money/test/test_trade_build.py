@@ -49,6 +49,21 @@ assert 'id="owner"' in page and "$149" in page and "$249" in page and "$299 setu
 live = tb.render(dict(full, preview=False))
 assert 'id="after-hours"' in live and 'id="owner"' not in live and "$149" not in live and "noindex" not in live
 assert 'id="after-hours"' not in tb.render(dict(full, front_desk=False))
+
+# 2026-10-31 premium pass: skip link, link-preview tags, texting opt-in + privacy page on live forms (A2P 10DLC)
+assert 'class="skip"' in page and 'id="main"' in page and 'property="og:title"' in page and 'aria-live="polite"' in page
+assert 'name="sms_ok"' not in page and "Privacy and texting terms" not in page  # previews: no form backend, no legal page
+lc = dict(full, preview=False, form_action="https://x.test/s/a/request", privacy_url="https://x.test/s/a/privacy",
+          site_url="https://x.test/s/a")
+lp = tb.render(lc)
+assert tb.audit(lp, lc) == [], tb.audit(lp, lc)
+assert 'name="sms_ok"' in lp and "checked" not in lp.split('name="sms_ok"')[1][:40] and "Reply STOP" in lp
+assert 'href="https://x.test/s/a/privacy"' in lp and 'rel="canonical" href="https://x.test/s/a"' in lp
+nolegal = dict(lc, privacy_url=None)
+assert any("10DLC" in x for x in tb.audit(tb.render(nolegal), nolegal))
+legal = tb.legal_html(dict(full, legal_date="2026-10-31"))
+assert "do not sell, rent or share your phone number" in legal and "Reply STOP" in legal and "recording" in legal
+assert "!" not in legal.replace("<!doctype", "")
 bill = (pathlib.Path(__file__).parents[1] / "agency" / "api" / "billing.py").read_text()
 assert f"SETUP_CENTS = {tb.PLANS['setup']}00" in bill and f'"monthly_cents": {tb.PLANS["front_desk"][0]}00, "minutes": {tb.PLANS["front_desk"][1]}' in bill
 assert f'"monthly_cents": {tb.PLANS["plus"][0]}00, "minutes": {tb.PLANS["plus"][1]}' in bill and "OVERAGE_CENTS_PER_MIN = 25" in bill

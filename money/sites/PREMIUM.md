@@ -49,6 +49,15 @@ Things several pro sources agree on. ✅ = in the golden sites now. 🔒 = needs
 20. ✅ An owner-only panel at the bottom (comes off at go-live): a sample after-hours call labeled as an example, the next-morning call log, and the two plans with our prices. Nothing else on the page names a price.
 - A gallery sorted by job type once they send photos.
 
+**Premium pass 2 (2026-10-31)**: checked against pro contractor checklists and the A2P 10DLC website rules.
+21. ✅ "After-hours calls answered" in the hero facts (links to the Front Desk section) when the shop isn't 24/7. Front Desk is now the main pitch.
+22. ✅ Live forms: an unticked "Text me about this request" box with the carrier disclosures (who texts, up to 4 per request, rates, STOP/HELP, not required for service). Opt-ins are saved with a timestamp (`site_requests.sms_ok_at`).
+23. ✅ A public privacy and texting terms page on every live site (`/s/<slug>/privacy`, `/privacy` on their domain), linked from the form and footer. It says that phone numbers and opt-in data are never shared for marketing, and it covers call recording and the automated assistant. Twilio rejects 10DLC campaigns without one.
+24. ✅ Accessibility: a skip link, a form status that screen readers read out, and a reduced-motion rule.
+25. ✅ Search and link previews: og tags (so the link looks right in a text or email), a canonical on live sites, and richer schema (sameAs, hasMap, email, logo, 24/7 hours).
+26. ✅ Monthly Site Care check, including AI-search (AEO) checks: `care/README.md`.
+Deliberately left out: review stars in schema (Google ignores self-served LocalBusiness review markup), llms.txt (no major engine reads it yet, check again in Site Care), chat widgets (Front Desk answers the phone, and a widget is an AI tell).
+
 ## No AI tells (Tj, 2026-10-23: "no pill shaped buttons, no AI indicators at all")
 A site must not look AI-made to a designer or an owner. Researched 2026-10-23; the sources are design-critique posts and community ban lists, so treat this as consensus, not measured data.
 

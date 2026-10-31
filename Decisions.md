@@ -56,3 +56,4 @@ Newest first. Covers [[SecurityAI]], [[Basis]] and [[Jarvis]].
 - **2026-10-24** Vault 479 wings (TJ): one wing per business in the 3D factory. Sites by TJ keeps Jujutsu Kaisen, Basis is Naruto, Gym-security is Death Note, the Etsy shop is Dragon Ball Z. Rooms are where each fighter fought, dummies are opponents they beat, each with a Mii card. Characters are inspired, not copied. See hud/DESIGN.md round 9.
 
 - 2026-10-31: Cold emails (first + follow-ups) now lead with the after-hours AI assistant; website is the extra. See [[Sites by TJ]].
+- 2026-10-31: Site Care runs monthly, not nonstop (TJ). Client sites change only with the client's yes; our own sites follow full access. Analytics and competitor tracking wait until a client is live. Site Care is a regular package (price proposed $39/mo, TJ sets it). See money/sites/care/README.md.

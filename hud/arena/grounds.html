@@ -3,8 +3,14 @@
 <style>
 :root{--ink:#eef2f4;--dim:#a8b4bc;--mute:#6f7c85;--line:rgba(255,255,255,.14);--surface:rgba(10,12,16,.78);--arc:#a6e4ff}
 html,body{margin:0;height:100%;background:#0b0d10;overflow:hidden;font:14px/1.4 system-ui,-apple-system,Roboto,Arial,sans-serif;color:var(--ink)}
-canvas{position:fixed;inset:0}
-.bar{position:fixed;left:0;right:0;top:0;display:flex;align-items:center;gap:22px;padding:16px 28px;font-size:13px;color:var(--dim);white-space:nowrap;overflow:hidden;background:linear-gradient(rgba(11,13,16,.9),rgba(11,13,16,0))}
+canvas{position:fixed;inset:0;touch-action:none;cursor:grab}canvas.drag{cursor:grabbing}body.embed canvas{touch-action:pan-y;cursor:pointer}
+.bar::-webkit-scrollbar{display:none}.bar a{color:inherit;text-decoration:none;padding:6px 0}
+.help{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:2;display:flex;align-items:center;gap:14px;max-width:calc(100% - 24px);box-sizing:border-box;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:9px 12px;font-size:12.5px;color:var(--dim);backdrop-filter:blur(8px)}
+.help b{color:#fff;font-weight:600}.help i{display:inline-block;width:8px;height:8px;border-radius:2px;margin:0 4px 0 8px;vertical-align:0}.help button{background:none;border:0;color:var(--mute);font-size:18px;line-height:1;padding:2px 4px;cursor:pointer}
+.zoom{position:fixed;right:24px;bottom:22px;z-index:2;display:flex;gap:6px}@media (max-width:600px){.zoom{right:12px;top:58px;bottom:auto;flex-direction:column}}.zoom button{width:40px;height:40px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--ink);font-size:18px;cursor:pointer}
+.deck .shut{position:absolute;right:8px;top:8px;width:36px;height:36px;border:1px solid var(--line);border-radius:6px;background:none;color:var(--ink);font-size:18px;cursor:pointer;display:none}.deck.open .shut{display:block}
+.tagn.sel{color:#ffd27a}
+.bar{position:fixed;left:0;right:0;top:0;z-index:3;display:flex;align-items:center;gap:22px;padding:16px 28px;font-size:13px;color:var(--dim);white-space:nowrap;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch;touch-action:pan-x;background:linear-gradient(rgba(11,13,16,.9),rgba(11,13,16,0))}
 .bar b{color:var(--ink);font-size:15px;font-weight:600;margin-right:6px}.bar .on{color:var(--ink);box-shadow:inset 0 -1px 0 var(--arc);padding-bottom:4px}#tabs{display:flex;gap:18px}.bar .r{margin-left:auto;color:var(--mute)}
 #labels{position:fixed;inset:0;pointer-events:none}
 .sign{position:absolute;transform:translate(-50%,-50%);text-align:center;white-space:nowrap;text-shadow:0 1px 8px rgba(0,0,0,.9)}
@@ -12,19 +18,21 @@ canvas{position:fixed;inset:0}
 .bub{position:absolute;transform:translate(-50%,-100%);white-space:nowrap;font-size:12px;background:#fbfaf6;color:#15131a;border:2px solid #15131a;border-radius:6px;padding:4px 8px 5px;font-weight:600}
 .bub:after{content:"";position:absolute;left:18px;bottom:-8px;border:6px solid transparent;border-top-color:#15131a}
 .bub small{display:block;font-weight:500;color:#5a5560;font-size:11px}
-.feed{position:fixed;left:24px;bottom:22px;width:330px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 14px;backdrop-filter:blur(8px)}
+.feed{position:fixed;left:24px;bottom:72px;width:330px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 14px;backdrop-filter:blur(8px)}
 .feed h3{margin:0 0 6px;font-size:13px;font-weight:600;color:var(--dim)}.feed div{font-size:12.5px;color:var(--dim);padding:3px 0;border-top:1px solid rgba(255,255,255,.05)}.feed div b{color:#fff;font-weight:600}.feed div i{font-style:normal;color:#ffd27a}
 .mini{position:fixed;right:24px;bottom:22px;display:flex;gap:6px}.mini span{width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--dim);font-size:18px}
-@media (max-width:600px){.feed div:nth-child(n+4){display:none}.bar{padding:12px 16px;gap:14px}.bar .r{display:none}.feed{left:12px;right:12px;width:auto}.mini{display:none}.sign b{font-size:14px}.bub{font-size:11px}}
-.deck{position:fixed;right:24px;top:70px;width:300px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px;backdrop-filter:blur(8px);font-size:12.5px;color:var(--dim)}
+@media (max-width:600px){.help{bottom:12px;font-size:12px;gap:8px}.feed{bottom:64px}.feed div:nth-child(n+4){display:none}.bar{padding:12px 16px;gap:14px}.bar .r{display:none}.feed{left:12px;right:12px;width:auto}.mini{display:none}.sign b{font-size:14px}.bub{font-size:11px}}
+.deck{position:fixed;right:24px;top:70px;width:300px;max-height:calc(100% - 160px);overflow:auto;box-sizing:border-box;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px;backdrop-filter:blur(8px);font-size:12.5px;color:var(--dim)}
 .deck h3{margin:0;font-size:16px;color:#fff;font-weight:600}.deck .job{color:var(--mute);margin-bottom:8px}.deck h4{margin:10px 0 4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);font-weight:600}
 .deck ol{margin:0;padding-left:20px}.deck li{padding:1px 0}.deck li.now{color:#fff;font-weight:600}.deck li.done{color:var(--mute);text-decoration:line-through}.deck .pk{color:#ffd27a}.deck .q{color:#fff;font-style:italic}.deck .watch{display:block;margin:10px 0 4px;background:#ffd27a14;border-color:#ffd27a66 !important;padding:10px 12px;border:1px solid var(--line);border-radius:6px;color:#fff;text-decoration:none;text-align:center;font-weight:600}.deck .src{margin-top:10px;font-size:11px;color:var(--mute)}.deck .src a{color:var(--dim)}.bar a{color:inherit;text-decoration:none}.bar a.on{color:var(--ink);box-shadow:inset 0 -1px 0 var(--arc);padding-bottom:4px}.x{position:fixed;right:20px;bottom:20px;width:44px;height:44px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:20px;display:grid;place-items:center;text-decoration:none;z-index:5}
 .tagn{position:absolute;transform:translate(-50%,0);white-space:nowrap;font-size:10.5px;color:#fff;text-shadow:0 1px 4px #000,0 0 2px #000;font-weight:600}.tagn small{display:block;font-weight:400;color:var(--dim);font-size:10px}
-@media (max-width:600px){.deck{display:none}.deck.open{display:block;left:12px;right:12px;top:auto;bottom:12px;width:auto;max-height:58vh;overflow:auto;z-index:4}.deck.open~.x{bottom:auto;top:56px}body.sheet .feed{display:none}}
+@media (max-width:600px){.deck{display:none}.deck.open{display:block;left:12px;right:12px;top:auto;bottom:12px;width:auto;max-height:58vh;overflow:auto;z-index:4;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}body.sheet .help{display:none}.deck.open~.x{bottom:auto;top:56px}body.sheet .feed{display:none}}
 </style></head><body>
 <div id="labels"></div>
 <div class="bar"><b>Training grounds</b><span id="tabs"></span><span class="r" id="count"></span></div>
 <div class="feed" id="feed"><h3>Live</h3></div><div class="deck" id="deck"></div>
+<div class="zoom" id="zoom"><button data-z="1.35" aria-label="Zoom in">+</button><button data-z="0.74" aria-label="Zoom out">−</button><button data-z="0" aria-label="Reset view">⌂</button></div>
+<div class="help" id="help"><span><b>Each room is one agent at work.</b> Light in the corner:<i style="background:#7be0a0"></i>live<i style="background:#ffd27a"></i>built<i style="background:#8a96a0"></i>planned. <span id="howto"></span></span><button id="helpx" aria-label="Hide">×</button></div>
 <a class="x" id="close" href="#" aria-label="Close">×</a>
 <script type="module">
 import * as THREE from "three";
@@ -35,11 +43,12 @@ import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js"
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { fighter, pose, blend, POSE, toon, part, rnd, reseed, TAU, OPT, RIM, RIMK } from "./chars.js";
 OPT.ink = false; OPT.faces = false; RIMK.value = .35;
-const phone = innerWidth < 600, W = innerWidth, H = innerHeight;
+let phone = innerWidth < 600, W = innerWidth, H = innerHeight;
+const EMBED = new URLSearchParams(location.search).has("embed"); if (EMBED) document.body.classList.add("embed");
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setSize(W, H); document.body.prepend(renderer.domElement);
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.1;
 const scene = new THREE.Scene(); scene.background = new THREE.Color("#0f1216");
-const zoom = phone ? 15 : 17.5, asp = W / H;
+const zoom = phone ? 15 : 17.5; let asp = W / H;
 const camera = new THREE.OrthographicCamera(-zoom * asp, zoom * asp, zoom, -zoom, -100, 200);
 camera.position.set(30, 30, 30); camera.lookAt(0, 0, 1.5);  camera.updateProjectionMatrix(); camera.updateMatrixWorld();
 scene.add(new THREE.HemisphereLight("#b9c6ff", "#5a4a4a", 1.3));
@@ -77,7 +86,7 @@ const HOST = new URLSearchParams(location.search).get("host") === "station" ? "h
 if (HOST) document.getElementById("close").style.display = "none"; if (HOST && innerWidth < 600) document.getElementById("feed").style.display = "none";
 document.getElementById("close").onclick = (e) => { e.preventDefault(); parent.postMessage({ arena: "close" }, "*"); };
 document.getElementById("count").textContent = `${total} fighters training · tap a room to zoom`;
-document.getElementById("tabs").innerHTML = [["", "All wings"], ...WINGS.map(w => [w.id, w.name])].map(([id, n]) => `<a href="?${HOST}${id ? "wing=" + id : ""}" class="${(focus || "") === id ? "on" : ""}">${n}</a>`).join("");
+document.getElementById("tabs").innerHTML = [["", "All wings"], ...WINGS.map(w => [w.id, w.name])].map(([id, n]) => `<a href="?${HOST}${EMBED ? "embed=1&" : ""}${id ? "wing=" + id : ""}" class="${(focus || "") === id ? "on" : ""}">${n}</a>`).join("");
 const ROOMF = { "Rock Lee": "wood", Guy: "wood", Neji: "wood", Sakura: "rocky", Choji: "grass", Kakashi: "stone", Sukuna: "stone", Jogo: "rocky", Gojo: "stone", Todo: "stone", Mahoraga: "stone", Goku: "rocky", Vegeta: "rocky", Piccolo: "rocky", Gohan: "rocky", Sasuke: "stone", Gaara: "rocky", Maki: "wood", Panda: "wood" };
 const labels = document.getElementById("labels"), L = []; const lab = (cls, html, p) => { const e = document.createElement("div"); e.className = cls; e.innerHTML = html; labels.append(e); L.push({ e, p }); };
 const MOVES = [POSE.strike, POSE.dash, POSE.purple, POSE.charge, POSE.wind, POSE.ready, POSE.seal];
@@ -122,19 +131,24 @@ WINGS.forEach((wg, wi) => {
     d.position.set(cx + .65, .35, cz + .2); d.rotation.y = -Math.PI / 2; d.scale.setScalar(.76); scene.add(d);
     if (peak) { const glow = new THREE.PointLight(wg.accent, 6, 3.4, 1.4); glow.position.set(cx - .3, 1.3, cz + .2); scene.add(glow);
       const aura = new THREE.Mesh(new THREE.SphereGeometry(.55, 20, 12), new THREE.MeshBasicMaterial({ color: wg.accent, transparent: true, opacity: .22, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false })); aura.scale.set(1, 1.8, 1); aura.position.set(cx - .6, 1.05, cz + .2); scene.add(aura); }
-    const bub = (focus === wg.id && (peak || i % 3 === 0)) || (!focus && peak && !phone);
+    const bub = (focus === wg.id && (peak || nm === pick)) || (!focus && peak && !phone);
     ROOMS.push({ F, wg, cx, cz, mv, dm, peak, k, fd, f, d, bub, ph: hash(nm) % 97 / 97 * 6 });
     feed.push({ nm, mv, q: peak ? F.peak.quip : F.quips[k % F.quips.length], peak, wing: wg.id });
-    if (focus === wg.id) lab("tagn", `${nm}<small>${F.job.split(" (")[0].slice(0, 30)}</small>`, new THREE.Vector3(cx, .4, cz + RD / 2 - .1));
+    if (focus === wg.id) { lab("tagn", `${nm}<small>${F.job.split(" (")[0].slice(0, 30)}</small>`, new THREE.Vector3(cx, .4, cz + RD / 2 - .1)); L[L.length - 1].name = nm; }
     if (bub) { lab("bub", "", new THREE.Vector3(cx - .6, 2.3, cz + .2)); ROOMS[ROOMS.length - 1].bubEl = L[L.length - 1].e; }
   });
   const sub = `${wg.building} · ${n} fighters`;
-  lab("sign", `<span class="jp">${wg.jp}</span><b>${wg.name}</b><small>${sub}</small>`, new THREE.Vector3(wg.at[0], .4, wg.at[1] + (rows * RD) / 2 + 1.4));
+  lab("sign", `<span class="jp">${wg.jp}</span><b>${wg.name}</b><small>${sub}</small>`, new THREE.Vector3(wg.at[0], .4, wg.at[1] + (rows * RD) / 2 + 1.4)); L[L.length - 1].wing = wg.id;
 });
-// focus: zoom the orthographic camera onto one wing
-if (focus) { const w = WINGS.find(w => w.id === focus), rows = Math.ceil(w.fighters.length / w.cols), ext = Math.max(w.cols * 3.6, rows * 3.4 * 1.6);
-  const z = ext * (phone ? .9 : .42); Object.assign(camera, { left: -z * asp, right: z * asp, top: z, bottom: -z }); camera.position.set(w.at[0] + 30, 30, w.at[1] + 30); camera.lookAt(w.at[0] + (phone ? 0 : 3), 0, w.at[1] + .6); camera.updateProjectionMatrix(); camera.updateMatrixWorld(); }
-else { const z = phone ? 26 : 18.5; Object.assign(camera, { left: -z * asp, right: z * asp, top: z, bottom: -z }); camera.position.set(30, 30, 30); camera.lookAt(2.5, 0, -2); camera.updateProjectionMatrix(); camera.updateMatrixWorld(); }
+// the view: an orthographic camera looking at a target on the ground; drag pans the target, pinch/wheel/buttons change camera.zoom
+const VIEW = { t: new THREE.Vector3(), z: 18.5, home: null };
+function frameView() { Object.assign(camera, { left: -VIEW.z * asp, right: VIEW.z * asp, top: VIEW.z, bottom: -VIEW.z }); camera.position.set(VIEW.t.x + 30, 30, VIEW.t.z + 30); camera.lookAt(VIEW.t); camera.updateProjectionMatrix(); camera.updateMatrixWorld(); }
+function homeView() {
+  if (focus) { const w = WINGS.find(w => w.id === focus), rows = Math.ceil(w.fighters.length / w.cols), ext = Math.max(w.cols * 3.6, rows * 3.4 * 1.6);
+    VIEW.z = ext * (phone ? .8 : .42); VIEW.t.set(w.at[0] + (phone ? 0 : 3), 0, w.at[1] + .6); }
+  else { VIEW.z = phone ? 26 : 18.5; VIEW.t.set(2.5, 0, -2); }
+  camera.zoom = 1; frameView(); }
+homeView();
 // feed: peaks first, then a spread across wings
 const fe = document.getElementById("feed"); const order = [...feed.filter(x => x.peak), ...feed.filter(x => !x.peak)].filter(x => !focus || x.wing === focus).slice(0, focus ? 6 : 5);
 fe.innerHTML = "<h3>Live</h3>" + order.map(x => `<div><b>${x.nm}</b> ${x.peak ? "went all out:" : "used"} ${x.mv} · <i>"${x.q}"</i></div>`).join("");
@@ -145,12 +159,16 @@ function fightUrl(r) { const F = r.F; if (PEAKS[F.name]) return `peak.html?c=${P
     form: F.peak.form, move: F.peak.move, quip: F.peak.quip, q: F.quips.slice(0, 2), dummy: F.dummy.name };
   return "peak.html?back=1&f=" + btoa(unescape(encodeURIComponent(JSON.stringify(d)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
 function showDeck(name) { const r = ROOMS.find(r => r.F.name === name) || ROOMS[0], F = r.F, k = r.k % r.fd.length;
-  document.getElementById("deck").innerHTML = `<h3>${F.name}</h3><div class="job">${F.job} · ${F.status}</div><a class="watch" href="${fightUrl(r)}">${PEAKS[F.name] ? "Watch the peak" : "Watch them fight"}</a>
+  document.getElementById("deck").innerHTML = `<button class="shut" aria-label="Close">×</button><h3>${F.name}</h3><div class="job">${F.job} · ${F.status}</div><a class="watch" href="${fightUrl(r)}">${PEAKS[F.name] ? "Watch the peak" : "Watch them fight"}</a>
   <h4>Move deck · ${k + 1} of ${r.fd.length} · no repeats till it runs out</h4><ol start="${Math.max(1, k - 1)}">${r.fd.map((m, i) => `<li class="${i < k ? "done" : i === k ? "now" : ""}" ${i < k - 2 ? "hidden" : ""}>${m}</li>`).join("")}</ol>
   <h4>Then the peak</h4><div class="pk">${F.peak.form} → ${F.peak.move}</div><div class="q">“${F.peak.quip}”</div>
   <h4>Forms unlocked in order</h4><div>${F.forms.join(" → ") || "none in the show"}</div>
   <h4>Dummy: ${F.dummy.name}</h4><div>${F.dummy.moves.join(" · ")}</div>${F.sources ? `<div class="src">Checked against: ${F.sources.slice(0, 2).map(u => `<a href="${u}" target="_blank" rel="noopener">${u.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]}</a>`).join(", ")}${F.verified === "yes" ? "" : " (partly)"}</div>` : ""}`; }
 showDeck(pick);
+document.getElementById("deck").addEventListener("click", (e) => { if (e.target.closest(".shut")) { document.getElementById("deck").classList.remove("open"); document.body.classList.remove("sheet"); } });
+function markPick(name) { for (const l of L) { if (l.name) l.e.classList.toggle("sel", l.name === name); }
+  for (const r of ROOMS) if (r.bubEl) { if (r.F.name === name) r.bubEl.dataset.sel = 1; else delete r.bubEl.dataset.sel; } }
+markPick(pick);
 
 const composer = new EffectComposer(renderer); composer.addPass(new RenderPass(scene, camera));
 composer.addPass(new UnrealBloomPass(new THREE.Vector2(W / 2, H / 2), .35, .4, .92)); composer.addPass(new OutputPass());
@@ -162,7 +180,17 @@ composer.addPass(new ShaderPass({ uniforms: { tDiffuse: { value: null }, res: { 
       vec3 o=c.rgb/w; vec2 d=vUv-.5; o*=1.-dot(d,d)*.8; o=mix(o,o*vec3(1.04,1.,.95),.5); gl_FragColor=vec4(o,1.); }` }));
 /* ---------- live: every fighter walks its deck (no move repeats till the deck runs out), the dummy answers; 12 fps, paused when hidden ---------- */
 const DREACT = [POSE.brace, POSE.hit, POSE.guard, POSE.dodge, POSE.crouch], BEAT = 1.7;
-const v = new THREE.Vector3(); const place = () => { for (const { e, p } of L) { v.copy(p).project(camera); e.style.left = (v.x + 1) / 2 * W + "px"; e.style.top = (1 - v.y) / 2 * H + "px"; if (e.classList.contains("bub")) e.style.visibility = (1 - v.y) / 2 * H < 96 ? "hidden" : ""; } };
+const v = new THREE.Vector3();
+const prio = (l) => l.e.classList.contains("bub") ? (l.e.dataset.sel ? 0 : 2) : l.wing ? (l.wing === focus ? 1 : 3) : (l.name === pick ? 1 : 4);
+const place = () => { const kept = [], vis = [];
+  for (const l of L) { v.copy(l.p).project(camera); const x = (v.x + 1) / 2 * W, y = (1 - v.y) / 2 * H; l.e.style.left = x + "px"; l.e.style.top = y + "px"; l.x = x; l.y = y; }
+  for (const l of [...L].sort((a, b) => prio(a) - prio(b))) { const e = l.e;
+    if (!e.innerHTML || l.y < 60 || l.y > H - 10 || l.x < -40 || l.x > W + 40) { e.style.visibility = "hidden"; continue; }
+    const w = e.offsetWidth, h = e.offsetHeight, bub = e.classList.contains("bub"), tag = e.classList.contains("tagn");
+    const r = { x: l.x - w / 2, y: l.y - (bub ? h + 8 : tag ? 0 : h / 2), w, h };
+    if (bub && r.y < 56) { e.style.visibility = "hidden"; continue; }
+    const hit = kept.some(k => r.x < k.x + k.w + 4 && k.x < r.x + r.w + 4 && r.y < k.y + k.h + 2 && k.y < r.y + r.h + 2);
+    e.style.visibility = hit ? "hidden" : ""; if (!hit) kept.push(r); } };
 function tick(t) {
   for (const r of ROOMS) { const b = (t + r.ph) / BEAT, n = Math.floor(b), u = b - n, mvI = (r.k + n) % (r.fd.length + 1), peakNow = r.peak || mvI === r.fd.length;
     const mv = peakNow ? r.F.peak.move : r.fd[mvI], P = peakNow ? POSE.purple : MOVES[hash(mv) % MOVES.length];
@@ -185,10 +213,32 @@ function tick(t) {
 }
 const P0 = new URLSearchParams(location.search), FIXT = P0.has("t") ? +P0.get("t") : null;
 let last = -1; const t0 = performance.now();
-function frame(now) { if (FIXT == null) requestAnimationFrame(frame); if (document.hidden) return; const t = FIXT ?? (now - t0) / 1000; if (FIXT == null && t - last < 1 / 12) return; last = t; tick(t); composer.render(); place(); }
+function frame(now) { if (FIXT == null) requestAnimationFrame(frame); if (document.hidden) return; const t = FIXT ?? (now - t0) / 1000; if (FIXT == null && t - last < 1 / 12 && !VIEW.moving) return; VIEW.moving = false; last = t; tick(t); composer.render(); place(); }
 frame(performance.now()); if (FIXT != null) document.title = "ready";
+// move around: drag pans, pinch and wheel zoom, a tap (no drag) picks a room. Inline on the Station page (embed) one finger scrolls the page instead.
+const cv = renderer.domElement; cv.style.pointerEvents = "auto";
+const ELEV = Math.sin(Math.atan(30 / Math.hypot(30, 30)));            // ground looks squashed vertically by the camera's tilt
+const R3 = new THREE.Vector3(1, 0, -1).normalize(), U3 = new THREE.Vector3(-1, 0, -1).normalize();
+function pan(dx, dy) { const k = (2 * VIEW.z) / H / camera.zoom; VIEW.t.addScaledVector(R3, -dx * k).addScaledVector(U3, dy * k / ELEV);
+  VIEW.t.x = Math.max(-34, Math.min(34, VIEW.t.x)); VIEW.t.z = Math.max(-34, Math.min(34, VIEW.t.z)); frameView(); VIEW.moving = true; }
+function zoomBy(f) { camera.zoom = Math.max(.6, Math.min(4, camera.zoom * f)); camera.updateProjectionMatrix(); VIEW.moving = true; }
+const pts = new Map(); let moved = 0, pinch0 = 0;
+cv.addEventListener("pointerdown", (e) => { if (EMBED && e.pointerType === "touch") return; pts.set(e.pointerId, [e.clientX, e.clientY]); cv.setPointerCapture(e.pointerId); if (pts.size === 1) moved = 0;
+  if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch0 = Math.hypot(a[0] - b[0], a[1] - b[1]); } });
+cv.addEventListener("pointermove", (e) => { const p = pts.get(e.pointerId); if (!p) return; const dx = e.clientX - p[0], dy = e.clientY - p[1]; pts.set(e.pointerId, [e.clientX, e.clientY]);
+  if (pts.size === 1) { moved += Math.abs(dx) + Math.abs(dy); if (moved > 8) { cv.classList.add("drag"); pan(dx, dy); } }
+  else if (pts.size === 2) { const [a, b] = [...pts.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (pinch0) zoomBy(d / pinch0); pinch0 = d; moved = 99; pan(dx / 2, dy / 2); } });
+const up = (e) => { pts.delete(e.pointerId); pinch0 = 0; cv.classList.remove("drag"); };
+cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
+cv.addEventListener("wheel", (e) => { if (EMBED) return; e.preventDefault(); zoomBy(e.deltaY < 0 ? 1.12 : 1 / 1.12); }, { passive: false });
+document.getElementById("zoom").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; const z = +b.dataset.z; if (z) zoomBy(z); else { homeView(); VIEW.moving = true; } });
+if (EMBED) document.getElementById("zoom").style.display = "none";
+document.getElementById("howto").textContent = EMBED ? "Tap a wing to look inside." : phone ? "Drag to move, pinch to zoom, tap a room." : "Drag to move, scroll to zoom, click a room.";
+document.getElementById("helpx").onclick = () => { document.getElementById("help").remove(); try { localStorage.setItem("tg-help", "1"); } catch (_) {} };
+try { if (localStorage.getItem("tg-help")) document.getElementById("help").remove(); } catch (_) {}
 // tap a room: in the overview it zooms to that wing, inside a wing it opens that fighter's deck
-renderer.domElement.style.pointerEvents = "auto";
-renderer.domElement.addEventListener("click", (e) => { let best = null, bd = 1e9; for (const r of ROOMS) { v.set(r.cx, .8, r.cz).project(camera); const x = (v.x + 1) / 2 * W, y = (1 - v.y) / 2 * H, d = Math.hypot(x - e.clientX, y - e.clientY); if (d < bd) { bd = d; best = r; } }
-  if (!best || bd > (focus ? 120 : 60)) return; if (!focus) location.search = `?${HOST}wing=${best.wg.id}&f=${encodeURIComponent(best.F.name)}`; else { showDeck(best.F.name); document.getElementById("deck").classList.add("open"); document.body.classList.add("sheet"); } });
+cv.addEventListener("click", (e) => { if (moved > 8) return; let best = null, bd = 1e9; for (const r of ROOMS) { v.set(r.cx, .8, r.cz).project(camera); const x = (v.x + 1) / 2 * W, y = (1 - v.y) / 2 * H, d = Math.hypot(x - e.clientX, y - e.clientY); if (d < bd) { bd = d; best = r; } }
+  if (!best || bd > (focus ? 120 : 60) * camera.zoom) return; if (!focus) location.search = `?${HOST}${EMBED ? "embed=1&" : ""}wing=${best.wg.id}&f=${encodeURIComponent(best.F.name)}`; else { showDeck(best.F.name); markPick(best.F.name); document.getElementById("deck").classList.add("open"); document.body.classList.add("sheet"); } });
+// rotate or resize: refit the renderer and the view
+addEventListener("resize", () => { W = innerWidth; H = innerHeight; if (!W || !H) return; phone = W < 600; asp = W / H; renderer.setSize(W, H); composer.setSize(W, H); homeView(); VIEW.moving = true; });
 </script></body></html>

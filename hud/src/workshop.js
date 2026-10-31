@@ -415,7 +415,7 @@ for (const ev of ["pointerdown", "pointermove", "keydown", "wheel"]) addEventLis
 const coreTint = new THREE.Color();
 function render(now) {
   requestAnimationFrame(render);
-  if (SHOW() || document.hidden || !$("night").hidden || window.JarvisFactory?.isOpen?.()) { last = now; return; }
+  if (SHOW() || document.hidden || !$("night").hidden || window.JarvisFactory?.isOpen?.() || window.JarvisBrain?.on || window.JarvisArena?.open) { last = now; return; }
   // nobody has touched it for a minute and Jarvis is idle: 30 frames a second is plenty, and saves the battery
   if (mode === "idle" && !focus && now - touchedAt > 60000 && now - last < 30) return;
   const dt = Math.max(0, Math.min(0.05, (now - last) / 1000)); last = now; // rAF time can trail performance.now() on the first frame

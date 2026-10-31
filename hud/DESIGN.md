@@ -112,3 +112,10 @@ TJ: one wing per business, rooms dressed as where each fighter fought, dummies a
 - **Cost rules.** No AI calls, no textures from files (canvas only, painted once), shared materials, no extra lights per room. Same caps as round 8 (30 fps and no bloom on phones, auto-downgrade on slow frames, stops when hidden).
 - **Honest state.** Each wing runs a demo loop and says so until that business writes event rows; feed(rows) takes {id, step}. The agency floor keeps reading its events table.
 - **build_brain.py** inlines vault-kit, vault-wings, vault-wing, vault and vault-ui into one module (deduped outside imports, local imports dropped). The page is not republished in this round; "Fix Jarvis page" puts the factory into the Show off demo and the working UI.
+
+## Round 10 (2026-10-31): the brain and the Training grounds
+- **Home brain.** The orb is replaced by a 3D human brain (Allen atlas mesh, packed to `arena/brain-mesh.js`) in `arena/brain.html?embed`, an iframe behind the home screen. `src/arena.js` posts the `#slot` box and the status mode; the brain centres on the slot (`setViewOffset`) and fires neural pathways faster while Jarvis is busy. It fades in only after its first frame; the old hologram is hidden once it is ready, and the Show off theme keeps the old look.
+- **Training grounds.** The factory button opens `arena/grounds.html` full screen: a floorplan of five wings, 68 fighters, every agent one fighter. Tap a room to zoom; tap a fighter for its move deck (no repeats until the deck runs out), its peak form, its dummy, and the sources its moves were checked against. Escape or the close button returns home.
+- **Peak cutaways.** Goku, Sasuke, Gojo, Sung Jinwoo, Light and Vegeta have "Watch the peak": `arena/peak.html?c=…`, a 16 s clip in the studio grammar (hit-stop, ink frames, smears, dolly zoom on the transformation, letterbox, subtitles held 2.6 s or more).
+- **Private only.** The anime characters live in this private dashboard. They never go into anything sold.
+- **Publishing.** `build_brain.py` inlines `src/arena.js`; the five `arena/` files are published beside the artifact at the same paths.

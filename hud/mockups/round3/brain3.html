@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jarvis brain</title>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/" } }</script>
+<style>
+:root{--bg:#030507;--surface:rgba(7,11,15,.8);--ink:#e8eef2;--dim:#98a7b2;--mute:#5f6d77;--line:rgba(166,228,255,.22);--arc:#a6e4ff;--amber:#ffb547;--ok:#6fdcaa;--body:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:15px/1.4 var(--body);overflow:hidden}
+canvas{position:fixed;inset:0;width:100%;height:100%}
+svg#lead{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+.top{position:fixed;left:32px;top:24px}
+.brand{font-weight:600;font-size:14px;display:flex;gap:8px;align-items:center;color:var(--dim)}.brand i{width:6px;height:6px;border-radius:50%;background:var(--ok)}
+h1{margin:6px 0 0;font-weight:500;font-size:24px;letter-spacing:-.01em}.sub{color:var(--mute);font-size:13px;margin-top:2px}
+.call{position:absolute;font-size:12.5px;color:var(--mute);line-height:1.3;width:170px}
+.call b{display:block;color:var(--dim);font-weight:500;font-size:13.5px}
+.call.l{text-align:right}.call.hot b{color:var(--ink)}.call.hot .st{color:var(--arc)}.call .st.warn{color:var(--amber)}
+.call .st{display:block;font-size:12px;color:var(--mute);margin-top:1px}
+.think{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);width:min(620px,calc(100% - 32px));text-align:center}
+.think .q{font-size:17px;color:var(--ink)}
+.trail{display:flex;justify-content:center;gap:0;margin-top:10px;font-size:12.5px;color:var(--mute)}
+.trail span{padding:0 10px;position:relative}.trail span+span:before{content:"";position:absolute;left:-4px;top:50%;width:8px;height:1px;background:var(--line)}
+.trail .done{color:var(--dim)}.trail .now{color:var(--arc)}
+.meter{position:fixed;right:32px;top:28px;text-align:right;font-size:12.5px;color:var(--mute)}.meter b{color:var(--ink);font-weight:500;font-size:20px;display:block}
+@media (max-width:600px){.top{left:16px;top:16px}h1{font-size:20px}.call{width:118px;font-size:11px}.call b{font-size:12px}.meter{right:16px;top:20px}.meter b{font-size:16px}.think{bottom:18px}.think .q{font-size:15px}.trail{flex-wrap:wrap;row-gap:4px;font-size:11.5px}}
+</style></head><body>
+<canvas id="c"></canvas><svg id="lead"></svg><div id="calls"></div>
+<div class="top"><div class="brand"><i></i>Jarvis</div><h1>Good evening, TJ</h1><div class="sub">Friday 30 Oct · 22:51</div></div>
+<div class="meter"><b id="sig">1,862</b>signals a second</div>
+<div class="think"><div class="q">“What should I charge the roofer in Rogers?”</div><div class="trail" id="trail"></div></div>
+<script type="module">
+import * as THREE from "three";
+import { BRAIN_MESH } from "./brain-mesh.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
+import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+
+const P = new URLSearchParams(location.search), FIX_T = P.has("t") ? +P.get("t") : null, phone = innerWidth < 600;
+/* Regions: anatomy from the Allen human brain atlas (HuBMAP CCF, CC BY 4.0), each mapped to a Jarvis section. */
+const R = [
+  { id: "think", name: "Thinking", part: "Prefrontal cortex", col: "#9fdcff", st: "Claude, your rules, Decisions", m: /superior_frontal|middle_frontal|frontal_pole|orbital|gyrus_rectus|rostral_gyrus|frontomarginal|paracingulate/ },
+  { id: "jobs", name: "Jobs", part: "Motor cortex", col: "#ffb547", st: "3 queued, runner every 3 h", m: /precentral|paracentral_lobule_rostral/ },
+  { id: "money", name: "Money", part: "Parietal lobe", col: "#6fdcaa", st: "$61 of $175 left", m: /postcentral|supraparietal|supramarginal|angular|precuneus|paracentral_lobule_caudal|parietal_operculum/ },
+  { id: "vault", name: "Training grounds", part: "Occipital lobe", col: "#b99cff", st: "34 fighters, demo loop", m: /occipital|cuneus|lingual/ },
+  { id: "voice", name: "Voice", part: "Temporal lobe", col: "#7fa8ff", st: "Butler voice, listening", m: /temporal_gyrus|temporal_pole|Heschl|planum|fusiform_gyrus_temporal/ },
+  { id: "chat", name: "Replies", part: "Broca's area", col: "#8ff0ff", st: "212 chats saved", m: /inferior_frontal|frontal_operculum/ },
+  { id: "memory", name: "Memory", part: "Hippocampus", col: "#ffd27a", st: "148 lessons, 32 notes", m: /hippocamp|parahippocampal/ },
+  { id: "alerts", name: "Alerts", part: "Amygdala", col: "#ff7a6a", st: "No feed yet", warn: true, m: /amygdal|central_nuclear|lateral_nucleus|basolateral|basomedial|cortical_nucleus|medial_nucleus/ },
+  { id: "links", name: "Connectors", part: "Thalamus", col: "#e8f2ff", st: "Calendar, Render, GitHub", m: /thalam|pulvinar|geniculate|ventral_(anterior|lateral|posterior)|centromedian|parafascicular|reuniens/ },
+  { id: "routine", name: "Routines", part: "Cerebellum", col: "#8ff0c8", st: "Brief at 6:11", m: /cerebell|vermis/ },
+  { id: "core", name: "Core", part: "Brainstem", col: "#a6e4ff", st: "Linked", m: /pons|pontine|medulla|olive|midbrain|nigra|colliculus|peduncle_crus|tegmentum/ },
+];
+const RI = Object.fromEntries(R.map((r, i) => [r.id, i])); const OTHER = R.length;
+
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("c"), antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, phone ? 1.5 : 2)); renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.1;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(phone ? 34 : 24, innerWidth / innerHeight, .1, 60);
+camera.position.set(0, .55, phone ? 10.5 : 8.4); camera.lookAt(0, phone ? -.75 : -.02, 0); camera.updateMatrixWorld();
+const rig = new THREE.Group(); scene.add(rig); const brain = new THREE.Group(); rig.add(brain);
+rig.rotation.set(.06, phone ? 1.45 : 1.5, 0); rig.position.y = phone ? .45 : .02;
+
+// backdrop: deep gradient sphere so the bloom has something to sit in
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(30, 32, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false,
+  vertexShader: `varying vec3 p; void main(){ p=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+  fragmentShader: `varying vec3 p; void main(){ vec3 d=normalize(p); float g=smoothstep(-.4,.6,d.y); vec3 c=mix(vec3(.004,.008,.012),vec3(.02,.04,.06),g*.6); c+=vec3(.03,.07,.1)*pow(max(0.,1.-length(d.xy-vec2(0.,.05))),6.); gl_FragColor=vec4(c,1.); }` })));
+
+const uT = { value: 0 }, uAct = { value: new Array(16).fill(0) };
+const regCol = R.map(r => new THREE.Color(r.col));
+function cortexMat(ri, deep) {
+  return new THREE.ShaderMaterial({ transparent: true, depthWrite: false,
+    uniforms: { uT, uAct, ri: { value: ri }, col: { value: ri < OTHER ? regCol[ri] : new THREE.Color("#9fb8c8") }, deep: { value: deep ? 1 : 0 } },
+    vertexShader: `varying vec3 vN; varying vec3 vV; varying vec3 vW; void main(){ vW=(modelMatrix*vec4(position,1.)).xyz; vec4 mv=modelViewMatrix*vec4(position,1.); vN=normalize(normalMatrix*normal); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }`,
+    fragmentShader: `uniform float uT; uniform float uAct[16]; uniform int ri; uniform vec3 col; uniform float deep; varying vec3 vN; varying vec3 vV; varying vec3 vW;
+      void main(){ vec3 n=normalize(vN); if(!gl_FrontFacing) n=-n;
+        float nv=max(dot(n,vV),0.); float fr=pow(1.-nv,2.6);
+        float key=dot(n,normalize(vec3(-.35,.75,.55)))*.5+.5; float back=pow(max(dot(n,normalize(vec3(.6,.2,-.8))),0.),2.);
+        float act=ri<16?uAct[ri]:0.;
+        vec3 tint=mix(vec3(.62,.78,.88),col,.35+act*.55);
+        vec3 c=tint*(.03+.11*key*key) + vec3(.6,.86,1.)*fr*(.3+act*.35) + tint*back*.05;
+        float scan=act*smoothstep(.035,0.,abs(fract(vW.y*1.8-uT*.55)-.5)-.465);
+        c+=col*(act*.32*(.4+.6*key));
+        float a=mix(.1+fr*.5+act*.15, .3+act*.35, deep);
+        if(deep>.5) c=col*(.07+act*.55)+col*fr*.25;
+        gl_FragColor=vec4(c,a); }` });
+}
+
+const prepass = new THREE.MeshBasicMaterial({ colorWrite: false, transparent: true, depthWrite: true });
+const cells = []; let anchors = R.map(() => []);
+const unpack = (D) => { const g = new THREE.Group(), lo = D.lo, hi = D.hi, b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0)).buffer;
+  for (const m of D.m) { const q = new Int16Array(b64(m.p)), p = new Float32Array(q.length); for (let i = 0; i < q.length; i++) { const d = i % 3; p[i] = lo[d] + (q[i] + 32768) / 65535 * (hi[d] - lo[d]); }
+    const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.BufferAttribute(p, 3)); geo.setIndex(new THREE.BufferAttribute(m.w === 2 ? new Uint16Array(b64(m.i)) : new Uint32Array(b64(m.i)), 1)); geo.computeVertexNormals();
+    const o = new THREE.Mesh(geo); o.name = m.n; g.add(o); } return g; };
+((g) => {
+  const root = g.scene; root.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(root), ctr = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
+  const parts = {}; const cent = (name) => { const o = root.getObjectByName(name); const b = new THREE.Box3().setFromObject(o); return b.getCenter(new THREE.Vector3()); };
+  const ant = cent("Allen_frontal_pole_L").add(cent("Allen_frontal_pole_R")).multiplyScalar(.5).sub(cent("Allen_occipital_pole_L").add(cent("Allen_occipital_pole_R")).multiplyScalar(.5)).setY(0).normalize();
+  const rotY = Math.atan2(ant.x, ant.z); const S = 2.15 / Math.max(size.x, size.y, size.z);
+  const M = new THREE.Matrix4().makeRotationY(-rotY).multiply(new THREE.Matrix4().makeScale(S, S, S)).multiply(new THREE.Matrix4().makeTranslation(-ctr.x, -ctr.y, -ctr.z));
+  const buckets = {};
+  root.traverse(o => {
+    if (!o.isMesh) return; const nm = o.name;
+    if (/ventricle|aqueduct|canal|white_matter|commissure|fornix|tract|radiation|chiasm|callosum|capsule/.test(nm)) return;
+    let ri = R.findIndex(r => r.m.test(nm)); if (ri < 0) ri = OTHER;
+    const geo = o.geometry.clone(); for (const k of Object.keys(geo.attributes)) if (k !== "position" && k !== "normal") geo.deleteAttribute(k);
+    if (!geo.attributes.normal) geo.computeVertexNormals();
+    geo.applyMatrix4(new THREE.Matrix4().multiplyMatrices(M, o.matrixWorld)); (buckets[ri] ||= []).push(geo);
+    if (ri < OTHER) { geo.computeBoundingBox(); const c = geo.boundingBox.getCenter(new THREE.Vector3()); anchors[ri].push(c); }
+  });
+  const deepSet = new Set([RI.memory, RI.alerts, RI.links, OTHER]);
+  for (const k in buckets) {
+    const ri = +k, geo = mergeGeometries(buckets[k], false); if (!geo) continue;
+    if (ri === OTHER) continue;
+    const deep = deepSet.has(ri), m = new THREE.Mesh(geo, cortexMat(ri, deep));
+    m.renderOrder = deep ? 1 : 3; brain.add(m); parts[ri] = m;
+    if (!deep) { const d = new THREE.Mesh(geo, prepass); d.renderOrder = 2; brain.add(d); }
+  }
+  // collapse each region's pieces into one or two anchors (left and right)
+  anchors = anchors.map((list, ri) => {
+    const L = list.filter(v => v.x < 0), Rr = list.filter(v => v.x >= 0), avg = a => a.reduce((s, v) => s.add(v), new THREE.Vector3()).multiplyScalar(1 / a.length);
+    const out = []; if (L.length) out.push(avg(L)); if (Rr.length) out.push(avg(Rr)); return out;
+  });
+  build(); start();
+})({ scene: unpack(BRAIN_MESH) });
+
+/* ---------- tracts between real region centres, signals on the GPU ---------- */
+const uTr = { value: new Array(40).fill(0) }, uHead = { value: new Array(40).fill(0) };
+const T = [["voice","links"],["links","think"],["think","memory"],["memory","money"],["think","money"],["think","chat"],["voice","chat"],["think","jobs"],["jobs","routine"],["routine","core"],["links","core"],["jobs","links"],["vault","links"],["vault","think"],["vault","money"],["alerts","memory"],["alerts","think"],["alerts","links"],["memory","links"],["money","jobs"],["voice","memory"],["think","think"],["money","money"],["jobs","jobs"],["vault","vault"]];
+let seed = 9; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+const jit = (v, s) => v.clone().add(new THREE.Vector3((rnd() - .5) * s, (rnd() - .5) * s, (rnd() - .5) * s));
+function build() {
+  const fib = [], center = new THREE.Vector3(0, .05, -.05);
+  T.forEach(([A, B], ti) => {
+    const a0 = anchors[RI[A]], b0 = anchors[RI[B]], n = phone ? 40 : 80;
+    for (let k = 0; k < n; k++) {
+      const pa = a0[k % a0.length], pb = A === B ? b0[(k + 1) % b0.length] : b0[(k + (rnd() < .2 ? 1 : 0)) % b0.length];
+      const a = jit(pa, .16), b = jit(pb, .16), mid = a.clone().add(b).multiplyScalar(.5).lerp(center, A === B ? .05 : .4);
+      if (A === B) mid.y += .2;
+      fib.push({ ti, p: [a, jit(a.clone().lerp(mid, .75), .06), jit(b.clone().lerp(mid, .75), .06), b], ca: regCol[RI[A]], cb: regCol[RI[B]] });
+    }
+  });
+  const bez = (p, t, o) => { const u = 1 - t; return o.set(0, 0, 0).addScaledVector(p[0], u * u * u).addScaledVector(p[1], 3 * u * u * t).addScaledVector(p[2], 3 * u * t * t).addScaledVector(p[3], t * t * t); };
+  { const SEG = 24, pos = [], tt = [], tr = [], cc = [], o = new THREE.Vector3(), o2 = new THREE.Vector3(), c = new THREE.Color();
+    for (const f of fib) for (let s = 0; s < SEG; s++) { bez(f.p, s / SEG, o); bez(f.p, (s + 1) / SEG, o2); pos.push(o.x, o.y, o.z, o2.x, o2.y, o2.z);
+      for (const t of [s / SEG, (s + 1) / SEG]) { tt.push(t); tr.push(f.ti); c.copy(f.ca).lerp(f.cb, t); cc.push(c.r, c.g, c.b); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("t", new THREE.Float32BufferAttribute(tt, 1)); g.setAttribute("tract", new THREE.Float32BufferAttribute(tr, 1)); g.setAttribute("color", new THREE.Float32BufferAttribute(cc, 3));
+    const l = new THREE.LineSegments(g, new THREE.ShaderMaterial({ uniforms: { uT, uTr }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+      vertexShader: `attribute float t,tract; attribute vec3 color; uniform float uTr[40]; varying float vT,vA; varying vec3 vC; void main(){ vT=t; vA=uTr[int(tract+.5)]; vC=color; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+      fragmentShader: `uniform float uT; varying float vT,vA; varying vec3 vC; void main(){ float d=pow(fract(vT*3.-uT*.7),8.); float edge=smoothstep(0.,.08,vT)*smoothstep(1.,.92,vT); gl_FragColor=vec4(vC*(.018+vA*(.22+d*.9))*edge,1.); }` }));
+    l.renderOrder = 0; brain.add(l); }
+  { const per = phone ? 7 : 12, n = fib.length * per, A = {}; for (const k of ["position", "p1", "p2", "p3", "ca", "cb"]) A[k] = new Float32Array(n * 3); for (const k of ["seed", "speed", "tract"]) A[k] = new Float32Array(n);
+    let i = 0; for (const f of fib) for (let k = 0; k < per; k++, i++) { ["position", "p1", "p2", "p3"].forEach((key, j) => A[key].set([f.p[j].x, f.p[j].y, f.p[j].z], i * 3)); A.seed[i] = rnd(); A.speed[i] = .07 + rnd() * .12; A.tract[i] = f.ti; A.ca.set([f.ca.r, f.ca.g, f.ca.b], i * 3); A.cb.set([f.cb.r, f.cb.g, f.cb.b], i * 3); }
+    const g = new THREE.BufferGeometry(); for (const k in A) g.setAttribute(k, new THREE.BufferAttribute(A[k], A[k].length === n ? 1 : 3)); g.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 4);
+    const pts = new THREE.Points(g, new THREE.ShaderMaterial({ uniforms: { uT, uTr, uHead, px: { value: renderer.getPixelRatio() } }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+      vertexShader: `attribute vec3 p1,p2,p3,ca,cb; attribute float seed,speed,tract; uniform float uT,px; uniform float uTr[40]; uniform float uHead[40]; varying vec3 vC; varying float vA;
+        void main(){ int ti=int(tract+.5); float act=uTr[ti]; float t=fract(seed+uT*speed*(1.+act*3.)); float u=1.-t;
+          vec3 p=u*u*u*position+3.*u*u*t*p1+3.*u*t*t*p2+t*t*t*p3; float h=act*smoothstep(.1,0.,abs(t-uHead[ti]));
+          vC=mix(ca,cb,t); vA=(.07+act*.55+h*2.)*smoothstep(0.,.06,t)*smoothstep(1.,.94,t);
+          vec4 mv=modelViewMatrix*vec4(p,1.); gl_PointSize=px*(1.3+act*1.6+h*5.)*(4.5/-mv.z); gl_Position=projectionMatrix*mv; }`,
+      fragmentShader: `varying vec3 vC; varying float vA; void main(){ float d=length(gl_PointCoord-.5); if(d>.5) discard; gl_FragColor=vec4(vC*vA*pow(1.-d*2.,1.6),1.); }` }));
+    pts.renderOrder = 0; brain.add(pts); }
+  // dust in the room, out of focus
+  { const n = 500, p = new Float32Array(n * 3); for (let i = 0; i < n; i++) p.set([(rnd() - .5) * 12, (rnd() - .5) * 6, (rnd() - .5) * 8 - 2], i * 3);
+    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(p, 3));
+    scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: "#5d7f96", size: .025, transparent: true, opacity: .35, depthWrite: false }))); }
+  // projector plinth: thin rings and ticks under the brain
+  const base = new THREE.Group(); base.position.y = -1.08; rig.add(base);
+  const ringM = (o) => new THREE.MeshBasicMaterial({ color: "#a6e4ff", transparent: true, opacity: o, depthWrite: false, blending: THREE.AdditiveBlending });
+  for (const [r, w, o] of [[1.25, .006, .5], [1.32, .002, .3], [1.6, .003, .18], [.9, .002, .2]]) { const m = new THREE.Mesh(new THREE.RingGeometry(r, r + w, 128), ringM(o)); m.rotation.x = -Math.PI / 2; base.add(m); }
+  for (let i = 0; i < 120; i++) { const a = i / 120 * Math.PI * 2, L = i % 10 ? .03 : .08; const m = new THREE.Mesh(new THREE.PlaneGeometry(.004, L), ringM(i % 10 ? .25 : .5)); m.rotation.x = -Math.PI / 2; m.rotation.z = -a; m.position.set(Math.sin(a) * (1.36 + L / 2), 0, Math.cos(a) * (1.36 + L / 2)); base.add(m); }
+  const pool = new THREE.Mesh(new THREE.CircleGeometry(1.3, 64), new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: `varying vec2 u; void main(){ u=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`, fragmentShader: `varying vec2 u; void main(){ float d=length(u-.5)*2.; gl_FragColor=vec4(vec3(.25,.5,.65)*pow(1.-d,3.)*.35,1.); }` }));
+  pool.rotation.x = -Math.PI / 2; base.add(pool);
+}
+
+/* ---------- a live thought: real steps, each lighting the tract it uses ---------- */
+const SCRIPT = [{ say: "Heard you", tr: ["voice", "links"], reg: ["voice"] }, { say: "Thinking", tr: ["links", "think"], reg: ["think", "links"] }, { say: "Read Pricing", tr: ["think", "memory"], reg: ["memory", "think"] }, { say: "Checked the budget", tr: ["memory", "money"], reg: ["money", "memory"] }, { say: "Writing the reply", tr: ["think", "chat"], reg: ["chat", "think"] }];
+const trail = document.getElementById("trail"); trail.innerHTML = SCRIPT.map(s => `<span>${s.say}</span>`).join("");
+const ti = (a, b) => T.findIndex(([x, y]) => (x === a && y === b) || (x === b && y === a));
+
+/* ---------- callouts in two clean columns with elbow leaders (the anatomy-plate layout) ---------- */
+const calls = document.getElementById("calls"), lead = document.getElementById("lead");
+const SHOWN = R.map(r => r.id);
+const CE = SHOWN.map(id => { const r = R[RI[id]], e = document.createElement("div"); e.className = "call"; e.innerHTML = `<b>${r.name}</b>${r.part}<span class="st ${r.warn ? "warn" : ""}">${r.st}</span>`; calls.append(e); return { id, e }; });
+const v = new THREE.Vector3();
+function placeCalls() {
+  rig.updateMatrixWorld(true);
+  for (const c of CE) c.e.style.display = phone && uAct.value[RI[c.id]] < .4 ? "none" : "";
+  const pts = CE.filter(c => c.e.style.display !== "none").map(c => { const a = anchors[RI[c.id]]; const pick = a.reduce((best, p) => { v.copy(p).applyMatrix4(brain.matrixWorld); const d = v.distanceTo(camera.position); return !best || d < best.d ? { p: p.clone(), d } : best; }, null);
+    v.copy(pick.p).applyMatrix4(brain.matrixWorld).project(camera); return { ...c, x: (v.x + 1) / 2 * innerWidth, y: (1 - v.y) / 2 * innerHeight }; });
+  const cx = innerWidth / 2, colW = phone ? 118 : 170, gapX = phone ? 10 : Math.max(32, innerWidth / 2 - 520);
+  const byX = [...pts].sort((a, b) => a.x - b.x), half = Math.ceil(byX.length / 2);
+  const sides = { l: byX.slice(0, half).sort((a, b) => a.y - b.y), r: byX.slice(half).sort((a, b) => a.y - b.y) };
+  let svg = "";
+  for (const s of ["l", "r"]) {
+    const list = sides[s], top = phone ? innerHeight * .56 : 150, bottom = innerHeight - (phone ? 150 : 150), step = Math.min(phone ? 60 : 74, (bottom - top) / Math.max(1, list.length - 1));
+    const start = (top + bottom) / 2 - step * (list.length - 1) / 2;
+    list.forEach((p, i) => {
+      const ly = start + i * step, lx = s === "l" ? gapX : innerWidth - gapX - colW;
+      p.e.className = "call " + s; p.e.style.left = lx + "px"; p.e.style.top = ly - 9 + "px";
+      const ex = s === "l" ? lx + colW + 10 : lx - 10, kx = s === "l" ? ex + 26 : ex - 26;
+      const hot = uAct.value[RI[p.id]] > .4; p.e.classList.toggle("hot", hot);
+      const c = hot ? "rgba(166,228,255,.75)" : "rgba(166,228,255,.22)";
+      svg += `<polyline points="${ex},${ly} ${kx},${ly} ${p.x},${p.y}" fill="none" stroke="${c}" stroke-width="1"/><circle cx="${p.x}" cy="${p.y}" r="${hot ? 3 : 2}" fill="${hot ? "#e8f6ff" : "rgba(166,228,255,.55)"}"/>`;
+    });
+  }
+  lead.innerHTML = svg;
+}
+
+/* ---------- post: bloom, then one finishing pass (grade, vignette, a little aberration and grain) ---------- */
+const composer = new EffectComposer(renderer); composer.addPass(new RenderPass(scene, camera));
+composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth / 2, innerHeight / 2), phone ? .5 : .6, .5, .32));
+composer.addPass(new OutputPass());
+composer.addPass(new ShaderPass({ uniforms: { tDiffuse: { value: null }, uT, asp: { value: innerWidth / innerHeight } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float uT,asp; varying vec2 vUv; float h(vec2 p){ return fract(sin(dot(p,vec2(12.9898,78.233))+uT)*43758.5453); }
+    void main(){ vec2 d=vUv-.5; float r=dot(d*vec2(asp,1.),d*vec2(asp,1.)); vec2 o=d*r*.006;
+      vec3 c=vec3(texture2D(tDiffuse,vUv+o).r,texture2D(tDiffuse,vUv).g,texture2D(tDiffuse,vUv-o).b);
+      c=mix(c,c*vec3(.92,1.,1.08),.5); c*=1.-r*.55; c+=(h(vUv*999.)-.5)*.018; gl_FragColor=vec4(c,1.); }` }));
+
+function start() {
+  const clock = new THREE.Clock(), sig = document.getElementById("sig");
+  function frame() {
+    const t = FIX_T ?? clock.getElapsedTime(); uT.value = t;
+    if (FIX_T == null) rig.rotation.y = (phone ? 1.45 : 1.5) + Math.sin(t * .08) * .3;
+    const STEP = 2.4, k = Math.floor(t / STEP) % (SCRIPT.length + 1), f = (t % STEP) / STEP;
+    uTr.value.fill(0); uAct.value.fill(0); uHead.value.fill(2);
+    for (let i = 0; i <= Math.min(k, SCRIPT.length - 1); i++) { const s = SCRIPT[i], cur = i === k, idx = ti(...s.tr);
+      uTr.value[idx] = Math.max(uTr.value[idx], cur ? 1 : .3); if (cur) uHead.value[idx] = f;
+      for (const id of s.reg) uAct.value[RI[id]] = Math.max(uAct.value[RI[id]], cur ? .55 + .45 * Math.sin(Math.min(1, f * 1.4) * Math.PI / 2) : .25); }
+    trail.querySelectorAll("span").forEach((e, i) => (e.className = i < k ? "done" : i === k ? "now" : ""));
+    sig.textContent = (1600 + Math.round(400 * uTr.value.reduce((a, b) => a + b, 0))).toLocaleString();
+    placeCalls(); composer.render();
+    if (FIX_T == null) requestAnimationFrame(frame); else document.title = "ready";
+  }
+  frame();
+}
+addEventListener("resize", () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight); });
+</script></body></html>

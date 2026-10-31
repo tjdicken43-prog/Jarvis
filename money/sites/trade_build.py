@@ -441,7 +441,7 @@ def quote_form_open(c, phone, tel):
 
 
 def render(c):
-    """c: name, trade, city, phone, email, website, rating, review_count, logo_url, colors, open_247, licensed,
+    """c: name, trade, city, phone, email, website, rating, review_count, logo_url, colors, open_247, licensed, (roofing, owner-supplied only: warranty, financing, free_inspection, claim_help),
     since, site_text (their own words, for services), towns, font_url, preview (default True), form_action (live only),
     front_desk (default True: the after-hours receptionist section, plus the owner panel on previews)."""
     trade = c["trade"]
@@ -508,6 +508,16 @@ def render(c):
         faq.insert(0, ("Are you really open 24/7?", "Yes. Call any time" + (f": {phone}." if tel else ".")))
     if c.get("licensed"):
         faq.append(("Are you licensed and insured?", "Yes, licensed and insured."))
+    # Roofing extras. Each shows only when the owner supplied it (see money/sites/trades/roofing/OFFER.md).
+    if trade == "roofing":
+        if c.get("warranty"):
+            faq.append(("What warranty comes with the work?", str(c["warranty"])[:300]))
+        if c.get("financing"):
+            faq.append(("Do you offer financing?", f"Yes, through {str(c['financing'])[:80]}. Ask about terms when you call."))
+        if c.get("free_inspection"):
+            faq.append(("Is the inspection free?", "Yes. Call or send the form to set up a time."))
+        if c.get("claim_help"):
+            faq.append(("Can you help with an insurance claim?", "We photograph and document the damage and walk you through what we found. Your insurance company decides what is covered."))
     faq_html = "".join(f"<details><summary>{esc(q)}</summary><p>{esc(a)}</p></details>" for q, a in faq)
     faq_ld = json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
         {"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in faq]}).replace("</", "<\\/")

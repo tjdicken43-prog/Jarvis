@@ -59,3 +59,15 @@ for g in ("one-call-hvac", "its-plumbing", "johns-quality-roofing"):
     assert tb.audit(gp) == [], (g, tb.audit(gp))
     assert 'id="after-hours"' in gp and 'id="owner"' in gp, g
 print("trade build ok")
+
+# roofing extras appear only when the owner supplied them, and never on other trades
+roof = dict(base, trade="roofing")
+plain = tb.render(roof)
+for q in ("warranty", "financing", "insurance claim", "inspection free"):
+    assert q not in plain.lower().replace("insurance company", ""), q
+extra = dict(roof, warranty="Ten years on labor.", financing="Acme Finance", free_inspection=True, claim_help=True)
+page = tb.render(extra)
+assert tb.audit(page, extra) == []
+assert "Ten years on labor." in page and "through Acme Finance" in page and "Is the inspection free?" in page and "help with an insurance claim" in page
+assert "financing" not in tb.render(dict(base, trade="hvac", financing="Acme Finance")).lower()
+print("trade_build ok")

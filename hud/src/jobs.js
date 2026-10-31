@@ -176,6 +176,7 @@ async function vaultRows() { // the agency's real event log; [] while Render is 
 let vaultOpen = false;
 function openFactory() {
   $("card").classList.remove("show"); lastInput = t;
+  if (window.JarvisArena) return window.JarvisArena.openGrounds(); // round 10: the Training grounds (hud/arena) replace Vault 479
   if (window.JarvisVault && !vaultOpen) { vaultOpen = true; window.JarvisFactory?.setOpen?.(true); window.JarvisVault.open({ rows: vaultRows, onClose: () => { vaultOpen = false; window.JarvisFactory?.setOpen?.(false); lastInput = t; } }); return; }
   const F = window.JarvisFactory; if (!F) return;
   F.setAccent(`rgb(${ARC})`);
@@ -194,7 +195,7 @@ $("factoryBtn").addEventListener("click", openFactory);
     vaultFace(g, 0, 0, cv.width, cv.height, ts / 1000);
   };
   requestAnimationFrame(frame);
-  $("factoryLine").innerHTML = "<i></i>Four wings · tap to walk in";
+  $("factoryLine").innerHTML = "<i></i>68 fighters · five wings";
 })();
 $("memBtn").addEventListener("click", () => {
   const list = $("memList"); list.innerHTML = "";

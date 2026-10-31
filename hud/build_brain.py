@@ -124,6 +124,9 @@ def write_artifact(dest, brain_js):
     html = html.replace(tag, '<script type="module">\n' + vault_js + "</script>")
     dest.write_text(html.strip() + "\n", encoding="utf-8")
     print(f"Wrote artifact copy to {dest}")
+    # round 10: the brain, Training grounds and peak clips are their own pages; publish them beside the artifact
+    arena = sorted(p.name for p in (ROOT / "hud" / "arena").iterdir() if p.suffix in (".html", ".js"))
+    print("Publish these too (Artifact files map, same paths): " + ", ".join(f"arena/{n}" for n in arena))
 
 
 if __name__ == "__main__":

@@ -1,0 +1,368 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Peak</title>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/" } }</script>
+<style>html,body{margin:0;background:#000;overflow:hidden}canvas{display:block}
+.bar{position:fixed;left:0;right:0;background:#000;z-index:2}.bar.t{top:0}.bar.b{bottom:0}
+.sub{position:fixed;left:50%;transform:translateX(-50%);z-index:3;width:84%;text-align:center;font:500 25px/1.35 "Noto Sans",system-ui,Roboto,Arial,sans-serif;color:#f4f2ec;letter-spacing:.01em}
+.sub i{font-style:normal;color:#9aa4b4;font-size:15px;letter-spacing:.14em;text-transform:uppercase;display:block;margin-bottom:4px;font-weight:600}
+.kan{position:fixed;z-index:3;right:5.5%;text-align:right;font:900 92px/1 "Noto Serif CJK JP","WenQuanYi Zen Hei",serif;color:#fff;
+  text-shadow:-5px -5px 0 #0a0a10,5px -5px 0 #0a0a10,-5px 5px 0 #0a0a10,5px 5px 0 #0a0a10,10px 10px 0 var(--k)}
+.kan small{display:block;font:700 17px system-ui,Roboto,sans-serif;letter-spacing:.2em;text-transform:uppercase;margin-top:12px;color:#fff;text-shadow:0 2px 6px #000}
+.who{position:fixed;z-index:3;left:28px;font:600 12px system-ui,Roboto,Arial,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.55)}
+</style></head><body>
+<div class="bar t" id="bt"></div><div class="bar b" id="bb"></div><div class="who" id="who"></div><div class="sub" id="sub"></div><a id="back" href="#" style="position:fixed;z-index:4;right:18px;top:10px;color:#fff;font:600 13px system-ui,Roboto,sans-serif;text-decoration:none;padding:10px 12px;border:1px solid rgba(255,255,255,.25);border-radius:6px;display:none">Back</a><div class="kan" id="kan"></div>
+<script type="module">
+import * as THREE from "three";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import { fighter, blend, POSE, faceTex, toon, part, rnd, reseed, TAU, ease, RIM, RIMK, CAST } from "./chars.js";
+
+/* Peak cutaways, round 4. The rules we copy from MAPPA-style fight cuts:
+   - effects are drawn, not glowed: hard 3-tone cel bands with an ink edge, boiling on 12 fps
+   - hold, then burst: a long build, a beat of stillness, a 2-4 frame hit, a long follow-through
+   - impact frames (ink, invert, colour hold), smear on the striking limb, focus lines, debris with trails
+   - camera does the acting: dolly-zoom on transformations, low-angle hero shots, whip pans into action
+   - every line stays up long enough to read (about 15 characters a second, never under 2.6 s) */
+const W = innerWidth, H = innerHeight, Q = new URLSearchParams(location.search);
+const BAR = Math.max(0, (H - W / 2.39) / 2); document.getElementById("bt").style.height = document.getElementById("bb").style.height = BAR + "px";
+if (Q.has("back")) { const b = document.getElementById("back"); b.style.display = ""; b.onclick = (e) => { e.preventDefault(); history.back(); }; }
+const subEl = document.getElementById("sub"), kanEl = document.getElementById("kan");
+subEl.style.bottom = Math.max(14, BAR * .5 - 30) + "px"; kanEl.style.top = (BAR + 26) + "px"; document.getElementById("who").style.top = Math.max(10, BAR * .5 - 7) + "px";
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); renderer.setPixelRatio(1); renderer.setSize(W, H); document.body.prepend(renderer.domElement);
+renderer.shadowMap.enabled = true; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
+const scene = new THREE.Scene(); const camera = new THREE.PerspectiveCamera(32, W / H, .05, 400);
+const V = (x, y, z) => new THREE.Vector3(x, y, z), C = c => new THREE.Color(c);
+const uT = { value: 0 }, uS = { value: 0 };   // uS = time stepped to 12 fps: effects boil on 2s like drawn FX
+
+const CFG = {
+  goku: { who: "Goku · Etsy shop", fx: "ui", fx3: ["#ffffff", "#b8c8ff", "#3a3a8a"], sky: ["#04030a", "#2a1450", "#10204a"], plat: "#5a5a6a", rim: "#b8c8ff",
+    hero: { top: "#f07a24", pants: "#f07a24", yoke: "#24346a", belt: "#24346a", cuff: "#24346a", skin: "#f5cfa8", hair: "#141418", shoe: "#24346a", wrap: "#c03a2a", hairN: 34, hairLen: .26, bangs: 5, bangLen: .14, baggy: 1.25, loose: 1.1, seed: 21,
+      face: { skin: "#f5cfa8", iris: "#1a1a1a", irisTop: "#000000", angry: true, mouth: "flat", brow: "#141418" } },
+    alt: { iris: "#dfe6ff", irisTop: "#8a9ac8", glow: true, angry: false, brow: "#d8dcf0" }, hairTo: "#c4cce6", kan: ["身勝手の極意", "Ultra Instinct"], kan2: ["", ""],
+    foe: { top: "#b02020", pants: "#1a1a1e", yoke: "#1a1a1e", skin: "#9aa0b0", hair: "#9aa0b0", hairN: 0, shoe: "#1a1a1e", belt: "#e8e8e8", baggy: 1.2, loose: 1.3, seed: 33, face: { skin: "#9aa0b0", iris: "#e02020", irisTop: "#600000", angry: true, mouth: "flat", brow: "#5a6070", eyeH: 16 } }, foeScale: 1.22,
+    subs: [["Opponent", "You've hit your limit. Stay down."], ["Goku", "...Huh. My body's moving on its own."], ["Opponent", "Why can't I touch you?!"], ["Goku", "Didn't think. Just moved. Whis would be proud."], ["Goku", "Hey, you good? Same time tomorrow?"], ["Opponent", "...I'm telling Beerus."]] },
+  sasuke: { who: "Sasuke · Basis", fx: "susanoo", fx3: ["#f4e8ff", "#a46bff", "#2a0a5a"], sky: ["#07040e", "#2a0e48", "#14204a"], plat: "#4a4656", rim: "#c8a8ff",
+    hero: { top: "#2a2a36", pants: "#2a2a36", yoke: "#e8e4dc", belt: "#6a3aa8", skin: "#f2d6bc", hair: "#14141e", shoe: "#1a1a22", hairN: 30, hairLen: .2, bangs: 6, bangLen: .16, baggy: 1.1, hem: .35, seed: 31,
+      face: { skin: "#f2d6bc", iris: "#141418", irisTop: "#000", angry: true, mouth: "flat", brow: "#14141e" } },
+    alt: { iris: "#e01a2a", irisTop: "#600010", glow: true }, kan: ["須佐能乎", "Perfect Susanoo"], kan2: ["インドラの矢", "Indra's Arrow"],
+    foe: { top: "#141418", pants: "#141418", yoke: "#141418", skin: "#efd2b6", hair: "#14141a", hairN: 22, hairLen: .26, seed: 44, hem: .45, face: { skin: "#efd2b6", iris: "#c01020", irisTop: "#500", angry: false, mouth: "flat", brow: "#14141a" } },
+    subs: [["Itachi", "Foolish little brother. You still lack hatred."], ["Sasuke", "No. I lack patience. Fifteen-minute workout."], ["Itachi", "...A Susanoo? Since when?"], ["Sasuke", "Short on time? Then don't blink."], ["Sasuke", "Next set in sixty seconds."], ["Itachi", "Forgive me, Sasuke... I'll do the cardio."]] },
+  gojo: { who: "Gojo · Sites by TJ", fx: "purple", fx3: ["#fff4ff", "#b06cff", "#1e0838"], sky: ["#03050a", "#12203e", "#2a1438"], plat: "#3e4250", rim: "#a6e4ff",
+    hero: "gojo", alt: { iris: "#9ae8ff", irisTop: "#1a6aff", glow: true, mouth: "grin" }, kan: ["虚式「茈」", "Hollow Technique: Purple"], kan2: ["", ""],
+    foe: { top: "#f2efe8", pants: "#f2efe8", skin: "#f2d6bc", hair: "#ff9ab0", hairN: 26, hairLen: .2, up: true, seed: 52, hem: .5, baggy: 1.3, face: { skin: "#f2d6bc", iris: "#c01020", irisTop: "#500", angry: true, mouth: "grin", brow: "#ff9ab0" } },
+    subs: [["Sukuna", "Stand proud. You're strong."], ["Gojo", "Nah. I'd win."], ["Sukuna", "Red and Blue... at the same time?"], ["Gojo", "Throughout heaven and earth, I alone send the email."], ["Gojo", "Sends go out at nine. Don't be late."], ["Sukuna", "...Next time. Malevolent Shrine."]] },
+  jinwoo: { who: "Sung Jinwoo · Jarvis HQ", fx: "army", fx3: ["#d8e4ff", "#4a6aff", "#05050c"], sky: ["#020306", "#0a1626", "#140c30"], plat: "#2a3038", rim: "#8ab0ff",
+    hero: { top: "#14141c", pants: "#14141c", yoke: "#14141c", collar: "#14141c", collarH: .14, skin: "#eed4bc", hair: "#0e0e14", shoe: "#0e0e14", hairN: 26, hairLen: .17, bangs: 6, bangLen: .15, baggy: 1.05, hem: .55, seed: 61,
+      face: { skin: "#eed4bc", iris: "#141418", irisTop: "#000", angry: true, mouth: "flat", brow: "#0e0e14" } },
+    alt: { iris: "#8ab8ff", irisTop: "#3a3aff", glow: true }, kan: ["影の君主", "Shadow Monarch"], kan2: ["起きろ", "Arise"],
+    foe: { top: "#7a1a1a", pants: "#2a1a1a", yoke: "#3a3a44", skin: "#5a5a66", hair: "#8a1a1a", hairN: 12, hairLen: .4, seed: 71, hem: .6, face: { skin: "#5a5a66", iris: "#ff2020", irisTop: "#600", angry: true, mouth: "flat", brow: "#5a5a66" } },
+    subs: [["System", "[Job change quest. Survive.]"], ["Jinwoo", "Every agent. Report in."], ["Igris", "..."], ["Jinwoo", "Arise."], ["Jinwoo", "Overseer check. All shadows accounted for."], ["Igris", "*kneels* My liege."]] },
+  light: { who: "Light · Gym-security", fx: "note", fx3: ["#ffe8e8", "#ff2a3a", "#2a0006"], sky: ["#050206", "#300610", "#140818"], plat: "#3a3236", rim: "#ff8a8a",
+    hero: { top: "#5a4636", pants: "#3a3a40", yoke: "#e8e4dc", collar: "#e8e4dc", collarH: .08, skin: "#f2d6bc", hair: "#6a4a2a", shoe: "#2a2020", hairN: 24, hairLen: .15, bangs: 6, bangLen: .14, baggy: 1.0, seed: 81,
+      face: { skin: "#f2d6bc", iris: "#5a3a1a", irisTop: "#2a1a0a", angry: false, mouth: "flat", brow: "#6a4a2a" } },
+    alt: { iris: "#ff1a2a", irisTop: "#5a0008", glow: true, mouth: "grin", angry: true }, kan: ["計画通り", "Just as planned"], kan2: ["40秒", "Forty seconds"],
+    foe: { top: "#f2f2f2", pants: "#6a7a9a", skin: "#f2e2d6", hair: "#0e0e14", hairN: 30, hairLen: .2, seed: 91, face: { skin: "#f2e2d6", iris: "#0e0e14", irisTop: "#000", angry: false, mouth: "flat", brow: "#0e0e14" } },
+    subs: [["L", "There's a five percent chance you're Kira."], ["Light", "I'll take a potato chip..."], ["L", "...Why is he writing?"], ["Light", "...and EAT IT."], ["Light", "Admin sign-in. Only one name gets in."], ["L", "I knew it... rotate the codes..."]] },
+  vegeta: { who: "Vegeta · Etsy shop", fx: "beam", fx3: ["#fffbe8", "#ffd23a", "#5a2a00"], sky: ["#0a0503", "#4a200c", "#20142e"], plat: "#7a5a44", rim: "#ffd87a",
+    hero: { top: "#2a3a8a", pants: "#2a3a8a", yoke: "#f2efe8", belt: "#f2efe8", cuff: "#f2efe8", skin: "#f2d0aa", hair: "#141418", shoe: "#f2efe8", hairN: 30, hairLen: .26, up: true, bangs: 0, baggy: 1.05, seed: 101,
+      face: { skin: "#f2d0aa", iris: "#141418", irisTop: "#000", angry: true, mouth: "flat", brow: "#141418" } },
+    alt: { iris: "#3ad8c8", irisTop: "#0a6a60", glow: true, angry: true, mouth: "shout" }, hairTo: "#ffd84a", kan: ["超サイヤ人", "Super Saiyan"], kan2: ["ファイナルフラッシュ", "Final Flash"],
+    foe: { top: "#4aa04a", pants: "#4aa04a", yoke: "#1a1a1a", skin: "#4aa04a", hair: "#2a6a2a", hairN: 8, hairLen: .3, seed: 111, face: { skin: "#4aa04a", iris: "#c040c0", irisTop: "#401040", angry: false, mouth: "grin", brow: "#2a6a2a" } },
+    subs: [["Cell", "Go on, Vegeta. Give me your best shot."], ["Vegeta", "You asked for it. I am the prince of the ledger."], ["Cell", "Wait... that's too much ki."], ["Vegeta", "It's over. Not nine thousand. Just over."], ["Vegeta", "Margins are up. Kakarot can't say that."], ["Cell", "I'll regenerate... from one cell. Ugh."]] },
+}[Q.get("c") || "sasuke"];
+const fx = CFG.fx, [K0, K1, K2] = CFG.fx3.map(C);
+document.getElementById("who").textContent = CFG.who; kanEl.style.setProperty("--k", CFG.fx3[1]);
+RIM.value.set(CFG.rim); RIMK.value = .8;
+
+/* ---------- timing: 16 s, six readable lines, one hold before the hit ---------- */
+const END = 16, HIT = 10.0, HOLD = 9.4;
+const SUBT = [[.4, 3.2], [3.4, 6.0], [7.4, 9.3], [10.9, 13.0], [13.1, 14.6], [14.6, 16]];
+const KAN = [[5.3, 7.0, ...CFG.kan], ...(CFG.kan2[0] ? [[fx === "army" ? 11.0 : 8.0, fx === "army" ? 12.6 : 9.3, ...CFG.kan2]] : [])];
+const step = (t, fps = 12) => Math.floor(t * fps + 1e-6) / fps, seg = (t, a, b) => Math.min(1, Math.max(0, (t - a) / (b - a)));
+
+/* ---------- arena ---------- */
+const sky = new THREE.Mesh(new THREE.SphereGeometry(150, 48, 24), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, uniforms: { a: { value: C(CFG.sky[0]) }, b: { value: C(CFG.sky[1]) }, d: { value: C(CFG.sky[2]) }, k: { value: 0 } },
+  vertexShader: `varying vec3 p; void main(){ p=normalize(position); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+  fragmentShader: `uniform vec3 a,b,d; uniform float k; varying vec3 p; float h(vec3 q){ return fract(sin(dot(q,vec3(12.9,78.2,37.7)))*43758.5); }
+    float n(vec3 q){ vec3 i=floor(q),f=fract(q); f=f*f*(3.-2.*f); return mix(mix(mix(h(i),h(i+vec3(1,0,0)),f.x),mix(h(i+vec3(0,1,0)),h(i+vec3(1,1,0)),f.x),f.y),mix(mix(h(i+vec3(0,0,1)),h(i+vec3(1,0,1)),f.x),mix(h(i+vec3(0,1,1)),h(i+vec3(1,1,1)),f.x),f.y),f.z); }
+    void main(){ float neb=n(p*2.5)*.6+n(p*6.)*.3+n(p*14.)*.1; float band=floor(smoothstep(.4,.9,neb)*3.)/3.;   // posterised nebula, like a painted background
+      vec3 c=mix(a,b,band); c+=d*step(.62,n(p*4.+3.))*.8; c+=vec3(step(.9975,h(floor(p*420.)))); c=mix(c,c*.35,k); gl_FragColor=vec4(c,1.); }` }));
+scene.add(sky, new THREE.HemisphereLight(CFG.rim, "#2a1a3a", 1.0));
+const key = new THREE.DirectionalLight("#ffe8d0", 2.2); key.position.set(-4, 6, 5); key.castShadow = true; key.shadow.mapSize.set(2048, 2048); Object.assign(key.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8 }); scene.add(key);
+const plat = new THREE.Group(); scene.add(plat); reseed(4);
+for (let i = 0; i < 46; i++) { const a = rnd() * TAU, r = Math.sqrt(rnd()) * 8; const w = .8 + rnd() * 1.6, d = .8 + rnd() * 1.6;
+  const s = part(new THREE.BoxGeometry(w, .5 + rnd() * .4, d), CFG.plat, plat, Math.cos(a) * r, -.25 - rnd() * .15, Math.sin(a) * r); s.rotation.y = rnd(); s.receiveShadow = true; s.userData.base = s.position.clone(); s.userData.k = rnd(); }
+const rubble = []; for (let i = 0; i < 46; i++) { const m = part(new THREE.DodecahedronGeometry(.08 + rnd() * .25, 0), CFG.plat, scene, (rnd() - .5) * 18, rnd() * 4, (rnd() - .5) * 14 - 2); m.userData.base = m.position.clone(); m.userData.k = rnd(); rubble.push(m); }
+
+/* ---------- cel energy: the core of the look. noise boils on 2s, quantised to 3 tones with an ink edge ---------- */
+const NOISE = `float h3(vec3 q){ return fract(sin(dot(q,vec3(12.9,78.2,37.7)))*43758.5); }
+  float n3(vec3 q){ vec3 i=floor(q),f=fract(q); f=f*f*(3.-2.*f); return mix(mix(mix(h3(i),h3(i+vec3(1,0,0)),f.x),mix(h3(i+vec3(0,1,0)),h3(i+vec3(1,1,0)),f.x),f.y),mix(mix(h3(i+vec3(0,0,1)),h3(i+vec3(1,0,1)),f.x),mix(h3(i+vec3(0,1,1)),h3(i+vec3(1,1,1)),f.x),f.y),f.z); }
+  float fbm(vec3 q){ return n3(q)*.55+n3(q*2.1)*.28+n3(q*4.3)*.17; }`;
+function cel({ flow = V(0, -1.4, 0), freq = 3, shape = "fres", th = [.38, .55, .72], ink = true, a = 1 } = {}) {
+  return new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, uniforms: { uS, k0: { value: K0 }, k1: { value: K1 }, k2: { value: K2 }, fl: { value: flow }, fq: { value: freq }, th: { value: V(...th) }, amt: { value: a }, inkOn: { value: ink ? 1 : 0 } },
+    vertexShader: `varying vec3 vP,vN,vV; void main(){ vP=position; vec4 mv=modelViewMatrix*vec4(position,1.); vN=normalize(normalMatrix*normal); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }`,
+    fragmentShader: `uniform float uS,fq,amt,inkOn; uniform vec3 k0,k1,k2,fl,th; varying vec3 vP,vN,vV; ${NOISE}
+      void main(){ float fr=abs(dot(normalize(vN),vV)); float body=${shape === "fres" ? "pow(fr,.7)" : shape === "rim" ? "pow(1.-fr,1.2)" : "1."};
+        float v=body*(.35+.9*fbm(vP*fq+fl*uS))*amt; if(v<th.x) discard;
+        vec3 c=v>th.z?k0:(v>th.y?k1:k2); if(inkOn>.5 && v<th.x+.035) c=vec3(.02,.01,.04);   // ink line around every drawn shape
+        gl_FragColor=vec4(c,1.); }` });
+}
+// flame shell around a fighter (lathe tear-drop), boiling upward
+const tear = (r, h) => new THREE.LatheGeometry([...Array(22)].map((_, i) => { const t = i / 21; return new THREE.Vector2(r * Math.sin(Math.PI * Math.min(1, t * 1.15)) * (1 - t * .5), t * h - .15); }), 40);
+const aura = new THREE.Group(); scene.add(aura);
+const auraM = [cel({ freq: 3.2, flow: V(0, -2.2, 0), shape: "rim", th: [.42, .62, .82] }), cel({ freq: 5, flow: V(0, -3, 0), shape: "rim", th: [.5, .7, .9] })];
+aura.add(new THREE.Mesh(tear(.85, 2.9), auraM[0]), new THREE.Mesh(tear(1.1, 3.4), auraM[1]));
+// spikes: the hand-drawn flame tongues that lick up off the aura
+const spikes = new THREE.Group(); aura.add(spikes); spikes.visible = false; reseed(17);
+for (let i = 0; i < 18; i++) { const g = new THREE.ConeGeometry(.08 + rnd() * .08, .6 + rnd() * .8, 5, 1, true); g.translate(0, .4, 0); const m = new THREE.Mesh(g, cel({ freq: 6, flow: V(0, -4, 0), shape: "fres", th: [.3, .5, .7] }));
+  const a = rnd() * TAU; m.userData = { a, r: .5 + rnd() * .35, y: .2 + rnd() * 1.9, k: rnd() }; spikes.add(m); }
+const glowL = new THREE.PointLight(CFG.fx3[1], 0, 8, 1.4); scene.add(glowL);
+
+/* ---------- shared action FX: shock rings, cel dust, debris with trails, ground cracks, lightning, focus lines ---------- */
+const ringM = () => new THREE.Mesh(new THREE.RingGeometry(.9, 1, 96), new THREE.MeshBasicMaterial({ color: K0, transparent: true, side: THREE.DoubleSide, depthWrite: false, toneMapped: false }));
+const rings = [0, 1, 2].map(() => { const m = ringM(); scene.add(m); return m; });
+const dust = new THREE.Group(); scene.add(dust); reseed(23);
+const dustM = cel({ freq: 3.6, flow: V(0, -.8, 0), shape: "fres", th: [.46, .62, .8] }); dustM.uniforms.k0.value = C("#ece6dc").lerp(K1, .15); dustM.uniforms.k1.value = C("#8a8078").lerp(K1, .25); dustM.uniforms.k2.value = C("#3a3236").lerp(K2, .4);
+for (let i = 0; i < 16; i++) { const m = new THREE.Mesh(new THREE.IcosahedronGeometry(.5, 3), dustM); const a = (i / 22) * TAU + rnd() * .2; m.userData = { a, k: rnd() }; dust.add(m); }
+const debris = []; reseed(29);
+for (let i = 0; i < 70; i++) { const m = part(new THREE.TetrahedronGeometry(.05 + rnd() * .12, 0), CFG.plat, scene, 0, 0, 0, false); const a = rnd() * TAU, e = .3 + rnd() * 1.1;
+  m.userData = { v: V(Math.cos(a) * Math.cos(e), Math.sin(e), Math.sin(a) * Math.cos(e)).multiplyScalar(3 + rnd() * 7), k: rnd() }; debris.push(m); }
+const trailG = new THREE.BufferGeometry(); trailG.setAttribute("position", new THREE.BufferAttribute(new Float32Array(debris.length * 6), 3));
+const trails = new THREE.LineSegments(trailG, new THREE.LineBasicMaterial({ color: K0, transparent: true, opacity: .7 })); scene.add(trails);
+const crackTex = (() => { const c = document.createElement("canvas"); c.width = c.height = 512; const g = c.getContext("2d"); reseed(31); g.strokeStyle = "#000"; g.lineCap = "round";
+  for (let i = 0; i < 14; i++) { let x = 256, y = 256, a = rnd() * TAU; g.lineWidth = 7; g.beginPath(); g.moveTo(x, y); for (let s = 0; s < 9; s++) { a += (rnd() - .5) * .9; x += Math.cos(a) * 26; y += Math.sin(a) * 26; g.lineWidth = Math.max(1, 7 - s * .7); g.lineTo(x, y); } g.stroke(); }
+  return new THREE.CanvasTexture(c); })();
+const crack = new THREE.Mesh(new THREE.PlaneGeometry(6, 6), new THREE.MeshBasicMaterial({ map: crackTex, transparent: true, depthWrite: false, opacity: .9 })); crack.rotation.x = -Math.PI / 2; scene.add(crack);
+const boltM = new THREE.MeshBasicMaterial({ color: K0, toneMapped: false }), bolts = new THREE.Group(); scene.add(bolts);
+function bolt(a, b, seed, r = .012) { reseed(seed); const pts = [], n = 9; for (let i = 0; i <= n; i++) { const p = a.clone().lerp(b, i / n); if (i && i < n) p.add(V(rnd() - .5, rnd() - .5, rnd() - .5).multiplyScalar(a.distanceTo(b) * .14)); pts.push(p); }
+  const m = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, false, "catmullrom", 0), 24, r, 4), boltM); bolts.add(m); }
+const clearBolts = () => { bolts.children.forEach(m => m.geometry.dispose()); bolts.clear(); };
+// beam: drawn core, banded body, ink rim
+const beam = new THREE.Group(); scene.add(beam);
+{ const g = new THREE.CylinderGeometry(1, 1, 1, 40, 24, true); g.rotateZ(-Math.PI / 2); g.translate(.5, 0, 0);
+  const core = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: K0, toneMapped: false })); core.scale.set(1, .45, .45);
+  const body = new THREE.Mesh(g, cel({ freq: 2.4, flow: V(-6, 0, 0), shape: "rim", th: [.25, .45, .7] })); const out = new THREE.Mesh(g, cel({ freq: 3.5, flow: V(-9, 0, 0), shape: "rim", th: [.45, .62, .85] })); out.scale.set(1, 1.5, 1.5);
+  beam.add(core, body, out); }
+// smear: a stretched drawn streak behind the striking limb
+const smear = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: K0, transparent: true, opacity: .85, side: THREE.DoubleSide, depthWrite: false, toneMapped: false })); scene.add(smear);
+
+/* ---------- cast ---------- */
+const HS = typeof CFG.hero === "string" ? CAST[CFG.hero] : CFG.hero;
+const hero = fighter(HS), foe = fighter(CFG.foe); scene.add(hero, foe); if (CFG.foeScale) foe.scale.setScalar(CFG.foeScale);
+const headMat = f => f.userData.J.head.children[0].material;
+const faceBase = headMat(hero).map, faceAlt = faceTex({ ...HS.face, ...CFG.alt }), faceClosed = faceTex({ ...HS.face, closed: true });
+const foeBase = headMat(foe).map, foeHit = faceTex({ ...CFG.foe.face, closed: true, mouth: "shout" }), foeShock = faceTex({ ...CFG.foe.face, mouth: "shout", angry: false });
+const setMap = (f, t) => { const m = headMat(f); if (m.map !== t) { m.map = t; m.needsUpdate = true; } };
+const hairM = []; hero.userData.J.hair.traverse(o => o.isMesh && hairM.push(o)); const hair0 = hairM[0]?.material, hair1 = CFG.hairTo ? toon(CFG.hairTo, { emit: CFG.fx3[2] }) : null;
+const hw = (f, j) => f.userData.J[j].getWorldPosition(new THREE.Vector3());
+
+/* ---------- per-move props ---------- */
+const FX = {};
+if (fx === "ui") { const gm = new THREE.MeshBasicMaterial({ color: "#7a90d0", transparent: true, opacity: .2, depthWrite: false, blending: THREE.AdditiveBlending });
+  FX.ghosts = [0, 1, 2].map(() => { const g = fighter(HS); g.traverse(o => { if (o.isMesh) o.material = gm; }); scene.add(g); return g; }); FX.gm = gm; }
+if (fx === "susanoo") {
+  FX.ribs = new THREE.Group(); scene.add(FX.ribs); const bm = cel({ freq: 4, shape: "fres", th: [.3, .5, .72] });
+  for (let i = 0; i < 6; i++) { const r = new THREE.Mesh(new THREE.TorusGeometry(.95 - i * .06, .07, 6, 30, Math.PI * 1.25), bm); r.position.y = 1.4 + i * .42; r.rotation.set(Math.PI / 2, 0, -Math.PI * .62); FX.ribs.add(r); }
+  const sp = new THREE.Mesh(new THREE.CylinderGeometry(.09, .12, 3.2, 8), bm); sp.position.set(0, 2.4, -.7); FX.ribs.add(sp);
+  const sk = new THREE.Mesh(new THREE.IcosahedronGeometry(.55, 1), bm); sk.position.set(0, 4.3, -.2); FX.ribs.add(sk);
+  const g = fighter({ ...HS, hairN: 0, seed: 7 }); FX.gm = cel({ freq: 1.8, flow: V(0, -1.2, 0), shape: "none", th: [.3, .62, .9] }); g.traverse(o => { if (o.isMesh) o.material = FX.gm; }); scene.add(g); FX.giant = g;
+  FX.armor = new THREE.Group(); scene.add(FX.armor); FX.am = [cel({ freq: 2.2, flow: V(0, -2.4, 0), shape: "rim", th: [.4, .6, .82] }), cel({ freq: 3.4, flow: V(0, -3.2, 0), shape: "rim", th: [.48, .68, .88] })];
+  FX.armor.add(new THREE.Mesh(tear(1.9, 6.4), FX.am[0]), new THREE.Mesh(tear(2.3, 7.2), FX.am[1]));
+  FX.bow = new THREE.Mesh(new THREE.TorusGeometry(2.0, .07, 6, 64, Math.PI * 1.15), cel({ freq: 5, shape: "fres", th: [.28, .48, .7] })); scene.add(FX.bow);
+  FX.arrow = new THREE.Group(); scene.add(FX.arrow); { const s = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, 2.6, 8), boltM); s.rotation.z = -Math.PI / 2; const hd = new THREE.Mesh(new THREE.ConeGeometry(.16, .5, 8), boltM); hd.rotation.z = -Math.PI / 2; hd.position.x = 1.5; FX.arrow.add(s, hd); } }
+if (fx === "purple") {
+  FX.red = new THREE.Mesh(new THREE.IcosahedronGeometry(.2, 3), cel({ freq: 6, flow: V(2, 2, 0), shape: "fres", th: [.25, .5, .74] })); FX.red.material.uniforms.k1.value = C("#ff2a3a"); FX.red.material.uniforms.k2.value = C("#4a0008");
+  FX.blue = new THREE.Mesh(new THREE.IcosahedronGeometry(.2, 3), cel({ freq: 6, flow: V(-2, 2, 0), shape: "fres", th: [.25, .5, .74] })); FX.blue.material.uniforms.k1.value = C("#2a6aff"); FX.blue.material.uniforms.k2.value = C("#000a3a");
+  FX.orb = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 4), cel({ freq: 2.2, flow: V(0, 0, -3), shape: "fres", th: [.2, .45, .72] })); scene.add(FX.red, FX.blue, FX.orb);
+  FX.trench = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: "#050208", transparent: true, depthWrite: false })); FX.trench.rotation.x = -Math.PI / 2; scene.add(FX.trench);
+  FX.swirl = new THREE.Group(); scene.add(FX.swirl); for (let i = 0; i < 3; i++) { const m = new THREE.Mesh(new THREE.TorusGeometry(.42 + i * .12, .018, 4, 48, Math.PI * 1.3), new THREE.MeshBasicMaterial({ color: "#ffffff", toneMapped: false })); FX.swirl.add(m); } }
+if (fx === "army") { FX.army = []; const dark = toon("#07070d"), eye = new THREE.MeshBasicMaterial({ color: "#a8c8ff", toneMapped: false }); reseed(9);
+  for (let i = 0; i < 21; i++) { const g = fighter({ top: "#0a0a12", pants: "#0a0a12", skin: "#0a0a12", hair: "#0a0a12", hairN: 6, seed: 200 + i }); g.traverse(o => { if (o.isMesh) o.material = dark; });
+    for (const x of [.05, -.05]) { const e = new THREE.Mesh(new THREE.SphereGeometry(.03, 8, 6), eye); e.scale.set(1.6, .6, 1); e.position.set(x, .05, .12); g.userData.J.head.add(e); }
+    const wave = Math.floor(i / 7), a = -1.25 + ((i % 7) / 6) * 2.5 + (rnd() - .5) * .2, r = 1.8 + wave * 1.3 + rnd() * .5; g.userData.at = V(-1.25 - Math.cos(a) * r, 0, Math.sin(a) * r); g.userData.w = wave; g.userData.k = rnd(); g.scale.setScalar(.95 + rnd() * .45 + wave * .1); scene.add(g); FX.army.push(g); }
+  FX.pool = new THREE.Mesh(new THREE.CircleGeometry(7, 64), new THREE.MeshBasicMaterial({ color: "#020205", transparent: true, opacity: .92, depthWrite: false })); FX.pool.rotation.x = -Math.PI / 2; FX.pool.position.set(-2.6, .04, 0); scene.add(FX.pool); FX.edge = new THREE.Mesh(new THREE.RingGeometry(.97, 1, 96), new THREE.MeshBasicMaterial({ color: K1, toneMapped: false, transparent: true, depthWrite: false })); FX.edge.rotation.x = -Math.PI / 2; FX.edge.position.set(-2.6, .05, 0); scene.add(FX.edge);
+  FX.smoke = new THREE.Group(); scene.add(FX.smoke); const sm = cel({ freq: 2.4, flow: V(0, -1.8, 0), shape: "rim", th: [.36, .56, .8] }); reseed(41);
+  for (let i = 0; i < 14; i++) { const m = new THREE.Mesh(new THREE.CylinderGeometry(.05, .4, 2.6, 10, 6, true), sm); m.userData = { at: V(-2.6 + (rnd() - .5) * 8, 0, (rnd() - .5) * 7), k: rnd() }; FX.smoke.add(m); }
+  FX.dagger = part(new THREE.BoxGeometry(.03, .03, .4), "#c8d0e0", scene, 0, 0, 0, false); }
+if (fx === "note") {
+  const cv = document.createElement("canvas"); cv.width = 1024; cv.height = 512; FX.cv = cv; FX.ctx = cv.getContext("2d"); FX.tex = new THREE.CanvasTexture(cv);
+  FX.page = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.2), new THREE.MeshBasicMaterial({ map: FX.tex, depthTest: false, color: "#cfc9bc" })); FX.page.renderOrder = 999; scene.add(FX.page);
+  FX.book = new THREE.Group(); part(new THREE.BoxGeometry(.32, .03, .22), "#0a0a0e", FX.book, 0, 0, 0, false); part(new THREE.BoxGeometry(.3, .035, .2), "#f2efe8", FX.book, 0, .002, 0, false); scene.add(FX.book);
+  FX.clock = document.createElement("div"); Object.assign(FX.clock.style, { position: "fixed", left: "50%", top: "50%", transform: "translate(-50%,-50%)", font: "900 220px/1 'Noto Serif CJK JP',serif", color: "#ff2a3a", zIndex: 3, textShadow: "8px 8px 0 #000", display: "none" }); document.body.append(FX.clock); }
+if (fx === "beam") { FX.orb = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 3), cel({ freq: 4, flow: V(0, -3, 0), shape: "fres", th: [.25, .48, .74] })); scene.add(FX.orb); }
+const ENV = [sky, plat, ...rubble, crack];
+
+/* ---------- post: bloom, focus lines, whip blur, photography pass, impact frames ---------- */
+const composer = new EffectComposer(renderer); composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(W / 2, H / 2), .35, .35, .9); composer.addPass(bloom); composer.addPass(new OutputPass());
+const lines = new ShaderPass({ uniforms: { tDiffuse: { value: null }, amt: { value: 0 }, c: { value: new THREE.Vector2(.5, .5) }, asp: { value: W / H }, seed: { value: 0 }, mode: { value: 0 }, col: { value: C("#ffffff") } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float amt,asp,seed,mode; uniform vec2 c; uniform vec3 col; varying vec2 vUv; float h(float n){ return fract(sin(n+seed*13.1)*43758.5453); }
+    void main(){ vec3 o=texture2D(tDiffuse,vUv).rgb; vec2 d=(vUv-c)*vec2(asp,1.); float l=0.;
+      if(mode<.5){ float a=atan(d.y,d.x), r=length(d); float k=floor(a*160./6.2832); float w=fract(a*160./6.2832); l=step(.55,h(k))*smoothstep(.25+h(k+7.)*.35,.9,r)*step(abs(w-.5),.18+h(k+2.)*.2); }
+      else { float k=floor(vUv.y*120.); l=step(.6,h(k))*step(h(k+5.)*.6,fract(vUv.x*.7+h(k+9.)+seed*.37))*step(abs(fract(vUv.y*120.)-.5),.2); }
+      gl_FragColor=vec4(mix(o,col,l*amt),1.); }` }); composer.addPass(lines);
+const photo = new ShaderPass({ uniforms: { tDiffuse: { value: null }, t: { value: 0 }, flash: { value: 0 }, ab: { value: .003 }, whip: { value: 0 }, hold: { value: 0 }, hc: { value: K1 } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float t,flash,ab,whip,hold; uniform vec3 hc; varying vec2 vUv; float h(vec2 p){ return fract(sin(dot(p,vec2(12.98,78.23))+t*7.)*43758.5); }
+    void main(){ vec2 d=vUv-.5; float r=dot(d,d); vec2 o=d*r*ab*8.; vec3 c=vec3(0.);
+      for(int i=0;i<9;i++){ vec2 w=vec2((float(i)-4.)*whip*.012,0.); c+=vec3(texture2D(tDiffuse,vUv+o+w).r,texture2D(tDiffuse,vUv+w).g,texture2D(tDiffuse,vUv-o+w).b); } c/=9.;
+      vec3 blur=(texture2D(tDiffuse,vUv+vec2(.004,0.)).rgb+texture2D(tDiffuse,vUv-vec2(.004,0.)).rgb+texture2D(tDiffuse,vUv+vec2(0.,.006)).rgb+texture2D(tDiffuse,vUv-vec2(0.,.006)).rgb)*.25;
+      c=mix(c,max(c,blur),.3); c*=1.-r*.95; c+=(h(vUv*731.)-.5)*.035;
+      float l=dot(c,vec3(.3,.59,.11)); c=mix(c,mix(vec3(.02),hc,step(.35,l)),hold);   // colour hold: a two-tone frame in the move's colour
+      c=mix(c,vec3(1.),flash); gl_FragColor=vec4(c,1.); }` }); composer.addPass(photo);
+const SIL = new THREE.MeshBasicMaterial({ color: "#000000" }), PAPER = new THREE.Color("#ffffff");
+const inkP = new ShaderPass({ uniforms: { tDiffuse: { value: null }, c: { value: new THREE.Vector2(.55, .52) }, asp: { value: W / H }, mode: { value: 0 } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+  fragmentShader: `uniform sampler2D tDiffuse; uniform vec2 c; uniform float asp,mode; varying vec2 vUv; float h(float n){ return fract(sin(n)*43758.5453); }
+    void main(){ vec3 col=texture2D(tDiffuse,vUv).rgb; float l=dot(col,vec3(.299,.587,.114)); vec2 d=(vUv-c)*vec2(asp,1.); float a=atan(d.y,d.x), r=length(d);
+      float k=floor(a*110./6.2832); float line=step(.5,h(k))*smoothstep(.12+h(k+3.)*.3,.7,r);
+      float ink=step(.5,l); vec3 paper=vec3(.97,.95,.9), black=vec3(.05,.03,.06); vec3 o=mix(black,paper,ink); o=mix(o,black,line*ink*step(.2,r)); if(mode>1.5) o=vec3(1.)-o; gl_FragColor=vec4(o,1.); }` });
+inkP.enabled = false; composer.addPass(inkP);
+
+/* ---------- shots: [start, from, to, lookFrom, lookTo, fov, flags] flags: h = frame on hero head, dz = dolly zoom, w = whip in ---------- */
+const big = fx === "susanoo" || fx === "army";
+const SH = [
+  { t: 0, a: V(.2, .55, 7.2), b: V(.4, .6, 6.2), la: V(0, 1.0, 0), lb: V(0, 1.0, 0), fov: 30 },                                  // establishing, low and wide
+  { t: 3.3, a: V(.75, .02, 1.15), b: V(.62, .05, .95), la: V(0, .02, 0), lb: V(0, .03, 0), fov: 24, h: 1 },                      // the hero's line, close
+  { t: 5.1, a: V(-1.25, .6, 3.0), b: V(-1.25, .5, big ? 9.5 : 6.8), la: V(-1.25, big ? 1.6 : 1.2, 0), lb: V(-1.25, big ? 2.6 : 1.4, 0), fov: 0, dz: big ? 5.2 : 2.6, w: 1 },   // transformation: dolly zoom
+  { t: 7.2, a: big ? V(4.0, 1.4, 8.2) : V(1.2, .45, 4.0), b: big ? V(3.4, 1.6, 7.6) : V(.8, .5, 3.6), la: V(-1.0, big ? 2.4 : 1.1, 0), lb: V(-.8, big ? 2.6 : 1.15, 0), fov: big ? 44 : 34, w: 1 },   // the build, opponent reacts
+  { t: HOLD, a: V(.7, 1.05, 1.5), b: V(.66, 1.05, 1.42), la: V(-1.25, 1.3, 0), lb: V(-1.25, 1.32, 0), fov: 30 },                  // the hold: stillness
+  { t: HIT + .14, a: V(0, 2.6, 12.5), b: V(.4, 3.2, 15.0), la: V(1.5, 1.2, -1), lb: V(2.4, 1.6, -1), fov: 42, w: 1 },          // aftermath, wide
+  { t: 13.0, a: V(.4, .05, 1.35), b: V(.32, .08, 1.15), la: V(0, 0, 0), lb: V(0, .02, 0), fov: 26, h: 1 },                       // calm close
+];
+if (fx === "susanoo") Object.assign(SH[4], { a: V(.9, .5, 2.6), b: V(.88, .5, 2.5), la: V(-1.3, 2.2, -.4), lb: V(-1.3, 2.25, -.4), fov: 50 });
+if (fx === "purple") { Object.assign(SH[4], { a: V(-.2, 1.45, 1.1), b: V(-.22, 1.45, 1.0), la: V(-.75, 1.3, 0), lb: V(-.75, 1.3, 0), fov: 30 }); Object.assign(SH[5], { a: V(-3.6, 2.0, 2.6), b: V(-4.4, 2.6, 3.4), la: V(5, 1.0, 0), lb: V(8, 1.2, 0), fov: 46 }); }
+if (fx === "army") Object.assign(SH[5], { a: V(3.2, 2.4, 9.0), b: V(3.8, 2.9, 10.2), la: V(-2.6, .9, 0), lb: V(-2.4, 1.0, 0), fov: 46 });
+if (fx === "note") { Object.assign(SH[2], { a: V(-1.05, 1.35, .55), b: V(-1.08, 1.25, .45), la: V(-1.08, 1.0, .1), lb: V(-1.08, .98, .1), fov: 30, dz: 0 }); Object.assign(SH[5], { a: V(2.9, 1.1, 3.6), b: V(2.6, .9, 3.1), la: V(.6, .6, 0), lb: V(.8, .4, 0), fov: 40 }); }
+
+function renderAt(T) {
+  // the hit: hold 1 frame, ink, ink, invert, colour hold, white; time stops for the hit-stop
+  let t = T; const hs = T > HIT && T < HIT + .21; if (hs) t = HIT; if (T >= HIT + .21) t = T - .21;
+  const ts = step(t), f = Math.round((T - HIT) * 24); uT.value = t; uS.value = step(t);
+  const on = seg(T, 5.2, 5.9);   // the transformation switch
+  clearBolts();
+  hero.position.set(-1.25, 0, 0); hero.rotation.set(0, Math.PI / 2, 0); foe.position.set(1.3, 0, 0); foe.rotation.set(0, -Math.PI / 2, 0); foe.visible = true;
+  // ---- hero acting: tired or poised, eyes close, the switch, the build, a frozen hold, the release
+  const charge = { susanoo: POSE.charge, purple: POSE.purple, army: POSE.ready, note: POSE.seal, beam: { ...POSE.charge, sh1: [-.3, 0, 1.4], "sh-1": [-.3, 0, -1.4], el1: [-.2, 0, 0], "el-1": [-.2, 0, 0] }, ui: POSE.idle }[fx];
+  const fire = { susanoo: POSE.follow, purple: POSE.purple, army: POSE.strike, note: POSE.grin, beam: { ...POSE.strike, spine: [.2, 0, 0], sh1: [-1.55, -.1, .12], el1: [0, 0, 0], "sh-1": [-1.55, .1, -.12], "el-1": [0, 0, 0] }, ui: POSE.strike }[fx];
+  const start = fx === "ui" ? POSE.crouch : POSE.ready;
+  if (ts < 5.1) blend(hero, start, fx === "ui" ? POSE.crouch : POSE.idle, ease.io(seg(ts, 3.4, 5.0)));
+  else if (ts < 7.2) blend(hero, fx === "ui" ? POSE.crouch : POSE.idle, fx === "note" ? POSE.seal : POSE.charge, ease.back(seg(ts, 5.2, 5.8)));
+  else if (ts < HOLD) blend(hero, fx === "note" ? POSE.seal : POSE.charge, charge, ease.out(seg(ts, 7.2, 7.8)));
+  else if (T < HIT) blend(hero, charge, charge, 0);
+  else if (ts < 13) blend(hero, charge, fire, ease.out(seg(t, HIT, HIT + .08)));
+  else { blend(hero, fire, POSE.idle, ease.out(seg(ts, 13, 13.6))); hero.rotation.y = Math.PI / 2 - ease.out(seg(ts, 13, 13.5)) * .9; }
+  if (fx === "note" && ts > 7.2 && T < HIT) hero.userData.J["el-1"].rotation.z += Math.sin(ts * 30) * .09;
+  if (fx === "army" && T > HIT - .25 && T < 13) hero.position.x = -1.25 + ease.out(seg(t, HIT - .25, HIT)) * 1.6;
+  if (fx === "army" && ts >= 13) hero.position.x = .35;
+  if (fx === "ui") { if (ts >= 7.2 && T < HOLD) { const k = Math.floor((ts - 7.2) * 5) % 3; blend(hero, [POSE.dodge, { ...POSE.dodge, spine: [.1, -.2, .55], head: [0, 0, .3] }, { ...POSE.idle, spine: [-.35, 0, 0] }][k], POSE.idle, 0); hero.position.z = [0, .35, -.3][k]; }
+    if (T > HIT - .3 && ts < 13) hero.position.x = -1.25 + ease.out(seg(t, HIT - .3, HIT)) * 1.1; if (ts >= 13) hero.position.x = -.4; }
+  hero.userData.J.hip.position.y += Math.sin(ts * 5) * .008;
+  setMap(hero, ts < 3.3 ? faceBase : ts < 5.25 ? (ts > 4.6 ? faceClosed : faceBase) : faceAlt);
+  if (hair1) hairM.forEach(m => (m.material = ts >= 5.4 ? hair1 : hair0));
+  // ---- opponent acting: taunts, sees it, braces, eats it, and reacts in character
+  setMap(foe, T > HIT && T < 13 ? foeHit : ts > 7.4 && T < HIT ? foeShock : foeBase);
+  if (ts < 7.2) blend(foe, fx === "purple" ? POSE.grin : POSE.guard, POSE.guard, 0);
+  else if (T < HIT) { if (fx === "ui") { const k = Math.floor((ts - 7.2) * 10) % 2; blend(foe, k ? POSE.strike : { ...POSE.strike, spine: [.45, -.35, 0] }, POSE.idle, 0); foe.position.x = .4; }
+    else blend(foe, POSE.guard, fx === "note" ? POSE.idle : POSE.brace, ease.out(seg(ts, 7.3, 7.7))); }
+  else if (fx === "note" || fx === "army") { blend(foe, POSE.brace, POSE.down, ease.in(seg(t, HIT, fx === "note" ? 12.2 : 11.0)));   // note: the slow-motion fall
+    if (fx === "army" && ts >= 13) blend(foe, POSE.down, POSE.crouch, ease.out(seg(ts, 13, 13.6))); }
+  else { const u = seg(t, HIT, 12.4); blend(foe, POSE.hit, POSE.fly, ease.out(Math.min(1, u * 4))); foe.position.x = 1.3 + ease.out(u) * 11; foe.position.y = Math.sin(u * Math.PI) * 2.6; foe.rotation.z = -u * 2.4; if (ts >= 12.4) foe.visible = false; }
+  hero.updateMatrixWorld(true); foe.updateMatrixWorld(true);
+  // ---- aura: drawn flames that flare on the switch and on the hit
+  const flare = (T > 5.2 && T < 6.4 ? 1 - seg(T, 5.4, 6.4) : 0) + (T > HIT && T < HIT + 1 ? 1 - seg(T, HIT, HIT + 1) : 0);
+  aura.visible = on > 0 && fx !== "note"; aura.position.set(hero.position.x, 0, hero.position.z); aura.scale.set((fx === "ui" || fx === "beam" ? 1 : .85) * (.85 + on * .2 + flare * .5), (.6 + on * .45) * (1 + flare * .3), .85 + on * .2 + flare * .5);
+  const calm = fx === "ui" || fx === "beam" ? 1 : (T > 6.6 && T < HIT ? .72 : 1); auraM.forEach(m => (m.uniforms.amt.value = on * (1 + flare * .4) * calm * (T > HOLD && T < HIT ? .8 : 1)));
+  spikes.children.forEach((m, i) => { const d = m.userData, life = ((uS.value * (1 + d.k) + d.k * 3) % 1); m.position.set(Math.cos(d.a) * d.r, d.y + life * 1.2, Math.sin(d.a) * d.r); m.scale.set(1, 1.4 - life, 1); m.rotation.set(Math.sin(d.a) * .25, 0, -Math.cos(d.a) * .25); m.material.uniforms.amt.value = on * (1.1 - life); });
+  glowL.position.set(hero.position.x + .3, 1.3, .6); glowL.intensity = on * 2 + flare * 6;
+  // ---- the arena reacts: platform shudders, rubble lifts with power
+  const quake = Math.max(T > 5.2 && T < 6.6 ? 1 - seg(T, 5.2, 6.6) : 0, T > HIT && T < 12.6 ? 1 - seg(T, HIT, 12.6) : 0) * (fx === "note" ? .25 : 1);
+  plat.children.forEach(s => { s.position.copy(s.userData.base); s.visible = true; s.position.y += on * s.userData.k * .25 + Math.sin(T * 24 + s.userData.k * 9) * .035 * quake; });
+  rubble.forEach(m => { m.position.copy(m.userData.base); m.position.y += on * (1 + m.userData.k * 2.4) * (fx === "note" ? .2 : 1) + Math.sin(T * (1 + m.userData.k) + m.userData.k * 9) * .2; m.rotation.set(T * m.userData.k, T * .7, 0); });
+  sky.material.uniforms.k.value = T > HOLD && T < HIT ? .8 : 0;   // the world dims in the held breath
+  // ---- shared hit FX: rings, cel dust wall, debris with trails, ground crack
+  const P0 = fx === "note" ? V(1.3, .2, 0) : V(.6, .05, 0); const ru = seg(T, 5.25, 6.4);
+  rings.forEach((m, i) => { const u = seg(T, 5.25 + i * .1, 6.3 + i * .12), u2 = seg(T, HIT + .2 + i * .07, HIT + 1.2 + i * .1), a = u > 0 && u < 1; m.visible = (a || (u2 > 0 && u2 < 1)) && fx !== "note";
+    m.position.set(a ? hero.position.x : P0.x, a ? .06 : 1.1, 0); m.rotation.set(a ? -Math.PI / 2 : 0, a ? 0 : Math.PI / 2, 0); m.scale.setScalar(.4 + ease.out(a ? u : u2) * (a ? 6 : 15)); m.material.opacity = 1 - (a ? u : u2); });
+  const du = seg(t, HIT, HIT + 2.2); dust.visible = du > 0 && du < 1 && fx !== "note";
+  dust.children.forEach((m, i) => { const d = m.userData, r = .5 + ease.out(du) * (4 + d.k * 2); m.position.set(P0.x + Math.cos(d.a) * r, .2 + d.k * .4 + du * .5, Math.sin(d.a) * r); const sc = (.6 + d.k * .7) * (1 + du * 1.8); m.scale.set(sc * 1.3, sc * .75, sc * 1.3); });
+  dustM.uniforms.amt.value = 1.1 * (1 - du * .9);
+  const pos = trailG.attributes.position.array, dd = Math.max(0, t - HIT);
+  debris.forEach((m, i) => { const d = m.userData, v = d.v; m.visible = dd > 0 && dd < 2.4 && fx !== "note"; const p = V(P0.x + v.x * dd, Math.max(-.2, .2 + v.y * dd - 4.9 * dd * dd), v.z * dd); m.position.copy(p); m.rotation.set(dd * 9 * d.k, dd * 7, 0);
+    const q = p.clone().sub(V(v.x, v.y - 9.8 * dd, v.z).multiplyScalar(.05)); pos.set([p.x, p.y, p.z, q.x, q.y, q.z], i * 6); });
+  trailG.attributes.position.needsUpdate = true; trails.visible = dd > 0 && dd < 1.4 && fx !== "note";
+  crack.visible = T > HIT && fx !== "note"; crack.position.set(P0.x - .4, .045, 0); crack.scale.setScalar(.3 + ease.out(seg(t, HIT, HIT + .5)) * 1.1);
+  beam.visible = false; smear.visible = false; bolts.visible = true;
+  // ---- the signature move
+  if (fx === "ui") { const ghostOn = ts >= 7.2 && T < HOLD; FX.ghosts.forEach((g, i) => { g.visible = ghostOn; if (!ghostOn) return; const k = (Math.floor((ts - 7.2) * 5) - 1 - i + 9) % 3; blend(g, [POSE.dodge, POSE.dodge, POSE.idle][k], POSE.idle, 0); g.position.set(-1.25, 0, [0, .35, -.3][k]); g.rotation.y = Math.PI / 2; }); FX.gm.opacity = .16;
+    if (T > HIT && T < HIT + .5) { const hp = hw(hero, "hd-1"); smear.visible = true; smear.position.copy(hp).add(V(-.5, 0, 0)); smear.scale.set(1.1, .12, 1); smear.lookAt(camera.position); smear.material.opacity = .9 * (1 - seg(T, HIT, HIT + .5)); } }
+  if (fx === "susanoo") { const g = FX.giant, rb = seg(T, 5.2, 5.9), bd = ease.back(seg(T, 5.9, 6.7)), ar = seg(T, 6.6, 7.2);
+    FX.ribs.visible = rb > 0 && T < 13.5; FX.ribs.position.set(-1.7, 0, -.4); FX.ribs.children.forEach((m, i) => { m.visible = i < Math.ceil(rb * FX.ribs.children.length); });   // bones first, rib by rib
+    g.visible = bd > 0 && T < 13.5; g.position.set(-1.7, 0, -.6); g.rotation.y = Math.PI / 2; g.scale.set(3.3 * Math.min(1, bd * 1.1), 3.3 * bd, 3.3 * Math.min(1, bd * 1.1));
+    blend(g, POSE.charge, T < HIT ? POSE.purple : POSE.follow, T < HIT ? ease.out(seg(ts, 7.2, 7.8)) : 1); FX.gm.uniforms.amt.value = 1;
+    FX.armor.visible = ar > 0 && T < 13.5; FX.armor.position.set(-1.7, 0, -.6); FX.am.forEach(m => (m.uniforms.amt.value = ar * (1 + (T > HIT && T < HIT + 1 ? .4 : 0))));
+    FX.bow.visible = T > 7.4 && T < 13.5; FX.bow.position.set(-.1, 3.0, -.6); FX.bow.rotation.set(0, Math.PI / 2, -Math.PI * .57); FX.bow.scale.setScalar(Math.min(1, seg(T, 7.4, 8.0) * 1.15));
+    const draw = ease.io(seg(T, 8.0, HOLD)); FX.arrow.visible = T > 7.8 && T < HIT; FX.arrow.position.set(.1 - draw * .6, 3.0, -.55); FX.arrow.rotation.set(0, 0, -.17);
+    if (T > 7.8 && T < HIT) for (let i = 0; i < 3; i++) bolt(V(-.3 - draw * .6, 3.0, -.5), V(1.4, 2.75, -.5 + (i - 1) * .3), Math.floor(uS.value * 12) * 7 + i, .01);
+    if (T > HIT) { const d = V(12, -2.2, .5).normalize(); beam.visible = true; beam.position.set(.2, 3.0, -.5); beam.quaternion.setFromUnitVectors(V(1, 0, 0), d); const L = 44 * ease.out(seg(T, HIT, HIT + .35)), r = .32 * (1 - seg(T, 11.8, 12.6)); beam.scale.set(L, r, r); beam.visible = r > .002;
+      if (T < 12) for (let i = 0; i < 4; i++) bolt(V(.2, 3.0, -.5), V(.2, 3.0, -.5).add(d.clone().multiplyScalar(4 + i * 2.5)).add(V(0, (i % 2 - .5) * .8, .3)), Math.floor(uS.value * 12) * 5 + i, .014); } }
+  if (fx === "purple") { const hr = hw(hero, "hd1"), hl = hw(hero, "hd-1"), mid = hr.clone().lerp(hl, .5).add(V(.4, .08, 0));
+    const sep = 1 - ease.in(seg(T, 8.2, 9.2)), orbit = (T - 7.2) * 9;           // red and blue circle each other, then collide
+    const pr = mid.clone().add(V(0, Math.sin(orbit) * .35 * sep, Math.cos(orbit) * .35 * sep)), pb = mid.clone().add(V(0, -Math.sin(orbit) * .35 * sep, -Math.cos(orbit) * .35 * sep));
+    const grow = seg(T, 5.3, 6.0), toMid = ease.io(seg(T, 6.6, 7.4));
+    FX.red.visible = FX.blue.visible = T > 5.3 && T < 9.2; FX.red.position.copy(hr).lerp(pr, toMid); FX.blue.position.copy(hl).lerp(pb, toMid); FX.red.scale.setScalar(grow * 1.2); FX.blue.scale.setScalar(grow * 1.2);
+    FX.swirl.visible = T > 5.3 && T < 9.2; FX.swirl.position.copy(FX.blue.position); FX.swirl.lookAt(camera.position); FX.swirl.children.forEach((m, i) => { m.rotation.z = -uS.value * (6 + i * 3); m.scale.setScalar(grow * (1.2 - (uS.value * 2 + i * .3) % 1 * .6)); });
+    if (T > 7.4 && T < 9.2) bolt(FX.red.position, FX.blue.position, Math.floor(uS.value * 12), .012);
+    const o = FX.orb, launch = ease.in(seg(t, HIT, 12.6)); o.visible = T >= 9.2 && T < 12.9; o.position.copy(mid).add(V(launch * 28, 0, 0)); o.scale.setScalar(T < HIT ? .12 + Math.sin(T * 40) * .006 : .25 + launch * 2.8);   // a marble in the hold, then a planet
+    if (T > HIT) { beam.visible = true; beam.position.copy(mid); beam.quaternion.identity(); beam.scale.set(launch * 28, .2 + launch * 2.4, .2 + launch * 2.4); beam.visible = T < 12.9;
+      FX.trench.visible = true; const tl = launch * 28; FX.trench.position.set(mid.x + tl / 2, .06, 0); FX.trench.scale.set(tl, .5 + launch * 3.2, 1);
+      plat.children.forEach(s => { if (Math.abs(s.position.z) < launch * 2.8 + .5 && s.position.x > mid.x && s.position.x < o.position.x) s.visible = false; }); } else FX.trench.visible = false; }
+  if (fx === "army") { const pu = ease.out(seg(T, 5.2, 6.4)); FX.pool.visible = FX.edge.visible = pu > 0; FX.pool.scale.setScalar(pu * (T > 10.6 ? 1.3 : 1)); FX.edge.scale.setScalar(7 * pu * (T > 10.6 ? 1.3 : 1));
+    FX.smoke.children.forEach(m => { const d = m.userData, u = (uS.value * .6 + d.k) % 1; m.visible = pu > .3; m.position.copy(d.at).add(V(0, .8 + u * 1.2, 0)); m.scale.set(1, .5 + u, 1); m.material.uniforms.amt.value = (T > 10.6 ? 1.2 : .8) * (1 - u * .6) * pu; });
+    FX.army.forEach((g, i) => { const w0 = 10.7 + g.userData.w * .55 + g.userData.k * .25, u = ease.back(seg(T, w0, w0 + .5)); g.visible = u > 0; g.position.copy(g.userData.at); g.position.y = -2.0 * (1 - u); g.rotation.y = Math.PI / 2 + (g.userData.k - .5) * .5; blend(g, POSE.crouch, i % 3 ? POSE.idle : POSE.ready, u); });
+    FX.dagger.visible = ts >= 7.2 && ts < 13; const hp = hw(hero, "hd1"); FX.dagger.position.copy(hp); FX.dagger.lookAt(foe.position.clone().setY(hp.y));
+    if (T > HIT && T < HIT + .45) { smear.visible = true; smear.position.copy(hp).add(V(-.35, 0, 0)); smear.scale.set(1.6, .5, 1); smear.rotation.set(0, 0, -.6); smear.lookAt(camera.position); smear.material.opacity = .9 * (1 - seg(T, HIT, HIT + .45)); }
+    if (ts >= 13) foe.traverse(o => { if (o.isMesh && !o.userData.sh) { o.userData.sh = 1; o.material = FX.army[0].userData.J.spine.children[0]?.material || o.material; } }); }
+  if (fx === "note") { const hl = hw(hero, "hd-1"); FX.book.visible = T > 5.1 && T < 13; FX.book.position.copy(hl).add(V(.12, -.02, 0)); FX.book.rotation.set(0, 0, .3);
+    const cx = FX.ctx, name = "L Lawliet", cause = "Cause of death: heart attack", n = Math.floor(seg(T, 5.4, 6.9) * name.length), n2 = Math.floor(seg(T, 7.4, 9.0) * cause.length);
+    cx.fillStyle = "#f2efe4"; cx.fillRect(0, 0, 1024, 512); cx.strokeStyle = "#c8c0b0"; cx.lineWidth = 2; for (let y = 80; y < 512; y += 64) { cx.beginPath(); cx.moveTo(40, y); cx.lineTo(984, y); cx.stroke(); }
+    cx.fillStyle = "#14100c"; cx.font = "italic 700 120px Georgia,serif"; cx.fillText(name.slice(0, n), 90, 250); cx.font = "italic 600 48px Georgia,serif"; cx.fillText(cause.slice(0, n2), 94, 380); FX.tex.needsUpdate = true;
+    FX.page.visible = T > 5.1 && T < 7.2;
+    const sec = Math.max(0, 40 - Math.floor(seg(T, 9.3, HIT) * 40)); FX.clock.style.display = T > HOLD && T < HIT ? "" : "none"; FX.clock.textContent = sec + "秒"; }
+  if (fx === "beam") { const hr = hw(hero, "hd1"), hl = hw(hero, "hd-1"), mid = hr.clone().lerp(hl, .5).add(V(.18, 0, 0));
+    if (T > 5.3 && T < 6.8) for (let i = 0; i < 4; i++) bolt(V(hero.position.x, .3 + i * .45, 0).add(V(Math.sin(i * 7) * .5, 0, Math.cos(i * 5) * .5)), V(hero.position.x + Math.sin(i * 3) * .9, 1.0 + i * .5, Math.cos(i * 9) * .8), Math.floor(uS.value * 12) * 3 + i, .01);
+    FX.orb.visible = T > 8.0 && T < HIT + .1; FX.orb.position.copy(T > 8.6 ? mid : hr); FX.orb.scale.setScalar(.08 + seg(T, 8.0, HOLD) * .28 + (T > HOLD ? Math.sin(T * 50) * .01 : 0));
+    if (T > 8.4 && T < HIT) for (let i = 0; i < 3; i++) bolt(FX.orb.position, FX.orb.position.clone().add(V(Math.sin(i * 4 + uS.value * 9) * .7, Math.cos(i * 3 + uS.value * 7) * .6, .3)), Math.floor(uS.value * 12) * 11 + i, .008);
+    if (T > HIT) { const L = 48 * ease.out(seg(T, HIT, HIT + .3)), r = (.45 + .6 * seg(T, HIT, 11.0)) * (1 - seg(T, 12.2, 12.8)); beam.visible = r > .002; beam.position.copy(mid); beam.quaternion.identity(); beam.scale.set(L, r, r);
+      if (T < 12.2) for (let i = 0; i < 5; i++) bolt(mid.clone().add(V(1 + i * 2, 0, 0)), mid.clone().add(V(2.4 + i * 2, (i % 2 - .5) * 1.6 * r, .5 * r)), Math.floor(uS.value * 12) * 13 + i, .012); } }
+  // ---- camera
+  let s = SH[0]; for (const x of SH) if (T >= x.t) s = x; const si = SH.indexOf(s), sEnd = SH[si + 1]?.t ?? END, u = ease.io(seg(T, s.t, sEnd));
+  camera.position.lerpVectors(s.a, s.b, u); const look = new THREE.Vector3().lerpVectors(s.la, s.lb, u); let fov = s.fov;
+  if (s.h) { const hp = hw(hero, "head"); camera.position.add(hp); look.add(hp); }
+  if (s.dz) { const d0 = s.a.distanceTo(s.la), d = camera.position.distanceTo(look); fov = 2 * Math.atan(s.dz * .5 / d) * 180 / Math.PI * (d0 / d) ** 0 ; fov = 2 * Math.atan((s.dz * .5) / d) * 180 / Math.PI; }   // subject stays put, the world stretches
+  reseed(Math.floor(T * 24) + 3); camera.position.add(V((rnd() - .5) * .2 * quake, (rnd() - .5) * .16 * quake, 0));
+  camera.fov = fov; camera.aspect = W / H; camera.updateProjectionMatrix(); camera.lookAt(look); camera.updateMatrixWorld();
+  { const near = 1 - seg(camera.position.distanceTo(hero.position.clone().setY(1)), 1.6, 3.2);  auraM.forEach(m => (m.uniforms.amt.value *= 1 - near * .55)); }
+  if (fx === "note" && FX.page.visible) { FX.page.position.copy(camera.position).add(camera.getWorldDirection(V(0, 0, 0)).multiplyScalar(.5)); FX.page.quaternion.copy(camera.quaternion); const hh = 2 * Math.tan(camera.fov * Math.PI / 360) * .5; FX.page.scale.setScalar(hh * camera.aspect / 2.4 * 1.04); FX.page.rotateZ(-.06); }
+  // ---- post
+  const inkOn = hs && f >= 1 && f <= 3, holdOn = hs && f === 4; inkP.enabled = inkOn; inkP.uniforms.mode.value = f === 3 ? 2 : 0;
+  ENV.forEach(o => (o.visible = o.visible && !inkOn)); aura.visible = aura.visible && !inkOn; beam.visible = beam.visible && !inkOn; bolts.visible = !inkOn; dust.visible = dust.visible && !inkOn; trails.visible = trails.visible && !inkOn;
+  scene.overrideMaterial = inkOn ? SIL : null; scene.background = inkOn ? PAPER : null;
+  if (inkOn) { const p = (fx === "note" ? foe.position.clone().setY(1.2) : V(.6, 1.15, 0)).project(camera); inkP.uniforms.c.value.set((p.x + 1) / 2, (p.y + 1) / 2); }
+  photo.uniforms.hold.value = holdOn ? 1 : 0; photo.uniforms.flash.value = hs && f === 5 ? .85 : 0; photo.uniforms.t.value = T; photo.uniforms.ab.value = .003 + quake * .012;
+  const wIn = SH.find(x => x.w && T >= x.t - .08 && T < x.t + .12); photo.uniforms.whip.value = wIn ? 1 - Math.abs(T - wIn.t) / .12 : 0;   // whip blur across the cut
+  const linesOn = (T > 7.2 && T < HOLD) || (T > HIT && T < HIT + .9) || (fx === "ui" && T > 5.3 && T < 6.2); lines.uniforms.amt.value = linesOn && !inkOn ? (T > HIT ? 1 - seg(T, HIT, HIT + .9) : .55) : 0;
+  lines.uniforms.mode.value = fx === "beam" && T > HIT ? 1 : 0; lines.uniforms.seed.value = Math.floor(T * 12); { const p = hw(hero, "spine").project(camera); lines.uniforms.c.value.set((p.x + 1) / 2, (p.y + 1) / 2); }
+  bloom.strength = .32 + on * .1 + (T > HIT && T < HIT + 1 ? .6 * (1 - seg(T, HIT, HIT + 1)) : 0); bloom.enabled = !inkOn;
+  const sb = SUBT.findIndex(([a, b]) => T >= a && T < b), sx = CFG.subs[sb]; subEl.innerHTML = sb >= 0 && !inkOn ? `<i>${sx[0]}</i>${sx[1]}` : "";
+  const k = KAN.find(([a, b]) => T >= a && T < b); kanEl.style.display = k && !inkOn ? "" : "none";
+  if (k) { const uu = (T - k[0]) / (k[1] - k[0]); kanEl.innerHTML = `${k[2]}<small>${k[3]}</small>`; kanEl.style.fontSize = k[2].length > 6 ? "60px" : ""; kanEl.style.opacity = uu > .88 ? (1 - uu) / .12 : 1; kanEl.style.transform = `scale(${1 + Math.max(0, .12 - uu) * 2})`; }
+  composer.render();
+}
+window.renderAt = renderAt; window.END = END;
+if (Q.has("t")) { renderAt(+Q.get("t")); document.title = "ready"; }
+else { const t0 = performance.now(); (function loop() { renderAt(((performance.now() - t0) / 1000) % END); requestAnimationFrame(loop); })(); }
+</script></body></html>

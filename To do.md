@@ -17,6 +17,8 @@ Covers [[SecurityAI]], [[Basis]], [[Jarvis]] and [[Sites by TJ]]. Done items mov
 - [ ] Tell Jarvis about how much J Street pays you a year, so the tax estimate counts your bracket right.
 - [ ] Read and say what to change: [[Backend proficiency checklist]], [[J Street pilot pitch]], and the 35-day line in [[Gym service agreement]].
 
+- [ ] Tell Jarvis your computer's specs so he picks the cloud or local brain path ([[Jarvis]] spec): Windows Settings > System > About (processor, RAM) and Task Manager > Performance > GPU (graphics card and its memory). A photo of both screens works.
+
 ## Tuesday 2026-10-27 (payday)
 - [ ] Follow the Launch List page (https://claude.ai/artifact/PZd4rfN2GPZuA7SNVHVNqk), Tuesday band, top to bottom; the same list is in money/agency/README.md "Tuesday checklist" (updated 2026-10-25): business card (Privacy.com, Render card $35), Anthropic workspace limit $20 with auto-reload off, outreach domain + Workspace, DNS + Postmaster, PO box, resume all four agency services on Render (agency-db first; they exist, no new Blueprint), agency-api settings (MAILING_ADDRESS, OPERATOR_EMAIL), new dashboard password, OPERATOR_TOKEN in Project settings, Workspace app password, warm-up date, then the 10 Front Desk test calls. Jarvis does every step after the keys are in.
 - [ ] After the test calls, five Front Desk calls only you can make (all built, all off): Spanish yes or no, buy the demo number, Google calendar OAuth app or wait for Jobber, Twilio 10DLC, and OK the owner page mockup (/mnt/project-files/front-desk-pro/owner-light-dark.jpg). See money/agency/PRO-PASS.md.

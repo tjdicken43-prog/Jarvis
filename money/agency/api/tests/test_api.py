@@ -76,7 +76,7 @@ assert api.post("/outreach/draft", json={}, headers=H).json()["created"] == []  
 items = {i["prospect"]["id"]: i for i in api.get("/queue", headers=H).json()["items"]}
 a, e = items["overture/a"], items["overture/e"]
 assert "https://ozark-pipe.preview.example.test" in a["email"]["body"] and "tap-to-call" in a["email"]["body"], a
-assert "burst pipe" in a["email"]["body"] and "isn't loading" in e["email"]["subject"], (a, e)
+assert "burst pipe" in a["email"]["body"] and "after hours" in e["email"]["body"] and "didn't load" in e["email"]["body"], (a, e)
 for i in (a, e):
     assert len(i["email"]["body"].split()) <= outreach.MAX_WORDS, i
     assert "unsub_token" not in i["email"] and "https://api.example.test/u/" in i["footer"], i

@@ -49,3 +49,8 @@ Websites for local shops in Bentonville and NWA. Started 2026-10-22. See [[Decis
 
 ## Clients
 None yet.
+
+## Cold email: after-hours assistant leads (TJ, 2026-10-31)
+- First email now sells the after-hours AI assistant (Front Desk); the website is the supporting extra. Emails only (TCPA). Prices unchanged and not named in cold email. Code: money/agency/api/outreach.py (`template_draft`, SYSTEM prompt) and followups.py.
+- Technique: one trade-specific stake (burst pipe, dead AC, leaking roof) in their town, their business name, one real thing seen on their site, a sample call as the proof, one low-effort question ("worth two minutes to listen?"). No claims we can't back (no 24/7, no reviews, no guarantees).
+- Honest reply-rate estimate (industry benchmarks, not our data): about 3-6% replies, 1-2% interested, on 5/day to well-matched shops. Real numbers after the first 50 sends (check).

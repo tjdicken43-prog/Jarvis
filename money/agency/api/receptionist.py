@@ -42,6 +42,19 @@ SAFETY = {
                "sagging ceiling. Never tell anyone to get on a roof.",
 }
 
+# Roofers get insurance-claim and storm calls. The assistant takes the facts and stops there: no coverage opinions,
+# no deductible talk, no promises about the insurer. A roofer who waives a deductible or acts as the adjuster is
+# breaking the law in many states (check Arkansas with the owner before go-live).
+ROOF_RULES = ("Callers may mention a storm or an insurance claim. Write down only what they say (date of the storm, "
+              "claim filed or not, insurance company if they offer it). Never say what insurance will cover, never "
+              "talk about deductibles or offer to waive one, and never promise the company will deal with the "
+              "adjuster. Say the team will talk it through when they call back. Don't ask for a claim number or "
+              "policy details.")
+
+
+def trade_rules(c):
+    return f"\n- {ROOF_RULES}" if c["trade"] == "roofing" else ""
+
 
 def transfer_on(c):
     return bool(digits(c.get("owner_cell"))) and shopcfg.merged(c)["transfer"] != "never"
@@ -147,7 +160,7 @@ Rules:
 - Never book a time slot. You take messages only."""
     money = "" if p["fees"] else "\n- Never quote prices or say any amount of money."
     return head + "\n" + job + money + f"""
-- {SAFETY[c["trade"]]}{transfer_rule(c)}
+- {SAFETY[c["trade"]]}{trade_rules(c)}{transfer_rule(c)}
 - If you are not sure what they said, ask them to say it again. If you don't know an answer, say you will pass the
   question on. Never guess a name, number or address.
 - If the caller is selling something or it's a robocall, thank them and end the call.{language_rule(c)}

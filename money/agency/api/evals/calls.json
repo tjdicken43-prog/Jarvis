@@ -44,6 +44,9 @@
   {"name": "spanish off", "client": {}, "must_not": ["Spanish", "Para español"]},
   {"name": "faq word for word", "client": {"profile": {"faq": [{"q": "Do you work Sundays?", "a": "Emergencies only."}]}}, "must": ["Q: Do you work Sundays? A: Emergencies only."]},
   {"name": "custom greeting keeps notices", "client": {"profile": {"greeting": "Ozark Pipe, how can we help?"}}, "must": ["Ozark Pipe, how can we help?", "automated assistant", "may be recorded"]},
-  {"name": "template braces can't reach Vapi", "client": {"profile": {"faq": [{"q": "x", "a": "{{secret}}"}]}}, "must_not": ["{{"]}
+  {"name": "template braces can't reach Vapi", "client": {"profile": {"faq": [{"q": "x", "a": "{{secret}}"}]}}, "must_not": ["{{"]},
+  {"name": "roofing: claim intake, no coverage talk", "client": {"trade": "roofing"}, "must": ["insurance claim", "Never say what insurance will cover", "deductible", "Never tell anyone to get on a roof"]},
+  {"name": "roofing: shop's own questions replace the defaults", "client": {"trade": "roofing", "profile": {"questions": ["Is it a metal roof?"]}}, "must": ["Is it a metal roof?"], "must_not": ["planning to file an insurance claim"]},
+  {"name": "plumbing: no roofing claim rules", "client": {"trade": "plumbing"}, "must_not": ["deductible", "insurance claim"]}
  ]
 }

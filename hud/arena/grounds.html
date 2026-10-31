@@ -18,7 +18,7 @@ canvas{position:fixed;inset:0}
 @media (max-width:600px){.feed div:nth-child(n+4){display:none}.bar{padding:12px 16px;gap:14px}.bar .r{display:none}.feed{left:12px;right:12px;width:auto}.mini{display:none}.sign b{font-size:14px}.bub{font-size:11px}}
 .deck{position:fixed;right:24px;top:70px;width:300px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px;backdrop-filter:blur(8px);font-size:12.5px;color:var(--dim)}
 .deck h3{margin:0;font-size:16px;color:#fff;font-weight:600}.deck .job{color:var(--mute);margin-bottom:8px}.deck h4{margin:10px 0 4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);font-weight:600}
-.deck ol{margin:0;padding-left:20px}.deck li{padding:1px 0}.deck li.now{color:#fff;font-weight:600}.deck li.done{color:var(--mute);text-decoration:line-through}.deck .pk{color:#ffd27a}.deck .q{color:#fff;font-style:italic}.deck .watch{display:block;margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:6px;color:#fff;text-decoration:none;text-align:center;font-weight:600}.deck .src{margin-top:10px;font-size:11px;color:var(--mute)}.deck .src a{color:var(--dim)}.bar a{color:inherit;text-decoration:none}.bar a.on{color:var(--ink);box-shadow:inset 0 -1px 0 var(--arc);padding-bottom:4px}.x{position:fixed;right:20px;bottom:20px;width:44px;height:44px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:20px;display:grid;place-items:center;text-decoration:none;z-index:5}
+.deck ol{margin:0;padding-left:20px}.deck li{padding:1px 0}.deck li.now{color:#fff;font-weight:600}.deck li.done{color:var(--mute);text-decoration:line-through}.deck .pk{color:#ffd27a}.deck .q{color:#fff;font-style:italic}.deck .watch{display:block;margin:10px 0 4px;background:#ffd27a14;border-color:#ffd27a66 !important;padding:10px 12px;border:1px solid var(--line);border-radius:6px;color:#fff;text-decoration:none;text-align:center;font-weight:600}.deck .src{margin-top:10px;font-size:11px;color:var(--mute)}.deck .src a{color:var(--dim)}.bar a{color:inherit;text-decoration:none}.bar a.on{color:var(--ink);box-shadow:inset 0 -1px 0 var(--arc);padding-bottom:4px}.x{position:fixed;right:20px;bottom:20px;width:44px;height:44px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:20px;display:grid;place-items:center;text-decoration:none;z-index:5}
 .tagn{position:absolute;transform:translate(-50%,0);white-space:nowrap;font-size:10.5px;color:#fff;text-shadow:0 1px 4px #000,0 0 2px #000;font-weight:600}.tagn small{display:block;font-weight:400;color:var(--dim);font-size:10px}
 @media (max-width:600px){.deck{display:none}.deck.open{display:block;left:12px;right:12px;top:auto;bottom:12px;width:auto;max-height:58vh;overflow:auto;z-index:4}.deck.open~.x{bottom:auto;top:56px}body.sheet .feed{display:none}}
 </style></head><body>
@@ -73,9 +73,11 @@ const LOOK = {
 const P = new URLSearchParams(location.search), focus = P.get("wing"), pick = P.get("f") || "Sasuke";
 const WINGS = RO.wings.map(w => ({ ...w, ...LOOK[w.id] }));
 const total = WINGS.reduce((n, w) => n + w.fighters.length, 0);
+const HOST = new URLSearchParams(location.search).get("host") === "station" ? "host=station&" : "";   // Station embeds the grounds inline: no close button there
+if (HOST) document.getElementById("close").style.display = "none"; if (HOST && innerWidth < 600) document.getElementById("feed").style.display = "none";
 document.getElementById("close").onclick = (e) => { e.preventDefault(); parent.postMessage({ arena: "close" }, "*"); };
 document.getElementById("count").textContent = `${total} fighters training · tap a room to zoom`;
-document.getElementById("tabs").innerHTML = [["", "All wings"], ...WINGS.map(w => [w.id, w.name])].map(([id, n]) => `<a href="?${id ? "wing=" + id : ""}" class="${(focus || "") === id ? "on" : ""}">${n}</a>`).join("");
+document.getElementById("tabs").innerHTML = [["", "All wings"], ...WINGS.map(w => [w.id, w.name])].map(([id, n]) => `<a href="?${HOST}${id ? "wing=" + id : ""}" class="${(focus || "") === id ? "on" : ""}">${n}</a>`).join("");
 const ROOMF = { "Rock Lee": "wood", Guy: "wood", Neji: "wood", Sakura: "rocky", Choji: "grass", Kakashi: "stone", Sukuna: "stone", Jogo: "rocky", Gojo: "stone", Todo: "stone", Mahoraga: "stone", Goku: "rocky", Vegeta: "rocky", Piccolo: "rocky", Gohan: "rocky", Sasuke: "stone", Gaara: "rocky", Maki: "wood", Panda: "wood" };
 const labels = document.getElementById("labels"), L = []; const lab = (cls, html, p) => { const e = document.createElement("div"); e.className = cls; e.innerHTML = html; labels.append(e); L.push({ e, p }); };
 const MOVES = [POSE.strike, POSE.dash, POSE.purple, POSE.charge, POSE.wind, POSE.ready, POSE.seal];
@@ -138,12 +140,16 @@ const fe = document.getElementById("feed"); const order = [...feed.filter(x => x
 fe.innerHTML = "<h3>Live</h3>" + order.map(x => `<div><b>${x.nm}</b> ${x.peak ? "went all out:" : "used"} ${x.mv} · <i>"${x.q}"</i></div>`).join("");
 // move deck panel for one fighter (tap a room to change it)
 const PEAKS = { Goku: "goku", Sasuke: "sasuke", Gojo: "gojo", "Sung Jinwoo": "jinwoo", Light: "light", Vegeta: "vegeta" };
+function fightUrl(r) { const F = r.F; if (PEAKS[F.name]) return `peak.html?c=${PEAKS[F.name]}&back=1`;
+  const d = { n: F.name, w: r.wg.id, wn: r.wg.name, top: F.colors.top, pants: F.colors.pants, hair: F.colors.hair, up: /Gojo|Sasuke|Goku|Vegeta|Naruto|Minato|Trunks/.test(F.name),
+    form: F.peak.form, move: F.peak.move, quip: F.peak.quip, q: F.quips.slice(0, 2), dummy: F.dummy.name };
+  return "peak.html?back=1&f=" + btoa(unescape(encodeURIComponent(JSON.stringify(d)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
 function showDeck(name) { const r = ROOMS.find(r => r.F.name === name) || ROOMS[0], F = r.F, k = r.k % r.fd.length;
-  document.getElementById("deck").innerHTML = `<h3>${F.name}</h3><div class="job">${F.job} · ${F.status}</div>
+  document.getElementById("deck").innerHTML = `<h3>${F.name}</h3><div class="job">${F.job} · ${F.status}</div><a class="watch" href="${fightUrl(r)}">${PEAKS[F.name] ? "Watch the peak" : "Watch them fight"}</a>
   <h4>Move deck · ${k + 1} of ${r.fd.length} · no repeats till it runs out</h4><ol start="${Math.max(1, k - 1)}">${r.fd.map((m, i) => `<li class="${i < k ? "done" : i === k ? "now" : ""}" ${i < k - 2 ? "hidden" : ""}>${m}</li>`).join("")}</ol>
   <h4>Then the peak</h4><div class="pk">${F.peak.form} → ${F.peak.move}</div><div class="q">“${F.peak.quip}”</div>
   <h4>Forms unlocked in order</h4><div>${F.forms.join(" → ") || "none in the show"}</div>
-  <h4>Dummy: ${F.dummy.name}</h4><div>${F.dummy.moves.join(" · ")}</div>${PEAKS[F.name] ? `<a class="watch" href="peak.html?c=${PEAKS[F.name]}&back=1">Watch the peak</a>` : ""}${F.sources ? `<div class="src">Checked against: ${F.sources.slice(0, 2).map(u => `<a href="${u}" target="_blank" rel="noopener">${u.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]}</a>`).join(", ")}${F.verified === "yes" ? "" : " (partly)"}</div>` : ""}`; }
+  <h4>Dummy: ${F.dummy.name}</h4><div>${F.dummy.moves.join(" · ")}</div>${F.sources ? `<div class="src">Checked against: ${F.sources.slice(0, 2).map(u => `<a href="${u}" target="_blank" rel="noopener">${u.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]}</a>`).join(", ")}${F.verified === "yes" ? "" : " (partly)"}</div>` : ""}`; }
 showDeck(pick);
 
 const composer = new EffectComposer(renderer); composer.addPass(new RenderPass(scene, camera));
@@ -156,7 +162,7 @@ composer.addPass(new ShaderPass({ uniforms: { tDiffuse: { value: null }, res: { 
       vec3 o=c.rgb/w; vec2 d=vUv-.5; o*=1.-dot(d,d)*.8; o=mix(o,o*vec3(1.04,1.,.95),.5); gl_FragColor=vec4(o,1.); }` }));
 /* ---------- live: every fighter walks its deck (no move repeats till the deck runs out), the dummy answers; 12 fps, paused when hidden ---------- */
 const DREACT = [POSE.brace, POSE.hit, POSE.guard, POSE.dodge, POSE.crouch], BEAT = 1.7;
-const v = new THREE.Vector3(); const place = () => { for (const { e, p } of L) { v.copy(p).project(camera); e.style.left = (v.x + 1) / 2 * W + "px"; e.style.top = (1 - v.y) / 2 * H + "px"; } };
+const v = new THREE.Vector3(); const place = () => { for (const { e, p } of L) { v.copy(p).project(camera); e.style.left = (v.x + 1) / 2 * W + "px"; e.style.top = (1 - v.y) / 2 * H + "px"; if (e.classList.contains("bub")) e.style.visibility = (1 - v.y) / 2 * H < 96 ? "hidden" : ""; } };
 function tick(t) {
   for (const r of ROOMS) { const b = (t + r.ph) / BEAT, n = Math.floor(b), u = b - n, mvI = (r.k + n) % (r.fd.length + 1), peakNow = r.peak || mvI === r.fd.length;
     const mv = peakNow ? r.F.peak.move : r.fd[mvI], P = peakNow ? POSE.purple : MOVES[hash(mv) % MOVES.length];
@@ -172,5 +178,5 @@ frame(performance.now()); if (FIXT != null) document.title = "ready";
 // tap a room: in the overview it zooms to that wing, inside a wing it opens that fighter's deck
 renderer.domElement.style.pointerEvents = "auto";
 renderer.domElement.addEventListener("click", (e) => { let best = null, bd = 1e9; for (const r of ROOMS) { v.set(r.cx, .8, r.cz).project(camera); const x = (v.x + 1) / 2 * W, y = (1 - v.y) / 2 * H, d = Math.hypot(x - e.clientX, y - e.clientY); if (d < bd) { bd = d; best = r; } }
-  if (!best || bd > (focus ? 120 : 60)) return; if (!focus) location.search = `?wing=${best.wg.id}&f=${encodeURIComponent(best.F.name)}`; else { showDeck(best.F.name); document.getElementById("deck").classList.add("open"); document.body.classList.add("sheet"); } });
+  if (!best || bd > (focus ? 120 : 60)) return; if (!focus) location.search = `?${HOST}wing=${best.wg.id}&f=${encodeURIComponent(best.F.name)}`; else { showDeck(best.F.name); document.getElementById("deck").classList.add("open"); document.body.classList.add("sheet"); } });
 </script></body></html>

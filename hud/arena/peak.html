@@ -36,7 +36,7 @@ const scene = new THREE.Scene(); const camera = new THREE.PerspectiveCamera(32, 
 const V = (x, y, z) => new THREE.Vector3(x, y, z), C = c => new THREE.Color(c);
 const uT = { value: 0 }, uS = { value: 0 };   // uS = time stepped to 12 fps: effects boil on 2s like drawn FX
 
-const CFG = {
+const CFGS = {
   goku: { who: "Goku · Etsy shop", fx: "ui", fx3: ["#ffffff", "#b8c8ff", "#3a3a8a"], sky: ["#04030a", "#2a1450", "#10204a"], plat: "#5a5a6a", rim: "#b8c8ff",
     hero: { top: "#f07a24", pants: "#f07a24", yoke: "#24346a", belt: "#24346a", cuff: "#24346a", skin: "#f5cfa8", hair: "#141418", shoe: "#24346a", wrap: "#c03a2a", hairN: 34, hairLen: .26, bangs: 5, bangLen: .14, baggy: 1.25, loose: 1.1, seed: 21,
       face: { skin: "#f5cfa8", iris: "#1a1a1a", irisTop: "#000000", angry: true, mouth: "flat", brow: "#141418" } },
@@ -71,7 +71,25 @@ const CFG = {
     alt: { iris: "#3ad8c8", irisTop: "#0a6a60", glow: true, angry: true, mouth: "shout" }, hairTo: "#ffd84a", kan: ["超サイヤ人", "Super Saiyan"], kan2: ["ファイナルフラッシュ", "Final Flash"],
     foe: { top: "#4aa04a", pants: "#4aa04a", yoke: "#1a1a1a", skin: "#4aa04a", hair: "#2a6a2a", hairN: 8, hairLen: .3, seed: 111, face: { skin: "#4aa04a", iris: "#c040c0", irisTop: "#401040", angry: false, mouth: "grin", brow: "#2a6a2a" } },
     subs: [["Cell", "Go on, Vegeta. Give me your best shot."], ["Vegeta", "You asked for it. I am the prince of the ledger."], ["Cell", "Wait... that's too much ki."], ["Vegeta", "It's over. Not nine thousand. Just over."], ["Vegeta", "Margins are up. Kakarot can't say that."], ["Cell", "I'll regenerate... from one cell. Ugh."]] },
-}[Q.get("c") || "sasuke"];
+};
+/* any fighter: the Training grounds passes ?f=<base64 json> (name, wing, colours, peak, quips, dummy); the clip keeps the same studio grammar */
+function generic(d) {
+  const h = [...d.n].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7), txt = `${d.form} ${d.move}`;
+  const PAL = { blue: ["#eef6ff", "#4aa8ff", "#06204a"], purple: ["#f4e8ff", "#a46bff", "#2a0a5a"], red: ["#ffe8e8", "#ff2a3a", "#2a0006"], gold: ["#fffbe8", "#ffd23a", "#5a2a00"],
+    fire: ["#fff2e0", "#ff7a1a", "#4a1000"], green: ["#eaffef", "#3ad88a", "#06301a"], white: ["#ffffff", "#b8c8ff", "#3a3a8a"] };
+  const key = /fire|flame|sun|blaze|burn|ember|rengoku/i.test(txt) ? "fire" : /thunder|lightning|chidori|zap|spark/i.test(txt) ? "gold" : /water|ice|frost|mist|wave|ocean/i.test(txt) ? "blue"
+    : /shadow|dark|curse|void|abyss/i.test(txt) ? "purple" : /blood|crimson|demon/i.test(txt) ? "red" : /wind|leaf|wood|plant|root|flower|serpent|insect/i.test(txt) ? "green"
+    : { jarvis_hq: "blue", sites: "purple", basis: "fire", gym: "red", etsy: "gold" }[d.w] || "white";
+  const p = PAL[key], dum = (d.dummy || "Sparring partner").replace(/\s*\(.*?\)/g, "").trim() || "Sparring partner";
+  const beam = /beam|flash|blast|kamehameha|cannon|arrow|wave|ray|breath|gun|shot|spear|bolt|thunder|lightning|fire|flame|roar|bomb|rasengan|chidori|slash|dragon/i.test(d.move);
+  return { who: `${d.n} · ${d.wn}`, fx: beam ? "beam" : "ui", fx3: p, sky: ["#040308", p[2], "#10182a"], plat: "#4a4656", rim: p[1],
+    hero: { top: d.top, pants: d.pants, yoke: d.top, belt: d.pants, skin: "#f2cfaa", hair: d.hair, shoe: "#1a1a22", hairN: 26, hairLen: .18, bangs: 5, bangLen: .14, baggy: 1.1, up: !!d.up, seed: h % 997,
+      face: { skin: "#f2cfaa", iris: "#141418", irisTop: "#000", angry: true, mouth: "flat", brow: d.hair } },
+    alt: { iris: p[1], irisTop: p[2], glow: true }, kan: [d.form || "All out", "Peak form"], kan2: [d.move, "Finisher"],
+    foe: { top: "#3a3a44", pants: "#2a2a30", skin: "#9aa0b0", hair: "#5a6070", hairN: 10, hairLen: .2, seed: (h >> 3) % 997, face: { skin: "#9aa0b0", iris: "#e02020", irisTop: "#600", angry: true, mouth: "flat", brow: "#5a6070" } },
+    subs: [[dum, "Your move. Make it count."], [d.n, d.q[0] || "Let's go."], [dum, "Wait... what is that?"], [d.n, d.quip], [d.n, d.q[1] || "Again tomorrow."], [dum, "...Rematch. Same time tomorrow."]] };
+}
+const CFG = Q.get("f") ? generic(JSON.parse(decodeURIComponent(escape(atob(Q.get("f").replace(/-/g, "+").replace(/_/g, "/")))))) : CFGS[Q.get("c") || "sasuke"];
 const fx = CFG.fx, [K0, K1, K2] = CFG.fx3.map(C);
 document.getElementById("who").textContent = CFG.who; kanEl.style.setProperty("--k", CFG.fx3[1]);
 RIM.value.set(CFG.rim); RIMK.value = .8;
@@ -359,7 +377,7 @@ function renderAt(T) {
   bloom.strength = .32 + on * .1 + (T > HIT && T < HIT + 1 ? .6 * (1 - seg(T, HIT, HIT + 1)) : 0); bloom.enabled = !inkOn;
   const sb = SUBT.findIndex(([a, b]) => T >= a && T < b), sx = CFG.subs[sb]; subEl.innerHTML = sb >= 0 && !inkOn ? `<i>${sx[0]}</i>${sx[1]}` : "";
   const k = KAN.find(([a, b]) => T >= a && T < b); kanEl.style.display = k && !inkOn ? "" : "none";
-  if (k) { const uu = (T - k[0]) / (k[1] - k[0]); kanEl.innerHTML = `${k[2]}<small>${k[3]}</small>`; kanEl.style.fontSize = k[2].length > 6 ? "60px" : ""; kanEl.style.opacity = uu > .88 ? (1 - uu) / .12 : 1; kanEl.style.transform = `scale(${1 + Math.max(0, .12 - uu) * 2})`; }
+  if (k) { const uu = (T - k[0]) / (k[1] - k[0]); kanEl.innerHTML = `${k[2]}<small>${k[3]}</small>`; const latin = !/[\u3000-\u9fff]/.test(k[2]); kanEl.style.fontSize = latin ? (k[2].length > 16 ? (innerWidth < 600 ? "26px" : "40px") : (innerWidth < 600 ? "34px" : "54px")) : k[2].length > 6 ? "60px" : ""; kanEl.style.maxWidth = latin ? "62vw" : ""; kanEl.style.opacity = uu > .88 ? (1 - uu) / .12 : 1; kanEl.style.transform = `scale(${1 + Math.max(0, .12 - uu) * 2})`; }
   composer.render();
 }
 window.renderAt = renderAt; window.END = END;

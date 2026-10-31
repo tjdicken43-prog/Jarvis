@@ -80,9 +80,28 @@ function generic(d) {
   const key = /fire|flame|sun|blaze|burn|ember|rengoku/i.test(txt) ? "fire" : /thunder|lightning|chidori|zap|spark/i.test(txt) ? "gold" : /water|ice|frost|mist|wave|ocean/i.test(txt) ? "blue"
     : /shadow|dark|curse|void|abyss/i.test(txt) ? "purple" : /blood|crimson|demon/i.test(txt) ? "red" : /wind|leaf|wood|plant|root|flower|serpent|insect/i.test(txt) ? "green"
     : { jarvis_hq: "blue", sites: "purple", basis: "fire", gym: "red", etsy: "gold" }[d.w] || "white";
-  const p = PAL[key], dum = (d.dummy || "Sparring partner").replace(/\s*\(.*?\)/g, "").trim() || "Sparring partner";
+  const MAP = {   // each fighter's finisher type, from what they do in the show
+    "Ijichi": ["dome", { m: "veil" }, "purple"], "Yaga": ["summon", { m: "panda" }, "white"], "Shoko": ["glow", { m: "heal" }, "green"], "Gakuganji": ["ring", { m: "music" }, "red"],
+    "Utahime": ["ring", { m: "dance" }, "gold"], "Mei Mei": ["proj", { m: "crow", n: 1 }, "purple"], "Kusakabe": ["blade", { s: "iai" }, "white"], "Shinobu Kocho": ["blade", { s: "thrust", hex: 1 }, "purple"],
+    "Igris": ["blade", { s: "cleave" }, "red"], "Toji": ["blade", { s: "thrust", len: 1.7 }, "white"], "Yuji": ["fist", { s: "flash" }, "red"], "Hanami": ["bind", { m: "roots" }, "green"],
+    "Yuta": ["summon", { m: "rika" }, "white"], "Mahoraga": ["fist", { s: "punch", wheel: 1 }, "gold"], "Todo": ["fist", { s: "flash", clap: 1 }, "blue"], "Hakari": ["dome", { m: "jackpot" }, "gold"],
+    "Nanami": ["blade", { s: "cleave", ratio: 1 }, "gold"], "Sukuna": ["blade", { s: "dance", n: 6, noblade: 1 }, "red"], "Jogo": ["dome", { m: "volcano" }, "fire"], "Maki": ["blade", { s: "dance", n: 3 }, "white"],
+    "Zenitsu Agatsuma": ["blade", { s: "iai", thunder: 1 }, "gold"], "Nobara": ["proj", { m: "nail", n: 1 }, "red"], "Inumaki": ["ring", { m: "voice" }, "purple"], "Panda": ["fist", { s: "smash" }, "white"],
+    "Choso": ["wave", { thin: 1, noAura: 1 }, "red"], "Higuruma": ["dome", { m: "court" }, "gold"], "Kyojuro Rengoku": ["blade", { s: "iai", big: 1 }, "fire"], "Muichiro Tokito": ["blade", { s: "dance", n: 4, mist: 1 }, "white"],
+    "Gyomei Himejima": ["proj", { m: "flail", n: 1 }, "gold"], "Giyu Tomioka": ["blade", { s: "calm" }, "blue"], "Shikamaru": ["bind", { m: "shadow", imitate: 1 }, "purple"], "Rock Lee": ["fist", { s: "gate" }, "green"],
+    "Minato": ["orb", { teleport: 1 }, "blue"], "Choji": ["fist", { s: "smash", wings: 1 }, "pink"], "Sakura": ["fist", { s: "smash" }, "pink"], "Kakashi": ["orb", { lightning: 1 }, "purple"],
+    "Guy": ["fist", { s: "gate" }, "red"], "Neji": ["fist", { s: "spin" }, "blue"], "Naruto": ["orb", { planets: 3 }, "fire"], "Hinata": ["fist", { s: "lion" }, "blue"],
+    "Ino Yamanaka": ["card", { m: "mind" }, "purple"], "Gaara": ["bind", { m: "sand" }, "gold"], "Tenten": ["proj", { m: "weapons", n: 16 }, "white"], "Jiraiya": ["wave", { fire: 1, noAura: 1 }, "fire"],
+    "Kiba": ["fist", { s: "spin", drill: 1 }, "white"], "Shino": ["bind", { m: "insects" }, "green"], "Mitsuri Kanroji": ["blade", { s: "dance", n: 5, whip: 1 }, "pink"],
+    "Ryuk": ["note", { name: "Light Yagami" }, "red"], "Misa": ["card", { m: "eyes" }, "red"], "L": ["card", { m: "decoy" }, "white"], "Mello": ["proj", { m: "bullet", n: 3 }, "gold"],
+    "Near": ["card", { m: "puzzle" }, "white"], "Rem": ["note", { name: "L Lawliet", cause: "Watari, too" }, "white"], "Cha Hae-In": ["blade", { s: "dance", n: 4 }, "gold"],
+    "Tengen Uzui": ["blade", { s: "dance", n: 4, twin: 1, boom: 1 }, "fire"], "Matsuda": ["proj", { m: "bullet", n: 6 }, "gold"], "Bulma": ["card", { m: "portal" }, "blue"],
+    "Gohan": ["wave", {}, "purple"], "Piccolo": ["wave", { thin: 1, spiral: 1, noAura: 1 }, "gold"], "Trunks": ["blade", { s: "dance", n: 5 }, "gold"], "Dende": ["glow", { m: "heal" }, "green"], "Whis": ["glow", { m: "rewind" }, "blue"] };
+  PAL.pink = ["#fff0f6", "#ff6ab0", "#4a0a2a"];
+  const mp = MAP[d.n] || ["fist", {}, key], gk = mp[0], gp = mp[1];
+  const p = PAL[mp[2]] || PAL[key], dum = (d.dummy || "Sparring partner").replace(/\s*\(.*?\)/g, "").trim() || "Sparring partner";
   const beam = /beam|flash|blast|kamehameha|cannon|arrow|wave|ray|breath|gun|shot|spear|bolt|thunder|lightning|fire|flame|roar|bomb|rasengan|chidori|slash|dragon/i.test(d.move);
-  return { who: `${d.n} · ${d.wn}`, fx: beam ? "beam" : "ui", fx3: p, sky: ["#040308", p[2], "#10182a"], plat: "#4a4656", rim: p[1],
+  return { who: `${d.n} · ${d.wn}`, fx: gk === "wave" ? "beam" : gk === "note" ? "note" : "gen", gk, gp, calm: gk === "wave", thin: gp.thin, spiral: gp.spiral, fire: gp.fire, noAura: gp.noAura, noteName: gp.name, noteCause: gp.cause, fx3: p, sky: ["#040308", p[2], "#10182a"], plat: "#4a4656", rim: p[1],
     hero: { top: d.top, pants: d.pants, yoke: d.top, belt: d.pants, skin: "#f2cfaa", hair: d.hair, shoe: "#1a1a22", hairN: 26, hairLen: .18, bangs: 5, bangLen: .14, baggy: 1.1, up: !!d.up, seed: h % 997,
       face: { skin: "#f2cfaa", iris: "#141418", irisTop: "#000", angry: true, mouth: "flat", brow: d.hair } },
     alt: { iris: p[1], irisTop: p[2], glow: true }, kan: [d.form || "All out", "Peak form"], kan2: [d.move, "Finisher"],
@@ -209,7 +228,127 @@ if (fx === "note") {
   FX.page = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.2), new THREE.MeshBasicMaterial({ map: FX.tex, depthTest: false, color: "#cfc9bc" })); FX.page.renderOrder = 999; scene.add(FX.page);
   FX.book = new THREE.Group(); part(new THREE.BoxGeometry(.32, .03, .22), "#0a0a0e", FX.book, 0, 0, 0, false); part(new THREE.BoxGeometry(.3, .035, .2), "#f2efe8", FX.book, 0, .002, 0, false); scene.add(FX.book);
   FX.clock = document.createElement("div"); Object.assign(FX.clock.style, { position: "fixed", left: "50%", top: "50%", transform: "translate(-50%,-50%)", font: "900 220px/1 'Noto Serif CJK JP',serif", color: "#ff2a3a", zIndex: 3, textShadow: "8px 8px 0 #000", display: "none" }); document.body.append(FX.clock); }
+if (fx === "beam" && CFG.spiral) FX.spiral = [...Array(14)].map(() => { const m = new THREE.Mesh(new THREE.TorusGeometry(1, .06, 4, 32, Math.PI * 1.5), new THREE.MeshBasicMaterial({ color: K0, toneMapped: false })); scene.add(m); return m; });
 if (fx === "beam") { FX.orb = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 3), cel({ freq: 4, flow: V(0, -3, 0), shape: "fres", th: [.25, .48, .74] })); scene.add(FX.orb); }
+/* ---------- every other fighter: their own finisher type, true to the show (kinds set in generic()) ---------- */
+const gw = (j) => hw(hero, j), mk = (m, p, r) => { if (p) m.position.copy(p); if (r) m.rotation.copy(r); return m; };
+const GK = fx === "gen" ? CFG.gk : "", GP = CFG.gp || {}, GEN = { p0: V(1.15, .05, 0), soft: false };
+const solid = (c, o = {}) => new THREE.MeshBasicMaterial({ color: c, toneMapped: false, ...o });
+const celC = (cols, o) => { const m = cel(o); m.uniforms.k0.value = C(cols[0]); m.uniforms.k1.value = C(cols[1]); m.uniforms.k2.value = C(cols[2]); return m; };
+function txtTex(lines, font, col = "#fff", w = 1024, h = 512, bg = null) { const c = document.createElement("canvas"); c.width = w; c.height = h; const g = c.getContext("2d"); if (bg) { g.fillStyle = bg; g.fillRect(0, 0, w, h); }
+  g.fillStyle = col; g.font = font; g.textAlign = "center"; g.textBaseline = "middle"; g.lineWidth = 14; g.strokeStyle = "#000"; const L = [].concat(lines);
+  L.forEach((l, i) => { const y = h / 2 + (i - (L.length - 1) / 2) * (h / (L.length + .6)); if (!bg) g.strokeText(l, w / 2, y); g.fillText(l, w / 2, y); }); return new THREE.CanvasTexture(c); }
+const sprite = (tex, w, h) => { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, toneMapped: false })); s.scale.set(w, h, 1); scene.add(s); return s; };
+const PZ = {
+  draw: { ...POSE.wind }, low: { ...POSE.dash },
+  aim: { ...POSE.strike, spine: [.12, .15, 0], "sh-1": [-1.55, 0, 0], "el-1": [0, 0, 0], sh1: [.2, 0, .3], el1: [-.6, 0, 0], th1: [-.3, 0, .12], kn1: [.3, 0, 0], "th-1": [.2, 0, -.12], "kn-1": [.2, 0, 0] },
+  two: { ...POSE.strike, spine: [.2, 0, 0], sh1: [-1.55, -.1, .12], el1: [0, 0, 0], "sh-1": [-1.55, .1, -.12], "el-1": [0, 0, 0] },
+  over: { ...POSE.ready, spine: [-.25, 0, 0], sh1: [-2.9, 0, .25], el1: [-.4, 0, 0], "sh-1": [-2.9, 0, -.25], "el-1": [-.4, 0, 0] },
+  cross: { ...POSE.grin, sh1: [-.9, -.9, .2], el1: [-1.9, 0, 0], "sh-1": [-.9, .9, -.2], "el-1": [-1.9, 0, 0], head: [-.12, 0, 0] },
+  sit: { ...POSE.crouch, y: .42, head: [.35, 0, 0] },
+};
+const KP = { blade: [PZ.draw, POSE.follow], fist: [POSE.ready, POSE.strike], orb: [POSE.purple, POSE.strike], bind: [POSE.seal, POSE.seal], dome: [POSE.seal, POSE.seal],
+  proj: [POSE.charge, PZ.aim], ring: [POSE.charge, PZ.two], glow: [POSE.seal, PZ.two], summon: [PZ.cross, PZ.cross], card: [POSE.seal, POSE.grin] }[GK] || [POSE.charge, POSE.strike];
+GEN.charge = KP[0]; GEN.fire = GK === "blade" && GP.s === "thrust" ? POSE.strike : GK === "fist" && GP.s === "smash" ? POSE.follow : KP[1];
+if (["bind", "dome", "ring", "glow", "card", "summon", "proj"].includes(GK)) GEN.p0 = V(1.3, .05, 0);
+if (["glow", "card"].includes(GK) || (GK === "ring" && GP.m === "voice")) GEN.soft = true;
+if (GK === "dome" && GP.m === "court") GEN.soft = false;
+
+if (GK === "blade") {
+  const steel = solid(GP.whip ? "#ffb8d8" : "#eef2f8"), mkSword = (len) => { const g = new THREE.Group(); const b = new THREE.Mesh(new THREE.BoxGeometry(.016, len, .05), steel); b.position.y = len / 2 + .07;
+    g.add(b, new THREE.Mesh(new THREE.BoxGeometry(.1, .02, .1), solid("#141414")), mk(new THREE.Mesh(new THREE.CylinderGeometry(.02, .02, .17, 6), solid("#3a1a1a")), V(0, -.04, 0), null)); scene.add(g); return g; };
+  FX.swords = GP.noblade ? [] : [mkSword(GP.len || .95), ...(GP.twin ? [mkSword(.85)] : [])];
+  FX.ribs = new THREE.Group(); scene.add(FX.ribs); const rm = cel({ freq: 4, flow: V(0, -3, 0), shape: "fres", th: [.28, .5, .72] });
+  for (let i = 0; i < 3; i++) FX.ribs.add(new THREE.Mesh(new THREE.TorusGeometry(.62 + i * .2, .045, 6, 48, Math.PI * 1.25), rm));
+  const am = cel({ freq: 3, flow: V(-5, 0, 0), shape: "none", th: [.18, .45, .7] });
+  FX.arcs = [...Array(GP.n || 1)].map(() => { const m = new THREE.Mesh(new THREE.TorusGeometry(1.3, GP.big ? .2 : .11, 4, 64, Math.PI * .92), am); m.scale.z = .12; scene.add(m); return m; });
+  FX.cut = new THREE.Mesh(new THREE.BoxGeometry(1, .02, .02), solid("#ffffff")); scene.add(FX.cut);
+  if (GP.ratio) { FX.ratio = new THREE.Group(); FX.ratio.add(new THREE.Mesh(new THREE.BoxGeometry(.8, .014, .014), solid("#ffd23a")), mk(new THREE.Mesh(new THREE.BoxGeometry(.014, .2, .014), solid("#ffd23a")), V(0, 0, 0), null)); scene.add(FX.ratio); }
+  if (GP.hex) { FX.hex = [0, 1, 2].map(() => { const m = new THREE.Mesh(new THREE.RingGeometry(.92, 1, 6), solid(K1, { transparent: true, side: THREE.DoubleSide, depthWrite: false })); scene.add(m); return m; }); }
+  if (GP.boom) { FX.booms = [...Array(6)].map(() => { const m = new THREE.Mesh(new THREE.IcosahedronGeometry(.35, 2), cel({ freq: 4, flow: V(0, -3, 0), shape: "fres", th: [.25, .5, .74] })); scene.add(m); return m; }); }
+}
+if (GK === "fist") {
+  const fm = cel({ freq: 6, flow: V(0, -3, 0), shape: "fres", th: [.25, .48, .74] });
+  FX.fo = new THREE.Mesh(new THREE.IcosahedronGeometry(.16, 3), fm); FX.fo2 = new THREE.Mesh(new THREE.IcosahedronGeometry(.16, 3), fm); scene.add(FX.fo, FX.fo2);
+  FX.blk = solid("#050003"); FX.red = solid("#ff1a2a");
+  if (GP.wheel) { const w = new THREE.Group(), wm = solid("#e8d8a8"); w.add(new THREE.Mesh(new THREE.TorusGeometry(.42, .03, 6, 40), wm));
+    for (let i = 0; i < 4; i++) w.add(mk(new THREE.Mesh(new THREE.BoxGeometry(.03, .84, .03), wm), null, new THREE.Euler(0, 0, i * Math.PI / 4)));
+    for (let i = 0; i < 8; i++) { const k = new THREE.Mesh(new THREE.SphereGeometry(.06, 8, 6), wm); k.position.set(Math.cos(i * Math.PI / 4) * .48, Math.sin(i * Math.PI / 4) * .48, 0); w.add(k); } scene.add(w); FX.wheel = w; }
+  if (GP.wings) { FX.wings = [1, -1].map(s => { const g = new THREE.Shape(); g.moveTo(0, 0); g.bezierCurveTo(.6, .9, 1.4, 1.1, 1.5, .2); g.bezierCurveTo(1.2, -.4, .5, -.5, 0, 0);
+    const m = new THREE.Mesh(new THREE.ShapeGeometry(g, 16), cel({ freq: 3, flow: V(0, -2, 0), shape: "none", th: [.2, .5, .75] })); m.userData.s = s; scene.add(m); return m; }); }
+  if (GP.s === "spin") { FX.dome = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 4), cel({ freq: 3, flow: V(0, -4, 0), shape: "rim", th: [.35, .55, .8] })); scene.add(FX.dome); }
+  if (GP.s === "gate") { FX.ghost = [0, 1, 2].map(() => { const g = fighter(HS), gm = solid(K1, { transparent: true, opacity: .25, depthWrite: false, blending: THREE.AdditiveBlending }); g.traverse(o => { if (o.isMesh) o.material = gm; }); scene.add(g); return g; }); }
+}
+if (GK === "orb") {
+  FX.orb = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 4), cel({ freq: 3.4, flow: V(0, 0, -4), shape: "fres", th: [.22, .46, .72] })); scene.add(FX.orb);
+  FX.swirl = new THREE.Group(); scene.add(FX.swirl); for (let i = 0; i < 4; i++) FX.swirl.add(new THREE.Mesh(new THREE.TorusGeometry(1 + i * .12, .03, 4, 48, Math.PI * 1.4), solid("#ffffff")));
+  FX.planets = [...Array(GP.planets || 0)].map(() => { const m = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 3), cel({ freq: 5, flow: V(0, -3, 0), shape: "fres", th: [.25, .48, .74] })); scene.add(m); return m; });
+}
+if (GK === "bind") {
+  const cols = { shadow: ["#5a5a7a", "#14141e", "#020205"], sand: ["#f6e2a8", "#c8a060", "#5a3a18"], roots: ["#d8f0a8", "#4a8a3a", "#2a1a0a"], insects: ["#7a7a6a", "#2a2a22", "#050505"] }[GP.m] || ["#5a5a7a", "#14141e", "#020205"];
+  FX.bm = celC(cols, { freq: 3, flow: V(0, -1.5, 0), shape: "none", th: [.12, .5, .8] });
+  FX.strip = new THREE.Mesh(new THREE.PlaneGeometry(1, .34), solid(cols[2])); FX.strip.rotation.x = -Math.PI / 2; scene.add(FX.strip);
+  FX.pool = new THREE.Mesh(new THREE.CircleGeometry(1, 40), solid(cols[2])); FX.pool.rotation.x = -Math.PI / 2; scene.add(FX.pool);
+  FX.tend = []; reseed(51); for (let i = 0; i < 12; i++) { const g = new THREE.ConeGeometry(.05 + rnd() * .05, 2.4, 6, 1, true); g.translate(0, 1.2, 0); const m = new THREE.Mesh(g, FX.bm); m.userData = { a: i / 12 * TAU + rnd() * .3, r: .3 + rnd() * .35, k: rnd() }; scene.add(m); FX.tend.push(m); }
+  if (GP.m === "sand") { FX.sand = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 3), FX.bm); scene.add(FX.sand); }
+  if (GP.m === "roots") { FX.flowers = [...Array(14)].map(() => { const m = new THREE.Mesh(new THREE.IcosahedronGeometry(.11, 1), solid(["#ffb8d8", "#fff2a8", "#ffffff"][Math.floor(rnd() * 3)])); scene.add(m); return m; }); }
+  if (GP.m === "insects") { FX.bugs = [...Array(90)].map(() => { const m = new THREE.Mesh(new THREE.TetrahedronGeometry(.035, 0), solid("#0a0a08")); m.userData = { a: rnd() * TAU, r: .3 + rnd() * .7, y: rnd() * 2, k: rnd() }; scene.add(m); return m; }); }
+}
+if (GK === "dome") {
+  FX.dome = new THREE.Mesh(new THREE.SphereGeometry(1, 48, 24), celC([CFG.fx3[1], CFG.fx3[2], "#030206"], { freq: 1.4, flow: V(0, -.5, 0), shape: "none", th: [.05, .78, .93] })); FX.dome.material.side = THREE.BackSide; scene.add(FX.dome);
+  FX.floor = new THREE.Mesh(new THREE.CircleGeometry(1, 64), solid(CFG.fx3[2])); FX.floor.rotation.x = -Math.PI / 2; scene.add(FX.floor);
+  if (GP.m === "jackpot") { FX.digits = [..."0123456789"].map(d => txtTex(d, "900 380px Georgia,serif", "#ffd23a", 512, 512, "#1a0a2a")); FX.reels = [0, 1, 2].map(() => sprite(FX.digits[7], .62, .62)); }
+  if (GP.m === "volcano") { FX.vents = [...Array(7)].map((_, i) => { const g = new THREE.ConeGeometry(.35, 3, 10, 1, true); g.translate(0, 1.5, 0); const m = new THREE.Mesh(g, cel({ freq: 3, flow: V(0, -5, 0), shape: "rim", th: [.3, .55, .8] })); m.userData.a = i / 7 * TAU; scene.add(m); return m; }); }
+  if (GP.m === "court") { FX.verdict = sprite(txtTex(["有罪"], "900 300px 'Noto Serif CJK JP',serif", "#ffffff"), 2.4, 1.2);
+    FX.axe = new THREE.Group(); FX.axe.add(new THREE.Mesh(new THREE.BoxGeometry(.5, 3.2, .06), solid("#e8e4dc")), mk(new THREE.Mesh(new THREE.BoxGeometry(.14, .9, .14), solid("#2a2a2a")), V(0, 2.0, 0), null)); scene.add(FX.axe); }
+  if (GP.m === "veil") { FX.veil = new THREE.Mesh(new THREE.CylinderGeometry(4.5, 4.5, 12, 48, 1, true), celC(["#2a2a3a", "#0a0a12", "#010103"], { freq: 2, flow: V(0, 3, 0), shape: "none", th: [.05, .7, .9] })); FX.veil.material.side = THREE.DoubleSide; scene.add(FX.veil); }
+}
+if (GK === "proj") {
+  const M = GP.m, n = GP.n || 1; FX.pj = [];
+  for (let i = 0; i < n; i++) { const g = new THREE.Group();
+    if (M === "crow") { g.add(mk(new THREE.Mesh(new THREE.ConeGeometry(.16, .7, 8), solid("#08080c")), null, new THREE.Euler(0, 0, -Math.PI / 2)));
+      [1, -1].forEach(s => { const w = new THREE.Mesh(new THREE.PlaneGeometry(.7, .26), solid("#14141c", { side: THREE.DoubleSide })); w.position.set(-.05, 0, s * .36); w.rotation.x = Math.PI / 2; w.userData.s = s; g.add(w); }); g.scale.setScalar(1.4); }
+    else if (M === "nail") g.add(mk(new THREE.Mesh(new THREE.CylinderGeometry(.012, .012, .42, 6), solid("#c8ccd4")), null, new THREE.Euler(0, 0, -Math.PI / 2)), mk(new THREE.Mesh(new THREE.CylinderGeometry(.04, .04, .02, 10), solid("#c8ccd4")), V(-.21, 0, 0), new THREE.Euler(0, 0, -Math.PI / 2)));
+    else if (M === "weapons") { const k = i % 3; g.add(new THREE.Mesh(k === 0 ? new THREE.BoxGeometry(.7, .03, .06) : k === 1 ? new THREE.ConeGeometry(.05, .4, 4) : new THREE.BoxGeometry(.5, .14, .03), solid(k === 2 ? "#a8acb4" : "#e8ecf2"))); if (k === 1) g.children[0].rotation.z = -Math.PI / 2; }
+    else if (M === "bullet") g.add(new THREE.Mesh(new THREE.SphereGeometry(.025, 6, 4), solid("#ffe08a")));
+    else if (M === "flail") { g.add(new THREE.Mesh(new THREE.IcosahedronGeometry(.26, 1), toon("#5a5a62"))); for (let s = 0; s < 14; s++) { const c = new THREE.Mesh(new THREE.ConeGeometry(.07, .26, 5), toon("#3a3a42")); const d = V(rnd() - .5, rnd() - .5, rnd() - .5).normalize(); c.position.copy(d.clone().multiplyScalar(.28)); c.quaternion.setFromUnitVectors(V(0, 1, 0), d); g.add(c); } }
+    g.userData = { k: rnd(), z: (rnd() - .5) * .5, y: (rnd() - .5) * .5 }; scene.add(g); FX.pj.push(g); }
+  FX.trail = smear;
+  if (M === "bullet") { FX.gun = new THREE.Mesh(new THREE.BoxGeometry(.2, .05, .04), solid("#1a1a1e")); FX.flash = sprite(txtTex("✸", "900 420px sans-serif", "#ffe08a", 512, 512), .45, .45); scene.add(FX.gun); }
+  if (M === "nail") { FX.spikes = [...Array(9)].map(() => { const g = new THREE.ConeGeometry(.04, .55, 5); g.translate(0, .27, 0); const m = new THREE.Mesh(g, solid("#e01a2a")); scene.add(m); return m; }); }
+  if (M === "weapons") { FX.scrolls = [0, 1].map(() => { const m = new THREE.Mesh(new THREE.CylinderGeometry(.08, .08, .5, 10), toon("#e8dcc0")); scene.add(m); return m; }); }
+  if (M === "flail") { FX.chain = new THREE.Line(new THREE.BufferGeometry().setFromPoints([V(), V()]), new THREE.LineBasicMaterial({ color: "#8a8a92" })); scene.add(FX.chain); }
+}
+if (GK === "ring") {
+  FX.rg = [...Array(6)].map(() => { const m = new THREE.Mesh(new THREE.TorusGeometry(1, .025, 4, 48), solid(K1, { transparent: true, depthWrite: false })); scene.add(m); return m; });
+  FX.word = sprite(txtTex(GP.m === "voice" ? "動くな" : GP.m === "dance" ? "♪ 舞 ♪" : "♪ ♫ ♪", "900 260px 'Noto Serif CJK JP',serif", CFG.fx3[0]), 2.2, 1.1);
+  if (GP.m === "music") { FX.guitar = new THREE.Group(); FX.guitar.add(mk(new THREE.Mesh(new THREE.BoxGeometry(.36, .26, .07), toon("#a01a1a")), null, null), mk(new THREE.Mesh(new THREE.BoxGeometry(.5, .04, .03), toon("#2a1a10")), V(.4, .04, 0), null)); scene.add(FX.guitar); }
+}
+if (GK === "glow") {
+  FX.gs = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 4), cel({ freq: 3, flow: V(0, -2, 0), shape: "rim", th: [.35, .55, .8] })); scene.add(FX.gs);
+  FX.gr = [0, 1, 2].map(() => { const m = new THREE.Mesh(new THREE.RingGeometry(.94, 1, 64), solid(K1, { transparent: true, side: THREE.DoubleSide, depthWrite: false })); m.rotation.x = -Math.PI / 2; scene.add(m); return m; });
+  if (GP.m === "rewind") { FX.clock = new THREE.Group(); const cm = solid(K0); FX.clock.add(new THREE.Mesh(new THREE.TorusGeometry(1.6, .04, 6, 64), cm));
+    for (let i = 0; i < 12; i++) FX.clock.add(mk(new THREE.Mesh(new THREE.BoxGeometry(.05, .22, .02), cm), V(Math.sin(i * TAU / 12) * 1.42, Math.cos(i * TAU / 12) * 1.42, 0), new THREE.Euler(0, 0, -i * TAU / 12)));
+    FX.hand = new THREE.Mesh(new THREE.BoxGeometry(.05, 1.2, .02), cm); FX.hand.geometry.translate(0, .55, 0); FX.clock.add(FX.hand); scene.add(FX.clock); FX.rw = sprite(txtTex("◀◀", "900 300px sans-serif", "#ffffff"), 1.4, .7); }
+}
+if (GK === "summon") {
+  if (GP.m === "panda") { FX.helper = fighter({ top: "#f2f2f2", pants: "#141414", yoke: "#141414", skin: "#f2f2f2", hair: "#141414", hairN: 0, shoe: "#141414", baggy: 1.5, loose: 1.4, seed: 303, face: { skin: "#f2f2f2", iris: "#141414", irisTop: "#000", angry: true, mouth: "flat", brow: "#141414" } });
+    [1, -1].forEach(s => { const e = new THREE.Mesh(new THREE.SphereGeometry(.07, 10, 8), toon("#141414")); e.position.set(s * .13, .17, 0); FX.helper.userData.J.head.add(e); }); FX.helper.scale.setScalar(1.35); }
+  else { FX.helper = fighter({ top: "#e8e4ec", pants: "#e8e4ec", skin: "#d8d4dc", hair: "#1a1a22", hairN: 30, hairLen: .5, seed: 404, face: { skin: "#d8d4dc", iris: "#f2f2f2", irisTop: "#8a8a92", angry: true, mouth: "shout", brow: "#1a1a22" } });
+    FX.hm = cel({ freq: 1.8, flow: V(0, -1.2, 0), shape: "none", th: [.3, .62, .9] }); FX.helper.traverse(o => { if (o.isMesh && !o.material.isShaderMaterial) o.material = FX.hm; }); FX.helper.scale.setScalar(2.8); }
+  scene.add(FX.helper);
+}
+if (GK === "card") {
+  const M = GP.m;
+  if (M === "eyes") FX.over = sprite(txtTex(["Kira", "4 2 0 7 1 1 9"], "700 120px Georgia,serif", "#ff3a4a"), 2.2, 1.1);
+  if (M === "decoy") { FX.tv = new THREE.Group(); FX.tv.add(new THREE.Mesh(new THREE.BoxGeometry(1.1, .8, .5), toon("#1a1a1e")), mk(new THREE.Mesh(new THREE.PlaneGeometry(.95, .66), new THREE.MeshBasicMaterial({ map: txtTex("L", "italic 900 420px 'Old English Text MT',Georgia,serif", "#141414", 512, 384, "#f2f2f2"), toneMapped: false })), V(0, 0, .26), null)); scene.add(FX.tv); }
+  if (M === "puzzle") { FX.dice = [...Array(14)].map((_, i) => { const m = new THREE.Mesh(new THREE.BoxGeometry(.16, .16, .16), toon("#f2f2f2")); scene.add(m); return m; }); FX.over = sprite(txtTex(["The notebook", "was fake."], "italic 700 110px Georgia,serif", "#ffffff"), 2.2, 1.1); }
+  if (M === "mind") { FX.ghost = fighter(HS); const gm = solid(K1, { transparent: true, opacity: .35, depthWrite: false, blending: THREE.AdditiveBlending }); FX.ghost.traverse(o => { if (o.isMesh) o.material = gm; }); scene.add(FX.ghost); }
+  if (M === "portal") { FX.cap = new THREE.Mesh(new THREE.CapsuleGeometry(.06, .1, 4, 8), toon("#f2f2f2")); scene.add(FX.cap);
+    FX.tm = new THREE.Group(); FX.tm.add(new THREE.Mesh(new THREE.CylinderGeometry(.7, .8, .4, 20), toon("#e8e4dc")), mk(new THREE.Mesh(new THREE.SphereGeometry(.6, 20, 12, 0, TAU, 0, Math.PI / 2), new THREE.MeshBasicMaterial({ color: "#a8d8ff", transparent: true, opacity: .5 })), V(0, .2, 0), null)); scene.add(FX.tm);
+    FX.gate = new THREE.Mesh(new THREE.TorusGeometry(1.2, .1, 8, 64), cel({ freq: 4, flow: V(0, 0, -4), shape: "fres", th: [.2, .45, .72] })); scene.add(FX.gate); }
+}
+
 const ENV = [sky, plat, ...rubble, crack];
 
 /* ---------- post: bloom, focus lines, whip blur, photography pass, impact frames ---------- */
@@ -255,6 +394,10 @@ if (fx === "susanoo") Object.assign(SH[4], { a: V(.9, .5, 2.6), b: V(.88, .5, 2.
 if (fx === "purple") { Object.assign(SH[4], { a: V(-.2, 1.45, 1.1), b: V(-.22, 1.45, 1.0), la: V(-.75, 1.3, 0), lb: V(-.75, 1.3, 0), fov: 30 }); Object.assign(SH[5], { a: V(-3.6, 2.0, 2.6), b: V(-4.4, 2.6, 3.4), la: V(5, 1.0, 0), lb: V(8, 1.2, 0), fov: 46 }); }
 if (fx === "army") Object.assign(SH[5], { a: V(3.2, 2.4, 9.0), b: V(3.8, 2.9, 10.2), la: V(-2.6, .9, 0), lb: V(-2.4, 1.0, 0), fov: 46 });
 if (fx === "note") { Object.assign(SH[2], { a: V(-1.05, 1.35, .55), b: V(-1.08, 1.25, .45), la: V(-1.08, 1.0, .1), lb: V(-1.08, .98, .1), fov: 30, dz: 0 }); Object.assign(SH[5], { a: V(2.9, 1.1, 3.6), b: V(2.6, .9, 3.1), la: V(.6, .6, 0), lb: V(.8, .4, 0), fov: 40 }); }
+// shot tweaks: melee kinds frame both fighters in the held breath
+if (GK) { Object.assign(SH[4], { a: V(-.1, 1.0, 3.6), b: V(-.1, 1.02, 3.45), la: V(.1, 1.05, 0), lb: V(.1, 1.05, 0), fov: 34 });
+  if (GK === "dome") Object.assign(SH[3], { a: V(4.5, 2.2, 6.5), b: V(4.0, 2.4, 6.0), la: V(.2, 1.2, 0), lb: V(.2, 1.4, 0), fov: 46 });
+  if (GK === "summon" && GP.m === "rika") Object.assign(SH[3], { a: V(3.8, 1.2, 7.6), b: V(3.4, 1.4, 7.0), la: V(-1.4, 2.4, 0), lb: V(-1.4, 2.6, 0), fov: 46 }); }
 
 function renderAt(T) {
   // the hit: hold 1 frame, ink, ink, invert, colour hold, white; time stops for the hit-stop
@@ -264,8 +407,8 @@ function renderAt(T) {
   clearBolts();
   hero.position.set(-1.25, 0, 0); hero.rotation.set(0, Math.PI / 2, 0); foe.position.set(1.3, 0, 0); foe.rotation.set(0, -Math.PI / 2, 0); foe.visible = true;
   // ---- hero acting: tired or poised, eyes close, the switch, the build, a frozen hold, the release
-  const charge = { susanoo: POSE.charge, purple: POSE.purple, army: POSE.ready, note: POSE.seal, beam: { ...POSE.charge, sh1: [-.3, 0, 1.4], "sh-1": [-.3, 0, -1.4], el1: [-.2, 0, 0], "el-1": [-.2, 0, 0] }, ui: POSE.idle }[fx];
-  const fire = { susanoo: POSE.follow, purple: POSE.purple, army: POSE.strike, note: POSE.grin, beam: { ...POSE.strike, spine: [.2, 0, 0], sh1: [-1.55, -.1, .12], el1: [0, 0, 0], "sh-1": [-1.55, .1, -.12], "el-1": [0, 0, 0] }, ui: POSE.strike }[fx];
+  const charge = { susanoo: POSE.charge, purple: POSE.purple, army: POSE.ready, note: POSE.seal, beam: { ...POSE.charge, sh1: [-.3, 0, 1.4], "sh-1": [-.3, 0, -1.4], el1: [-.2, 0, 0], "el-1": [-.2, 0, 0] }, ui: POSE.idle, gen: GEN.charge }[fx];
+  const fire = { susanoo: POSE.follow, purple: POSE.purple, army: POSE.strike, note: POSE.grin, beam: { ...POSE.strike, spine: [.2, 0, 0], sh1: [-1.55, -.1, .12], el1: [0, 0, 0], "sh-1": [-1.55, .1, -.12], "el-1": [0, 0, 0] }, ui: POSE.strike, gen: GEN.fire }[fx];
   const start = fx === "ui" ? POSE.crouch : POSE.ready;
   if (ts < 5.1) blend(hero, start, fx === "ui" ? POSE.crouch : POSE.idle, ease.io(seg(ts, 3.4, 5.0)));
   else if (ts < 7.2) blend(hero, fx === "ui" ? POSE.crouch : POSE.idle, fx === "note" ? POSE.seal : POSE.charge, ease.back(seg(ts, 5.2, 5.8)));
@@ -289,10 +432,52 @@ function renderAt(T) {
   else if (fx === "note" || fx === "army") { blend(foe, POSE.brace, POSE.down, ease.in(seg(t, HIT, fx === "note" ? 12.2 : 11.0)));   // note: the slow-motion fall
     if (fx === "army" && ts >= 13) blend(foe, POSE.down, POSE.crouch, ease.out(seg(ts, 13, 13.6))); }
   else { const u = seg(t, HIT, 12.4); blend(foe, POSE.hit, POSE.fly, ease.out(Math.min(1, u * 4))); foe.position.x = 1.3 + ease.out(u) * 11; foe.position.y = Math.sin(u * Math.PI) * 2.6; foe.rotation.z = -u * 2.4; if (ts >= 12.4) foe.visible = false; }
+  if (GK) {   // ---- generic finishers: footwork and the opponent's reaction, per move type
+    const X = (x) => (hero.position.x = x), go = (a, b, x0, x1, e = ease.out) => X(x0 + (x1 - x0) * e(seg(t, a, b)));
+    const foeAt = () => { foe.visible = true; foe.position.set(1.3, 0, 0); foe.rotation.z = 0; };
+    const foeCut = (d) => { foeAt(); if (t < HIT + d) blend(foe, POSE.hit, POSE.brace, ease.out(seg(t, HIT, HIT + .15))); else { const u = seg(t, HIT + d, HIT + d + .55); blend(foe, POSE.hit, POSE.down, ease.in(u)); foe.position.x = 1.3 + u * .25; } };
+    const foeDown = (a, b, from = POSE.brace) => { foeAt(); blend(foe, from, POSE.down, ease.in(seg(t, a, b))); };
+    const s = GP.s || GP.m;
+    if (GK === "blade") {
+      if (s === "thrust") { go(7.2, HOLD, -1.25, -.95); if (T > HIT - .12) go(HIT - .12, HIT, -.95, .5, ease.in); if (T >= HIT - .12 && ts < 13) blend(hero, PZ.low, POSE.strike, ease.out(seg(t, HIT - .12, HIT))); if (T > HIT) foeDown(HIT + .3, HIT + 1.2, POSE.hit); }
+      else if (s === "cleave") { const j = seg(t, HOLD - .3, HIT); if (T > HOLD - .3) { go(HOLD - .3, HIT, -1.25, .3, ease.io); hero.position.y = Math.sin(Math.min(1, j) * Math.PI) * 1.3; if (T < HIT) blend(hero, PZ.over, PZ.over, 0); }
+        if (T > HIT) { hero.position.y = 0; foeCut(.7); } }
+      else if (s === "calm") { if (T > 7.2 && T < HOLD) { const k = Math.floor((ts - 7.2) * 6) % 2; foeAt(); foe.position.x = .1; blend(foe, k ? POSE.strike : POSE.follow, POSE.idle, 0); blend(hero, PZ.draw, k ? POSE.guard : POSE.dodge, .5); }
+        if (T > HIT - .1) go(HIT - .1, HIT, -1.25, .6, ease.in); if (T > HIT) foeCut(.9); }
+      else if (GP.noblade) { if (T > HIT - .2 && ts < 13) blend(hero, POSE.grin, POSE.purple, ease.out(seg(t, HIT - .2, HIT))); if (T > HIT) foeCut(.5); }
+      else { go(7.2, HOLD, -1.25, -.95); if (T > HIT - .09) go(HIT - .09, HIT, -.95, 2.7, ease.in); if (T > HIT - .09 && ts < 13) blend(hero, PZ.low, POSE.follow, ease.out(seg(t, HIT - .09, HIT + .1)));
+        if (ts >= 12.2) blend(hero, POSE.follow, POSE.idle, ease.out(seg(ts, 12.2, 12.8))); if (T > HIT) foeCut(s === "dance" ? .55 : .85); }
+      if (ts >= 13) hero.rotation.y = Math.PI / 2;   // back turned to the fallen
+    }
+    if (GK === "fist") {
+      if (GP.clap) { if (T > 8.1 && T < 8.5) blend(hero, POSE.seal, POSE.seal, 0); X(T < 8.5 ? -1.25 : .35); }
+      else if (s === "smash") { go(7.2, HOLD, -1.25, .15, ease.io); hero.position.y = T < HIT ? Math.sin(seg(t, 7.2, HOLD) * Math.PI * .5) * 1.7 : 0; if (T > 7.2 && T < HIT) blend(hero, PZ.over, PZ.over, 0); if (T > HIT) X(.45); }
+      else if (s === "gate") { go(7.2, 7.5, -1.25, .45, ease.in); if (T > 7.5 && T < HOLD) { const k = Math.floor(ts * 12) % 3; blend(hero, [POSE.strike, POSE.follow, POSE.dash][k], POSE.idle, 0); foeAt(); blend(foe, k ? POSE.hit : POSE.brace, POSE.guard, .2); foe.position.x = 1.3 + (k - 1) * .06; } }
+      else if (s === "spin") { go(7.2, HOLD, -1.25, .3); if (T > HIT && T < HIT + 1.3) hero.rotation.y = Math.PI / 2 + (t - HIT) * 28; }
+      else go(7.2, HOLD, -1.25, .3, ease.io);
+      if (T > 7.2 && T < HIT && s !== "gate" && s !== "smash") blend(hero, POSE.ready, PZ.draw, ease.out(seg(ts, 7.2, 7.8)));
+    }
+    if (GK === "orb") { if (GP.teleport) X(T < 8.6 ? -1.25 : .3); else { go(7.4, HOLD, -1.25, .3, ease.in); if (T > 7.4 && T < HOLD) blend(hero, POSE.dash, POSE.dash, 0); } if (T >= HOLD && T < HIT) blend(hero, POSE.purple, POSE.purple, 0); }
+    if (GK === "bind") { if (GP.imitate && T > 7.0 && T < HIT + .5) { foeAt(); blend(foe, POSE.seal, POSE.seal, 0); } if (T > HIT) foeDown(HIT + .4, HIT + 1.5, GP.imitate ? POSE.seal : POSE.brace); }
+    if (GK === "dome") { if (s === "jackpot" && T > HIT - .15) { go(HIT - .15, HIT, -1.25, .35, ease.in); if (ts < 13) blend(hero, POSE.dash, POSE.strike, ease.out(seg(t, HIT - .15, HIT))); }
+      if (s === "court" || s === "veil") { if (T > HIT) foeDown(HIT + .2, HIT + 1.3, POSE.hit); } }
+    if (GK === "proj") { if (GP.m === "weapons" && T > 7.2 && T < HIT) { hero.position.y = Math.sin(seg(t, 7.2, HIT) * Math.PI) * 1.4; blend(hero, POSE.seal, POSE.seal, 0); }
+      if (["nail", "weapons", "bullet"].includes(GP.m) && T > HIT) foeDown(HIT + .5, HIT + 1.6, POSE.hit); }
+    if (GK === "ring") { if (s === "voice" && T > 7.4) { foeAt(); blend(foe, POSE.idle, T > HIT ? POSE.crouch : POSE.idle, ease.out(seg(t, HIT, HIT + .5))); foe.rotation.z = 0; } }
+    if (GK === "glow") { if (s === "rewind") { const fwd = seg(t, 7.2, HOLD), back = seg(t, HIT, HIT + 1.1); foeAt(); foe.position.x = 1.3 - ease.in(fwd) * 1.9 + ease.io(back) * 1.9;
+        blend(foe, T < HIT ? POSE.dash : POSE.dash, T < HIT ? POSE.strike : POSE.idle, T < HIT ? fwd : back); if (T > HIT + 1.3) blend(foe, POSE.idle, PZ.sit, ease.out(seg(t, HIT + 1.3, HIT + 1.9))); }
+      else if (T > HIT) { foeAt(); blend(foe, POSE.brace, PZ.sit, ease.out(seg(t, HIT + .3, HIT + 1.2))); } }
+    if (GK === "summon") { if (T > HIT) { /* the summon throws the hit; the boss watches */ } }
+    if (GK === "card") { const m = GP.m;
+      if (m === "eyes") { if (T > HIT) foeDown(HIT, 12.4, POSE.brace); }
+      if (m === "decoy" || m === "puzzle") { foeAt(); if (T > 7.4) blend(foe, POSE.guard, T > HIT ? PZ.sit : POSE.brace, ease.out(seg(t, T > HIT ? HIT + .2 : 7.4, T > HIT ? HIT + 1.0 : 7.9))); }
+      if (m === "mind") { if (T > 7.4 && T < 13) blend(hero, POSE.seal, POSE.down, ease.in(seg(t, 8.0, 8.6)) * .6); foeAt(); if (T > HIT) { blend(foe, POSE.strike, POSE.down, ease.in(seg(t, HIT + .5, HIT + 1.4))); foe.rotation.y = -Math.PI / 2 + Math.PI * (t < HIT + .5 ? 1 : 0) * .0; } }
+      if (m === "portal" && T > HIT) { foeAt(); const u = seg(t, HIT, HIT + .9); blend(foe, POSE.hit, POSE.fly, u); foe.position.x = 1.3 + u * 1.6; foe.scale.setScalar(Math.max(.001, 1 - ease.in(u))); foe.visible = u < 1; } }
+  }
   hero.updateMatrixWorld(true); foe.updateMatrixWorld(true);
   // ---- aura: drawn flames that flare on the switch and on the hit
   const flare = (T > 5.2 && T < 6.4 ? 1 - seg(T, 5.4, 6.4) : 0) + (T > HIT && T < HIT + 1 ? 1 - seg(T, HIT, HIT + 1) : 0);
-  aura.visible = on > 0 && fx !== "note"; aura.position.set(hero.position.x, 0, hero.position.z); aura.scale.set((fx === "ui" || fx === "beam" ? 1 : .85) * (.85 + on * .2 + flare * .5), (.6 + on * .45) * (1 + flare * .3), .85 + on * .2 + flare * .5);
+  aura.visible = on > 0 && fx !== "note" && !GK && !CFG.noAura; aura.position.set(hero.position.x, 0, hero.position.z); aura.scale.set((fx === "ui" || fx === "beam" ? 1 : .85) * (.85 + on * .2 + flare * .5), (.6 + on * .45) * (1 + flare * .3), .85 + on * .2 + flare * .5);
   const calm = fx === "ui" || fx === "beam" ? 1 : (T > 6.6 && T < HIT ? .72 : 1); auraM.forEach(m => (m.uniforms.amt.value = on * (1 + flare * .4) * calm * (T > HOLD && T < HIT ? .8 : 1)));
   spikes.children.forEach((m, i) => { const d = m.userData, life = ((uS.value * (1 + d.k) + d.k * 3) % 1); m.position.set(Math.cos(d.a) * d.r, d.y + life * 1.2, Math.sin(d.a) * d.r); m.scale.set(1, 1.4 - life, 1); m.rotation.set(Math.sin(d.a) * .25, 0, -Math.cos(d.a) * .25); m.material.uniforms.amt.value = on * (1.1 - life); });
   glowL.position.set(hero.position.x + .3, 1.3, .6); glowL.intensity = on * 2 + flare * 6;
@@ -302,7 +487,7 @@ function renderAt(T) {
   rubble.forEach(m => { m.position.copy(m.userData.base); m.position.y += on * (1 + m.userData.k * 2.4) * (fx === "note" ? .2 : 1) + Math.sin(T * (1 + m.userData.k) + m.userData.k * 9) * .2; m.rotation.set(T * m.userData.k, T * .7, 0); });
   sky.material.uniforms.k.value = T > HOLD && T < HIT ? .8 : 0;   // the world dims in the held breath
   // ---- shared hit FX: rings, cel dust wall, debris with trails, ground crack
-  const P0 = fx === "note" ? V(1.3, .2, 0) : V(.6, .05, 0); const ru = seg(T, 5.25, 6.4);
+  const P0 = fx === "note" ? V(1.3, .2, 0) : GK ? GEN.p0 : V(.6, .05, 0); const ru = seg(T, 5.25, 6.4);
   rings.forEach((m, i) => { const u = seg(T, 5.25 + i * .1, 6.3 + i * .12), u2 = seg(T, HIT + .2 + i * .07, HIT + 1.2 + i * .1), a = u > 0 && u < 1; m.visible = (a || (u2 > 0 && u2 < 1)) && fx !== "note";
     m.position.set(a ? hero.position.x : P0.x, a ? .06 : 1.1, 0); m.rotation.set(a ? -Math.PI / 2 : 0, a ? 0 : Math.PI / 2, 0); m.scale.setScalar(.4 + ease.out(a ? u : u2) * (a ? 6 : 15)); m.material.opacity = 1 - (a ? u : u2); });
   const du = seg(t, HIT, HIT + 2.2); dust.visible = du > 0 && du < 1 && fx !== "note";
@@ -345,17 +530,129 @@ function renderAt(T) {
     if (T > HIT && T < HIT + .45) { smear.visible = true; smear.position.copy(hp).add(V(-.35, 0, 0)); smear.scale.set(1.6, .5, 1); smear.rotation.set(0, 0, -.6); smear.lookAt(camera.position); smear.material.opacity = .9 * (1 - seg(T, HIT, HIT + .45)); }
     if (ts >= 13) foe.traverse(o => { if (o.isMesh && !o.userData.sh) { o.userData.sh = 1; o.material = FX.army[0].userData.J.spine.children[0]?.material || o.material; } }); }
   if (fx === "note") { const hl = hw(hero, "hd-1"); FX.book.visible = T > 5.1 && T < 13; FX.book.position.copy(hl).add(V(.12, -.02, 0)); FX.book.rotation.set(0, 0, .3);
-    const cx = FX.ctx, name = "L Lawliet", cause = "Cause of death: heart attack", n = Math.floor(seg(T, 5.4, 6.9) * name.length), n2 = Math.floor(seg(T, 7.4, 9.0) * cause.length);
+    const cx = FX.ctx, name = CFG.noteName || "L Lawliet", cause = CFG.noteCause || "Cause of death: heart attack", n = Math.floor(seg(T, 5.4, 6.9) * name.length), n2 = Math.floor(seg(T, 7.4, 9.0) * cause.length);
     cx.fillStyle = "#f2efe4"; cx.fillRect(0, 0, 1024, 512); cx.strokeStyle = "#c8c0b0"; cx.lineWidth = 2; for (let y = 80; y < 512; y += 64) { cx.beginPath(); cx.moveTo(40, y); cx.lineTo(984, y); cx.stroke(); }
     cx.fillStyle = "#14100c"; cx.font = "italic 700 120px Georgia,serif"; cx.fillText(name.slice(0, n), 90, 250); cx.font = "italic 600 48px Georgia,serif"; cx.fillText(cause.slice(0, n2), 94, 380); FX.tex.needsUpdate = true;
     FX.page.visible = T > 5.1 && T < 7.2;
-    const sec = Math.max(0, 40 - Math.floor(seg(T, 9.3, HIT) * 40)); FX.clock.style.display = T > HOLD && T < HIT ? "" : "none"; FX.clock.textContent = sec + "秒"; }
+    const sec = Math.max(0, 40 - Math.floor(seg(T, 9.3, HIT) * 40)); FX.clock.style.display = T > HOLD && T < HIT && !CFG.noteName ? "" : "none"; FX.clock.textContent = sec + "秒"; }
+  if (FX.spiral) FX.spiral.forEach(m => (m.visible = false));
   if (fx === "beam") { const hr = hw(hero, "hd1"), hl = hw(hero, "hd-1"), mid = hr.clone().lerp(hl, .5).add(V(.18, 0, 0));
-    if (T > 5.3 && T < 6.8) for (let i = 0; i < 4; i++) bolt(V(hero.position.x, .3 + i * .45, 0).add(V(Math.sin(i * 7) * .5, 0, Math.cos(i * 5) * .5)), V(hero.position.x + Math.sin(i * 3) * .9, 1.0 + i * .5, Math.cos(i * 9) * .8), Math.floor(uS.value * 12) * 3 + i, .01);
-    FX.orb.visible = T > 8.0 && T < HIT + .1; FX.orb.position.copy(T > 8.6 ? mid : hr); FX.orb.scale.setScalar(.08 + seg(T, 8.0, HOLD) * .28 + (T > HOLD ? Math.sin(T * 50) * .01 : 0));
-    if (T > 8.4 && T < HIT) for (let i = 0; i < 3; i++) bolt(FX.orb.position, FX.orb.position.clone().add(V(Math.sin(i * 4 + uS.value * 9) * .7, Math.cos(i * 3 + uS.value * 7) * .6, .3)), Math.floor(uS.value * 12) * 11 + i, .008);
-    if (T > HIT) { const L = 48 * ease.out(seg(T, HIT, HIT + .3)), r = (.45 + .6 * seg(T, HIT, 11.0)) * (1 - seg(T, 12.2, 12.8)); beam.visible = r > .002; beam.position.copy(mid); beam.quaternion.identity(); beam.scale.set(L, r, r);
-      if (T < 12.2) for (let i = 0; i < 5; i++) bolt(mid.clone().add(V(1 + i * 2, 0, 0)), mid.clone().add(V(2.4 + i * 2, (i % 2 - .5) * 1.6 * r, .5 * r)), Math.floor(uS.value * 12) * 13 + i, .012); } }
+    if (!CFG.calm && T > 5.3 && T < 6.8) for (let i = 0; i < 4; i++) bolt(V(hero.position.x, .3 + i * .45, 0).add(V(Math.sin(i * 7) * .5, 0, Math.cos(i * 5) * .5)), V(hero.position.x + Math.sin(i * 3) * .9, 1.0 + i * .5, Math.cos(i * 9) * .8), Math.floor(uS.value * 12) * 3 + i, .01);
+    FX.orb.visible = T > 8.0 && T < HIT + .1; FX.orb.position.copy(T > 8.6 ? mid : hr); FX.orb.scale.setScalar((.08 + seg(T, 8.0, HOLD) * .28 + (T > HOLD ? Math.sin(T * 50) * .01 : 0)) * (CFG.thin ? .35 : 1));
+    if (!CFG.calm && T > 8.4 && T < HIT) for (let i = 0; i < 3; i++) bolt(FX.orb.position, FX.orb.position.clone().add(V(Math.sin(i * 4 + uS.value * 9) * .7, Math.cos(i * 3 + uS.value * 7) * .6, .3)), Math.floor(uS.value * 12) * 11 + i, .008);
+    if (T > HIT) { const L = 48 * ease.out(seg(T, HIT, HIT + .3)), r = (.45 + .6 * seg(T, HIT, 11.0)) * (1 - seg(T, 12.2, 12.8)); beam.visible = r > .002; beam.position.copy(mid); beam.quaternion.identity(); const rr = r * (CFG.thin ? .22 : CFG.fire ? 1.5 : 1); beam.scale.set(L, rr * (CFG.fire ? 1 + Math.sin(T * 40) * .08 : 1), rr);
+      if (FX.spiral) FX.spiral.forEach((m, i) => { m.visible = beam.visible; m.position.copy(mid).add(V(1 + i * 1.6, 0, 0)); m.rotation.set(T * 20 + i, Math.PI / 2, 0); m.scale.setScalar(.35 + .05 * Math.sin(T * 30 + i)); });
+      if (!CFG.calm && T < 12.2) for (let i = 0; i < 5; i++) bolt(mid.clone().add(V(1 + i * 2, 0, 0)), mid.clone().add(V(2.4 + i * 2, (i % 2 - .5) * 1.6 * r, .5 * r)), Math.floor(uS.value * 12) * 13 + i, .012); } }
+  if (GK) {   // ---- generic finishers: the drawn effects
+    const s = GP.s || GP.m, ch = V(1.25, 1.15, 0), fr = () => Math.floor(uS.value * 12);
+    const fade = (a, b) => 1 - seg(T, a, b), pop = (a, b) => ease.out(seg(t, a, b));
+    if (T > HIT) rings.forEach(m => { m.lookAt(camera.position); m.scale.multiplyScalar(.32); if (!["fist", "orb", "summon"].includes(GK) || T > HIT + .5) m.visible = false; });
+    if (GEN.soft) { dust.visible = trails.visible = crack.visible = false; debris.forEach(m => (m.visible = false)); if (T > HIT) rings.forEach(m => (m.visible = false)); }
+    if (GK === "blade") {
+      FX.swords.forEach((g, i) => { const h = gw(i ? "hd1" : "hd-1"), e = gw(i ? "el1" : "el-1"), d = h.clone().sub(e).normalize(); g.visible = ts > 5.0; g.position.copy(h); g.quaternion.setFromUnitVectors(V(0, 1, 0), d); });
+      const bo = T > 5.4 && T < HIT; FX.ribs.visible = bo; FX.ribs.position.set(hero.position.x, 1.0, 0);
+      FX.ribs.children.forEach((m, i) => { m.rotation.set(Math.PI / 2 + Math.sin(uS.value * 3 + i) * .4, uS.value * (3 + i), uS.value * (4 - i) + i * 2); m.material.uniforms.amt.value = seg(T, 5.4, 6.2) * (GP.mist ? .9 : 1.1); });
+      const n = FX.arcs.length, st = s === "dance" || GP.noblade ? .09 : 0;
+      FX.arcs.forEach((m, i) => { const a = HIT + i * st, u = seg(t, a, a + .45); m.visible = T > a && u < 1; m.position.copy(ch).add(V((i % 2 - .5) * .2 * (n > 1), (i - (n - 1) / 2) * .16, .25));
+        const r0 = s === "cleave" || (GP.noblade && i % 2) ? Math.PI / 2 : s === "thrust" ? 0 : (n > 1 ? (i * 2.1) % Math.PI - .5 : -.25);
+        m.rotation.set(0, 0, r0 + Math.PI * .55); m.scale.set((GP.big ? 1.6 : 1) * (.4 + pop(a, a + .12) * .8), (GP.big ? 1.6 : 1) * (.4 + pop(a, a + .12) * .8), .12); m.material.uniforms.amt.value = 1.2 * (1 - u * .8); });
+      // the dash-through: one long drawn streak, plus thunder along the path
+      if (T > HIT - .1 && T < HIT + .5 && !GP.noblade && s !== "calm" && s !== "cleave") { smear.visible = true; const x0 = -.95, x1 = s === "thrust" ? .6 : 2.7; smear.position.set((x0 + x1) / 2, 1.0, .1); smear.scale.set(x1 - x0, s === "thrust" ? .12 : .3, 1); smear.rotation.set(0, 0, 0); smear.material.opacity = .9 * fade(HIT, HIT + .5); }
+      if (GP.thunder && T > HIT - .1 && T < HIT + .6) for (let i = 0; i < 6; i++) bolt(V(-.9 + i * .6, .8 + (i % 2) * .5, 0), V(-.3 + i * .6, 1.2 - (i % 2) * .5, .2), fr() * 7 + i, .014);
+      FX.cut.visible = T > HIT + (s === "dance" ? .45 : .75) && T < HIT + 1.1; FX.cut.position.copy(ch).add(V(0, .05, .3)); FX.cut.rotation.set(0, 0, s === "cleave" ? Math.PI / 2 : -.35); FX.cut.scale.set(1.6 * pop(HIT + .45, HIT + .6), 1, 1);
+      if (FX.ratio) { FX.ratio.visible = T > 7.4 && T < HIT; FX.ratio.position.set(1.3, 1.25, .25); }   // 7:3: the weak point
+      if (FX.hex) FX.hex.forEach((m, i) => { const u = seg(t, HIT + i * .06, HIT + .6 + i * .06); m.visible = u > 0 && u < 1; m.position.copy(ch).add(V(0, 0, .2)); m.rotation.set(0, Math.PI / 2, 0); m.scale.setScalar(.2 + ease.out(u) * (1 + i * .5)); m.material.opacity = 1 - u; });
+      if (FX.booms) FX.booms.forEach((m, i) => { const a = HIT + .15 + i * .1, u = seg(t, a, a + .5); m.visible = u > 0 && u < 1; m.position.copy(ch).add(V(Math.sin(i * 2.3) * .8, Math.cos(i * 1.7) * .6, Math.sin(i * 4.1) * .4)); m.scale.setScalar(.3 + ease.out(u) * 1.2); m.material.uniforms.amt.value = 1.2 * (1 - u); });
+      if (GP.mist && T > 6 && T < HIT + 1) { dust.visible = true; dust.children.forEach((m, i) => { const d = m.userData; m.position.set(hero.position.x + Math.cos(d.a) * 1.6, .4 + d.k, Math.sin(d.a) * 1.6); m.scale.setScalar(.9 + d.k * .5); }); dustM.uniforms.amt.value = .9; }
+    }
+    if (GK === "fist") {
+      const hf = gw("hd-1"), hb = gw("hd1"), glow = seg(T, 5.3, 6.0);
+      FX.fo.visible = (s === "flash" || s === "lion" || s === "punch" || !s) && T > 5.3 && T < HIT + .3; FX.fo.position.copy(hf); FX.fo.scale.setScalar((s === "lion" ? 1.6 : 1) * glow * (1 + (T > HOLD && T < HIT ? Math.sin(T * 60) * .1 : 0)));
+      FX.fo2.visible = s === "lion" && T > 5.3 && T < HIT + .3; FX.fo2.position.copy(hb); FX.fo2.scale.setScalar(1.6 * glow);
+      if (s === "flash" && T > 5.4 && T < HIT) for (let i = 0; i < 3; i++) bolt(hf, hf.clone().add(V(Math.sin(i * 3 + fr()) * .35, Math.cos(i * 5 + fr()) * .3, .15)), fr() * 9 + i, .008);
+      if (s === "flash" && T > HIT && T < HIT + .7) { const n = 12; for (let i = 0; i < n; i++) { const a = i / n * TAU + fr(), L = .9 + (i % 3) * .5; bolt(ch.clone().add(V(-.2, 0, 0)), ch.clone().add(V(Math.cos(a) * L, Math.sin(a) * L, .3)), fr() * 17 + i, i % 2 ? .02 : .012); }
+        bolts.children.forEach((b, i) => (b.material = i % 2 ? FX.blk : FX.red)); }   // black and red sparks: the Black Flash
+      if (FX.wheel) { FX.wheel.position.copy(gw("head")).add(V(0, .55, 0)); FX.wheel.visible = T > 5.2; const turns = (T > 6.0 ? 1 : 0) + (T > HIT - .3 ? 1 : 0); FX.wheel.rotation.z = -(turns * Math.PI / 4) + (T > 6.0 && T < 6.3 ? (1 - seg(T, 6.0, 6.3)) * Math.PI / 4 : 0); }
+      if (FX.wings) FX.wings.forEach(w => { w.visible = T > 5.4; const b = gw("spine"); w.position.copy(b).add(V(-.12, .2, 0)); w.rotation.set(0, Math.PI / 2 + w.userData.s * (.5 + Math.sin(uS.value * 5) * .15), 0); w.scale.set(w.userData.s * 1.1, 1.1, 1); w.material.uniforms.amt.value = seg(T, 5.4, 6.0) * 1.1; });
+      if (FX.dome) { const u = seg(t, HIT, HIT + 1.3); FX.dome.visible = T > HIT - .1 && u < 1; FX.dome.position.set(hero.position.x, .9, 0); FX.dome.scale.setScalar(.6 + ease.out(u) * (GP.drill ? 1.0 : 1.6)); FX.dome.scale.y *= GP.drill ? 1.8 : 1; FX.dome.material.uniforms.amt.value = 1.2 * (1 - u * .7); }
+      if (FX.ghost) FX.ghost.forEach((g, i) => { g.visible = T > 7.5 && T < HOLD; if (!g.visible) return; g.position.set(.45 - (i + 1) * .18, 0, (i - 1) * .2); g.rotation.y = Math.PI / 2; blend(g, [POSE.strike, POSE.follow, POSE.dash][(Math.floor(ts * 12) + i + 1) % 3], POSE.idle, 0); });
+      if (s === "gate") { aura.visible = T > 5.2; }
+      if (s === "smash" && T > HIT) { crack.scale.setScalar(.3 + pop(HIT, HIT + .4) * 2.4); plat.children.forEach(p => { const d = p.position.distanceTo(V(.6, 0, 0)); if (d < 3) p.position.y += Math.max(0, Math.sin(seg(t, HIT, HIT + .8) * Math.PI)) * (3 - d) * .4; }); }
+      // contact: the fist lands on the body, the body folds around it
+      if (T > HIT && T < HIT + .35 && s !== "spin") { smear.visible = true; smear.position.copy(hf).add(V(-.35, 0, .1)); smear.scale.set(1.0, .22, 1); smear.rotation.set(0, 0, 0); smear.material.opacity = .9 * fade(HIT, HIT + .35); }
+    }
+    if (GK === "orb") {
+      const h = gw("hd-1"), grow = seg(T, 5.3, 6.3), push = seg(t, HIT, HIT + .45), at = T < HIT ? h.clone().add(V(.18, 0, 0)) : ch.clone().lerp(V(2.2, 1.3, 0), push);
+      FX.orb.visible = T > 5.3 && T < HIT + .9; FX.orb.position.copy(at); FX.orb.scale.setScalar(T < HIT ? .05 + grow * .2 + (T > HOLD ? Math.sin(T * 50) * .01 : 0) : .25 + ease.out(push) * 1.4); FX.orb.material.uniforms.amt.value = T > HIT ? 1.2 * (1 - seg(t, HIT + .45, HIT + .9)) : 1.1;
+      FX.swirl.visible = FX.orb.visible; FX.swirl.position.copy(at); FX.swirl.lookAt(camera.position); FX.swirl.children.forEach((m, i) => { m.rotation.z = -uS.value * (8 + i * 3); m.scale.setScalar(FX.orb.scale.x * (1.15 + i * .12)); });
+      FX.planets.forEach((m, i) => { const a = uS.value * 6 + i * TAU / FX.planets.length; m.visible = T > 6.0 && T < HIT; m.position.copy(at).add(V(Math.cos(a) * .55, Math.sin(a * .7) * .2, Math.sin(a) * .55)); m.scale.setScalar(.08 * seg(T, 6.0, 6.5)); });
+      if (GP.lightning && T > 5.4 && T < HIT + .4) for (let i = 0; i < 5; i++) bolt(at, at.clone().add(V(Math.sin(i * 2 + fr()) * .6, Math.cos(i * 3 + fr()) * .5, (i % 2 - .5) * .4)), fr() * 13 + i, .01);
+      if (GP.teleport && Math.abs(T - 8.6) < .25) { rings[0].visible = true; rings[0].position.set(T < 8.6 ? -1.25 : .3, .06, 0); rings[0].rotation.set(-Math.PI / 2, 0, 0); rings[0].scale.setScalar(.5 + (T - 8.35) * 3); rings[0].material.opacity = 1; hero.visible = Math.floor(T * 24) % 2 === 0; } else hero.visible = true;
+    }
+    if (GK === "bind") {
+      const ext = ease.io(seg(T, 5.6, 6.8)), x0 = hero.position.x + .2, x1 = x0 + (1.3 - x0) * ext; FX.strip.visible = ext > 0; FX.strip.position.set((x0 + x1) / 2, .025, 0); FX.strip.scale.set(Math.max(.01, x1 - x0), 1, 1);
+      const pu = ease.out(seg(T, 6.7, 7.1)); FX.pool.visible = pu > 0; FX.pool.position.set(1.3, .03, 0); FX.pool.scale.setScalar(pu * (GP.m === "sand" ? 1.6 : 1.1));
+      const rise = ease.out(seg(T, 7.2, HOLD)), stab = pop(HIT, HIT + .18);
+      FX.tend.forEach((m, i) => { const d = m.userData, wr = 1 - rise * .55; m.visible = rise > 0 && T < 13; m.position.set(1.3 + Math.cos(d.a + rise * 2) * d.r * wr * 1.6, 0, Math.sin(d.a + rise * 2) * d.r * wr * 1.6);
+        m.rotation.set(Math.sin(d.a) * (.6 - rise * .5 - stab * .1), 0, -Math.cos(d.a) * (.6 - rise * .5 - stab * .1)); m.scale.set(1, (.2 + rise * .7 + stab * (GP.m === "shadow" ? .7 : .3)) * (1 - seg(T, 12.4, 13)), 1); });
+      FX.bm.uniforms.amt.value = 1.1;
+      if (FX.sand) { const close = ease.in(seg(T, 8.4, HOLD)), burst = seg(t, HIT, HIT + .35); FX.sand.visible = T > 8.0 && burst < 1; FX.sand.position.set(1.3, 1.0, 0); FX.sand.scale.setScalar((1.4 - close * .6) * (1 - burst * .4) + burst * 1.2); FX.tend.forEach(m => (m.visible = m.visible && T < 8.6)); if (T > 8.8 && T < HIT + .2) foe.visible = false; }
+      if (FX.flowers) FX.flowers.forEach((m, i) => { const d = FX.tend[i % FX.tend.length]; m.visible = T > HIT; m.position.copy(d.position).add(V(0, (.6 + (i % 4) * .4) * d.scale.y * 2, 0)); m.scale.setScalar(pop(HIT + i * .03, HIT + .3 + i * .03) * 1.1); });
+      if (FX.bugs) FX.bugs.forEach((m, i) => { const d = m.userData, sw = seg(T, 7.0, 8.0); m.visible = T > 6.0 && T < 13; const a = d.a + uS.value * (2 + d.k * 3); const c = V(-1.25 + 2.55 * sw, 1.0, 0); m.position.set(c.x + Math.cos(a) * d.r * (1 - (T > HIT ? .5 : 0)), .2 + d.y * (1 - sw * .3) + Math.sin(a * 2) * .1, Math.sin(a) * d.r); m.rotation.set(a, a * 2, 0); });
+    }
+    if (GK === "dome") {
+      const ex = ease.out(seg(T, 5.5, 6.7)), R = .2 + ex * 16; FX.dome.visible = ex > 0; FX.dome.position.set(hero.position.x, 0, 0); FX.dome.scale.setScalar(R); FX.dome.material.uniforms.amt.value = 1.15;
+      FX.floor.visible = ex > 0; FX.floor.position.set(hero.position.x, .015, 0); FX.floor.scale.setScalar(Math.min(R, 15));
+      if (FX.reels) { const stop = [8.4, 8.9, HOLD]; FX.reels.forEach((r, i) => { r.visible = T > 7.2 && T < 13; r.position.set(.1 + (i - 1) * .7, 2.4, .4); const d = T < stop[i] ? (Math.floor(T * 24) + i * 3) % 10 : 7; r.material.map = FX.digits[d]; r.scale.setScalar((.62 + (T > stop[i] && T < stop[i] + .2 ? .2 : 0))); }); if (T > HOLD && T < HIT + .6) aura.visible = true; }
+      if (FX.vents) FX.vents.forEach((m, i) => { const a = m.userData.a, r = 1.2 + (i % 2) * .7, up = seg(T, 7.4 + i * .12, 8.2 + i * .12), er = pop(HIT, HIT + .4); m.visible = up > 0 && T < 13; m.position.set(1.3 + Math.cos(a) * r * (1 - er * .7), 0, Math.sin(a) * r * (1 - er * .7)); m.scale.set(1 + er, (.15 + up * .25) + er * 2.2, 1 + er); m.material.uniforms.amt.value = 1.15 * (T > 12.4 ? 1 - seg(T, 12.4, 13) : 1); });
+      if (FX.verdict) { FX.verdict.visible = T > 7.6 && T < HIT; FX.verdict.position.set(.1, 1.95, 1.0); FX.axe.visible = T > 7.8 && T < 13; const dr = ease.in(seg(t, HOLD + .3, HIT)); FX.axe.position.set(1.3, 5.2 - dr * 3.3, .1); FX.axe.rotation.z = 0; }
+      if (FX.veil) { const dn = ease.io(seg(T, 7.2, HIT)); FX.veil.visible = T > 7.2; FX.veil.position.set(.2, 6 + 6 - dn * 12 * .55, 0); FX.veil.material.uniforms.amt.value = 1.1; }
+    }
+    if (GK === "proj") {
+      const M = GP.m, n = FX.pj.length, src = gw("hd-1"), span = M === "weapons" ? .9 : M === "bullet" ? .7 : .45;
+      FX.pj.forEach((g, i) => { const a = HIT - span + (n > 1 ? i / (n - 1) : 1) * span - (M === "crow" || M === "flail" ? .2 : .12), b = a + (M === "crow" ? .5 : M === "flail" ? .35 : .12);
+        const S = M === "weapons" ? V(1.3 + Math.cos(i * 2.4) * 1.6, 4.2, Math.sin(i * 2.4) * 1.4) : M === "crow" ? V(-1.6, 2.4, .9) : src.clone(), E = ch.clone().add(V(0, g.userData.y * (M === "weapons" ? 1.6 : .4), g.userData.z));
+        const u = seg(t, a, b); g.visible = (T > a - (M === "crow" ? 1.6 : .05)) && T < (M === "nail" || M === "weapons" ? 12.8 : b + .02);
+        if (M === "crow" && T < a) { const k = seg(T, a - 1.6, a); g.position.set(-1.25 + Math.sin(k * 7) * 1.1, 1.9 + k * .5, Math.cos(k * 7) * 1.1); g.quaternion.setFromUnitVectors(V(1, 0, 0), V(Math.cos(k * 7), 0, -Math.sin(k * 7))); } else g.position.copy(S).lerp(E, ease.in(u));
+        const dir = E.clone().sub(S).normalize(); if (!(M === "crow" && T < a)) g.quaternion.setFromUnitVectors(V(1, 0, 0), dir); if (M === "flail") g.rotation.x = t * 12;
+        if (M === "crow") g.children.forEach(w => { if (w.userData.s) w.rotation.y = Math.sin(T * 30) * .5 * w.userData.s; }); });
+      if (FX.gun) { FX.gun.visible = T > 7.2 && T < 13; FX.gun.position.copy(src).add(V(.1, 0, 0)); const shot = FX.pj.some((g, i) => { const a = HIT - span + (n > 1 ? i / (n - 1) : 1) * span - .12; return T > a - .02 && T < a + .05; }); FX.flash.visible = shot; FX.flash.position.copy(src).add(V(.3, 0, 0)); }
+      if (FX.spikes) FX.spikes.forEach((m, i) => { const u = pop(HIT + .35, HIT + .5); m.visible = T > HIT + .35 && T < 13; m.position.copy(ch).add(V(0, (i - 4) * .08, 0)); const d = V(Math.cos(i * 2.1) * .6, Math.sin(i * 1.3), Math.sin(i * 2.1)).normalize(); m.quaternion.setFromUnitVectors(V(0, 1, 0), d); m.scale.setScalar(u); });
+      if (FX.scrolls) FX.scrolls.forEach((m, i) => { m.visible = T > 7.2 && T < HIT; const a = uS.value * 6 + i * Math.PI; m.position.copy(gw("spine")).add(V(Math.cos(a) * .7, Math.sin(a * .5) * .3, Math.sin(a) * .7)); m.rotation.set(a, 0, Math.PI / 2); });
+      if (FX.chain) { const g = FX.pj[0]; FX.chain.visible = g.visible; FX.chain.geometry.setFromPoints([src, g.position]); }
+    }
+    if (GK === "ring") {
+      const mouth = GP.m === "voice" ? gw("head").add(V(.15, -.05, 0)) : gw("hd-1"), on2 = T > 7.2 && T < HIT + .8;
+      FX.rg.forEach((m, i) => { const ph = ((T * 1.6 + i / FX.rg.length) % 1), x = mouth.x + ph * (1.3 - mouth.x + .2); m.visible = on2; m.position.set(x, mouth.y + (GP.m === "dance" ? Math.sin(ph * 6) * .3 : 0), 0); m.rotation.y = Math.PI / 2; m.scale.setScalar(.15 + ph * (T > HIT ? 2.2 : .9)); m.material.opacity = 1 - ph; });
+      FX.word.visible = T > 7.6 && T < HIT + .9; FX.word.position.set(.1, 2.2, .5); FX.word.scale.set(2.2 * (1 + (T > HIT ? .3 : 0)), 1.1 * (1 + (T > HIT ? .3 : 0)), 1);
+      if (FX.guitar) { FX.guitar.visible = T > 5.0; FX.guitar.position.copy(gw("spine")).add(V(.2, .05, 0)); FX.guitar.rotation.set(0, Math.PI / 2, .5 + Math.sin(T * 30) * .05 * (T > 7.2 ? 1 : 0)); }
+      if (GP.m === "dance") { blend(hero, POSE.seal, POSE.dodge, (Math.sin(T * 3) + 1) / 2 * (T > 7.2 && T < HIT ? 1 : 0)); }
+    }
+    if (GK === "glow") {
+      const hs2 = seg(T, 5.4, 6.2); FX.gs.visible = hs2 > 0 && T < 13; FX.gs.position.copy(gw("spine")); FX.gs.scale.setScalar(.7 + hs2 * .5 + (T > HIT ? pop(HIT, HIT + .6) * 2.5 : 0)); FX.gs.material.uniforms.amt.value = 1.1 * (T > HIT ? 1 - seg(t, HIT + .3, HIT + 1.2) : 1);
+      FX.gr.forEach((m, i) => { const u = seg(t, HIT + i * .15, HIT + 1.2 + i * .15); m.visible = u > 0 && u < 1; m.position.set(hero.position.x, .04, 0); m.scale.setScalar(.5 + ease.out(u) * 7); m.material.opacity = 1 - u; });
+      if (GP.m === "heal" && T > HIT) rubble.forEach(m => (m.position.y = THREE.MathUtils.lerp(m.position.y, m.userData.base.y, pop(HIT, HIT + 1.5))));
+      if (FX.clock) { FX.clock.visible = T > 5.4 && T < 13; FX.clock.position.set(-1.6, 2.0, -1.2); FX.clock.scale.setScalar(seg(T, 5.4, 6.0)); FX.hand.rotation.z = T < HIT ? -T * 2 : -HIT * 2 + (t - HIT) * 14; FX.rw.visible = T > HIT + .1 && T < HIT + 1.2; FX.rw.position.set(.3, 2.4, .5);
+        GEN.tint = T > HIT + .21 && T < HIT + 1.1 ? .35 : 0; }
+    }
+    if (GK === "summon") {
+      const g = FX.helper, up = ease.back(seg(T, 5.5, 6.6)), rika = GP.m === "rika";
+      g.visible = up > 0; g.rotation.y = Math.PI / 2;
+      if (rika) { g.position.set(-2.2, -2.5 * (1 - up), -1.0); blend(g, POSE.crouch, T < HIT ? POSE.charge : POSE.strike, T < HIT ? ease.out(seg(T, 6.6, 7.4)) : 1); FX.hm.uniforms.amt.value = 1;
+        if (T > HIT) { const d = V(1, -.12, .03).normalize(), L = 40 * pop(HIT, HIT + .3), r = .5 * (1 - seg(T, 12.0, 12.6)); beam.visible = r > .002; beam.position.copy(gw("head").setX(-1.4).setY(4.4)); beam.quaternion.setFromUnitVectors(V(1, 0, 0), d); beam.scale.set(L, r, r); } }
+      else { const run = seg(t, 7.4, HIT); g.position.set(-1.9 + ease.in(run) * 2.35, -1.8 * (1 - up), .25); blend(g, POSE.crouch, T < 7.4 ? POSE.ready : T < HIT ? POSE.dash : POSE.strike, T < 7.4 ? up : T < HIT ? 1 : ease.out(seg(t, HIT, HIT + .08)));
+        if (T > HIT && T < HIT + .35) { smear.visible = true; smear.position.copy(gw("hd-1").setX(.9)); smear.scale.set(1.1, .3, 1); smear.material.opacity = .9 * fade(HIT, HIT + .35); } }
+    }
+    if (GK === "card") {
+      const M = GP.m;
+      if (FX.over) { FX.over.visible = M === "eyes" ? T > 6.2 && T < HIT + 1 : T > HIT && T < 13; FX.over.position.set(1.3, 2.4, .3); FX.over.scale.set(2.2 * (M === "eyes" ? 1 : pop(HIT, HIT + .2)), 1.1 * (M === "eyes" ? 1 : pop(HIT, HIT + .2)), 1); }
+      if (FX.tv) { const r = ease.back(seg(T, 5.4, 6.2)); FX.tv.visible = r > 0 && T < 13; FX.tv.position.set(.05, -.6 + r * 1.6, -.4); FX.tv.rotation.y = -.25; FX.tv.scale.setScalar(Math.max(.01, r)); }
+      if (FX.dice) FX.dice.forEach((m, i) => { const at = 6.0 + i * .22; m.visible = T > at && T < 13; const lvl = Math.floor(i / 2); m.position.set(-.45 + (i % 2) * .17, .08 + lvl * .165 + (T < at + .15 ? (1 - seg(T, at, at + .15)) * .4 : 0), .5); m.rotation.y = i * .2; });
+      if (FX.ghost) { const fl = ease.io(seg(T, 8.2, 9.2)); FX.ghost.visible = T > 8.2 && T < 9.3; FX.ghost.position.set(-1.25 + fl * 2.55, Math.sin(fl * Math.PI) * .6, 0); FX.ghost.rotation.y = Math.PI / 2; blend(FX.ghost, POSE.dash, POSE.dash, 0); }
+      if (FX.cap) { const th = seg(T, 5.3, 5.9); FX.cap.visible = th > 0 && th < 1; FX.cap.position.set(-1.0 + th * .9, 1 + Math.sin(th * Math.PI) * .8, .6); FX.tm.visible = T > 5.9 && T < 13; FX.tm.position.set(-.3, 0, -1.2); FX.tm.scale.setScalar(pop(5.9, 6.2));
+        const gu = seg(T, HOLD, HIT); FX.gate.visible = T > HOLD && T < HIT + 1.1; FX.gate.position.set(2.9, 1.1, 0); FX.gate.rotation.y = Math.PI / 2; FX.gate.scale.setScalar(.1 + ease.back(gu) * 1.1 - seg(t, HIT + .8, HIT + 1.1)); }
+    }
+  }
   // ---- camera
   let s = SH[0]; for (const x of SH) if (T >= x.t) s = x; const si = SH.indexOf(s), sEnd = SH[si + 1]?.t ?? END, u = ease.io(seg(T, s.t, sEnd));
   camera.position.lerpVectors(s.a, s.b, u); const look = new THREE.Vector3().lerpVectors(s.la, s.lb, u); let fov = s.fov;
@@ -369,8 +666,8 @@ function renderAt(T) {
   const inkOn = hs && f >= 1 && f <= 3, holdOn = hs && f === 4; inkP.enabled = inkOn; inkP.uniforms.mode.value = f === 3 ? 2 : 0;
   ENV.forEach(o => (o.visible = o.visible && !inkOn)); aura.visible = aura.visible && !inkOn; beam.visible = beam.visible && !inkOn; bolts.visible = !inkOn; dust.visible = dust.visible && !inkOn; trails.visible = trails.visible && !inkOn;
   scene.overrideMaterial = inkOn ? SIL : null; scene.background = inkOn ? PAPER : null;
-  if (inkOn) { const p = (fx === "note" ? foe.position.clone().setY(1.2) : V(.6, 1.15, 0)).project(camera); inkP.uniforms.c.value.set((p.x + 1) / 2, (p.y + 1) / 2); }
-  photo.uniforms.hold.value = holdOn ? 1 : 0; photo.uniforms.flash.value = hs && f === 5 ? .85 : 0; photo.uniforms.t.value = T; photo.uniforms.ab.value = .003 + quake * .012;
+  if (inkOn) { const p = (fx === "note" ? foe.position.clone().setY(1.2) : GK ? GEN.p0.clone().setY(1.15) : V(.6, 1.15, 0)).project(camera); inkP.uniforms.c.value.set((p.x + 1) / 2, (p.y + 1) / 2); }
+  photo.uniforms.hold.value = holdOn ? 1 : (GEN.tint || 0); photo.uniforms.flash.value = hs && f === 5 ? .85 : 0; photo.uniforms.t.value = T; photo.uniforms.ab.value = .003 + quake * .012;
   const wIn = SH.find(x => x.w && T >= x.t - .08 && T < x.t + .12); photo.uniforms.whip.value = wIn ? 1 - Math.abs(T - wIn.t) / .12 : 0;   // whip blur across the cut
   const linesOn = (T > 7.2 && T < HOLD) || (T > HIT && T < HIT + .9) || (fx === "ui" && T > 5.3 && T < 6.2); lines.uniforms.amt.value = linesOn && !inkOn ? (T > HIT ? 1 - seg(T, HIT, HIT + .9) : .55) : 0;
   lines.uniforms.mode.value = fx === "beam" && T > HIT ? 1 : 0; lines.uniforms.seed.value = Math.floor(T * 12); { const p = hw(hero, "spine").project(camera); lines.uniforms.c.value.set((p.x + 1) / 2, (p.y + 1) / 2); }

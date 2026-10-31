@@ -84,6 +84,8 @@ for i in (a, e):
 with db.connect() as c:
     assert c.execute("SELECT status FROM prospects WHERE id='overture/b'").fetchone()["status"] == "unsubscribed"
 
+FRESH = dt.datetime.now(dt.timezone.utc).isoformat()  # 'checked just now', so these tests don't age out
+
 # Pre-flight blocks placeholders, made-up prices, missing preview link, long bodies
 p = {"mockup_url": "https://x.test"}
 assert outreach.preflight("Hi", "See https://x.test for [NAME]", p) == ["placeholder text left in"]
@@ -110,6 +112,9 @@ sat_10am = dt.datetime(2026, 10, 31, 15, 0, tzinfo=dt.timezone.utc)
 sent = []
 fake_send = lambda msg: sent.append(msg) or "<fake@id>"
 with db.connect() as c:
+    # approve sets send_after from the real clock; the fixed test dates below are in the past, so clear it
+    c.execute("UPDATE emails SET send_after = NULL")
+    c.commit()
     assert "paused" in mailer.send_due(c, tue_10am, fake_send)["held"][0]["reason"]
 ok(api.post("/settings/pause", json={"paused": False}, headers=H))
 with db.connect() as c:
@@ -233,7 +238,7 @@ ok(api.post("/prospects/overture/zz/mockup", headers=H), 404)
 with db.connect() as c:
     c.execute("INSERT INTO prospects (id, name, trade, city, phone, website, status, facts) VALUES "
               "('overture/j', 'Lorem Roofing', 'roofing', 'Rogers', '479-273-0103', 'lorem.com', 'checked', "
-              "'{\"checked_at\": \"2026-10-24T00:00:00+00:00\"}')")
+              f"'{{\"checked_at\": \"{FRESH}\"}}')")
     c.commit()
     res = mockup.build_and_save(c, "overture/j")
     assert not res["built"] and any("lorem" in x for x in res["problems"]), res
@@ -542,7 +547,7 @@ with db.connect() as c:
       ('fu/k', 'Kings Plumbing', 'plumbing', 'Rogers', 'kim@kingsplumb.com', 'kingsplumb.com', 4.4, 'no tap-to-call', 'https://api.example.test/m/kings', 'built'),
       ('fu/l', 'Lake Air', 'hvac', 'Lowell', 'lee@lakeair.com', 'lakeair.com', 4.2, 'no https', NULL, 'checked'),
       ('fu/m', 'Mesa Roofing', 'roofing', 'Bentonville', 'max@mesaroof.com', 'mesaroof.com', 4.0, '© 2019', NULL, 'checked')""")
-    c.execute("""UPDATE prospects SET facts = '{"checked_at": "2026-10-24T00:00:00+00:00", "check_mode": "http"}',
+    c.execute(f"""UPDATE prospects SET facts = '{{"checked_at": "{FRESH}", "check_mode": "http"}}',
                  mockup_slug = replace(id, '/', '-'), mockup_url = coalesce(mockup_url, 'https://api.example.test/m/' || replace(id, '/', '-'))
                  WHERE id LIKE 'fu/%'""")
     c.commit()
@@ -568,6 +573,8 @@ sent.clear()
 fake_send = lambda msg: sent.append(msg) or msg["Message-ID"]
 day = lambda m, d, h=15: dt.datetime(2026, m, d, h, 0, tzinfo=dt.timezone.utc)  # 15:00Z = 9 or 10am Central
 with db.connect() as c:
+    c.execute("UPDATE emails SET send_after = NULL WHERE status = 'approved'")  # real-clock send_after is after these fixed dates
+    c.commit()
     res = mailer.send_due(c, day(10, 27), fake_send)
     assert res["sent"] == 3 and len(sent) == 3 and not any(m["In-Reply-To"] for m in sent), res
     first_ids = {m["To"]: m["Message-ID"] for m in sent}

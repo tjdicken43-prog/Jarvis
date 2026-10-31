@@ -17,6 +17,7 @@ jobs:
       - run: python3 money/test/test_coldlist.py
       - run: python3 money/test/test_agency_import.py
       - run: python3 money/test/test_trade_build.py
+      - run: python3 money/test/test_care.py
       - run: python3 money/test/test_audit.py
       - run: python3 money/test/test_budget.py
       - run: python3 money/test/test_tax.py

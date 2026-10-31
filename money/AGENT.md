@@ -64,3 +64,6 @@ If a bot's last run failed (GitHub tools: list workflow runs), read its log and 
   - New previews to show (links + one line each).
   - Replies to send.
   - Problems.
+
+## 4. Site Care (first run of each month only)
+On the first Money agent run of a month (Tj, 2026-10-31: "it only needs to be monthly"), follow `money/sites/care/README.md` for every site in its table: assess, research the top item, plan, and then either propose it (client sites, `APPROVAL.md` format) or do it (our own sites, by PR). At most one proposal per site a month. Put "Site Care: N sites checked, M proposals" in the report. Every other day, skip this section.

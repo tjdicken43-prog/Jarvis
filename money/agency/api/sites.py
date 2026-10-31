@@ -30,7 +30,9 @@ def publish(conn, c, domain=None):
     old = conn.execute("SELECT slug, domain FROM client_sites WHERE client_id = %s", (c["id"],)).fetchone()
     slug = old["slug"] if old else mockup.slug_for(p)
     content = dict(mockup.content_for(p), preview=False, phone=c["phone"] or p["phone"], email=c["email"],
-                   form_action=f"{config.PUBLIC_URL}/s/{slug}/request")
+                   form_action=f"{config.PUBLIC_URL}/s/{slug}/request", privacy_url=f"{config.PUBLIC_URL}/s/{slug}/privacy")
+    domain = domain if domain is not None else (old or {}).get("domain")
+    content["site_url"] = f"https://{domain}" if domain else f"{config.PUBLIC_URL}/s/{slug}"
     if c["plan"] == "front_desk_plus":
         content["open_247"] = True  # Plus answers day and night
     page = mockup.trade_build.render(content)
@@ -39,7 +41,6 @@ def publish(conn, c, domain=None):
         problems.append("live page still says noindex")
     if problems:
         return {"published": False, "problems": problems}
-    domain = domain if domain is not None else (old or {}).get("domain")
     conn.execute("""INSERT INTO client_sites (client_id, slug, domain, html) VALUES (%s,%s,%s,%s)
                     ON CONFLICT (client_id) DO UPDATE SET domain = EXCLUDED.domain, html = EXCLUDED.html,
                     published_at = now()""", (c["id"], slug, domain, page))
@@ -58,6 +59,20 @@ class RequestError(Exception):
     pass
 
 
+def privacy_page(conn, slug):
+    """The live site's privacy and texting terms (linked from its form and footer). None if no such site."""
+    row = conn.execute("""SELECT s.slug, s.domain, c.business_name, c.phone, c.email FROM client_sites s
+                          JOIN clients c ON c.id = s.client_id WHERE s.slug = %s""", (slug,)).fetchone()
+    if not row:
+        return None
+    back = f"https://{row['domain']}" if row["domain"] else f"{config.PUBLIC_URL}/s/{row['slug']}"
+    return mockup.trade_build.legal_html({"name": row["business_name"], "phone": row["phone"], "email": row["email"],
+                                          "site_url": back, "legal_date": LEGAL_DATE})
+
+
+LEGAL_DATE = "2026-10-31"  # bump when legal_html's wording changes
+
+
 def save_request(conn, c, form, photos):
     """One form request. photos: [(content_type, bytes)]. Returns the request row (None for a bot, silently)."""
     if (form.get("website") or "").strip():
@@ -70,8 +85,10 @@ def save_request(conn, c, form, photos):
                     (c["id"],)).fetchone()["n"] >= HOURLY_LIMIT:
         raise RequestError("Too many requests right now. Please call instead.")
     pick = lambda k, n: (re.sub(r"\s+", " ", form.get(k) or "").strip()[:n] or None)
-    row = conn.execute("""INSERT INTO site_requests (client_id, name, phone, job, town, day) VALUES (%s,%s,%s,%s,%s,%s)
-                          RETURNING *""", (c["id"], name, phone, pick("job", 120), pick("town", 120), pick("day", 60))).fetchone()
+    sms_ok = (form.get("sms_ok") or "") == "yes"  # the unticked box on the form; proof of opt-in for texting (TCPA, 10DLC)
+    row = conn.execute("""INSERT INTO site_requests (client_id, name, phone, job, town, day, sms_ok, sms_ok_at)
+                          VALUES (%s,%s,%s,%s,%s,%s,%s, CASE WHEN %s THEN now() END) RETURNING *""",
+                       (c["id"], name, phone, pick("job", 120), pick("town", 120), pick("day", 60), sms_ok, sms_ok)).fetchone()
     urls = []
     for ctype, data in [p for p in photos if p[1]][:MAX_PHOTOS]:
         if ctype not in PHOTO_TYPES or len(data) > MAX_PHOTO_BYTES:

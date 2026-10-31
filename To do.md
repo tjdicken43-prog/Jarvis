@@ -36,6 +36,8 @@ Covers [[SecurityAI]], [[Basis]], [[Jarvis]] and [[Sites by TJ]]. Done items mov
 - [ ] File an Arkansas LLC at sos.arkansas.gov ($45, then $150 franchise tax every May 1; TJ can be his own registered agent). Over $25, so the Approve button.
 - [ ] Get 2 free insurance quotes: technology E&O + general liability (typical $80-200/mo together). Buy only when the first gym agrees to pay.
 - [ ] Lawyer glance at [[Gym service agreement]] and [[Camera privacy notice]] before any gym signs.
+- [ ] Before the first trades client goes live: in the same lawyer visit, have them read the client-site "Privacy and texting terms" page (money/sites/trade_build.py, legal_html). Twilio 10DLC rejects texting without it.
+- [ ] Say a price for the Site Care package (proposed $39/mo, money/agency/ADDONS.md).
 - [ ] Buy the gym kit from the Gym-security shopping guide (used N100 mini PC, about $130; kit at cost about $275), then run the first nights at [[J Street Gym]] with the checklist.
 - [ ] Pitch J Street's owners with the pilot counts. Draft: [[J Street pilot pitch]].
 

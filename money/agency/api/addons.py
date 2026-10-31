@@ -19,6 +19,9 @@ ADDONS = {   # monthly cents. status stays "proposed" until TJ says the price in
                      "what": "One drafted Business Profile post a week: a seasonal tip and a call to action."},
     "care_plus": {"name": "Review replies + weekly post", "monthly_cents": 7900, "status": "proposed",
                   "what": "Both of the above, $9 a month less than separately."},
+    "site_care": {"name": "Site Care", "monthly_cents": 3900, "status": "proposed",
+                  "what": "A monthly check of their site (speed, search and AI-search answers, accessibility, facts vs "
+                          "their Google listing) and one approval request; approved fixes done that month."},
 }
 REPLY_MAX_WORDS = 70
 POST_MAX_CHARS = 1500            # Google Business Profile post limit

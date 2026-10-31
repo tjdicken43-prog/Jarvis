@@ -282,6 +282,10 @@ def owner_html(trade, name, short, city):
 
 # Shared by trade_build pages and the golden sites. Works with either palette (--acc/--ink here, --cedar/--slate there).
 FD_CSS = """.pv a{color:#fff;font-weight:600}
+.skip{position:absolute;left:12px;top:-60px;z-index:60;background:#fff;color:#111;padding:12px 16px;border:2px solid #111;border-radius:4px;font-weight:700}.skip:focus{top:12px}
+.smsok{display:flex!important;gap:10px;align-items:flex-start;font-weight:500!important;font-size:15px!important}.smsok input{width:22px;height:22px;min-height:0;margin:2px 0 0;flex:none}
+.smsfine{font-size:14px;color:#4a5668;margin:0}.smsfine a{color:inherit}
+.facts a{color:inherit;font-weight:inherit;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
 .fd,.owner{--fa:var(--acc,var(--cedar));--fi:var(--ink,var(--slate));--fl:var(--line,#d4dae2)}
 .fd{background:#fff;border-top:1px solid var(--fl);border-bottom:1px solid var(--fl)}
 .fd p{max-width:52ch}.fdsafe{border-left:4px solid var(--fa);background:#f6f7f9;padding:12px 14px;margin:18px 0 0}
@@ -434,10 +438,57 @@ def quote_form_open(c, phone, tel):
     if c.get("preview", True) or not c.get("form_action"):
         call = (' Please call ' + esc(phone) + '.') if tel else ''
         return (f"""<form onsubmit="event.preventDefault();this.querySelector('.formnote').textContent='Preview only: this form is not connected yet.{call}'">
-   <p class="formnote">Preview only. This form is not connected yet.</p>""")
+   <p class="formnote" role="status" aria-live="polite">Preview only. This form is not connected yet.</p>""")
     return (f'<form method="post" action="{esc(c["form_action"])}" enctype="multipart/form-data">\n'
-            '   <p class="formnote">We call you back, usually the same day.</p>\n'
+            '   <p class="formnote" role="status" aria-live="polite">We call you back, usually the same day.</p>\n'
             '   <label class="hp" aria-hidden="true">Leave this empty<input name="website" tabindex="-1" autocomplete="off"></label>')
+
+
+def sms_consent_html(privacy_url):
+    """Live forms only. Texting is opt-in (unchecked box), about this request only, with the disclosures carriers
+    check for A2P 10DLC: who texts, how often, rates, STOP/HELP, and the privacy link."""
+    link = f' <a href="{esc(privacy_url)}">Privacy and texting terms</a>.' if privacy_url else ""
+    return ('   <label class="smsok"><input type="checkbox" name="sms_ok" value="yes"> Text me about this request (optional)</label>\n'
+            '   <p class="smsfine">Texts are only about your request, up to 4 per request. Message and data rates may apply. '
+            f'Reply STOP to opt out, HELP for help. Not required to get service.{link}</p>\n')
+
+
+def legal_html(c):
+    """The live site's privacy and texting terms page, in plain words. Carriers reject A2P 10DLC campaigns whose site
+    has no public privacy policy saying phone numbers and opt-in data aren't shared for marketing. Draft for a lawyer's
+    glance before the first client goes live (see money/sites/PREMIUM.md, production list)."""
+    name = esc(c["name"].strip())
+    phone = pretty_phone(c.get("phone"))
+    tel = tel_of(c.get("phone"))
+    reach = [f'call <a href="tel:{tel}">{esc(phone)}</a>'] if tel else []
+    if c.get("email"):
+        reach.append(f'email <a href="mailto:{esc(c["email"])}">{esc(c["email"])}</a>')
+    reach = " or ".join(reach) or "contact us"
+    back = esc(c.get("site_url") or "./")
+    return f"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy and texting terms | {name}</title><meta name="description" content="How {name} uses the details you send through this website, by phone and by text.">
+<style>body{{font:17px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;color:#1d232b;background:#fff;margin:0}}main{{max-width:68ch;margin:0 auto;padding:32px 16px 64px}}h1{{font-size:28px;line-height:1.2}}h2{{font-size:20px;margin-top:32px}}a{{color:#0b4f8a}}</style>
+</head><body><main>
+<p><a href="{back}">Back to {name}</a></p>
+<h1>Privacy and texting terms</h1>
+<p>{name} runs this website. This page says what we collect, why, and what we never do with it.</p>
+<h2>What we collect</h2>
+<p>When you send the form: your name, phone number, the job, your town, the day you prefer and any photos. When you call: your number, what you tell us, and a recording and transcript of the call. Calls after hours may be answered by an automated assistant, which says so if you ask.</p>
+<h2>How we use it</h2>
+<p>Only to answer your request: to call or text you back, schedule the visit and do the work. We may ask for a review once a job is done, and you can ignore it.</p>
+<h2>Texts</h2>
+<p>We text you only if you ticked the box on the form or texted us first, and only about your request (up to 4 texts per request). Message and data rates may apply. Reply STOP to stop, HELP for help. You never have to agree to texts to get service.</p>
+<p><b>We do not sell, rent or share your phone number or your texting consent with anyone for their marketing.</b> Mobile opt-in data and consent are never shared with third parties or affiliates for marketing or promotional purposes.</p>
+<h2>Who else sees it</h2>
+<p>The companies that run our phone line, texts, email and website handle your details for us, only to provide those services. We share details if the law requires it.</p>
+<h2>How long we keep it</h2>
+<p>Requests and call notes for as long as we need them for the job and our records. Ask and we will delete what we don't have to keep.</p>
+<h2>Questions or deletion</h2>
+<p>To see, fix or delete your details, {reach}.</p>
+<p>Last updated {esc(c.get("legal_date") or "")}</p>
+</main></body></html>
+"""
 
 
 def render(c):
@@ -483,6 +534,8 @@ def render(c):
         facts.append("<span><b>Licensed</b> and insured</span>")
     if since:
         facts.append(f"<span><b>Since {int(since)}</b></span>")
+    if c.get("front_desk", True) and not c.get("open_247"):
+        facts.append('<span><a href="#after-hours"><b>After-hours calls</b> answered</a></span>')
 
     trust = []
     if rating:
@@ -524,7 +577,13 @@ def render(c):
     biz_type = {"plumbing": "Plumber", "hvac": "HVACBusiness", "roofing": "RoofingContractor"}[trade]
     ld = {"@context": "https://schema.org", "@type": biz_type, "name": name, "telephone": tel or None,
           "url": c.get("website") or None, "areaServed": towns,
-          "address": {"@type": "PostalAddress", "addressLocality": city, "addressRegion": "AR", "addressCountry": "US"}}
+          "address": {"@type": "PostalAddress", "addressLocality": city, "addressRegion": "AR", "addressCountry": "US"},
+          "email": c.get("email") or None, "logo": logo or None,
+          "sameAs": [u for u in (c.get("google_url"), c.get("facebook_url")) if str(u or "").startswith("https://")] or None,
+          "hasMap": c.get("google_url") if str(c.get("google_url") or "").startswith("https://") else None,
+          "openingHoursSpecification": ({"@type": "OpeningHoursSpecification", "opens": "00:00", "closes": "23:59",
+                                         "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]}
+                                        if c.get("open_247") else None)}
     ld = json.dumps({k: v for k, v in ld.items() if v}).replace("</", "<\\/")
     source = esc(c.get("source_note") or "their website and Google profile")
     pv = (f'<div class="pv"><b>Concept preview</b> made by Sites by TJ for {esc(name)}. Not the official site. '
@@ -545,6 +604,12 @@ def render(c):
     lede = t["lede"].format(city=city)
     if since:
         lede += f" Serving the area since {int(since)}."
+    live = not c.get("preview", True)
+    site_url = c.get("site_url") if str(c.get("site_url") or "").startswith("https://") else ""
+    canon = (f'<link rel="canonical" href="{esc(site_url)}">\n' if live and site_url else "")
+    canon += (f'<meta property="og:url" content="{esc(site_url)}">\n' if site_url else "")
+    og_img = f'<meta property="og:image" content="{esc(logo)}">\n' if logo else ""
+    privacy = c.get("privacy_url") if live else ""
 
     return f"""<!doctype html>
 <html lang="en">
@@ -554,7 +619,10 @@ def render(c):
 <title>{esc(title)}</title>
 <meta name="description" content="{esc(lede)}">
 {robots}
-<meta name="theme-color" content="#ffffff">
+{canon}<meta property="og:type" content="website">
+<meta property="og:title" content="{esc(title)}">
+<meta property="og:description" content="{esc(lede)}">
+{og_img}<meta name="theme-color" content="#ffffff">
 <link rel="preload" href="{esc(c.get('font_url') or 'libre-franklin-latin-wght-normal.woff2')}" as="font" type="font/woff2" crossorigin>
 <style>
 {css}
@@ -564,6 +632,7 @@ def render(c):
 <script type="application/ld+json">{faq_ld}</script>
 </head>
 <body>
+<a class="skip" href="#main">Skip to main content</a>
 {pv}
 {alert}
 <header class="top"><div class="wrap topin">
@@ -589,7 +658,7 @@ def render(c):
  <h2 id="trh">Why {esc(city)} calls {esc(short)}</h2>
  <ul>{''.join(f'<li><b>{esc(a)}</b><span>{esc(b)}</span></li>' for a, b in trust)}</ul>
 </div></div>
-<main>
+<main id="main">
 <div class="how" aria-label="What happens next"><div class="wrap"><ol>{''.join(f'<li><div><b>{esc(a)}</b><span>{esc(b)}</span></div></li>' for a, b in t['how'])}</ol></div></div>
 <section class="qband"><div class="wrap qgrid"><div><h2>{esc(cta)}</h2><p class="lede2">Tell us what's going on and we'll call you back.</p>{f'<p class="lede2"><b>Need us now?</b> Call <a href="tel:{tel}">{esc(phone)}</a>.</p>' if tel else ''}</div>
  <div class="quote" id="book">
@@ -600,7 +669,7 @@ def render(c):
    <label>Town (optional)<input name="town" autocomplete="address-level2"></label>
    <label>Day (optional)<select name="day"><option>As soon as possible</option></select></label>
    <label>Photos (optional)<input name="photos" type="file" accept="image/*" multiple></label>
-   <button class="btn" type="submit">Request a call back</button>
+{sms_consent_html(privacy) if live else ''}   <button class="btn" type="submit">Request a call back</button>
   </form>
  </div>
 </div></section>
@@ -616,7 +685,7 @@ def render(c):
 <section id="visit"><div class="wrap visit"><div><h2>Get in touch</h2><dl>{''.join(contact)}</dl></div><div>{call_btn}</div></div></section>
 {owner_html(trade, name, short, city) if c.get('preview', True) and c.get('front_desk', True) else ''}
 </main>
-<div class="ft"><div class="wrap">{esc(name)} · {esc(city)}, AR{f' · <a href="tel:{tel}">{esc(phone)}</a>' if tel else ''}</div></div>
+<div class="ft"><div class="wrap">{esc(name)} · {esc(city)}, AR{f' · <a href="tel:{tel}">{esc(phone)}</a>' if tel else ''}{f' · <a href="{esc(privacy)}">Privacy and texting terms</a>' if privacy else ''}</div></div>
 <div class="bar">{f'<a class="btn" href="tel:{tel}">{PHONE_SVG}Call</a>' if tel else ''}<a class="btn line" href="#book">{esc(cta)}</a></div>
 {JS}
 </body>
@@ -649,6 +718,10 @@ def audit(page, c=None):
         problems.append("exclamation mark in copy")
     if 'name="viewport"' not in low:
         problems.append("no viewport tag")
+    if 'class="skip"' not in low:
+        problems.append("no skip link")
+    if 'property="og:title"' not in low:
+        problems.append("no link preview tags (og:title)")
     if c is not None:
         if c.get("phone") and 'href="tel:' not in low:
             problems.append("no tap-to-call")
@@ -656,6 +729,11 @@ def audit(page, c=None):
             problems.append("preview is indexable")
         if not c.get("preview", True) and "not connected yet" in low:
             problems.append("live page has a form that isn't connected")
+        if not c.get("preview", True) and c.get("form_action"):
+            if "privacy and texting terms" not in text or 'name="sms_ok"' not in low:
+                problems.append("live form needs the texting opt-in and a privacy link (A2P 10DLC)")
+            if re.search(r'name="sms_ok"[^>]*checked', low):
+                problems.append("texting box must start unticked")
         if c["name"].lower() not in html.unescape(text):
             problems.append("business name missing")
     return problems

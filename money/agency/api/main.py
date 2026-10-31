@@ -1085,6 +1085,14 @@ def live_site(slug: str, conn=Conn):  # public: the client's live site before th
     return HTMLResponse(row["html"], headers=LIVE)
 
 
+@app.get("/s/{slug}/privacy", response_class=HTMLResponse)
+def live_site_privacy(slug: str, conn=Conn):  # public: privacy and texting terms (A2P 10DLC needs a public policy)
+    page = sites.privacy_page(conn, slug)
+    if page is None:
+        raise HTTPException(404, "no such site")
+    return HTMLResponse(page, headers=LIVE)
+
+
 THANKS = PAGE.replace("<title>Unsubscribed</title>", "<title>Request sent</title>")
 
 
@@ -1303,4 +1311,10 @@ async def client_domains(request: Request, call_next):
             row = conn.execute("SELECT html FROM client_sites WHERE domain = %s", (host,)).fetchone()
         if row:
             return HTMLResponse(row["html"], headers=LIVE)
+    if request.method == "GET" and request.url.path == "/privacy" and host and host != config.PUBLIC_URL.split("//")[-1].split("/")[0]:
+        with db.connect() as conn:
+            row = conn.execute("SELECT slug FROM client_sites WHERE domain = %s", (host,)).fetchone()
+            page = sites.privacy_page(conn, row["slug"]) if row else None
+        if page:
+            return HTMLResponse(page, headers=LIVE)
     return await call_next(request)

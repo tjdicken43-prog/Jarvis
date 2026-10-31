@@ -270,6 +270,8 @@ CREATE TABLE IF NOT EXISTS site_requests (     -- the live site's "request a cal
   created_at  timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS site_requests_client ON site_requests (client_id, created_at);
+ALTER TABLE site_requests ADD COLUMN IF NOT EXISTS sms_ok boolean NOT NULL DEFAULT false;  -- ticked "text me" (opt-in proof)
+ALTER TABLE site_requests ADD COLUMN IF NOT EXISTS sms_ok_at timestamptz;
 CREATE TABLE IF NOT EXISTS site_request_photos (
   token        text PRIMARY KEY,               -- unguessable; /p/{token}
   request_id   int NOT NULL REFERENCES site_requests(id),

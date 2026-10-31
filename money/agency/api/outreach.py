@@ -71,44 +71,45 @@ def angle(p):
     return "first impression"
 
 
-def template_draft(p):
-    name, city = p["name"], p.get("city") or "your area"
+def seen_line(p):
+    """One supporting line about the website flaw we found, as something TJ saw himself."""
     seen = plain_flaw(p["flaw"])
     a = angle(p)
     if a == "losing calls":
         low = (p.get("flaw") or "").lower()
-        state, saw = (("shows a for-sale page", 'showed a "domain for sale" page') if "for sale" in low else
-                      ("is blank", "only showed a placeholder page") if "parked" in low else ("isn't loading", "didn't load"))
-        subject = f"{name}'s website {state}"
-        first = (f"I tried to pull up {host(p.get('website')) or 'your website'} today and it {saw}, "
-                 f"so people searching for a {TRADE_WORD[p['trade']]} in {city} hit a dead end.")
-    elif a == "phone callers" and "hidden" in (p.get("flaw") or ""):
-        subject = f"Calls from {name}'s website"
-        first = (f"I looked at your site on my phone and your number isn't on the first screen, so someone in {city} "
-                 f"with {EMERGENCY[p['trade']]} has to scroll to find it.")
-    elif a == "phone callers":
-        subject = f"Calls from {name}'s website"
-        first = (f"I looked at your site on my phone and there's no tap-to-call button, so someone in {city} "
-                 f"with {EMERGENCY[p['trade']]} has to copy your number by hand.")
-    else:
-        subject = f"Quick note on {name}'s website"
-        found = seen[0] if len(seen) == 1 else f"{seen[0]} and {seen[1]}"
-        first = f"I looked at your site on my phone and {found}."
+        saw = ('showed a "domain for sale" page' if "for sale" in low else
+               "only showed a placeholder page" if "parked" in low else "didn't load")
+        return f"I also tried {host(p.get('website')) or 'your website'} today and it {saw}."
+    if a == "phone callers" and "hidden" in (p.get("flaw") or ""):
+        return "I also looked at your site on my phone and your number isn't on the first screen."
+    if a == "phone callers":
+        return "I also looked at your site on my phone and there's no tap-to-call button."
+    seen = [x.split(", so ")[0] for x in seen]  # the short half; the long reasons are for the site audit, not the email
+    found = seen[0] if len(seen) == 1 else f"{seen[0]} and {seen[1]}"
+    return f"I also looked at your site on my phone and {found}."
+
+
+def template_draft(p):
+    """The after-hours assistant is the pitch; the website is the supporting extra (Tj, 2026-10-31)."""
+    name, city = p["name"], p.get("city") or "your area"
+    subject = f"After-hours calls for {name}"
+    first = (f"When someone in {city} has {EMERGENCY[p['trade']]} at night, they call whoever answers first, so I set up an "
+             f"assistant that answers {name}'s calls after hours and has the caller's details ready by morning.")
     if p.get("mockup_url"):
-        rest = f"I built you a preview of a new one, set up so after-hours calls get answered too:\n{p['mockup_url']}\n\nIs it worth a quick look?"
+        rest = f"{seen_line(p)} I built you a new site with it, plus a sample call of it answering as you:\n{p['mockup_url']}\n\nWorth two minutes to listen?"
     else:
-        rest = "I can build a free preview of a fixed one this week, set up so after-hours calls get answered too. Want me to send it over?"
+        rest = f"{seen_line(p)} I can send a free preview of a fixed site and a sample call of it answering as you. Want it?"
     return subject, f"Hi,\n\n{first} {rest}"
 
 
-SYSTEM = """You write short cold emails from TJ, who builds websites and an after-hours AI phone receptionist for local plumbers, HVAC companies and roofers in Northwest Arkansas.
+SYSTEM = """You write short cold emails from TJ, who sets up an after-hours AI phone receptionist (the main offer) and builds a new website (the extra) for local plumbers, HVAC companies and roofers in Northwest Arkansas.
 
 Rules:
-- Subject: plain and honest, under 8 words, names the business. No clickbait, no "Re:", no emoji.
+- Subject: plain and honest, under 8 words, names the business, about after-hours calls. No clickbait, no "Re:", no emoji.
 - Body: start with "Hi," on its own line, then exactly 3 sentences, at most 70 words in all. Plain words a shop owner uses.
-- Sentence 1 names the one problem from the facts, as something TJ saw himself. Only use the facts given. Never invent numbers, reviews, competitors or results.
-- Sentence 2 offers the fix: the preview link if one is given (paste it exactly), otherwise offer to build a free preview. You may mention calls being answered after hours.
-- Sentence 3 is one simple question.
+- Lead with the assistant, never the website. Sentence 1: when a customer has an emergency at night they call whoever picks up first, and TJ sets up an assistant that answers the shop's calls after hours and gets the owner the caller's details by morning. Never claim it replaces staff, is available 24/7, or guarantees any result.\n- Sentence 2 mentions the one website problem from the facts, as something TJ saw himself (the website is the supporting extra), and offers the new site with the assistant already in place: paste the preview link exactly if one is given, otherwise offer a free preview. Only use the facts given. Never invent numbers, reviews, competitors or results.
+- Sentence 3 is one low-effort question that asks for a small yes (listen to a sample, look at the preview), never for a meeting or a sale.
+- Personalize with the business name, its town and the trade's real after-hours emergency; one specific observation beats three generic ones. Plain text, no formatting, nothing salesy.
 - No prices, no signature, no sign-off, no unsubscribe line (TJ's footer adds those). No exclamation marks, no em dashes, no buzzwords (leverage, elevate, seamless, solutions, game-changer, boost), no flattery."""
 
 SCHEMA = {

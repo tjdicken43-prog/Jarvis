@@ -38,14 +38,14 @@ def write(kind, p, first_subject, founding=False):
         body = (f"Hi,\n\nOne more thing: when someone in {city} has {outreach.EMERGENCY[p['trade']]} at night, they "
                 f"usually call whoever picks up first. {fix}Do you have nights covered already?")
     elif kind == "follow_up_2":
-        made = (f"The preview is already built from what's on your current site, so there's very little for you to do:\n{link}\n\n"
-                if link else "I'd build it from what's on your current site, so there's very little for you to do. ")
+        made = (f"The assistant is set up from what's on your current site, so there's very little for you to do. The new site is already built too:\n{link}\n\n"
+                if link else "I'd set the assistant up from what's on your current site, so there's very little for you to do. ")
         lock = (f"You'd also be one of our first {FOUNDING} shops, so your price stays locked for as long as you're with us. "
                 if founding else "")
-        body = f"Hi,\n\nIf a new site sounds like a lot of work, it isn't on your end. {made}{lock}Is a 10-minute call this week worth it?"
+        body = f"Hi,\n\nIf answering after-hours calls sounds like a lot of work, it isn't on your end. {made}{lock}Is a 10-minute call this week worth it?"
     else:
         body = ("Hi,\n\nI haven't heard back, so I'll take it that now isn't the right time and stop writing about this. "
-                "If you want the site or the after-hours answering later, just reply here. Thanks for your time.")
+                "If you want the after-hours answering or the site later, just reply here. Thanks for your time.")
     return subject, body
 
 

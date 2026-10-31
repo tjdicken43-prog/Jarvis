@@ -35,3 +35,6 @@ Insurance-claim help, specific warranty years, shingle brands, certifications (G
 
 ## Photos
 Run `../../tools/photo-sheet.js` once and follow "Photos and logo colors" in `../README.md`. Preview only; the owner's OK comes before go-live.
+
+## Offer gap review (2026-10-31)
+See [OFFER.md](OFFER.md) for the roofer gap table, facts list, concierge quoting and Google profile checklist. One-page pitch and checklist: [pitch.html](pitch.html). Front Desk roofing intake and claim rules: `agency/api/receptionist.py` (ROOF_RULES), defaults in `shopcfg.py`.

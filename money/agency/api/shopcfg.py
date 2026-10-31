@@ -44,7 +44,11 @@ TRADE_DEFAULTS = {
     "roofing": {"services": ["roof leaks", "storm and hail damage", "roof replacement", "repairs", "gutters",
                              "inspections"],
                 "emergency_words": ["leaking through the ceiling", "water coming in", "tree on the roof",
-                                    "ceiling sagging", "hole in the roof"]},
+                                    "ceiling sagging", "hole in the roof"],
+                # Claim intake: only what the caller says. The assistant never advises on a claim (see receptionist.ROOF_RULES).
+                "questions": ["Is water coming in right now?",
+                              "Is this from a recent storm, and are you planning to file an insurance claim?",
+                              "Roughly how old is the roof, if you know?"]},
 }
 # NWA towns and trade words the transcriber should expect (Deepgram keyterm prompting). Town names are where
 # speech-to-text slips most, and a wrong town sends the truck to the wrong place.
@@ -173,7 +177,8 @@ def merged(c):
     p.setdefault("tone", "warm")
     p.setdefault("languages", ["en"])
     p.setdefault("transfer", "emergency")
-    for k in ("not_services", "service_area", "fees", "faq", "questions", "closed_dates"):
+    p.setdefault("questions", list(d.get("questions", [])))
+    for k in ("not_services", "service_area", "fees", "faq", "closed_dates"):
         p.setdefault(k, [])
     return p
 

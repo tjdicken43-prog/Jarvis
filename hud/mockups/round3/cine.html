@@ -1,0 +1,239 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Peak</title>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.min.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/" } }</script>
+<style>html,body{margin:0;background:#000;overflow:hidden}canvas{display:block}
+.hud{position:fixed;left:24px;bottom:20px;font:13px/1.35 system-ui,Roboto,Arial,sans-serif;color:rgba(255,255,255,.82);text-shadow:0 1px 4px rgba(0,0,0,.6)}.hud b{display:block;font-size:15px;font-weight:600;color:#fff}
+.sub{position:fixed;left:50%;bottom:64px;transform:translateX(-50%);max-width:80%;text-align:center;font:600 24px/1.3 system-ui,Roboto,Arial,sans-serif;color:#fff;
+  text-shadow:-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000,0 3px 8px rgba(0,0,0,.6)}.sub i{font-style:normal;color:#cfe0ff;font-size:18px;display:block;margin-bottom:2px}
+.kan{position:fixed;right:6%;top:10%;text-align:right;font:900 84px/1 "Noto Serif CJK JP","WenQuanYi Zen Hei",serif;color:#fff;
+  text-shadow:-4px -4px 0 #0a0a10,4px -4px 0 #0a0a10,-4px 4px 0 #0a0a10,4px 4px 0 #0a0a10,8px 8px 0 rgba(120,140,255,.85)}
+.kan small{display:block;font:700 18px system-ui,Roboto,sans-serif;margin-top:10px;color:#cfe0ff;text-shadow:0 2px 4px #000}
+.tag{position:fixed;right:24px;top:18px;font:12.5px system-ui,Roboto,Arial,sans-serif;color:rgba(255,255,255,.7)}</style></head><body>
+<div class="hud"><b></b><span id="beat"></span></div><div class="sub" id="sub"></div><div class="kan" id="kan"></div><div class="tag">Training grounds · live</div>
+<script type="module">
+import * as THREE from "three";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import { fighter, blend, pose, POSE, faceTex, toon, part, rnd, reseed, TAU, ease, RIM, RIMK, CAST } from "./chars.js";
+const W = innerWidth, H = innerHeight, Q = new URLSearchParams(location.search);
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); renderer.setPixelRatio(1); renderer.setSize(W, H); document.body.prepend(renderer.domElement);
+renderer.shadowMap.enabled = true; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
+const scene = new THREE.Scene(); const camera = new THREE.PerspectiveCamera(32, W / H, .05, 400);
+const V = (x, y, z) => new THREE.Vector3(x, y, z), C = c => new THREE.Color(c);
+const uT = { value: 0 }, uUI = { value: 0 };
+
+/* ---------- one config per peak moment: who, where, what the sky looks like, what the ultimate is ---------- */
+const CFG = {
+  sasuke: { who: "Sasuke · Basis, Leaf wing", fx: "susanoo", fxCol: "#a46bff", sky: ["#0a0614", "#3a1460", "#1a2a6a"], plat: "#4a4656", rim: "#c8a8ff",
+    hero: { top: "#2a2a36", pants: "#2a2a36", yoke: "#e8e4dc", belt: "#6a3aa8", skin: "#f2d6bc", hair: "#14141e", shoe: "#1a1a22", hairN: 30, hairLen: .2, bangs: 6, bangLen: .16, baggy: 1.1, hem: .35, seed: 31,
+      face: { skin: "#f2d6bc", iris: "#141418", irisTop: "#000", angry: true, mouth: "flat", brow: "#14141e" } },
+    alt: { iris: "#e01a2a", irisTop: "#600010", glow: true }, kan: ["須佐能乎", "Perfect Susanoo"], kan2: ["インドラの矢", "Indra's Arrow"],
+    foe: { top: "#141418", pants: "#141418", yoke: "#141418", skin: "#efd2b6", hair: "#14141a", hairN: 22, hairLen: .26, seed: 44, hem: .45, face: { skin: "#efd2b6", iris: "#c01020", irisTop: "#500", angry: false, mouth: "flat", brow: "#14141a" } }, foeName: "Itachi",
+    subs: [["Itachi", "Foolish little brother. You still lack hatred."], ["Sasuke", "No. I lack patience. Fifteen-minute workout."], ["Itachi", "...A Susanoo? Since when?"],
+      ["Sasuke", "Short on time? Then don't blink."], ["Sasuke", "Next set in 60 seconds."], ["Itachi", "*poke* Forgive me... I'll do cardio."]] },
+  gojo: { who: "Gojo · Sites by TJ, Jujutsu wing", fx: "purple", fxCol: "#b06cff", sky: ["#04060c", "#16264a", "#3a1a4a"], plat: "#3e4250", rim: "#a6e4ff",
+    hero: "gojo", alt: { iris: "#9ae8ff", irisTop: "#1a6aff", glow: true, mouth: "grin" }, kan: ["虚式「茈」", "Hollow Technique: Purple"], kan2: ["200%", "Max output"],
+    foe: { top: "#f2efe8", pants: "#f2efe8", skin: "#f2d6bc", hair: "#ff9ab0", hairN: 26, hairLen: .2, up: true, seed: 52, hem: .5, baggy: 1.3, face: { skin: "#f2d6bc", iris: "#c01020", irisTop: "#500", angry: true, mouth: "grin", brow: "#ff9ab0" } }, foeName: "Sukuna",
+    subs: [["Sukuna", "Stand proud. You're strong."], ["Gojo", "Nah. I'd win."], ["Sukuna", "...Red and Blue? At the same time?"],
+      ["Gojo", "Throughout heaven and earth, I alone ship the email."], ["Gojo", "Sends go out at 9. Don't be late."], ["Sukuna", "...Next time. Malevolent Shrine."]] },
+  jinwoo: { who: "Sung Jinwoo · Jarvis HQ, Faculty building", fx: "army", fxCol: "#5a7aff", sky: ["#020408", "#0a1a2a", "#1a1040"], plat: "#2a3038", rim: "#8ab0ff",
+    hero: { top: "#14141c", pants: "#14141c", yoke: "#14141c", collar: "#14141c", collarH: .14, skin: "#eed4bc", hair: "#0e0e14", shoe: "#0e0e14", hairN: 26, hairLen: .17, bangs: 6, bangLen: .15, baggy: 1.05, hem: .55, seed: 61,
+      face: { skin: "#eed4bc", iris: "#141418", irisTop: "#000", angry: true, mouth: "flat", brow: "#0e0e14" } },
+    alt: { iris: "#8ab8ff", irisTop: "#3a3aff", glow: true }, kan: ["影の君主", "Shadow Monarch"], kan2: ["起きろ", "ARISE"],
+    foe: { top: "#7a1a1a", pants: "#2a1a1a", yoke: "#3a3a44", skin: "#5a5a66", hair: "#8a1a1a", hairN: 12, hairLen: .4, seed: 71, hem: .6, face: { skin: "#5a5a66", iris: "#ff2020", irisTop: "#600", angry: true, mouth: "flat", brow: "#5a5a66" } }, foeName: "Igris",
+    subs: [["System", "[Job change quest: survive.]"], ["Jinwoo", "Every agent. Report in."], ["Igris", "...!"],
+      ["Jinwoo", "Arise."], ["Jinwoo", "Overseer check: all shadows accounted for."], ["Igris", "*kneels* My liege."]] },
+  light: { who: "Light · Gym-security, Case room wing", fx: "note", fxCol: "#ff2a3a", sky: ["#06030a", "#3a0810", "#1a0a20"], plat: "#3a3236", rim: "#ff8a8a",
+    hero: { top: "#c4b08a", pants: "#3a3a40", yoke: "#3a3a40", collar: "#e8e4dc", collarH: .08, skin: "#f2d6bc", hair: "#6a4a2a", shoe: "#2a2020", hairN: 24, hairLen: .15, bangs: 6, bangLen: .14, baggy: 1.0, seed: 81,
+      face: { skin: "#f2d6bc", iris: "#5a3a1a", irisTop: "#2a1a0a", angry: false, mouth: "flat", brow: "#6a4a2a" } },
+    alt: { iris: "#ff1a2a", irisTop: "#5a0008", glow: true, mouth: "grin", angry: true }, kan: ["計画通り", "Just as planned"], kan2: ["40秒", "40 seconds"],
+    foe: { top: "#f2f2f2", pants: "#6a7a9a", skin: "#f2e2d6", hair: "#0e0e14", hairN: 30, hairLen: .2, seed: 91, face: { skin: "#f2e2d6", iris: "#0e0e14", irisTop: "#000", angry: false, mouth: "flat", brow: "#0e0e14" } }, foeName: "L",
+    subs: [["L", "There's a 5% chance you're Kira."], ["Light", "I'll take a potato chip..."], ["L", "...Why is he writing?"],
+      ["Light", "...AND EAT IT."], ["Light", "Admin 2FA. Only one name gets in."], ["L", "*thud* ...I knew it. Rotate the codes."]] },
+  vegeta: { who: "Vegeta · Etsy shop, Capsule wing", fx: "beam", fxCol: "#ffe14a", sky: ["#0c0604", "#5a2a10", "#2a1a3a"], plat: "#7a5a44", rim: "#ffd87a",
+    hero: { top: "#2a3a8a", pants: "#2a3a8a", yoke: "#f2efe8", belt: "#f2efe8", cuff: "#f2efe8", skin: "#f2d0aa", hair: "#141418", shoe: "#f2efe8", hairN: 30, hairLen: .26, up: true, bangs: 0, baggy: 1.05, seed: 101,
+      face: { skin: "#f2d0aa", iris: "#141418", irisTop: "#000", angry: true, mouth: "flat", brow: "#141418" } },
+    alt: { iris: "#3ad8c8", irisTop: "#0a6a60", glow: true, angry: true, mouth: "shout" }, hairTo: "#ffd84a", kan: ["超サイヤ人", "Super Saiyan"], kan2: ["ファイナルフラッシュ", "Final Flash"],
+    foe: { top: "#4aa04a", pants: "#4aa04a", yoke: "#1a1a1a", skin: "#4aa04a", hair: "#2a6a2a", hairN: 8, hairLen: .3, seed: 111, face: { skin: "#4aa04a", iris: "#c040c0", irisTop: "#401040", angry: false, mouth: "grin", brow: "#2a6a2a" } }, foeName: "Cell",
+    subs: [["Cell", "Go on, Vegeta. Give me your best shot."], ["Vegeta", "You asked for it. I'm the prince of the ledger."], ["Cell", "...Wait. That's too much ki."],
+      ["Vegeta", "It's over. Not nine thousand. Just over."], ["Vegeta", "Margins are up. Kakarot can't say that."], ["Cell", "...I'll regenerate. From one cell. Ugh."]] },
+}[Q.get("c") || "sasuke"];
+document.querySelector(".hud b").textContent = CFG.who; document.title = CFG.who;
+RIM.value.set(CFG.rim); RIMK.value = .8;
+
+/* ---------- arena: tinted nebula sky, a shattered platform, floating rubble ---------- */
+const sky = new THREE.Mesh(new THREE.SphereGeometry(150, 48, 24), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, uniforms: { uT, uUI, a: { value: C(CFG.sky[0]) }, b: { value: C(CFG.sky[1]) }, d: { value: C(CFG.sky[2]) } },
+  vertexShader: `varying vec3 p; void main(){ p=normalize(position); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+  fragmentShader: `uniform float uT,uUI; uniform vec3 a,b,d; varying vec3 p; float h(vec3 q){ return fract(sin(dot(q,vec3(12.9,78.2,37.7)))*43758.5); }
+    float n(vec3 q){ vec3 i=floor(q),f=fract(q); f=f*f*(3.-2.*f); return mix(mix(mix(h(i),h(i+vec3(1,0,0)),f.x),mix(h(i+vec3(0,1,0)),h(i+vec3(1,1,0)),f.x),f.y),mix(mix(h(i+vec3(0,0,1)),h(i+vec3(1,0,1)),f.x),mix(h(i+vec3(0,1,1)),h(i+vec3(1,1,1)),f.x),f.y),f.z); }
+    void main(){ float neb=n(p*3.)*.6+n(p*7.)*.3+n(p*15.)*.1; vec3 c=mix(a,b,smoothstep(.45,.9,neb)); c+=d*smoothstep(.55,.95,n(p*4.+3.)); c+=vec3(step(.997,h(floor(p*400.)))); gl_FragColor=vec4(c,1.); }` }));
+scene.add(sky, new THREE.HemisphereLight(CFG.rim, "#2a1a3a", 1.0));
+const key = new THREE.DirectionalLight("#ffe8d0", 2.2); key.position.set(-4, 6, 5); key.castShadow = true; key.shadow.mapSize.set(2048, 2048); Object.assign(key.shadow.camera, { left: -8, right: 8, top: 8, bottom: -8 }); scene.add(key);
+const plat = new THREE.Group(); scene.add(plat); reseed(4);
+for (let i = 0; i < 40; i++) { const a = rnd() * TAU, r = Math.sqrt(rnd()) * 7; const w = .8 + rnd() * 1.6, d = .8 + rnd() * 1.6;
+  const s = part(new THREE.BoxGeometry(w, .5 + rnd() * .4, d), CFG.plat, plat, Math.cos(a) * r, -.25 - rnd() * .15, Math.sin(a) * r); s.rotation.y = rnd(); s.receiveShadow = true; s.userData.base = s.position.clone(); s.userData.k = rnd(); }
+const rubble = []; for (let i = 0; i < 50; i++) { const m = part(new THREE.DodecahedronGeometry(.08 + rnd() * .25, 0), CFG.plat, scene, (rnd() - .5) * 18, rnd() * 4, (rnd() - .5) * 14 - 2); m.userData.base = m.position.clone(); m.userData.k = rnd(); rubble.push(m); }
+
+/* ---------- hero and opponent ---------- */
+const HS = typeof CFG.hero === "string" ? CAST[CFG.hero] : CFG.hero;
+const hero = fighter(HS); scene.add(hero); const foe = fighter(CFG.foe); scene.add(foe);
+const headMat = f => f.userData.J.head.children[0].material;
+const faceBase = headMat(hero).map, faceAlt = faceTex({ ...HS.face, ...CFG.alt });
+const setFace = t => { const m = headMat(hero); if (m.map !== t) { m.map = t; m.needsUpdate = true; } };
+const foeBase = headMat(foe).map, foeHit = faceTex({ ...CFG.foe.face, closed: true, mouth: "shout" });
+const hairM = []; hero.userData.J.hair.traverse(o => o.isMesh && hairM.push(o)); const hair0 = hairM[0]?.material, hair1 = CFG.hairTo ? toon(CFG.hairTo, { emit: "#3a2a00" }) : null;
+
+/* ---------- effect materials: fresnel shells and flowing flame ---------- */
+const fres = (col, k = 1.6) => new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, uniforms: { col: { value: C(col) }, a: { value: 1 }, uT },
+  vertexShader: `varying vec3 n,v,p; void main(){ p=position; vec4 mv=modelViewMatrix*vec4(position,1.); n=normalize(normalMatrix*normal); v=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }`,
+  fragmentShader: `uniform vec3 col; uniform float a,uT; varying vec3 n,v,p; void main(){ float f=pow(1.-abs(dot(n,v)),${k.toFixed(1)}); float s=.75+.25*sin(p.y*18.-uT*9.); gl_FragColor=vec4(col*(f*1.6+.08)*s*a,1.); }` });
+const auraMat = (k, col) => new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, uniforms: { uT, uUI, k: { value: k }, col: { value: C(col) } },
+  vertexShader: `varying vec3 vP,vN,vV; void main(){ vP=position; vec4 mv=modelViewMatrix*vec4(position,1.); vN=normalize(normalMatrix*normal); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }`,
+  fragmentShader: `uniform float uT,uUI,k; uniform vec3 col; varying vec3 vP,vN,vV; float h(vec2 q){ return fract(sin(dot(q,vec2(12.9,78.2)))*43758.5); } float n(vec2 q){ vec2 i=floor(q),f=fract(q); f=f*f*(3.-2.*f); return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y); }
+    void main(){ float a=atan(vP.x,vP.z); vec2 q=vec2(a*3.,vP.y*4.-uT*(3.+k)); float f=n(q)*.6+n(q*2.3)*.3+n(q*5.)*.1; float fr=pow(1.-abs(dot(normalize(vN),vV)),1.5); float top=smoothstep(1.,-.2,vP.y/2.2);
+      gl_FragColor=vec4(col*smoothstep(.45,.8,f)*pow(fr,1.6)*top*uUI*(.5+k*.25),1.); }` });
+const aura = new THREE.Group(); scene.add(aura);
+const tear = (r, h) => new THREE.LatheGeometry([...Array(20)].map((_, i) => { const t = i / 19; return new THREE.Vector2(r * Math.sin(Math.PI * Math.min(1, t * 1.15)) * (1 - t * .55), t * h - .1); }), 40);
+aura.add(new THREE.Mesh(tear(.75, 2.6), auraMat(0, CFG.fxCol)), new THREE.Mesh(tear(.95, 3.0), auraMat(1, CFG.fxCol)), new THREE.Mesh(tear(.6, 2.3), auraMat(2, "#ffffff")));
+const glowL = new THREE.PointLight(CFG.fxCol, 0, 7, 1.5); scene.add(glowL);
+const ring = (c) => { const m = new THREE.Mesh(new THREE.RingGeometry(.96, 1, 96), new THREE.MeshBasicMaterial({ color: c, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false })); scene.add(m); return m; };
+const rings = [0, 1, 2].map(() => ring(CFG.fxCol));
+const wave = new THREE.Mesh(new THREE.SphereGeometry(1, 40, 20), fres(CFG.fxCol, 2)); scene.add(wave);
+// beam: a core and a shell along +x, used by Final Flash, Indra's Arrow and the Purple trail
+const beam = new THREE.Group(); scene.add(beam);
+{ const g = new THREE.CylinderGeometry(1, 1, 1, 32, 1, true); g.rotateZ(-Math.PI / 2); g.translate(.5, 0, 0);
+  beam.add(new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: "#ffffff", transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false })), new THREE.Mesh(g, fres(CFG.fxCol, 1.2))); beam.children[1].scale.set(1, 2.4, 2.4); beam.children[0].scale.set(1, .5, .5); }
+// effect props
+const FX = {};
+if (CFG.fx === "susanoo") { const g = fighter({ ...HS, hairN: 0, seed: 7 }); const m = fres(CFG.fxCol, 1.4); g.traverse(o => { if (o.isMesh) o.material = m; }); g.scale.setScalar(3.2); scene.add(g); FX.giant = g; FX.gm = m;
+  const bow = new THREE.Mesh(new THREE.TorusGeometry(1.6, .05, 8, 60, Math.PI * 1.1), fres("#e8d0ff", 1)); scene.add(bow); FX.bow = bow; }
+if (CFG.fx === "purple") { FX.red = new THREE.Mesh(new THREE.SphereGeometry(.16, 24, 16), new THREE.MeshBasicMaterial({ color: "#ff2a3a", toneMapped: false })); FX.blue = new THREE.Mesh(new THREE.SphereGeometry(.16, 24, 16), new THREE.MeshBasicMaterial({ color: "#2a6aff", toneMapped: false }));
+  FX.orb = new THREE.Group(); FX.orb.add(new THREE.Mesh(new THREE.SphereGeometry(1, 32, 20), new THREE.MeshBasicMaterial({ color: "#f0e0ff", toneMapped: false })), new THREE.Mesh(new THREE.SphereGeometry(1.5, 32, 20), fres("#b06cff", 1.2)));
+  scene.add(FX.red, FX.blue, FX.orb); }
+if (CFG.fx === "army") { FX.army = []; const dark = toon("#0a0a12"), eye = new THREE.MeshBasicMaterial({ color: "#8ab8ff", toneMapped: false }); reseed(9);
+  for (let i = 0; i < 16; i++) { const g = fighter({ top: "#0a0a12", pants: "#0a0a12", skin: "#0a0a12", hair: "#0a0a12", hairN: 6, seed: 200 + i }); g.traverse(o => { if (o.isMesh) o.material = dark; });
+    const e = new THREE.Mesh(new THREE.SphereGeometry(.035, 8, 6), eye); e.position.set(.05, .05, .12); g.userData.J.head.add(e); const e2 = e.clone(); e2.position.x = -.05; g.userData.J.head.add(e2);
+    const a = -1.2 + (i / 15) * 2.4 + (rnd() - .5) * .2, r = 2 + rnd() * 2.6; g.userData.at = V(-1.25 - Math.cos(a) * r, 0, Math.sin(a) * r); g.userData.k = rnd(); g.scale.setScalar(.9 + rnd() * .5); scene.add(g); FX.army.push(g); }
+  FX.pool = new THREE.Mesh(new THREE.CircleGeometry(6, 64), new THREE.MeshBasicMaterial({ color: "#05050a", transparent: true, opacity: .85, depthWrite: false })); FX.pool.rotation.x = -Math.PI / 2; FX.pool.position.set(-2.4, .03, 0); scene.add(FX.pool); }
+if (CFG.fx === "note") { FX.book = new THREE.Group(); const cv = part(new THREE.BoxGeometry(.32, .03, .22), "#0a0a0e", FX.book, 0, 0, 0, false); const pg = part(new THREE.BoxGeometry(.3, .035, .2), "#f2efe8", FX.book, 0, .002, 0, false); scene.add(FX.book);
+  FX.words = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.2), new THREE.MeshBasicMaterial({ transparent: true, toneMapped: false, depthWrite: false, map: (() => { const c = document.createElement("canvas"); c.width = 1024; c.height = 200; const g = c.getContext("2d");
+    g.font = "700 120px 'Noto Serif CJK JP','WenQuanYi Zen Hei',serif"; g.fillStyle = "#ff2a3a"; g.textAlign = "center"; g.fillText("L Lawliet — 心臓麻痺", 512, 140); return new THREE.CanvasTexture(c); })() }));
+  scene.add(FX.words); }
+const ENV = [sky, plat, ...rubble];
+const composer = new EffectComposer(renderer); composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(W / 2, H / 2), .45, .4, .95); composer.addPass(bloom); composer.addPass(new OutputPass());
+const photo = new ShaderPass({ uniforms: { tDiffuse: { value: null }, t: { value: 0 }, flash: { value: 0 }, ab: { value: .003 } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float t,flash,ab; varying vec2 vUv; float h(vec2 p){ return fract(sin(dot(p,vec2(12.98,78.23))+t*7.)*43758.5); }
+    void main(){ vec2 d=vUv-.5; float r=dot(d,d); vec2 o=d*r*ab*8.;
+      vec3 c=vec3(texture2D(tDiffuse,vUv+o).r,texture2D(tDiffuse,vUv).g,texture2D(tDiffuse,vUv-o).b);
+      vec3 blur=(texture2D(tDiffuse,vUv+vec2(.004,0.)).rgb+texture2D(tDiffuse,vUv-vec2(.004,0.)).rgb+texture2D(tDiffuse,vUv+vec2(0.,.006)).rgb+texture2D(tDiffuse,vUv-vec2(0.,.006)).rgb)*.25;
+      c=mix(c,max(c,blur),.35);                               // diffusion: highlights bleed a little, the anime 'photography' glow
+      c=pow(c,vec3(.96,1.,1.04)); c=mix(c,c*vec3(.95,.98,1.08),.6); // cool cosmic grade
+      c*=1.-r*.9; c+=(h(vUv*731.)-.5)*.025; c=mix(c,vec3(1.),flash); gl_FragColor=vec4(c,1.); }` });
+composer.addPass(photo);
+const SIL = new THREE.MeshBasicMaterial({ color: "#000000" }), PAPER = new THREE.Color("#ffffff"), FOG = scene.fog;
+const inkP = new ShaderPass({ uniforms: { tDiffuse: { value: null }, c: { value: new THREE.Vector2(.55, .52) }, asp: { value: W / H }, mode: { value: 0 } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }`,
+  fragmentShader: `uniform sampler2D tDiffuse; uniform vec2 c; uniform float asp,mode; varying vec2 vUv; float h(float n){ return fract(sin(n)*43758.5453); }
+    void main(){ vec3 col=texture2D(tDiffuse,vUv).rgb; float l=dot(col,vec3(.299,.587,.114)); vec2 d=(vUv-c)*vec2(asp,1.); float a=atan(d.y,d.x), r=length(d);
+      float k=floor(a*110./6.2832); float line=step(.5,h(k))*smoothstep(.12+h(k+3.)*.3,.7,r);
+      float ink=step(.5,l); vec3 paper=vec3(.97,.95,.9), black=vec3(.05,.03,.06), red=vec3(.86,.1,.16);
+      vec3 o=mix(black,paper,ink); o=mix(o,black,line*ink*step(.2,r)); 
+      if(mode>1.5){ o=vec3(1.)-o; }
+      gl_FragColor=vec4(o,1.); }` });
+inkP.enabled = false; composer.addPass(inkP);
+
+/* ---------- the cut: same seven-shot grammar as the Goku clip, effect beats per character ---------- */
+const fx = CFG.fx, big = fx === "susanoo";
+const SHOTS = [
+  [0.0, V(.4, 1.0, 6.2), V(.3, 1.05, 5.6), V(.3, .9, 0), V(.3, .95, 0), 34, "Face-off"],
+  [1.3, V(.8, .1, 1.25), V(.7, .12, 1.05), V(0, .05, 0), V(0, .05, 0), 24, "Eyes change", 1],
+  [2.5, big ? V(.6, .3, 7.5) : V(-1.3, .4, 4.2), big ? V(.8, .2, 8.6) : V(-1.3, .3, 5.4), big ? V(-1.6, 2.6, 0) : V(-1.25, 1.4, 0), big ? V(-1.6, 3.0, 0) : V(-1.25, 1.6, 0), big ? 46 : 40, CFG.kan[1]],
+  [3.4, big ? V(3.5, 2.0, 7.2) : V(-.2, 1.3, 4.6), big ? V(3.2, 2.2, 6.8) : V(-.1, 1.3, 4.2), big ? V(-.8, 2.4, 0) : V(-.4, 1.0, 0), big ? V(-.6, 2.4, 0) : V(-.3, 1.0, 0), big ? 44 : 34, "Charging"],
+  [4.7, V(-2.4, 1.0, 2.4), V(-2.1, 1.0, 2.4), V(.2, 1.2, 0), V(.4, 1.2, 0), 40, "Release"],
+  [5.1, fx === "army" ? V(3.0, 2.6, 8.5) : V(0, 3.2, 13.0), fx === "army" ? V(3.4, 2.9, 9.4) : V(0, 3.6, 14.5), fx === "army" ? V(-2.4, .9, 0) : V(1.5, 1.2, -2), fx === "army" ? V(-2.2, 1.0, 0) : V(2.0, 1.4, -2), fx === "army" ? 46 : 42, fx === "army" ? "Arise" : "Aftermath"],
+  [6.6, V(.35, .05, 1.3), V(.3, .08, 1.15), V(0, 0, 0), V(0, .02, 0), 26, "Calm", 1],
+];
+const END = 8.4, HIT = 4.95;
+const step = (t, fps = 12) => Math.floor(t * fps + 1e-6) / fps; const seg = (t, a, b) => Math.min(1, Math.max(0, (t - a) / (b - a)));
+const ST = [[.2, 1.25], [1.4, 2.45], [3.5, 4.6], [5.5, 6.5], [6.7, 7.6], [7.6, 8.4]], SUBS = CFG.subs.map((s, i) => [...ST[i], ...s]);
+const k2 = fx === "army" ? [5.6, 6.5] : [4.0, 4.7];
+const KAN = [[2.55, 3.35, ...CFG.kan], [...k2, ...CFG.kan2]];
+const subEl = document.getElementById("sub"), kanEl = document.getElementById("kan");
+const FF = { ...POSE.strike, spine: [.2, 0, 0], sh1: [-1.55, -.1, .12], el1: [0, 0, 0], "sh-1": [-1.55, .1, -.12], "el-1": [0, 0, 0], hd1: [0, 0, .5], "hd-1": [0, 0, -.5] };
+const P_CHARGE = { susanoo: POSE.purple, purple: POSE.purple, army: POSE.ready, note: POSE.seal, beam: POSE.charge }[fx];
+const P_FIRE = { susanoo: POSE.follow, purple: POSE.purple, army: POSE.strike, note: POSE.grin, beam: FF }[fx];
+const hw = (f, j) => f.userData.J[j].getWorldPosition(new THREE.Vector3());
+function renderAt(T) {
+  let t = T; const hitStop = T > HIT && T < HIT + .14; if (hitStop) t = HIT; if (T >= HIT + .14) t = T - .14; const ts = step(t);
+  const ui = seg(T, 2.25, 2.7); uUI.value = ui; uT.value = t;
+  hero.position.set(-1.25, 0, 0); hero.rotation.set(0, Math.PI / 2, 0); foe.position.set(1.3, 0, 0); foe.rotation.set(0, -Math.PI / 2, 0); foe.visible = true;
+  // hero
+  if (ts < 2.5) blend(hero, POSE.ready, POSE.idle, ease.io(seg(ts, 1.4, 2.3)));
+  else if (ts < 3.4) blend(hero, POSE.idle, fx === "note" ? POSE.seal : POSE.charge, ease.out(seg(ts, 2.5, 2.9)));
+  else if (ts < 4.7) { blend(hero, fx === "note" ? POSE.seal : POSE.charge, P_CHARGE, ease.out(seg(ts, 3.4, 3.8))); if (fx === "note") hero.userData.J["el-1"].rotation.z += Math.sin(ts * 30) * .08; }
+  else if (ts < 6.6) { blend(hero, P_CHARGE, P_FIRE, ease.out(seg(t, 4.7, HIT)));
+    if (fx === "army") { const u = ease.out(seg(t, 4.7, HIT)); hero.position.x = -1.25 + u * 1.5; } }
+  else { blend(hero, P_FIRE, POSE.idle, ease.out(seg(ts, 6.6, 7.1))); if (fx === "army") hero.position.x = .25; hero.rotation.y = Math.PI / 2 - ease.out(seg(ts, 6.6, 7.0)) * .9; }
+  hero.userData.J.hip.position.y += Math.sin(ts * 5) * .01;
+  setFace(ts < 2.2 ? faceBase : faceAlt); if (hair1) hairM.forEach(m => (m.material = ts >= 2.5 ? hair1 : hair0));
+  // opponent
+  const fm = headMat(foe); const setF = x => { if (fm.map !== x) { fm.map = x; fm.needsUpdate = true; } }; setF(T > HIT && T < 6.6 ? foeHit : foeBase);
+  if (ts < 3.4) blend(foe, fx === "purple" ? POSE.grin : POSE.guard, POSE.guard, 0);
+  else if (ts < 4.7 + .01 || T < HIT) blend(foe, POSE.guard, fx === "note" ? POSE.idle : POSE.brace, ease.out(seg(ts, 3.4, 3.8)));
+  else if (fx === "note" || fx === "army") { const u = seg(t, HIT, 5.8); blend(foe, POSE.brace, POSE.down, ease.in(u));
+    if (fx === "army" && ts >= 6.4) { blend(foe, POSE.down, POSE.crouch, ease.out(seg(ts, 6.4, 7.0))); } }
+  else { const u = seg(t, HIT, 6.6); blend(foe, POSE.hit, POSE.fly, ease.out(Math.min(1, u * 3))); foe.position.x = 1.3 + ease.out(u) * 9; foe.position.y = Math.sin(u * Math.PI) * 2.4; foe.rotation.z = -u * 2; if (ts >= 6.6) foe.visible = false; }
+  // aura and the arena reacting
+  aura.position.set(hero.position.x, 0, hero.position.z); aura.visible = ui > 0; aura.scale.setScalar(.8 + ui * .3 + (T > HIT && T < HIT + .8 ? .4 * (1 - seg(T, HIT, HIT + .8)) : 0));
+  glowL.position.set(hero.position.x + .3, 1.2, .5); glowL.intensity = ui * 1.5 + (T > 3.4 && T < 5.5 ? 4 * seg(T, 3.4, 4.7) : 0);
+  const quake = Math.max(T > 2.3 && T < 3.5 ? 1 - seg(T, 2.3, 3.5) : 0, T > HIT + .14 ? 1 - seg(T, HIT + .14, 6.6) : 0) * (fx === "note" ? .3 : 1);
+  plat.children.forEach(s => { s.position.copy(s.userData.base); s.visible = true; s.position.y += ui * (s.userData.k * .2) + Math.sin(T * 20 + s.userData.k * 9) * .03 * quake; });
+  rubble.forEach(m => { m.position.copy(m.userData.base); m.position.y += ui * (1 + m.userData.k * 2) + Math.sin(T * (1 + m.userData.k) + m.userData.k * 9) * .2; m.rotation.set(T * m.userData.k, T * .7, 0); });
+  rings.forEach((m, i) => { const u = seg(T, 2.35 + i * .12, 3.3 + i * .12), u2 = seg(T, HIT + .1 + i * .08, HIT + 1.1 + i * .1), a = u > 0 && u < 1, v = a ? u : u2;
+    m.visible = a || (u2 > 0 && u2 < 1); m.position.set(a ? hero.position.x : .6, a ? .05 : 1.1, 0); m.rotation.set(a ? -Math.PI / 2 : 0, a ? 0 : Math.PI / 2, 0); m.scale.setScalar(.5 + ease.out(v) * (a ? 6 : 14)); m.material.opacity = 1 - v; });
+  const wu = seg(T, HIT + .14, HIT + 1.0); wave.visible = wu > 0 && wu < 1 && fx !== "note"; wave.position.set(.6, 1.1, 0); wave.scale.setScalar(.4 + ease.out(wu) * 4); wave.material.uniforms.a.value = 1.6 * (1 - wu);
+  beam.visible = false;
+  hero.updateMatrixWorld(true);
+  // per-character ultimate
+  if (fx === "susanoo") { const g = FX.giant, u = ease.back(seg(T, 2.5, 3.3)); g.visible = u > 0; g.position.set(-1.7, 0, -.6); g.rotation.y = Math.PI / 2; g.scale.set(3.2 * Math.min(1, u * 1.1), 3.2 * u, 3.2 * Math.min(1, u * 1.1));
+    blend(g, POSE.charge, T < 4.7 ? POSE.purple : POSE.follow, T < 4.7 ? ease.out(seg(ts, 3.4, 3.9)) : 1); FX.gm.uniforms.a.value = .55 + .25 * Math.sin(T * 7);
+    FX.bow.visible = T > 3.5; FX.bow.position.set(-.2, 3.1, -.6); FX.bow.rotation.set(0, Math.PI / 2, -Math.PI * .55); FX.bow.scale.setScalar(Math.min(1, seg(T, 3.5, 4.0) * 1.2));
+    if (T > HIT) { beam.visible = true; beam.position.set(-.1, 3.1, -.4); const d = V(12, -2.0, .4).normalize(); beam.quaternion.setFromUnitVectors(V(1, 0, 0), d); const L = 40 * ease.out(seg(T, HIT, HIT + .5)), r = .18 * (1 - seg(T, 6.0, 6.6)); beam.scale.set(L, r, r); beam.visible = r > .001; } }
+  if (fx === "purple") { const hr = hw(hero, "hd1"), hl = hw(hero, "hd-1"), mid = hr.clone().lerp(hl, .5).add(V(.35, .05, 0)), m = ease.in(seg(T, 4.3, 4.7));
+    FX.red.visible = FX.blue.visible = T > 3.4 && T < 4.7; FX.red.position.copy(hr).lerp(mid, m); FX.blue.position.copy(hl).lerp(mid, m); const g = Math.min(1, seg(T, 3.4, 3.9) * 1.3); FX.red.scale.setScalar(g); FX.blue.scale.setScalar(g);
+    const o = FX.orb, launch = ease.in(seg(T, HIT + .14, 6.2)); o.visible = T >= 4.6 && T < 6.6; o.position.copy(mid).add(V(launch * 26, 0, 0)); o.scale.setScalar(.12 + seg(T, 4.6, 4.8) * .1 + launch * 2.4);
+    if (T > HIT + .14) { beam.visible = true; beam.position.copy(mid); beam.quaternion.identity(); beam.scale.set(launch * 26, .25 + launch * 2.2, .25 + launch * 2.2);
+      plat.children.forEach(s => { if (Math.abs(s.position.z) < launch * 2.6 + .4 && s.position.x > mid.x && s.position.x < o.position.x) s.visible = false; }); } }
+  if (fx === "army") { const pu = ease.out(seg(T, 5.1, 5.9)); FX.pool.visible = pu > 0; FX.pool.scale.setScalar(pu);
+    FX.army.forEach((g, i) => { const u = ease.back(seg(T, 5.4 + g.userData.k * .7, 6.1 + g.userData.k * .7)); g.visible = u > 0; g.position.copy(g.userData.at); g.position.y = -1.9 * (1 - u); g.rotation.y = Math.PI / 2 + (g.userData.k - .5) * .5;
+      blend(g, POSE.crouch, i % 3 ? POSE.idle : POSE.ready, u); });
+    if (ts >= 6.4) foe.traverse(o => { if (o.isMesh && !o.userData.sh) { o.userData.sh = 1; o.material = FX.army[0].userData.J.spine.children[0]?.material || o.material; } }); }
+  if (fx === "beam") { const hr = hw(hero, "hd1"), hl = hw(hero, "hd-1"), mid = hr.clone().lerp(hl, .5).add(V(.12, 0, 0));
+    if (T > 3.6 && T < HIT) { wave.visible = true; wave.position.copy(mid); wave.scale.setScalar(.15 + seg(T, 3.6, HIT) * .35); wave.material.uniforms.a.value = 2; }
+    if (T > HIT) { wave.visible = wave.visible && T < 5.3; const L = 40 * ease.out(seg(T, HIT, HIT + .4)), r = (.35 + .5 * seg(T, HIT, 5.6)) * (1 - seg(T, 6.3, 6.7)); beam.visible = r > .001; beam.position.copy(mid); beam.quaternion.identity(); beam.scale.set(L, r, r); } }
+  if (fx === "note") { const hl = hw(hero, "hd-1"); FX.book.visible = T > 2.5; FX.book.position.copy(hl).add(V(.12, -.02, 0)); FX.book.rotation.set(0, 0, .3);
+    const wu2 = seg(T, 3.5, 4.6); FX.words.visible = wu2 > 0 && T < 6.6; FX.words.position.set(-1.0, 2.0, -1.6); FX.words.scale.y = .7; FX.words.scale.set(wu2 * .7, .7, 1); FX.words.material.opacity = 1 - seg(T, 6.0, 6.6); FX.words.lookAt(camera.position); }
+  // camera
+  let s = SHOTS[0]; for (const x of SHOTS) if (T >= x[0]) s = x; const si = SHOTS.indexOf(s), sEnd = SHOTS[si + 1]?.[0] ?? END, su2 = ease.io(seg(T, s[0], sEnd));
+  camera.position.lerpVectors(s[1], s[2], su2); const look = new THREE.Vector3().lerpVectors(s[3], s[4], su2);
+  if (s[7]) { const hp = hw(hero, "head"); camera.position.add(hp); look.add(hp); }
+  reseed(Math.floor(T * 24) + 3); camera.position.add(V((rnd() - .5) * .18 * quake, (rnd() - .5) * .14 * quake, 0)); camera.fov = s[5]; camera.aspect = W / H; camera.updateProjectionMatrix(); camera.lookAt(look); camera.updateMatrixWorld();
+  if (fx === "note" && FX.words.visible) FX.words.lookAt(camera.position);
+  document.getElementById("beat").textContent = s[6];
+  const f = Math.round((T - HIT) * 24), inkOn = hitStop && f <= 2; inkP.enabled = inkOn; inkP.uniforms.mode.value = f === 2 ? 2 : 0;
+  ENV.forEach(o => (o.visible = o.visible && !inkOn)); aura.visible = aura.visible && !inkOn; beam.visible = beam.visible && !inkOn; scene.overrideMaterial = inkOn ? SIL : null; scene.background = inkOn ? PAPER : null;
+  if (inkOn) { const p = V(.6, 1.15, 0).project(camera); inkP.uniforms.c.value.set((p.x + 1) / 2, (p.y + 1) / 2); }
+  photo.uniforms.flash.value = hitStop && f === 3 ? .9 : 0; photo.uniforms.t.value = T; photo.uniforms.ab.value = .003 + quake * .01;
+  bloom.strength = .45 + ui * .1 + (T > HIT && T < HIT + .8 ? .7 * (1 - seg(T, HIT, HIT + .8)) : 0); bloom.enabled = !inkOn;
+  const sb = SUBS.find(([a, b]) => T >= a && T < b); subEl.innerHTML = sb ? `<i>${sb[2]}</i>${sb[3]}` : "";
+  const k = KAN.find(([a, b]) => T >= a && T < b); kanEl.style.display = k ? "" : "none"; if (k) { const u = (T - k[0]) / (k[1] - k[0]); kanEl.innerHTML = `${k[2]}<small>${k[3]}</small>`; kanEl.style.fontSize = k[2].length > 6 ? '56px' : ''; kanEl.style.opacity = u > .85 ? (1 - u) / .15 : 1; }
+  composer.render();
+}
+window.renderAt = renderAt; window.END = END;
+if (Q.has("t")) { renderAt(+Q.get("t")); document.title = "ready"; }
+else { const t0 = performance.now(); (function loop() { renderAt(((performance.now() - t0) / 1000) % END); requestAnimationFrame(loop); })(); }
+</script></body></html>
